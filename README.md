@@ -101,18 +101,38 @@ Em development/test, se `STUDY_COCKPIT_PASSWORD` estiver vazia, o app fica sem B
 
 ## Railway
 
-Variaveis minimas:
+O repo inclui `railway.json` para:
+
+- build via `Dockerfile`
+- `bundle exec rails db:prepare` antes do deploy
+- healthcheck em `/up`
+- restart em falha
+
+Variaveis minimas do servico Rails:
 
 ```sh
-DATABASE_URL=...
+RAILS_ENV=production
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 RAILS_MASTER_KEY=...
-SECRET_KEY_BASE=...
 STUDY_COCKPIT_PASSWORD=...
 GITHUB_TOKEN=...
 STUDY_SYNC_ON_BOOT=true
+STUDY_CONTENT_MODE=github
+STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos
+STUDY_CONTENT_GITHUB_REF=main
 ```
 
-O `Dockerfile` usa `bin/docker-entrypoint`, que executa `db:prepare` e, quando habilitado, `study:sync_content`.
+Passos recomendados:
+
+```sh
+railway login
+railway init --name system-design-study-cockpit
+railway add --database postgres
+railway up
+railway domain
+```
+
+O `Dockerfile` tambem usa `bin/docker-entrypoint`, que executa `db:prepare` e, quando habilitado, `study:sync_content`.
 
 ## Qualidade
 
