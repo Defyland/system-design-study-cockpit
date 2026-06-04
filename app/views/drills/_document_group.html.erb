@@ -1,0 +1,11 @@
+<article class="panel">
+  <h2><%= title %></h2>
+  <div class="chapter-list">
+    <% documents.each do |document| %>
+      <div class="drill-card">
+        <strong><%= document.title %></strong>
+        <p class="muted"><%= pluralize(document.checkpoints.size, "checkpoint") %></p>
+      </div>
+    <% end %>
+  </div>
+</article>

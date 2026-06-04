@@ -1,0 +1,35 @@
+<section class="reader">
+  <article class="reader-content">
+    <div class="panel hero-panel">
+      <p class="status-pill">Chapter <%= @chapter.position.to_s.rjust(2, "0") %></p>
+      <h1><%= @chapter.title %></h1>
+      <p class="muted"><%= @chapter.phase %></p>
+      <div class="button-row">
+        <%= button_to "Marcar como lido",
+          study_progress_path(@progress),
+          method: :patch,
+          params: { study_document_id: @chapter.id, study_progress: { current_block_position: @blocks.size, status: "read" } },
+          class: "button" %>
+        <%= link_to "Voltar aos chapters", chapters_path, class: "button secondary" %>
+      </div>
+    </div>
+
+    <% @blocks.each do |block| %>
+      <section id="block-<%= block.position %>" class="markdown-block">
+        <%= render_markdown(block.content_markdown) %>
+      </section>
+
+      <% if (checkpoint = @checkpoint_slots[block.position]) %>
+        <%= render "checkpoint", checkpoint: checkpoint %>
+      <% end %>
+    <% end %>
+  </article>
+
+  <aside class="panel">
+    <h2>Progresso</h2>
+    <p class="muted"><%= @progress.status.humanize %></p>
+    <p>Ultimo bloco: <%= @progress.current_block_position %>/<%= @blocks.size %></p>
+    <h3>Checkpoints</h3>
+    <p><%= @chapter.checkpoints.size %> perguntas extraidas</p>
+  </aside>
+</section>

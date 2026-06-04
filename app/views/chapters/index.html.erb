@@ -1,0 +1,17 @@
+<h1>Chapters</h1>
+
+<div class="chapter-list">
+  <% @chapters.each do |chapter| %>
+    <article class="chapter-row">
+      <div class="chapter-number"><%= chapter.position.to_s.rjust(2, "0") %></div>
+      <div>
+        <h2><%= link_to chapter.title, chapter_path(chapter.slug) %></h2>
+        <p class="muted">
+          <%= chapter.phase.presence || "Trilha canonica" %>
+          · <%= chapter.progress.status.humanize %>
+        </p>
+      </div>
+      <%= link_to "Estudar", chapter_path(chapter.slug), class: "button secondary" %>
+    </article>
+  <% end %>
+</div>

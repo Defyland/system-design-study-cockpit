@@ -1,0 +1,79 @@
+<section class="grid two">
+  <div class="panel hero-panel">
+    <p class="status-pill">Hoje</p>
+    <h1>Continue pelo proximo movimento certo.</h1>
+
+    <% if @current_chapter %>
+      <p class="muted">
+        Chapter atual: <strong><%= @current_chapter.title %></strong>
+      </p>
+      <div class="button-row">
+        <%= link_to "Abrir chapter", chapter_path(@current_chapter.slug), class: "button" %>
+        <%= link_to "Ver drills", drills_path, class: "button secondary" %>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        Nenhum conteudo importado ainda. Rode <code>bin/rails study:sync_content</code>.
+      </div>
+    <% end %>
+  </div>
+
+  <aside class="panel">
+    <h2 class="section-title">Post-its</h2>
+    <div class="postits">
+      <% if @reminders.any? %>
+        <% @reminders.each do |reminder| %>
+          <article class="postit">
+            <p><%= reminder.message %></p>
+            <div class="button-row">
+              <%= button_to "Soneca", snooze_reminder_path(reminder), method: :post, class: "button ghost small-form" %>
+              <%= button_to "Fechar", dismiss_reminder_path(reminder), method: :post, class: "button ghost small-form" %>
+            </div>
+          </article>
+        <% end %>
+      <% else %>
+        <p class="muted">Sem lembretes ativos. Eles aparecem quando voce marcar algo como hesitante ou errado.</p>
+      <% end %>
+    </div>
+  </aside>
+</section>
+
+<section class="grid three">
+  <article class="panel">
+    <h2>Chapters</h2>
+    <p class="muted"><%= @chapters.size %> importados</p>
+  </article>
+
+  <article class="panel">
+    <h2>Reviews vencidos</h2>
+    <p class="muted"><%= @due_reviews.size %> na fila</p>
+  </article>
+
+  <article class="panel">
+    <h2>Status</h2>
+    <p class="muted">
+      Mastered: <%= @progress_counts.fetch("mastered", 0) %>
+      · Reading: <%= @progress_counts.fetch("reading", 0) %>
+    </p>
+  </article>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">Fila de revisao</h2>
+  <% if @due_reviews.any? %>
+    <div class="chapter-list">
+      <% @due_reviews.each do |schedule| %>
+        <div class="chapter-row">
+          <span class="chapter-number"><%= schedule.interval_days %>d</span>
+          <div>
+            <strong><%= schedule.study_document.title %></strong>
+            <p class="muted"><%= schedule.checkpoint&.prompt || "Review do documento" %></p>
+          </div>
+          <%= link_to "Abrir", chapter_path(schedule.study_document.slug), class: "button secondary" if schedule.study_document.chapter? %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">Nenhuma revisao vencida agora.</p>
+  <% end %>
+</section>

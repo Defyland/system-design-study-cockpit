@@ -1,0 +1,27 @@
+<h1>Drills</h1>
+
+<section class="panel">
+  <h2>Reviews vencidos</h2>
+  <% if @due_reviews.any? %>
+    <div class="chapter-list">
+      <% @due_reviews.each do |schedule| %>
+        <article class="chapter-row">
+          <span class="chapter-number"><%= schedule.interval_days %>d</span>
+          <div>
+            <strong><%= schedule.study_document.title %></strong>
+            <p class="muted"><%= schedule.checkpoint&.prompt || "Review geral" %></p>
+          </div>
+          <span class="status-pill"><%= schedule.status %></span>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">Nada vencido agora.</p>
+  <% end %>
+</section>
+
+<section class="grid three">
+  <%= render "document_group", title: "Labs", documents: @labs %>
+  <%= render "document_group", title: "Review cards", documents: @review_cards %>
+  <%= render "document_group", title: "Capstones", documents: @capstones %>
+</section>

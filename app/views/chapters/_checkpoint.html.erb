@@ -1,0 +1,29 @@
+<section class="checkpoint">
+  <p class="status-pill"><%= checkpoint.source_label %></p>
+  <h3><%= checkpoint.prompt %></h3>
+
+  <details>
+    <summary>Revelar resposta e correcao</summary>
+    <div class="answer-box">
+      <p><strong>Resposta boa:</strong> <%= checkpoint.good_answer %></p>
+
+      <% if checkpoint.bad_answer.present? %>
+        <p class="bad-answer"><strong>Resposta ruim:</strong> <%= checkpoint.bad_answer %></p>
+      <% end %>
+
+      <% if checkpoint.correction.present? %>
+        <p><strong>Troque por isto:</strong> <%= checkpoint.correction %></p>
+      <% end %>
+
+      <div class="button-row">
+        <% CheckpointAttempt::RESULTS.except(:revealed).each_key do |result| %>
+          <%= button_to result.to_s.humanize,
+            checkpoint_attempts_path,
+            method: :post,
+            params: { checkpoint_id: checkpoint.id, checkpoint_attempt: { result: result } },
+            class: "button secondary" %>
+        <% end %>
+      </div>
+    </div>
+  </details>
+</section>
