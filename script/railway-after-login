@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+PROJECT_NAME="${PROJECT_NAME:-system-design-study-cockpit}"
+SERVICE_NAME="${SERVICE_NAME:-web}"
+POSTGRES_SERVICE_NAME="${POSTGRES_SERVICE_NAME:-Postgres}"
+
+if ! railway whoami >/dev/null 2>&1; then
+  echo "Railway auth missing. Run: railway login"
+  exit 1
+fi
+
+if [ ! -f "config/master.key" ]; then
+  echo "missing local config/master.key"
+  exit 1
+fi
+
+: "${STUDY_COCKPIT_PASSWORD:?export STUDY_COCKPIT_PASSWORD before running this script}"
+: "${GITHUB_TOKEN:?export GITHUB_TOKEN before running this script}"
+
+RAILS_MASTER_KEY="$(tr -d '\n' < config/master.key)"
+DATABASE_URL_REFERENCE="\${{${POSTGRES_SERVICE_NAME}.DATABASE_URL}}"
+
+echo "== Railway deploy =="
+echo "project: ${PROJECT_NAME}"
+echo "service: ${SERVICE_NAME}"
+echo "database: ${POSTGRES_SERVICE_NAME}"
+
+if railway status >/dev/null 2>&1; then
+  echo "Using linked Railway project"
+else
+  railway init --name "${PROJECT_NAME}"
+fi
+
+railway add --database postgres --service "${POSTGRES_SERVICE_NAME}" || true
+railway add --service "${SERVICE_NAME}" || true
+
+railway variables --service "${SERVICE_NAME}" \
+  --set "RAILS_ENV=production" \
+  --set "DATABASE_URL=${DATABASE_URL_REFERENCE}" \
+  --set "RAILS_MASTER_KEY=${RAILS_MASTER_KEY}" \
+  --set "STUDY_COCKPIT_USERNAME=study" \
+  --set "STUDY_COCKPIT_PASSWORD=${STUDY_COCKPIT_PASSWORD}" \
+  --set "GITHUB_TOKEN=${GITHUB_TOKEN}" \
+  --set "STUDY_SYNC_ON_BOOT=true" \
+  --set "STUDY_CONTENT_MODE=github" \
+  --set "STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos" \
+  --set "STUDY_CONTENT_GITHUB_REF=main"
+
+railway up --service "${SERVICE_NAME}" --detach
+railway domain --service "${SERVICE_NAME}" || true
+
+echo "Deploy requested."
+echo "Next checks:"
+echo "  railway status"
+echo "  railway logs --service ${SERVICE_NAME}"
+echo "  railway open"

@@ -101,6 +101,8 @@ Em development/test, se `STUDY_COCKPIT_PASSWORD` estiver vazia, o app fica sem B
 
 ## Railway
 
+Guia completo: [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md).
+
 O repo inclui `railway.json` para:
 
 - build via `Dockerfile`

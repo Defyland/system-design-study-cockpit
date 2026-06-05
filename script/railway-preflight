@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "== Railway preflight =="
+
+if ! command -v railway >/dev/null 2>&1; then
+  echo "railway CLI not found"
+  exit 1
+fi
+
+railway --version
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "not inside a git repository"
+  exit 1
+fi
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "git worktree is not clean"
+  git status --short
+  exit 1
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+  echo "missing git origin remote"
+  exit 1
+fi
+
+if [ ! -f "railway.json" ]; then
+  echo "missing railway.json"
+  exit 1
+fi
+
+ruby -rjson -e 'JSON.parse(File.read("railway.json"))'
+echo "railway.json OK"
+
+if [ ! -f "config/master.key" ]; then
+  echo "missing local config/master.key"
+  exit 1
+fi
+
+if railway whoami >/dev/null 2>&1; then
+  echo "Railway auth OK"
+else
+  echo "Railway auth missing. Run: railway login"
+fi
+
+echo "preflight OK"
