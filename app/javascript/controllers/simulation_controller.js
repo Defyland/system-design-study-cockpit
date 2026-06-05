@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "value", "metric", "inputSnapshot", "outputSnapshot", "decision", "feedback"]
+  static targets = ["input", "value", "metric", "inputSnapshot", "decision", "feedback"]
   static values = { slug: String }
 
   connect() {
@@ -29,7 +29,6 @@ export default class extends Controller {
     })
 
     this.inputSnapshotTarget.value = JSON.stringify(input)
-    this.outputSnapshotTarget.value = JSON.stringify(output)
     this.applyRecommendedDecision(output.recommendedDecision)
     this.applyFeedback(output.feedback)
   }

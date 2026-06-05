@@ -1,16 +1,5 @@
 class StudyDocument < ApplicationRecord
-  KINDS = {
-    chapter: "chapter",
-    lab: "lab",
-    review_card: "review_card",
-    capstone: "capstone",
-    foundation: "foundation",
-    component_card: "component_card",
-    simulation_lab: "simulation_lab",
-    ai_system: "ai_system",
-    real_world_case: "real_world_case",
-    decision_contrast: "decision_contrast"
-  }.freeze
+  KINDS = ContentKind.enum_mapping.freeze
 
   enum :kind, KINDS
 

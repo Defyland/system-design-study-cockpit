@@ -5,18 +5,7 @@ require "yaml"
 
 module Content
   class GithubSource
-    DOCUMENT_SPECS = {
-      "chapter" => { directory: "chapters", pattern: /\Achapter-.*\.md\z/ },
-      "lab" => { directory: "labs/chapters", pattern: /\Achapter-.*\.md\z/ },
-      "review_card" => { directory: "reviews/cards", pattern: /\A\d{2}-.*\.md\z/ },
-      "capstone" => { directory: "capstones", pattern: /\A\d{2}-.*\.md\z/ },
-      "foundation" => { directory: "areas/06-foundations-distribuidas/topics", pattern: /\A.+\.md\z/ },
-      "component_card" => { directory: "areas/07-componentes-de-sistemas/cards", pattern: /\A.+\.md\z/ },
-      "simulation_lab" => { directory: "simulation-labs", pattern: /\A(?!README\.md).+\.md\z/ },
-      "ai_system" => { directory: "areas/08-sistemas-ia/topics", pattern: /\A.+\.md\z/ },
-      "real_world_case" => { directory: "real-world-cases", pattern: %r{/README\.md\z}, recursive: true },
-      "decision_contrast" => { directory: "decision-contrasts", pattern: /\A\d{2}-.*\.md\z/ }
-    }.freeze
+    DOCUMENT_SPECS = ContentKind.github_specs.freeze
 
     def initialize(
       repo: ENV.fetch("STUDY_CONTENT_GITHUB_REPO", "Defyland/system-design-estudos"),

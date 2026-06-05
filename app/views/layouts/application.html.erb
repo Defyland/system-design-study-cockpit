@@ -37,10 +37,9 @@
         <%= link_to "Adaptativo", adaptive_session_path %>
         <%= link_to "Misconceptions", misconceptions_path %>
         <%= link_to "Simuladores", simulations_path %>
-        <%= link_to "Fundamentos", library_path(kind: "foundation") %>
-        <%= link_to "Componentes", library_path(kind: "component_card") %>
-        <%= link_to "IA", library_path(kind: "ai_system") %>
-        <%= link_to "Casos", library_path(kind: "real_world_case") %>
+        <% ContentKind.navigation_entries.each do |entry| %>
+          <%= link_to entry.short_label || entry.label, library_path(kind: entry.key) %>
+        <% end %>
       </nav>
     </header>
 

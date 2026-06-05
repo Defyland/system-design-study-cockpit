@@ -1,13 +1,6 @@
 class AdaptiveSessionBuilder
   Item = Struct.new(:kind, :title, :prompt, :reason, :path, keyword_init: true)
-  LIBRARY_KINDS = %w[
-    foundation
-    component_card
-    simulation_lab
-    ai_system
-    real_world_case
-    decision_contrast
-  ].freeze
+  LIBRARY_KINDS = ContentKind.library_keys.freeze
 
   include Rails.application.routes.url_helpers
 

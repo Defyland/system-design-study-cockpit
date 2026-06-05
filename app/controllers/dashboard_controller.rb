@@ -8,7 +8,7 @@ class DashboardController < ApplicationController
     @simulation_attempt_count = SimulationAttempt.count
     @misconception_count = MisconceptionEvent.count
     @low_confidence_count = CheckpointAttempt.where(confidence: %w[low medium]).count
-    @library_counts = StudyDocument.where(kind: %w[foundation component_card ai_system real_world_case]).group(:kind).count
+    @library_counts = StudyDocument.where(kind: ContentKind.dashboard_keys).group(:kind).count
   end
 
   private

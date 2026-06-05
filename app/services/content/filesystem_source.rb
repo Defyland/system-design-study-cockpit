@@ -2,18 +2,7 @@ require "yaml"
 
 module Content
   class FilesystemSource
-    DOCUMENT_PATTERNS = {
-      "chapter" => "chapters/chapter-*.md",
-      "lab" => "labs/chapters/chapter-*.md",
-      "review_card" => "reviews/cards/*.md",
-      "capstone" => "capstones/[0-9][0-9]-*.md",
-      "foundation" => "areas/06-foundations-distribuidas/topics/*.md",
-      "component_card" => "areas/07-componentes-de-sistemas/cards/*.md",
-      "simulation_lab" => "simulation-labs/*.md",
-      "ai_system" => "areas/08-sistemas-ia/topics/*.md",
-      "real_world_case" => "real-world-cases/**/README.md",
-      "decision_contrast" => "decision-contrasts/[0-9][0-9]-*.md"
-    }.freeze
+    DOCUMENT_PATTERNS = ContentKind.filesystem_patterns.freeze
 
     def initialize(root_path: ENV.fetch("STUDY_CONTENT_PATH", "../system-design-estudos"))
       @root_path = Pathname(root_path).expand_path(Rails.root)
