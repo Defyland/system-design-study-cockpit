@@ -10,6 +10,8 @@
       <div class="button-row">
         <%= link_to "Abrir chapter", chapter_path(@current_chapter.slug), class: "button" %>
         <%= link_to "Ver drills", drills_path, class: "button secondary" %>
+        <%= link_to "Sessao adaptativa", adaptive_session_path, class: "button secondary" %>
+        <%= link_to "Rodar simulador", simulations_path, class: "button ghost" %>
       </div>
     <% else %>
       <div class="empty-state">
@@ -55,6 +57,44 @@
       Mastered: <%= @progress_counts.fetch("mastered", 0) %>
       · Reading: <%= @progress_counts.fetch("reading", 0) %>
     </p>
+  </article>
+</section>
+
+<section class="grid three">
+  <article class="panel">
+    <h2>Adaptativo</h2>
+    <p class="muted">
+      <%= @misconception_count %> misconceptions
+      · <%= @low_confidence_count %> baixa/media confianca
+    </p>
+    <div class="button-row">
+      <%= link_to "Montar sessao", adaptive_session_path, class: "button secondary" %>
+      <%= link_to "Ver ledger", misconceptions_path, class: "button ghost" %>
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2>Simuladores</h2>
+    <p class="muted"><%= @simulation_attempt_count %> tentativas registradas</p>
+    <%= link_to "Abrir simuladores", simulations_path, class: "button secondary" %>
+  </article>
+
+  <article class="panel">
+    <h2>Fundamentos e componentes</h2>
+    <p class="muted">
+      <%= @library_counts.fetch("foundation", 0) %> fundamentos
+      · <%= @library_counts.fetch("component_card", 0) %> cards
+    </p>
+    <%= link_to "Consultar", library_path(kind: "foundation"), class: "button secondary" %>
+  </article>
+
+  <article class="panel">
+    <h2>IA e casos reais</h2>
+    <p class="muted">
+      <%= @library_counts.fetch("ai_system", 0) %> topicos IA
+      · <%= @library_counts.fetch("real_world_case", 0) %> casos
+    </p>
+    <%= link_to "Ver casos", library_path(kind: "real_world_case"), class: "button secondary" %>
   </article>
 </section>
 

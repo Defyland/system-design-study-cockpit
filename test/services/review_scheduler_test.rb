@@ -18,7 +18,12 @@ class ReviewSchedulerTest < ActiveSupport::TestCase
       good_answer: "Risco real.",
       bad_answer: "Ferramenta primeiro."
     )
-    attempt = checkpoint.checkpoint_attempts.create!(result: "missed")
+    attempt = checkpoint.checkpoint_attempts.create!(
+      result: "missed",
+      prediction_text: "Eu escalaria primeiro.",
+      decision_sentence: "Eu usaria escala quando a carga cresce.",
+      confidence: "low"
+    )
 
     ReviewScheduler.schedule!(attempt)
 

@@ -1,0 +1,25 @@
+<section class="reader">
+  <article class="reader-content">
+    <div class="panel hero-panel">
+      <p class="status-pill"><%= @document.kind.humanize %></p>
+      <h1><%= @document.title %></h1>
+      <p class="muted"><%= @document.source_path %></p>
+      <div class="button-row">
+        <%= link_to "Voltar", library_path(kind: @kind), class: "button secondary" %>
+      </div>
+    </div>
+
+    <% @blocks.each do |block| %>
+      <section class="markdown-block">
+        <%= render_markdown(block.content_markdown) %>
+      </section>
+    <% end %>
+  </article>
+
+  <aside class="panel">
+    <h2>Uso rapido</h2>
+    <p class="muted">Leia como consulta, depois volte ao chapter que puxou este tema.</p>
+    <p><strong>Checkpoints:</strong> <%= @document.checkpoints.size %></p>
+    <p><strong>Fonte:</strong> <%= @document.source_path %></p>
+  </aside>
+</section>

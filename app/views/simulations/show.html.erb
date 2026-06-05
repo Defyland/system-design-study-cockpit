@@ -1,0 +1,130 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Simulador</p>
+  <h1><%= @simulation.title %></h1>
+  <p><%= @simulation.description %></p>
+  <p class="muted"><%= @simulation.scenario %></p>
+  <div class="button-row">
+    <%= link_to "Voltar aos simuladores", simulations_path, class: "button secondary" %>
+    <% if @document %>
+      <%= link_to "Abrir lab narrativo", library_document_path(kind: "simulation_lab", slug: @document.slug), class: "button ghost" %>
+    <% end %>
+  </div>
+</section>
+
+<section class="simulator" data-controller="simulation" data-simulation-slug-value="<%= @simulation.slug %>">
+  <div class="panel control-panel">
+    <h2>Controles</h2>
+    <% @simulation.controls.each do |control| %>
+      <label class="range-control">
+        <span>
+          <strong><%= control.label %></strong>
+          <small><%= control.hint %></small>
+        </span>
+        <input
+          type="range"
+          min="<%= control.min %>"
+          max="<%= control.max %>"
+          step="<%= control.step %>"
+          value="<%= control.default %>"
+          data-simulation-target="input"
+          data-key="<%= control.key %>"
+          data-action="input->simulation#recalculate">
+        <output data-simulation-target="value" data-key="<%= control.key %>">
+          <%= control.default %> <%= control.unit %>
+        </output>
+      </label>
+    <% end %>
+  </div>
+
+  <div class="panel">
+    <h2>Diagrama mental</h2>
+    <div class="diagram">
+      <div class="node node-client">Cliente</div>
+      <div class="edge-line"></div>
+      <div class="node node-system">Sistema</div>
+      <div class="edge-line"></div>
+      <div class="node node-dependency">Dependencia</div>
+    </div>
+    <p class="muted">
+      Mude os parametros ate conseguir dizer: sintoma, primeira metrica, mitigacao e rollback.
+    </p>
+  </div>
+
+  <div class="panel metrics-panel">
+    <h2>Metricas</h2>
+    <div class="metric-grid">
+      <% @simulation.metrics.each do |metric| %>
+        <article class="metric-card" data-danger-at="<%= metric.danger_at %>">
+          <span><%= metric.label %></span>
+          <strong data-simulation-target="metric" data-key="<%= metric.key %>">--</strong>
+          <% if metric.unit.present? %>
+            <small><%= metric.unit %></small>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="panel decision-panel">
+    <h2>Julgamento</h2>
+    <p class="muted">Registre sua decisao como se estivesse respondendo numa entrevista ou incidente real.</p>
+
+    <%= form_with url: simulation_attempts_path, scope: :simulation_attempt, local: true do |form| %>
+      <%= form.hidden_field :study_document_id, value: @document&.id %>
+      <%= form.hidden_field :simulation_slug, value: @simulation.slug %>
+      <%= form.hidden_field :input_snapshot, data: { simulation_target: "inputSnapshot" } %>
+      <%= form.hidden_field :output_snapshot, data: { simulation_target: "outputSnapshot" } %>
+
+      <div class="decision-options">
+        <label>
+          <%= form.radio_button :decision, "safe", data: { simulation_target: "decision", action: "change->simulation#choose" } %>
+          Seguro continuar
+        </label>
+        <label>
+          <%= form.radio_button :decision, "risky", checked: true, data: { simulation_target: "decision", action: "change->simulation#choose" } %>
+          Arriscado, preciso conter
+        </label>
+        <label>
+          <%= form.radio_button :decision, "rollback", data: { simulation_target: "decision", action: "change->simulation#choose" } %>
+          Rollback agora
+        </label>
+      </div>
+
+      <fieldset class="confidence-options">
+        <legend>Confianca</legend>
+        <% SimulationAttempt::CONFIDENCES.each_key do |confidence| %>
+          <label>
+            <%= form.radio_button :confidence, confidence, checked: confidence == :medium %>
+            <%= confidence.to_s.humanize %>
+          </label>
+        <% end %>
+      </fieldset>
+
+      <%= form.label :feedback, "Resposta oral curta" %>
+      <%= form.text_area :feedback,
+        rows: 4,
+        placeholder: "Eu olharia primeiro..., mitigaria com..., faria rollback se...",
+        data: { simulation_target: "feedback" } %>
+
+      <div class="button-row">
+        <%= form.submit "Salvar tentativa", class: "button" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">Tentativas recentes</h2>
+  <% if @recent_attempts.any? %>
+    <div class="chapter-list">
+      <% @recent_attempts.each do |attempt| %>
+        <article class="drill-card">
+          <strong><%= attempt.created_at.to_fs(:short) %> · <%= attempt.decision.humanize %></strong>
+          <p class="muted"><%= attempt.feedback.presence || "Sem anotacao." %></p>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">Nenhuma tentativa registrada ainda.</p>
+  <% end %>
+</section>

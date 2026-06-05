@@ -3,7 +3,11 @@
   <div class="chapter-list">
     <% documents.each do |document| %>
       <div class="drill-card">
-        <strong><%= document.title %></strong>
+        <% if document.decision_contrast? %>
+          <strong><%= link_to document.title, library_document_path(kind: "decision_contrast", slug: document.slug) %></strong>
+        <% else %>
+          <strong><%= document.title %></strong>
+        <% end %>
         <p class="muted"><%= pluralize(document.checkpoints.size, "checkpoint") %></p>
       </div>
     <% end %>

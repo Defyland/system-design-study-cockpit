@@ -2,6 +2,8 @@ require "application_system_test_case"
 
 class StudyFlowTest < ApplicationSystemTestCase
   setup do
+    MisconceptionEvent.delete_all
+    SimulationAttempt.delete_all
     Reminder.delete_all
     StudyDocument.destroy_all
   end
@@ -31,9 +33,42 @@ class StudyFlowTest < ApplicationSystemTestCase
 
     visit root_path
     click_link "Abrir chapter"
-    find("summary", text: "Revelar resposta e correcao").click
+    fill_in "Antes de revelar: qual e seu palpite?", with: "Eu questionaria o requisito primeiro."
+    fill_in "Complete a frase tecnica", with: "Eu usaria simplicidade quando o requisito ainda nao foi provado."
+    choose "Medium"
+    click_button "Revelar resposta e correcao"
 
     assert_text "O requisito real."
     assert_text "A ferramenta."
+    click_button "Missed"
+
+    assert_text "Checkpoint registrado."
+    assert_equal 1, MisconceptionEvent.count
+  end
+
+  test "student runs a simulation and stores a decision" do
+    StudyDocument.create!(
+      kind: "simulation_lab",
+      slug: "load-balancer",
+      title: "Load Balancer Lab",
+      source_path: "simulation-labs/load-balancer.md",
+      position: 0,
+      body_markdown: "# Load Balancer Lab",
+      body_checksum: "sim-lb"
+    )
+
+    visit simulations_path
+    click_link "Simular", match: :first
+
+    assert_text "Load Balancer Capacity"
+    assert_text "Utilizacao"
+    fill_in "Resposta oral curta", with: "Eu limitaria o tenant quente e observaria erro."
+    choose "Arriscado, preciso conter"
+    click_button "Salvar tentativa"
+
+    assert_text "Tentativa registrada."
+    assert_text "Arriscado"
+    assert_equal 1, SimulationAttempt.where(simulation_slug: "load-balancer").count
+    assert_equal 1, Reminder.where(source_slug: "load-balancer").count
   end
 end

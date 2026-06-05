@@ -1,0 +1,28 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Sessao adaptativa</p>
+  <h1>Treine o que seu historico diz que esta fraco.</h1>
+  <p class="muted">
+    A fila mistura reviews vencidos, misconceptions, confidence baixo, simuladores arriscados e contrastes.
+  </p>
+</section>
+
+<section class="chapter-list">
+  <% if @items.any? %>
+    <% @items.each_with_index do |item, index| %>
+      <article class="chapter-row">
+        <div class="chapter-number"><%= (index + 1).to_s.rjust(2, "0") %></div>
+        <div>
+          <p class="status-pill"><%= item.kind.humanize %></p>
+          <h2><%= link_to item.title, item.path %></h2>
+          <p><%= item.prompt %></p>
+          <p class="muted"><%= item.reason %></p>
+        </div>
+        <%= link_to "Treinar", item.path, class: "button secondary" %>
+      </article>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      Ainda nao ha sinais suficientes. Complete checkpoints e simuladores para montar uma sessao adaptativa.
+    </div>
+  <% end %>
+</section>

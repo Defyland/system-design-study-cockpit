@@ -1,0 +1,54 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Misconception ledger</p>
+  <h1>Seus erros recorrentes de julgamento.</h1>
+  <p class="muted">
+    Nao e para punir erro. E para revelar o padrao que faria voce responder como junior sob pressao.
+  </p>
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <h2>Padroes</h2>
+    <% if @groups.any? %>
+      <div class="chapter-list">
+        <% @groups.each do |key, count| %>
+          <div class="drill-card">
+            <strong><%= key.humanize %></strong>
+            <p class="muted"><%= pluralize(count, "evento") %></p>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">Nenhum misconception registrado ainda.</p>
+    <% end %>
+  </article>
+
+  <article class="panel">
+    <h2>Como usar</h2>
+    <p>Antes de reler o chapter, diga em voz alta: qual decisao eu tomaria diferente agora?</p>
+    <p class="muted">Se a resposta virar ferramenta primeiro, volte para o First Principles Design Pass.</p>
+  </article>
+</section>
+
+<section class="panel">
+  <h2 class="section-title">Eventos recentes</h2>
+  <% if @events.any? %>
+    <div class="chapter-list">
+      <% @events.each do |event| %>
+        <article class="drill-card">
+          <p class="status-pill">Severity <%= event.severity %></p>
+          <h3><%= event.misconception_key.humanize %></h3>
+          <p><%= event.prompt %></p>
+          <% if event.correction.present? %>
+            <p class="muted"><strong>Correcao:</strong> <%= event.correction %></p>
+          <% end %>
+          <% if event.study_document %>
+            <p class="muted"><%= event.study_document.title %></p>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">Sem eventos por enquanto.</p>
+  <% end %>
+</section>

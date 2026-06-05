@@ -2,7 +2,7 @@ require "digest"
 
 module Content
   class MarkdownParser
-    PARSER_VERSION = 3
+    PARSER_VERSION = 4
     CHECKPOINT_HEADING = /\A\#{2,4}\s+.*(Fixacao|Recall|First Pass|Production Recall|Design Pass Recall)/i
     LABELLED_BULLET = /\A-\s+`([^`]+)`:\s*(.+)\z/
 
@@ -25,6 +25,8 @@ module Content
     private
 
     def slug_for(source_path)
+      return File.basename(File.dirname(source_path)) if File.basename(source_path) == "README.md"
+
       File.basename(source_path, ".md")
     end
 

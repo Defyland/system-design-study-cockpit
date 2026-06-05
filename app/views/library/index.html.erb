@@ -1,0 +1,29 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Biblioteca</p>
+  <h1><%= @title %></h1>
+  <p class="muted">
+    Material de apoio importado do repo de estudos. Use como consulta rapida enquanto percorre os chapters.
+  </p>
+</section>
+
+<section class="chapter-list">
+  <% if @documents.any? %>
+    <% @documents.each do |document| %>
+      <article class="chapter-row">
+        <div class="chapter-number"><%= document.position.positive? ? document.position.to_s.rjust(2, "0") : "ref" %></div>
+        <div>
+          <h2><%= link_to document.title, library_document_path(kind: @kind, slug: document.slug) %></h2>
+          <p class="muted">
+            <%= document.source_path %>
+            · <%= pluralize(document.checkpoints.size, "checkpoint") %>
+          </p>
+        </div>
+        <%= link_to "Abrir", library_document_path(kind: @kind, slug: document.slug), class: "button secondary" %>
+      </article>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      Nenhum documento importado para <%= @title %>. Rode <code>bin/rails study:sync_content</code>.
+    </div>
+  <% end %>
+</section>

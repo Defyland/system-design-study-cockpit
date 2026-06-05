@@ -3,7 +3,13 @@ class StudyDocument < ApplicationRecord
     chapter: "chapter",
     lab: "lab",
     review_card: "review_card",
-    capstone: "capstone"
+    capstone: "capstone",
+    foundation: "foundation",
+    component_card: "component_card",
+    simulation_lab: "simulation_lab",
+    ai_system: "ai_system",
+    real_world_case: "real_world_case",
+    decision_contrast: "decision_contrast"
   }.freeze
 
   enum :kind, KINDS
@@ -12,6 +18,8 @@ class StudyDocument < ApplicationRecord
   has_many :checkpoints, -> { order(:position) }, dependent: :destroy
   has_one :study_progress, dependent: :destroy
   has_many :review_schedules, dependent: :destroy
+  has_many :simulation_attempts, dependent: :nullify
+  has_many :misconception_events, dependent: :nullify
 
   validates :kind, :slug, :title, :source_path, :body_markdown, :body_checksum, presence: true
   validates :position, numericality: { greater_than_or_equal_to: 0 }

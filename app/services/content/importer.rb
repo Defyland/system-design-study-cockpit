@@ -6,12 +6,22 @@ module Content
     end
 
     def call
-      imported = @source.documents.map { |document| import_document(document) }
+      sync_curriculum
+      source_documents = @source.documents
+      imported = source_documents.map { |document| import_document(document) }
+      prune_stale_documents(imported) if source_documents.any?
       ensure_progress_for(imported)
       imported
     end
 
     private
+
+    def sync_curriculum
+      return unless @source.respond_to?(:curriculum)
+
+      curriculum = @source.curriculum
+      Rails.cache.write("study_content/curriculum", curriculum) if curriculum.present?
+    end
 
     def import_document(document)
       parsed = @parser.parse(**document)
@@ -46,6 +56,13 @@ module Content
       documents.each do |document|
         document.create_study_progress! unless document.study_progress
       end
+    end
+
+    def prune_stale_documents(imported_documents)
+      kinds = imported_documents.map(&:kind).uniq
+      ids = imported_documents.map(&:id)
+
+      StudyDocument.where(kind: kinds).where.not(id: ids).destroy_all
     end
   end
 end

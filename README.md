@@ -8,6 +8,10 @@ O cockpit nao substitui os textos. Ele cria uma camada de treino em cima deles:
 - reader guiado com blocos de leitura
 - checkpoints extraidos dos cards de fixacao do Markdown
 - drills por chapter
+- biblioteca de fundamentos, componentes, sistemas de IA e casos reais
+- simuladores guiados com parametros, metricas e registro de julgamento
+- prediction antes do reveal, confidence score e frase de decisao tecnica
+- misconception ledger e sessao adaptativa sob demanda
 - lembretes estilo post-it a partir de respostas hesitantes ou erradas
 - sync local por filesystem e sync de producao via GitHub API
 
@@ -54,6 +58,20 @@ bin/rails server
 Abra `http://localhost:3000`.
 
 ## Sync de conteudo
+
+O importador le:
+
+- `curriculum.yml`
+- `chapters/`
+- `labs/chapters/`
+- `reviews/cards/`
+- `capstones/`
+- `areas/06-foundations-distribuidas/topics/`
+- `areas/07-componentes-de-sistemas/cards/`
+- `areas/08-sistemas-ia/topics/`
+- `simulation-labs/`
+- `real-world-cases/**/README.md`
+- `decision-contrasts/`
 
 ### Local
 
@@ -158,9 +176,13 @@ bin/ci
 
 Este MVP e propositalmente pequeno:
 
+- inclui simuladores de load balancer, cache, rate limit vs load shedding, circuit breaker e canary rollout
+- inclui o nucleo adaptativo pragmatico, sem persistir sessoes completas
 - nao cria projetos executaveis para snippets
 - nao edita `system-design-estudos`
 - nao usa login multiusuario
 - nao tenta ser LMS completo
 
-A regra e simples: estudar em sequencia, responder rapido, revelar feedback e gerar lembretes do que precisa voltar.
+A regra e simples: estudar em sequencia, responder rapido, simular trade-offs, revelar feedback e gerar lembretes do que precisa voltar.
+
+O desenho mais ambicioso do tutor adaptativo esta preservado em [docs/adaptive_tutor_blueprint.md](docs/adaptive_tutor_blueprint.md).

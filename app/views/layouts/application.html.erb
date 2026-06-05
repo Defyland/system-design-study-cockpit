@@ -34,10 +34,21 @@
         <%= link_to "Dashboard", root_path %>
         <%= link_to "Chapters", chapters_path %>
         <%= link_to "Drills", drills_path %>
+        <%= link_to "Adaptativo", adaptive_session_path %>
+        <%= link_to "Misconceptions", misconceptions_path %>
+        <%= link_to "Simuladores", simulations_path %>
+        <%= link_to "Fundamentos", library_path(kind: "foundation") %>
+        <%= link_to "Componentes", library_path(kind: "component_card") %>
+        <%= link_to "IA", library_path(kind: "ai_system") %>
+        <%= link_to "Casos", library_path(kind: "real_world_case") %>
       </nav>
     </header>
 
     <main class="page">
+      <% flash.each do |type, message| %>
+        <div class="flash <%= type %>"><%= message %></div>
+      <% end %>
+
       <%= yield %>
     </main>
   </body>

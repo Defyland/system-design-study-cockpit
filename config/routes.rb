@@ -3,6 +3,12 @@ Rails.application.routes.draw do
 
   resources :chapters, only: %i[index show], param: :slug
   resources :drills, only: %i[index]
+  resource :adaptive_session, only: %i[show]
+  resources :misconceptions, only: %i[index]
+  resources :simulations, only: %i[index show], param: :slug
+  resources :simulation_attempts, only: %i[create]
+  get "library/:kind", to: "library#index", as: :library
+  get "library/:kind/:slug", to: "library#show", as: :library_document
   resources :study_progresses, only: %i[update]
   resources :checkpoint_attempts, only: %i[create]
   resources :reminders, only: [] do

@@ -6,11 +6,18 @@ class CheckpointAttempt < ApplicationRecord
     missed: "missed"
   }.freeze
 
+  CONFIDENCES = {
+    low: "low",
+    medium: "medium",
+    high: "high"
+  }.freeze
+
   enum :result, RESULTS
+  enum :confidence, CONFIDENCES
 
   belongs_to :checkpoint
 
-  validates :result, :answered_at, presence: true
+  validates :result, :answered_at, :prediction_text, :decision_sentence, :confidence, presence: true
 
   before_validation :set_answered_at, on: :create
 

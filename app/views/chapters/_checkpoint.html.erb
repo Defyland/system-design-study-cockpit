@@ -1,10 +1,45 @@
-<section class="checkpoint">
+<section class="checkpoint" data-controller="checkpoint">
   <p class="status-pill"><%= checkpoint.source_label %></p>
   <h3><%= checkpoint.prompt %></h3>
 
-  <details>
-    <summary>Revelar resposta e correcao</summary>
-    <div class="answer-box">
+  <%= form_with url: checkpoint_attempts_path, scope: :checkpoint_attempt, local: true do |form| %>
+    <%= hidden_field_tag :checkpoint_id, checkpoint.id %>
+
+    <div class="checkpoint-fields">
+      <%= form.label :prediction_text, "Antes de revelar: qual e seu palpite?" %>
+      <%= form.text_area :prediction_text,
+        rows: 3,
+        placeholder: "Eu acho que a decisao certa aqui e...",
+        data: { checkpoint_target: "required", action: "input->checkpoint#validate" } %>
+
+      <%= form.label :decision_sentence, "Complete a frase tecnica" %>
+      <%= form.text_area :decision_sentence,
+        rows: 3,
+        placeholder: "Eu usaria X quando Y, mas evitaria se Z...",
+        data: { checkpoint_target: "required", action: "input->checkpoint#validate" } %>
+
+      <fieldset class="confidence-options">
+        <legend>Confianca</legend>
+        <% CheckpointAttempt::CONFIDENCES.each_key do |confidence| %>
+          <label>
+            <%= form.radio_button :confidence,
+              confidence,
+              data: { action: "change->checkpoint#validate" } %>
+            <%= confidence.to_s.humanize %>
+          </label>
+        <% end %>
+      </fieldset>
+    </div>
+
+    <p class="muted" data-checkpoint-target="hint">
+      Preencha seu palpite, complete a frase de decisao e marque a confianca para liberar o reveal.
+    </p>
+
+    <button type="button" class="button secondary" data-checkpoint-target="revealButton" data-action="checkpoint#reveal">
+      Revelar resposta e correcao
+    </button>
+
+    <div class="answer-box" data-checkpoint-target="answer" hidden>
       <p><strong>Resposta boa:</strong> <%= checkpoint.good_answer %></p>
 
       <% if checkpoint.bad_answer.present? %>
@@ -17,13 +52,13 @@
 
       <div class="button-row">
         <% CheckpointAttempt::RESULTS.except(:revealed).each_key do |result| %>
-          <%= button_to result.to_s.humanize,
-            checkpoint_attempts_path,
-            method: :post,
-            params: { checkpoint_id: checkpoint.id, checkpoint_attempt: { result: result } },
+          <%= button_tag result.to_s.humanize,
+            type: "submit",
+            name: "checkpoint_attempt[result]",
+            value: result,
             class: "button secondary" %>
         <% end %>
       </div>
     </div>
-  </details>
+  <% end %>
 </section>

@@ -52,4 +52,16 @@ class ContentMarkdownParserTest < ActiveSupport::TestCase
     assert_equal "retry resolve.", checkpoint.fetch(:bad_answer)
     assert_equal "proteja o efeito antes do retry.", checkpoint.fetch(:correction)
   end
+
+  test "uses parent directory as slug for real world case readmes" do
+    parsed = Content::MarkdownParser.new.parse(
+      kind: "real_world_case",
+      source_path: "real-world-cases/05-product-scenarios/spotify-personalization/README.md",
+      body_markdown: "# Spotify Personalization\n\nCaso real."
+    )
+
+    assert_equal "spotify-personalization", parsed.fetch(:slug)
+    assert_equal "Spotify Personalization", parsed.fetch(:title)
+    assert_equal 0, parsed.fetch(:position)
+  end
 end

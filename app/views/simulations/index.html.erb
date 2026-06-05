@@ -1,0 +1,26 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Simulation Labs</p>
+  <h1>Aprenda mudando parametros, nao so lendo.</h1>
+  <p class="muted">
+    Cada simulador pega uma decisao de system design e transforma em sintoma, metrica e trade-off.
+  </p>
+</section>
+
+<section class="grid two">
+  <% @simulations.each do |simulation| %>
+    <% document = @documents[simulation.slug] %>
+    <article class="panel">
+      <p class="status-pill"><%= @attempt_counts.fetch(simulation.slug, 0) %> tentativas</p>
+      <h2><%= link_to simulation.title, simulation_path(simulation.slug) %></h2>
+      <p><%= simulation.description %></p>
+      <p class="muted"><%= simulation.scenario %></p>
+
+      <div class="button-row">
+        <%= link_to "Simular", simulation_path(simulation.slug), class: "button" %>
+        <% if document %>
+          <%= link_to "Ler lab", library_document_path(kind: "simulation_lab", slug: document.slug), class: "button secondary" %>
+        <% end %>
+      </div>
+    </article>
+  <% end %>
+</section>
