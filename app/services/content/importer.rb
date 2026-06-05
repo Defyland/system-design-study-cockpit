@@ -20,7 +20,12 @@ module Content
       return unless @source.respond_to?(:curriculum)
 
       curriculum = @source.curriculum
-      Rails.cache.write("study_content/curriculum", curriculum) if curriculum.present?
+      return if curriculum.blank?
+
+      Rails.cache.write("study_content/curriculum", curriculum)
+    rescue ActiveRecord::StatementInvalid, ArgumentError
+      # During first boot db:prepare can run before Solid Cache has finished preparing.
+      # Curriculum cache is an optimization; imported documents remain the source of truth.
     end
 
     def import_document(document)
