@@ -105,6 +105,32 @@ class ContentImporterTest < ActiveSupport::TestCase
     Rails.cache = previous_cache
   end
 
+  test "enriches imported documents from curriculum manifest" do
+    source = FakeSource.new([
+      {
+        kind: "chapter",
+        source_path: "chapters/chapter-03-idempotent-writes.md",
+        body_markdown: "# Chapter 03 - Idempotent Writes\n\nTexto base."
+      },
+      {
+        kind: "lab",
+        source_path: "labs/chapters/chapter-03-idempotent-writes.md",
+        body_markdown: "# Lab 03\n\nDrill rapido."
+      }
+    ], curriculum)
+
+    imported = Content::Importer.new(source: source).call
+    chapter = imported.detect(&:chapter?)
+    lab = imported.detect(&:lab?)
+
+    assert_equal 3, chapter.position
+    assert_equal "Fase 1 - Base forte", chapter.phase
+    assert_equal "Stripe - Idempotent Payments", chapter.metadata.fetch("primary_case_title")
+    assert_equal "03-filas-e-consistencia", chapter.metadata.fetch("primary_area_id")
+    assert_equal "chapter-03-idempotent-writes", lab.metadata.fetch("chapter_slug")
+    assert_equal 3, lab.position
+  end
+
   test "imports decision contrasts as study documents" do
     source = FakeSource.new([
       {
@@ -118,5 +144,45 @@ class ContentImporterTest < ActiveSupport::TestCase
 
     assert_predicate document, :decision_contrast?
     assert_equal "01-cache-vs-replica", document.slug
+  end
+
+  private
+
+  def curriculum
+    {
+      "phases" => [
+        { "id" => "fase-1", "title" => "Fase 1 - Base forte" }
+      ],
+      "areas" => [
+        { "id" => "03-filas-e-consistencia", "title" => "Filas e Consistencia" }
+      ],
+      "chapters" => [
+        {
+          "id" => "idempotent-writes-under-ambiguous-failure",
+          "number" => 3,
+          "title" => "Idempotent Writes",
+          "slug" => "chapter-03-idempotent-writes",
+          "path" => "chapters/chapter-03-idempotent-writes.md",
+          "phase" => "fase-1",
+          "primary_area" => "03-filas-e-consistencia",
+          "secondary_areas" => [],
+          "notes" => [ "areas/03-filas-e-consistencia/notes.md" ],
+          "primary_case" => {
+            "id" => "stripe-idempotent-payments",
+            "title" => "Stripe - Idempotent Payments",
+            "path" => "real-world-cases/stripe/README.md"
+          },
+          "complementary_cases" => [],
+          "lab" => { "path" => "labs/chapters/chapter-03-idempotent-writes.md" },
+          "review_card" => { "path" => "reviews/cards/03-idempotent-writes.md" },
+          "suggested_contrast" => {
+            "id" => "idempotency-key-vs-unique-index",
+            "title" => "Idempotency Key vs Unique Index",
+            "path" => "decision-contrasts/05-idempotency-key-vs-unique-index.md"
+          },
+          "simulations" => [ "rate-limit-vs-load-shedding" ]
+        }
+      ]
+    }
   end
 end

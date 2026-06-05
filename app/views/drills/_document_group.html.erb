@@ -3,8 +3,8 @@
   <div class="chapter-list">
     <% documents.each do |document| %>
       <div class="drill-card">
-        <% if document.decision_contrast? %>
-          <strong><%= link_to document.title, library_document_path(kind: "decision_contrast", slug: document.slug) %></strong>
+        <% if ContentKind.library_keys.include?(document.kind) %>
+          <strong><%= link_to document.title, library_document_path(kind: document.kind, slug: document.slug) %></strong>
         <% else %>
           <strong><%= document.title %></strong>
         <% end %>

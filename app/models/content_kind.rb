@@ -24,6 +24,7 @@ class ContentKind
     Entry.new(
       key: "lab",
       label: "Labs",
+      library: true,
       filesystem_pattern: "labs/chapters/chapter-*.md",
       github_directory: "labs/chapters",
       github_pattern: /\Achapter-.*\.md\z/
@@ -31,6 +32,7 @@ class ContentKind
     Entry.new(
       key: "review_card",
       label: "Review Cards",
+      library: true,
       filesystem_pattern: "reviews/cards/*.md",
       github_directory: "reviews/cards",
       github_pattern: /\A\d{2}-.*\.md\z/

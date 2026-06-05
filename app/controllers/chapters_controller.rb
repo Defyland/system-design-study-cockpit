@@ -8,6 +8,7 @@ class ChaptersController < ApplicationController
     @progress = @chapter.progress
     @blocks = @chapter.study_blocks
     @checkpoint_slots = checkpoint_slots(@chapter)
+    @study_context = ChapterStudyContext.new(@chapter)
   end
 
   private

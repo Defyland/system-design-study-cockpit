@@ -6,7 +6,7 @@ module Content
     end
 
     def call
-      sync_curriculum
+      @curriculum_graph = CurriculumGraph.new(sync_curriculum || {})
       source_documents = @source.documents
       imported = source_documents.map { |document| import_document(document) }
       prune_stale_documents(imported) if source_documents.any?
@@ -20,16 +20,19 @@ module Content
       return unless @source.respond_to?(:curriculum)
 
       curriculum = @source.curriculum
-      return if curriculum.blank?
+      return {} if curriculum.blank?
 
       Rails.cache.write("study_content/curriculum", curriculum)
+      curriculum
     rescue ActiveRecord::StatementInvalid, ArgumentError
       # During first boot db:prepare can run before Solid Cache has finished preparing.
       # Curriculum cache is an optimization; imported documents remain the source of truth.
+      curriculum || {}
     end
 
     def import_document(document)
       parsed = @parser.parse(**document)
+      parsed = enrich_with_curriculum(parsed)
       study_document = StudyDocument.find_or_initialize_by(kind: parsed.fetch(:kind), slug: parsed.fetch(:slug))
       changed = study_document.new_record? || study_document.body_checksum != parsed.fetch(:body_checksum)
 
@@ -55,6 +58,22 @@ module Content
       end
 
       study_document
+    end
+
+    def enrich_with_curriculum(parsed)
+      enrichment = @curriculum_graph.metadata_for(
+        kind: parsed.fetch(:kind),
+        source_path: parsed.fetch(:source_path),
+        slug: parsed.fetch(:slug)
+      )
+
+      return parsed if enrichment.blank?
+
+      parsed.merge(
+        phase: enrichment["phase_title"] || parsed.fetch(:phase),
+        position: enrichment["chapter_number"] || parsed.fetch(:position),
+        metadata: parsed.fetch(:metadata).merge(enrichment)
+      )
     end
 
     def ensure_progress_for(documents)

@@ -177,6 +177,29 @@ a {
   gap: 14px;
 }
 
+.context-divider {
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
+}
+
+.study-context-list {
+  display: grid;
+  gap: 4px 0;
+  margin: 14px 0;
+}
+
+.study-context-list dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-top: 10px;
+  text-transform: uppercase;
+}
+
+.study-context-list dd {
+  margin: 0;
+}
+
 .markdown-block {
   background: var(--panel);
   border: 1px solid transparent;

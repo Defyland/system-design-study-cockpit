@@ -31,5 +31,55 @@
     <p>Ultimo bloco: <%= @progress.current_block_position %>/<%= @blocks.size %></p>
     <h3>Checkpoints</h3>
     <p><%= @chapter.checkpoints.size %> perguntas extraidas</p>
+
+    <% if @study_context.available? %>
+      <div class="context-divider"></div>
+      <h2>Study Context</h2>
+      <p class="status-pill">Ordem <%= @study_context.study_order %></p>
+      <dl class="study-context-list">
+        <dt>Fase</dt>
+        <dd><%= @study_context.phase_title %></dd>
+
+        <dt>Caso principal</dt>
+        <dd><%= study_context_link(@study_context.primary_case) %></dd>
+
+        <% if @study_context.complementary_cases.any? %>
+          <dt>Casos complementares</dt>
+          <dd><%= study_context_links(@study_context.complementary_cases) %></dd>
+        <% end %>
+
+        <dt>Area principal</dt>
+        <dd><%= study_context_link(@study_context.primary_area) %></dd>
+
+        <% if @study_context.secondary_areas.any? %>
+          <dt>Areas secundarias</dt>
+          <dd><%= study_context_links(@study_context.secondary_areas) %></dd>
+        <% end %>
+
+        <dt>Lab</dt>
+        <dd><%= study_context_link(@study_context.lab) %></dd>
+
+        <dt>Review card</dt>
+        <dd><%= study_context_link(@study_context.review_card) %></dd>
+
+        <dt>Contraste</dt>
+        <dd><%= study_context_link(@study_context.suggested_contrast) %></dd>
+
+        <% if @study_context.simulations.any? %>
+          <dt>Simuladores</dt>
+          <dd><%= study_context_links(@study_context.simulations) %></dd>
+        <% end %>
+      </dl>
+
+      <% if @study_context.mastery_objectives.any? || @study_context.interview_objectives.any? %>
+        <h3>Objetivo</h3>
+        <% if @study_context.mastery_objectives.any? %>
+          <p class="muted"><strong>Mastery:</strong> <%= @study_context.mastery_objectives.to_sentence %></p>
+        <% end %>
+        <% if @study_context.interview_objectives.any? %>
+          <p class="muted"><strong>Entrevista:</strong> <%= @study_context.interview_objectives.to_sentence %></p>
+        <% end %>
+      <% end %>
+    <% end %>
   </aside>
 </section>

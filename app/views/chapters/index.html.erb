@@ -10,6 +10,11 @@
           <%= chapter.phase.presence || "Trilha canonica" %>
           · <%= chapter.progress.status.humanize %>
         </p>
+        <% if chapter.metadata["primary_case_title"].present? || chapter.metadata["primary_area_title"].present? %>
+          <p class="muted">
+            <%= [ chapter.metadata["primary_case_title"], chapter.metadata["primary_area_title"] ].compact_blank.join(" · ") %>
+          </p>
+        <% end %>
       </div>
       <%= link_to "Estudar", chapter_path(chapter.slug), class: "button secondary" %>
     </article>
