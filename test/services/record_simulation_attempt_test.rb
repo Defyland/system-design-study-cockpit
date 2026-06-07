@@ -2,6 +2,9 @@ require "test_helper"
 
 class RecordSimulationAttemptTest < ActiveSupport::TestCase
   setup do
+    MisconceptionEvent.delete_all
+    Reminder.delete_all
+    SimulationAttempt.delete_all
     StudyDocument.destroy_all
   end
 
@@ -42,27 +45,49 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
   end
 
   test "derives output snapshot instead of trusting client-provided output" do
-    attempt = RecordSimulationAttempt.call(
-      attributes: {
-        simulation_slug: "canary-rollout",
-        decision: "safe",
-        confidence: "high",
-        input_snapshot: {
-          "users" => 120_000,
-          "rollout" => 5,
-          "errorRate" => 6,
-          "latencyP95" => 420
-        },
-        output_snapshot: {
-          "recommendedDecision" => "safe",
-          "feedback" => "Cliente tentou adulterar."
+    attempt = nil
+
+    assert_difference -> { Reminder.count }, 1 do
+      attempt = RecordSimulationAttempt.call(
+        attributes: {
+          simulation_slug: "canary-rollout",
+          decision: "safe",
+          confidence: "high",
+          input_snapshot: {
+            "users" => 120_000,
+            "rollout" => 5,
+            "errorRate" => 6,
+            "latencyP95" => 420
+          },
+          output_snapshot: {
+            "recommendedDecision" => "safe",
+            "feedback" => "Cliente tentou adulterar."
+          }
         }
-      }
-    )
+      )
+    end
 
     assert_equal "rollback", attempt.output_snapshot.fetch("recommendedDecision")
     assert_equal "rollback_hesitation", attempt.misconception_key
     assert_equal 1, MisconceptionEvent.where(source_kind: "simulation_attempt", source_id: attempt.id).count
+  end
+
+  test "creates reminder for low confidence even when simulation decision matches recommendation" do
+    assert_difference -> { Reminder.count }, 1 do
+      RecordSimulationAttempt.call(
+        attributes: {
+          simulation_slug: "canary-rollout",
+          decision: "rollback",
+          confidence: "low",
+          input_snapshot: {
+            "users" => 120_000,
+            "rollout" => 5,
+            "errorRate" => 6,
+            "latencyP95" => 420
+          }
+        }
+      )
+    end
   end
 
   test "keeps simulation attempt side effects atomic" do

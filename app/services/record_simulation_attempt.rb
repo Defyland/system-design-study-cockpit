@@ -17,7 +17,7 @@ class RecordSimulationAttempt
       attempt = SimulationAttempt.create!(attempt_attributes(engine_result))
 
       MisconceptionTracker.record_simulation_attempt!(attempt)
-      create_reminder_for(attempt) if attempt.risky?
+      create_reminder_for(attempt) if reminder_needed?(attempt)
       attempt
     end
   end
@@ -38,11 +38,17 @@ class RecordSimulationAttempt
     StudyDocument.simulation_lab.find_by(slug: attributes.fetch(:simulation_slug))
   end
 
+  def reminder_needed?(attempt)
+    recommended_decision = attempt.output_snapshot["recommendedDecision"]
+
+    attempt.risky? || attempt.low? || recommended_decision.present? && recommended_decision != attempt.decision
+  end
+
   def create_reminder_for(attempt)
     Reminder.create!(
       source_kind: "simulation_lab",
       source_slug: attempt.simulation_slug,
-      message: "Reveja o simulador #{attempt.simulation_slug}: sua decisao ficou arriscada. Explique o rollback em 15 segundos.",
+      message: "Reveja o simulador #{attempt.simulation_slug}: sua decisao ou confianca indicou risco. Explique o rollback em 15 segundos.",
       priority: 2
     )
   end
