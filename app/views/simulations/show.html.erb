@@ -11,7 +11,10 @@
   </div>
 </section>
 
-<section class="simulator" data-controller="simulation" data-simulation-slug-value="<%= @simulation.slug %>">
+<section
+  class="simulator"
+  data-controller="simulation"
+  data-simulation-evaluate-url-value="<%= evaluate_simulation_path(@simulation.slug) %>">
   <div class="panel control-panel">
     <h2>Controles</h2>
     <% @simulation.controls.each do |control| %>

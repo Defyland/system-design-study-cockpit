@@ -5,7 +5,9 @@ Rails.application.routes.draw do
   resources :drills, only: %i[index]
   resource :adaptive_session, only: %i[show]
   resources :misconceptions, only: %i[index]
-  resources :simulations, only: %i[index show], param: :slug
+  resources :simulations, only: %i[index show], param: :slug do
+    get :evaluate, on: :member
+  end
   resources :simulation_attempts, only: %i[create]
   get "library/:kind", to: "library#index", as: :library
   get "library/:kind/:slug", to: "library#show", as: :library_document
