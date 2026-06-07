@@ -178,6 +178,70 @@ class ContentImporterTest < ActiveSupport::TestCase
     assert_equal "Production Migrations and Backfills", document.title
   end
 
+  test "imports operational playbooks as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "operational_playbook",
+        source_path: "areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md",
+        body_markdown: "# Incident Severity and Triage\n\nPrimeiros minutos de incidente."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :operational_playbook?
+    assert_equal "incident-severity-and-triage", document.slug
+    assert_equal "Incident Severity and Triage", document.title
+  end
+
+  test "imports engineering practice cards as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "engineering_practice",
+        source_path: "areas/12-engineering-practice/cards/data-contracts-and-schema-evolution.md",
+        body_markdown: "# Data Contracts and Schema Evolution\n\nContrato de dados executavel."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :engineering_practice?
+    assert_equal "data-contracts-and-schema-evolution", document.slug
+    assert_equal "Data Contracts and Schema Evolution", document.title
+  end
+
+  test "imports backend principle labs as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "backend_lab",
+        source_path: "areas/13-backend-principle-labs/labs/build-an-idempotent-write-api.md",
+        body_markdown: "# Build an Idempotent Write API\n\nExercicio de write path."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :backend_lab?
+    assert_equal "build-an-idempotent-write-api", document.slug
+    assert_equal "Build an Idempotent Write API", document.title
+  end
+
+  test "imports engineering case study labs as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "engineering_case_lab",
+        source_path: "areas/14-engineering-case-study-labs/labs/plan-a-zero-downtime-migration.md",
+        body_markdown: "# Plan a Zero-Downtime Migration\n\nExercicio de migracao."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :engineering_case_lab?
+    assert_equal "plan-a-zero-downtime-migration", document.slug
+    assert_equal "Plan a Zero-Downtime Migration", document.title
+  end
+
   private
 
   def curriculum

@@ -96,6 +96,24 @@
     </p>
     <%= link_to "Ver casos", library_path(kind: "real_world_case"), class: "button secondary" %>
   </article>
+
+  <article class="panel">
+    <h2>Ops e practice</h2>
+    <p class="muted">
+      <%= @library_counts.fetch("operational_playbook", 0) %> playbooks
+      · <%= @library_counts.fetch("engineering_practice", 0) %> cards
+    </p>
+    <%= link_to "Abrir playbooks", library_path(kind: "operational_playbook"), class: "button secondary" %>
+  </article>
+
+  <article class="panel">
+    <h2>Labs adicionais</h2>
+    <p class="muted">
+      <%= @library_counts.fetch("backend_lab", 0) %> backend
+      · <%= @library_counts.fetch("engineering_case_lab", 0) %> case study
+    </p>
+    <%= link_to "Abrir labs", library_path(kind: "backend_lab"), class: "button secondary" %>
+  </article>
 </section>
 
 <section class="panel">

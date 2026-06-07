@@ -108,6 +108,48 @@ class ContentKind
       github_pattern: /\A.+\.md\z/
     ),
     Entry.new(
+      key: "operational_playbook",
+      label: "Operational Playbooks",
+      short_label: "Playbooks",
+      library: true,
+      navigation: true,
+      dashboard: true,
+      filesystem_pattern: "areas/11-operational-playbooks/playbooks/*.md",
+      github_directory: "areas/11-operational-playbooks/playbooks",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
+      key: "engineering_practice",
+      label: "Engineering Practice",
+      short_label: "Practice",
+      library: true,
+      navigation: true,
+      dashboard: true,
+      filesystem_pattern: "areas/12-engineering-practice/cards/*.md",
+      github_directory: "areas/12-engineering-practice/cards",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
+      key: "backend_lab",
+      label: "Backend Principle Labs",
+      short_label: "B Labs",
+      library: true,
+      dashboard: true,
+      filesystem_pattern: "areas/13-backend-principle-labs/labs/*.md",
+      github_directory: "areas/13-backend-principle-labs/labs",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
+      key: "engineering_case_lab",
+      label: "Engineering Case Study Labs",
+      short_label: "Case Labs",
+      library: true,
+      dashboard: true,
+      filesystem_pattern: "areas/14-engineering-case-study-labs/labs/*.md",
+      github_directory: "areas/14-engineering-case-study-labs/labs",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
       key: "real_world_case",
       label: "Casos reais",
       short_label: "Casos",
