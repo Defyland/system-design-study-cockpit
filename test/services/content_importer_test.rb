@@ -146,6 +146,38 @@ class ContentImporterTest < ActiveSupport::TestCase
     assert_equal "01-cache-vs-replica", document.slug
   end
 
+  test "imports backend principle cards as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "backend_principle",
+        source_path: "areas/09-backend-principles/cards/http-protocol.md",
+        body_markdown: "# HTTP Protocol\n\nContrato base de APIs."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :backend_principle?
+    assert_equal "http-protocol", document.slug
+    assert_equal "HTTP Protocol", document.title
+  end
+
+  test "imports engineering case study cards as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "engineering_case_study",
+        source_path: "areas/10-engineering-case-studies/cards/production-migrations-backfills.md",
+        body_markdown: "# Production Migrations and Backfills\n\nMigracoes incrementais em producao."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :engineering_case_study?
+    assert_equal "production-migrations-backfills", document.slug
+    assert_equal "Production Migrations and Backfills", document.title
+  end
+
   private
 
   def curriculum

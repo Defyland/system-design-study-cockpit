@@ -86,6 +86,28 @@ class ContentKind
       github_pattern: /\A.+\.md\z/
     ),
     Entry.new(
+      key: "backend_principle",
+      label: "Backend Principles",
+      short_label: "Backend",
+      library: true,
+      navigation: true,
+      dashboard: true,
+      filesystem_pattern: "areas/09-backend-principles/cards/*.md",
+      github_directory: "areas/09-backend-principles/cards",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
+      key: "engineering_case_study",
+      label: "Engineering Case Studies",
+      short_label: "Engineering",
+      library: true,
+      navigation: true,
+      dashboard: true,
+      filesystem_pattern: "areas/10-engineering-case-studies/cards/*.md",
+      github_directory: "areas/10-engineering-case-studies/cards",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
       key: "real_world_case",
       label: "Casos reais",
       short_label: "Casos",
