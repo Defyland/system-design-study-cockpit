@@ -9,7 +9,6 @@ class SimulationAttemptsController < ApplicationController
 
   def attempt_attributes
     permitted = params.require(:simulation_attempt).permit(
-      :study_document_id,
       :simulation_slug,
       :decision,
       :confidence,

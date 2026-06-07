@@ -1,6 +1,46 @@
 require "test_helper"
 
 class RecordSimulationAttemptTest < ActiveSupport::TestCase
+  setup do
+    StudyDocument.destroy_all
+  end
+
+  test "resolves simulation document from slug instead of trusting client document id" do
+    wrong_document = StudyDocument.create!(
+      kind: "simulation_lab",
+      slug: "cache",
+      title: "Cache Lab",
+      source_path: "simulation-labs/cache.md",
+      body_markdown: "# Cache",
+      body_checksum: "cache"
+    )
+    correct_document = StudyDocument.create!(
+      kind: "simulation_lab",
+      slug: "canary-rollout",
+      title: "Canary Rollout Lab",
+      source_path: "simulation-labs/canary-rollout.md",
+      body_markdown: "# Canary",
+      body_checksum: "canary"
+    )
+
+    attempt = RecordSimulationAttempt.call(
+      attributes: {
+        study_document_id: wrong_document.id,
+        simulation_slug: "canary-rollout",
+        decision: "rollback",
+        confidence: "high",
+        input_snapshot: {
+          "users" => 120_000,
+          "rollout" => 5,
+          "errorRate" => 6,
+          "latencyP95" => 420
+        }
+      }
+    )
+
+    assert_equal correct_document, attempt.study_document
+  end
+
   test "derives output snapshot instead of trusting client-provided output" do
     attempt = RecordSimulationAttempt.call(
       attributes: {

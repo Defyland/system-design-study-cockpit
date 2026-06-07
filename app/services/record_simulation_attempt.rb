@@ -14,12 +14,7 @@ class RecordSimulationAttempt
         input_snapshot: attributes.fetch(:input_snapshot)
       )
 
-      attempt = SimulationAttempt.create!(
-        attributes.merge(
-          input_snapshot: engine_result.input_snapshot,
-          output_snapshot: engine_result.output_snapshot
-        )
-      )
+      attempt = SimulationAttempt.create!(attempt_attributes(engine_result))
 
       MisconceptionTracker.record_simulation_attempt!(attempt)
       create_reminder_for(attempt) if attempt.risky?
@@ -30,6 +25,18 @@ class RecordSimulationAttempt
   private
 
   attr_reader :attributes
+
+  def attempt_attributes(engine_result)
+    attributes.except(:study_document_id, :output_snapshot).merge(
+      study_document: study_document,
+      input_snapshot: engine_result.input_snapshot,
+      output_snapshot: engine_result.output_snapshot
+    )
+  end
+
+  def study_document
+    StudyDocument.simulation_lab.find_by(slug: attributes.fetch(:simulation_slug))
+  end
 
   def create_reminder_for(attempt)
     Reminder.create!(

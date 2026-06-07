@@ -70,7 +70,6 @@
     <p class="muted">Registre sua decisao como se estivesse respondendo numa entrevista ou incidente real.</p>
 
     <%= form_with url: simulation_attempts_path, scope: :simulation_attempt, local: true do |form| %>
-      <%= form.hidden_field :study_document_id, value: @document&.id %>
       <%= form.hidden_field :simulation_slug, value: @simulation.slug %>
       <%= form.hidden_field :input_snapshot, data: { simulation_target: "inputSnapshot" } %>
 
