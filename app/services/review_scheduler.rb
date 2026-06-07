@@ -40,12 +40,16 @@ class ReviewScheduler
   def create_reminder!
     message = @checkpoint.bad_answer.presence || @checkpoint.correction.presence || @checkpoint.prompt
 
-    Reminder.find_or_create_by!(
+    reminder = Reminder.find_or_initialize_by(
       source_kind: "checkpoint",
-      source_slug: "#{@document.slug}:#{@checkpoint.id}",
-      message: message
-    ) do |reminder|
-      reminder.priority = @attempt.missed? ? 3 : 2
-    end
+      source_slug: "#{@document.slug}:#{@checkpoint.id}"
+    )
+    reminder.assign_attributes(
+      message: message,
+      priority: [ reminder.priority || 0, @attempt.missed? ? 3 : 2 ].max,
+      dismissed_at: nil,
+      snoozed_until: nil
+    )
+    reminder.save!
   end
 end
