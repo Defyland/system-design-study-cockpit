@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_07_120500) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_07_122000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -84,7 +84,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_120500) do
     t.datetime "updated_at", null: false
     t.index ["checkpoint_id"], name: "index_review_schedules_on_checkpoint_id"
     t.index ["status", "due_on"], name: "index_review_schedules_on_status_and_due_on"
-    t.index ["study_document_id", "checkpoint_id", "interval_days"], name: "idx_review_schedules_document_checkpoint_interval"
+    t.index ["study_document_id", "checkpoint_id", "interval_days", "status"], name: "idx_review_schedules_unique_identity", unique: true
     t.index ["study_document_id"], name: "index_review_schedules_on_study_document_id"
   end
 

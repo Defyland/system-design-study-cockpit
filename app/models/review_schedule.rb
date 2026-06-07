@@ -12,6 +12,7 @@ class ReviewSchedule < ApplicationRecord
 
   validates :due_on, :interval_days, :status, presence: true
   validates :interval_days, numericality: { greater_than: 0 }
+  validates :status, uniqueness: { scope: %i[study_document_id checkpoint_id interval_days] }
 
   scope :due, -> { pending.where(due_on: ..Date.current).order(:due_on, :interval_days) }
 end
