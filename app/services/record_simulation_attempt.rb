@@ -45,11 +45,16 @@ class RecordSimulationAttempt
   end
 
   def create_reminder_for(attempt)
-    Reminder.create!(
+    reminder = Reminder.find_or_initialize_by(
       source_kind: "simulation_lab",
-      source_slug: attempt.simulation_slug,
-      message: "Reveja o simulador #{attempt.simulation_slug}: sua decisao ou confianca indicou risco. Explique o rollback em 15 segundos.",
-      priority: 2
+      source_slug: attempt.simulation_slug
     )
+    reminder.assign_attributes(
+      message: "Reveja o simulador #{attempt.simulation_slug}: sua decisao ou confianca indicou risco. Explique o rollback em 15 segundos.",
+      priority: [ reminder.priority || 0, 2 ].max,
+      dismissed_at: nil,
+      snoozed_until: nil
+    )
+    reminder.save!
   end
 end

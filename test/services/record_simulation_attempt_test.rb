@@ -90,6 +90,30 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
     end
   end
 
+  test "reuses simulation reminder instead of creating duplicates" do
+    assert_difference -> { Reminder.count }, 1 do
+      2.times do
+        RecordSimulationAttempt.call(
+          attributes: {
+            simulation_slug: "canary-rollout",
+            decision: "safe",
+            confidence: "high",
+            input_snapshot: {
+              "users" => 120_000,
+              "rollout" => 5,
+              "errorRate" => 6,
+              "latencyP95" => 420
+            }
+          }
+        )
+      end
+    end
+
+    reminder = Reminder.find_by!(source_kind: "simulation_lab", source_slug: "canary-rollout")
+    assert_nil reminder.dismissed_at
+    assert_nil reminder.snoozed_until
+  end
+
   test "keeps simulation attempt side effects atomic" do
     assert_no_difference -> { SimulationAttempt.count } do
       assert_no_difference -> { MisconceptionEvent.count } do
