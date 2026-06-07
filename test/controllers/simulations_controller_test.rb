@@ -26,7 +26,8 @@ class SimulationsControllerTest < ActionDispatch::IntegrationTest
           users: "120000",
           rollout: "5",
           errorRate: "6",
-          latencyP95: "420"
+          latencyP95: "420",
+          unexpected: "999"
         }
       },
       headers: auth_headers
@@ -35,6 +36,7 @@ class SimulationsControllerTest < ActionDispatch::IntegrationTest
     payload = JSON.parse(response.body)
     assert_equal "rollback", payload.fetch("outputSnapshot").fetch("recommendedDecision")
     assert_equal 120_000.0, payload.fetch("inputSnapshot").fetch("users")
+    assert_not_includes payload.fetch("inputSnapshot"), "unexpected"
   end
 
   private

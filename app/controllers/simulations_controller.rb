@@ -6,7 +6,7 @@ class SimulationsController < ApplicationController
   end
 
   def show
-    @simulation = SimulationCatalog.find!(params.fetch(:slug))
+    @simulation = simulation
     @document = StudyDocument.simulation_lab.find_by(slug: @simulation.slug)
     @recent_attempts = SimulationAttempt
       .where(simulation_slug: @simulation.slug)
@@ -16,7 +16,7 @@ class SimulationsController < ApplicationController
 
   def evaluate
     result = SimulationEngine.call(
-      simulation_slug: params.fetch(:slug),
+      simulation_slug: simulation.slug,
       input_snapshot: input_snapshot
     )
 
@@ -28,7 +28,13 @@ class SimulationsController < ApplicationController
 
   private
 
+  def simulation
+    @simulation ||= SimulationCatalog.find!(params.fetch(:slug))
+  end
+
   def input_snapshot
-    params.fetch(:input_snapshot, {}).permit!.to_h
+    params.fetch(:input_snapshot, ActionController::Parameters.new)
+      .permit(*simulation.controls.map(&:key))
+      .to_h
   end
 end
