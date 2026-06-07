@@ -1,6 +1,6 @@
 class SimulationAttemptsController < ApplicationController
   def create
-    attempt = RecordSimulationAttempt.call(attributes: attempt_attributes)
+    attempt = RecordSimulationAttempt.call(**attempt_attributes)
 
     redirect_to simulation_path(attempt.simulation_slug), notice: "Tentativa registrada."
   end

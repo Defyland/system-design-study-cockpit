@@ -8,8 +8,8 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
     StudyDocument.destroy_all
   end
 
-  test "resolves simulation document from slug instead of trusting client document id" do
-    wrong_document = StudyDocument.create!(
+  test "resolves simulation document from slug" do
+    StudyDocument.create!(
       kind: "simulation_lab",
       slug: "cache",
       title: "Cache Lab",
@@ -27,8 +27,24 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
     )
 
     attempt = RecordSimulationAttempt.call(
-      attributes: {
-        study_document_id: wrong_document.id,
+      simulation_slug: "canary-rollout",
+      decision: "rollback",
+      confidence: "high",
+      input_snapshot: {
+        "users" => 120_000,
+        "rollout" => 5,
+        "errorRate" => 6,
+        "latencyP95" => 420
+      }
+    )
+
+    assert_equal correct_document, attempt.study_document
+  end
+
+  test "rejects unexpected client attributes at the service boundary" do
+    assert_raises(ArgumentError) do
+      RecordSimulationAttempt.call(
+        study_document_id: 123,
         simulation_slug: "canary-rollout",
         decision: "rollback",
         confidence: "high",
@@ -38,10 +54,8 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
           "errorRate" => 6,
           "latencyP95" => 420
         }
-      }
-    )
-
-    assert_equal correct_document, attempt.study_document
+      )
+    end
   end
 
   test "derives output snapshot instead of trusting client-provided output" do
@@ -49,20 +63,14 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
 
     assert_difference -> { Reminder.count }, 1 do
       attempt = RecordSimulationAttempt.call(
-        attributes: {
-          simulation_slug: "canary-rollout",
-          decision: "safe",
-          confidence: "high",
-          input_snapshot: {
-            "users" => 120_000,
-            "rollout" => 5,
-            "errorRate" => 6,
-            "latencyP95" => 420
-          },
-          output_snapshot: {
-            "recommendedDecision" => "safe",
-            "feedback" => "Cliente tentou adulterar."
-          }
+        simulation_slug: "canary-rollout",
+        decision: "safe",
+        confidence: "high",
+        input_snapshot: {
+          "users" => 120_000,
+          "rollout" => 5,
+          "errorRate" => 6,
+          "latencyP95" => 420
         }
       )
     end
@@ -75,16 +83,14 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
   test "creates reminder for low confidence even when simulation decision matches recommendation" do
     assert_difference -> { Reminder.count }, 1 do
       RecordSimulationAttempt.call(
-        attributes: {
-          simulation_slug: "canary-rollout",
-          decision: "rollback",
-          confidence: "low",
-          input_snapshot: {
-            "users" => 120_000,
-            "rollout" => 5,
-            "errorRate" => 6,
-            "latencyP95" => 420
-          }
+        simulation_slug: "canary-rollout",
+        decision: "rollback",
+        confidence: "low",
+        input_snapshot: {
+          "users" => 120_000,
+          "rollout" => 5,
+          "errorRate" => 6,
+          "latencyP95" => 420
         }
       )
     end
@@ -94,16 +100,14 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
     assert_difference -> { Reminder.count }, 1 do
       2.times do
         RecordSimulationAttempt.call(
-          attributes: {
-            simulation_slug: "canary-rollout",
-            decision: "safe",
-            confidence: "high",
-            input_snapshot: {
-              "users" => 120_000,
-              "rollout" => 5,
-              "errorRate" => 6,
-              "latencyP95" => 420
-            }
+          simulation_slug: "canary-rollout",
+          decision: "safe",
+          confidence: "high",
+          input_snapshot: {
+            "users" => 120_000,
+            "rollout" => 5,
+            "errorRate" => 6,
+            "latencyP95" => 420
           }
         )
       end
@@ -120,12 +124,10 @@ class RecordSimulationAttemptTest < ActiveSupport::TestCase
         assert_no_difference -> { Reminder.count } do
           assert_raises(ActiveRecord::RecordNotFound) do
             RecordSimulationAttempt.call(
-              attributes: {
-                simulation_slug: "missing-simulator",
-                decision: "risky",
-                confidence: "medium",
-                input_snapshot: {}
-              }
+              simulation_slug: "missing-simulator",
+              decision: "risky",
+              confidence: "medium",
+              input_snapshot: {}
             )
           end
         end

@@ -1,17 +1,27 @@
 class RecordSimulationAttempt
-  def self.call(attributes:)
-    new(attributes).call
+  def self.call(simulation_slug:, decision:, confidence:, input_snapshot:, feedback: nil)
+    new(
+      simulation_slug: simulation_slug,
+      decision: decision,
+      confidence: confidence,
+      input_snapshot: input_snapshot,
+      feedback: feedback
+    ).call
   end
 
-  def initialize(attributes)
-    @attributes = attributes
+  def initialize(simulation_slug:, decision:, confidence:, input_snapshot:, feedback:)
+    @simulation_slug = simulation_slug
+    @decision = decision
+    @confidence = confidence
+    @input_snapshot = input_snapshot
+    @feedback = feedback
   end
 
   def call
     SimulationAttempt.transaction do
       engine_result = SimulationEngine.call(
-        simulation_slug: attributes.fetch(:simulation_slug),
-        input_snapshot: attributes.fetch(:input_snapshot)
+        simulation_slug: simulation_slug,
+        input_snapshot: input_snapshot
       )
 
       attempt = SimulationAttempt.create!(attempt_attributes(engine_result))
@@ -24,18 +34,22 @@ class RecordSimulationAttempt
 
   private
 
-  attr_reader :attributes
+  attr_reader :simulation_slug, :decision, :confidence, :input_snapshot, :feedback
 
   def attempt_attributes(engine_result)
-    attributes.except(:study_document_id, :output_snapshot).merge(
+    {
+      simulation_slug: simulation_slug,
+      decision: decision,
+      confidence: confidence,
+      feedback: feedback,
       study_document: study_document,
       input_snapshot: engine_result.input_snapshot,
       output_snapshot: engine_result.output_snapshot
-    )
+    }
   end
 
   def study_document
-    StudyDocument.simulation_lab.find_by(slug: attributes.fetch(:simulation_slug))
+    StudyDocument.simulation_lab.find_by(slug: simulation_slug)
   end
 
   def create_reminder_for(attempt)
