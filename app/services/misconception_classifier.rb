@@ -9,14 +9,6 @@ class MisconceptionClassifier
     [ /uber|stripe|github|shopify|netflix|cloudflare|big tech/i, "overgeneralized_big_tech_case" ]
   ].freeze
 
-  SIMULATION_KEYS = {
-    "load-balancer" => "scale_before_delete",
-    "cache" => "cache_without_freshness",
-    "rate-limit-vs-load-shedding" => "auth_vs_rate_limit_confusion",
-    "circuit-breaker" => "retry_without_idempotency",
-    "canary-rollout" => "rollback_hesitation"
-  }.freeze
-
   def self.for_checkpoint_attempt(attempt)
     return if attempt.correct? && attempt.high?
 
@@ -36,9 +28,6 @@ class MisconceptionClassifier
   end
 
   def self.for_simulation_attempt(attempt)
-    recommended_decision = attempt.output_snapshot.fetch("recommendedDecision", nil)
-    return if recommended_decision == attempt.decision && attempt.high?
-
-    SIMULATION_KEYS.fetch(attempt.simulation_slug, "missing_first_metric")
+    SimulationAttemptAssessment.new(attempt).misconception_key
   end
 end

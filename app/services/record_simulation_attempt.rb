@@ -17,7 +17,7 @@ class RecordSimulationAttempt
       attempt = SimulationAttempt.create!(attempt_attributes(engine_result))
 
       MisconceptionTracker.record_simulation_attempt!(attempt)
-      create_reminder_for(attempt) if reminder_needed?(attempt)
+      create_reminder_for(attempt) if SimulationAttemptAssessment.new(attempt).reminder_needed?
       attempt
     end
   end
@@ -36,12 +36,6 @@ class RecordSimulationAttempt
 
   def study_document
     StudyDocument.simulation_lab.find_by(slug: attributes.fetch(:simulation_slug))
-  end
-
-  def reminder_needed?(attempt)
-    recommended_decision = attempt.output_snapshot["recommendedDecision"]
-
-    attempt.risky? || attempt.low? || recommended_decision.present? && recommended_decision != attempt.decision
   end
 
   def create_reminder_for(attempt)

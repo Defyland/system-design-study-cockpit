@@ -49,10 +49,6 @@ class MisconceptionTracker
   end
 
   def severity_for_simulation(attempt)
-    recommended_decision = attempt.output_snapshot.fetch("recommendedDecision", nil)
-    return 3 if recommended_decision.present? && recommended_decision != attempt.decision
-    return 2 if attempt.risky? || attempt.low?
-
-    1
+    SimulationAttemptAssessment.new(attempt).severity
   end
 end
