@@ -8,7 +8,7 @@
         <%= button_to "Marcar como lido",
           study_progress_path(@progress),
           method: :patch,
-          params: { study_document_id: @chapter.id, study_progress: { current_block_position: @blocks.size, status: "read" } },
+          params: { study_progress: { current_block_position: @blocks.size, status: "read" } },
           class: "button" %>
         <%= link_to "Voltar aos chapters", chapters_path, class: "button secondary" %>
       </div>
