@@ -1,6 +1,7 @@
 class Reminder < ApplicationRecord
   validates :message, :source_kind, :source_slug, presence: true
   validates :priority, numericality: { greater_than_or_equal_to: 0 }
+  validates :source_slug, uniqueness: { scope: :source_kind }
 
   scope :active, -> { where(dismissed_at: nil) }
   scope :visible, -> { active.where("snoozed_until IS NULL OR snoozed_until <= ?", Time.current) }

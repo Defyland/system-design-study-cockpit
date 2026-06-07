@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_05_041100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_07_120500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,7 +71,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_05_041100) do
     t.string "source_slug", null: false
     t.datetime "updated_at", null: false
     t.index ["dismissed_at", "snoozed_until", "priority"], name: "index_reminders_on_dismissed_at_and_snoozed_until_and_priority"
-    t.index ["source_kind", "source_slug"], name: "index_reminders_on_source_kind_and_source_slug"
+    t.index ["source_kind", "source_slug"], name: "index_reminders_on_source_kind_and_source_slug", unique: true
   end
 
   create_table "review_schedules", force: :cascade do |t|
