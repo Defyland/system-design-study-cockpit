@@ -93,6 +93,26 @@ STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos
 STUDY_CONTENT_GITHUB_REF=main
 ```
 
+## Deploy automatico via CI (gated)
+
+O workflow `.github/workflows/ci.yml` tem um job `deploy` que sobe para o Railway
+**somente** depois que `scan_ruby`, `scan_js`, `lint`, `test` e `system-test` passam,
+e apenas em push para `main` (nunca em PR).
+
+Para habilitar:
+
+1. Gere um token de projeto no Railway (Project Settings -> Tokens) para o environment
+   de producao.
+2. Em GitHub -> Settings -> Secrets and variables -> Actions, crie o secret
+   `RAILWAY_TOKEN` com esse valor.
+3. (Opcional) Se o servico Rails nao se chamar `web`, crie a variable
+   `RAILWAY_SERVICE` com o nome correto.
+4. Se o Railway estiver com auto-deploy no push ligado pela integracao do GitHub,
+   desligue-o para o gate do CI ser o unico caminho de deploy (senao os dois disparam).
+
+As variaveis de ambiente de producao (master key, `GITHUB_TOKEN`, etc.) ja vivem no
+servico, entao o `railway up` apenas refaz o build/deploy do servico ja configurado.
+
 ## Observacao
 
 `Defyland/system-design-estudos` esta privado. Portanto, `GITHUB_TOKEN` e necessario para o sync em producao.
