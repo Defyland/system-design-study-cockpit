@@ -17,7 +17,7 @@ O cockpit nao substitui os textos. Ele cria uma camada de treino em cima deles:
 
 ## Stack
 
-- Ruby 3.3.6
+- Ruby 3.4.9
 - Rails 8.1
 - PostgreSQL
 - Minitest + system tests
