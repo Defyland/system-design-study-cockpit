@@ -9,8 +9,11 @@ Rails.application.routes.draw do
     get :evaluate, on: :member
   end
   resources :simulation_attempts, only: %i[create]
+  resources :side_tracks, only: %i[index show], param: :slug
   get "library/:kind", to: "library#index", as: :library
   get "library/:kind/:slug", to: "library#show", as: :library_document
+  resources :study_missions, only: %i[create update]
+  resources :learning_records, only: %i[create]
   resources :study_progresses, only: %i[update]
   resources :checkpoint_attempts, only: %i[create]
   resources :reminders, only: [] do

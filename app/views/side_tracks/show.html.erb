@@ -1,0 +1,131 @@
+<section class="grid two">
+  <article class="reader-content">
+    <div class="panel hero-panel">
+      <p class="status-pill">Side Track</p>
+      <h1><%= @side_track.title %></h1>
+      <p class="muted">
+        <%= @side_track.metadata["side_track_area_title"] %>
+        · <%= @side_track.metadata["chapter_count"] %> chapters
+        · paralela ao curriculo canonico
+      </p>
+      <div class="button-row">
+        <% if @source_map %>
+          <%= link_to "Source map", library_document_path(kind: @source_map.kind, slug: @source_map.slug), class: "button secondary" %>
+        <% end %>
+        <% if @review_guide %>
+          <%= link_to "Review flow", library_document_path(kind: @review_guide.kind, slug: @review_guide.slug), class: "button secondary" %>
+        <% end %>
+        <%= link_to "Ver trilhas", side_tracks_path, class: "button ghost" %>
+      </div>
+    </div>
+
+    <% @blocks.each do |block| %>
+      <section class="markdown-block">
+        <%= render_markdown(block.content_markdown) %>
+      </section>
+    <% end %>
+  </article>
+
+  <aside class="panel">
+    <h2>Mission</h2>
+    <p class="muted">Declare por que esta trilha importa agora e qual sinal vai provar que ela valeu.</p>
+
+    <%= form_with model: @mission, class: "stacked-form" do |form| %>
+      <%= form.hidden_field :study_document_id, value: @side_track.id %>
+
+      <label>
+        Why now
+        <%= form.text_area :why_now, rows: 4, placeholder: "Ex.: quero entender serving, RAG e trade-offs de modelo sem ficar preso a API wrappers." %>
+      </label>
+
+      <label>
+        Success signal
+        <%= form.text_area :success_signal, rows: 3, placeholder: "Ex.: consigo explicar finetuning vs RAG e justificar quando melhorar modelo vs sistema." %>
+      </label>
+
+      <%= form.submit @mission.persisted? ? "Atualizar mission" : "Salvar mission", class: "button" %>
+    <% end %>
+  </aside>
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <h2>Chapters</h2>
+    <div class="chapter-list">
+      <% @chapters.each do |chapter| %>
+        <% review_card = @review_cards_by_path[chapter.metadata["review_card_path"]] %>
+        <article class="chapter-row">
+          <div class="chapter-number"><%= chapter.position.to_s.rjust(2, "0") %></div>
+          <div>
+            <h3><%= link_to chapter.title, library_document_path(kind: chapter.kind, slug: chapter.slug) %></h3>
+            <p class="muted">
+              <%= chapter.metadata["study_order"] %>
+              · <%= chapter.progress.status.humanize %>
+              · <%= Array(chapter.metadata["bridge_topics"]).size %> bridges
+            </p>
+            <% if review_card %>
+              <p><strong>Review:</strong> <%= link_to review_card.title, library_document_path(kind: review_card.kind, slug: review_card.slug) %></p>
+            <% end %>
+          </div>
+          <%= link_to "Abrir", library_document_path(kind: chapter.kind, slug: chapter.slug), class: "button secondary" %>
+        </article>
+      <% end %>
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2>Learning Records</h2>
+    <p class="muted">Registre o que consolidou, o que parou de confundir e o que isso desbloqueia na trilha.</p>
+
+    <% if @learning_records.any? %>
+      <div class="record-list">
+        <% @learning_records.each do |record| %>
+          <article class="record-card">
+            <p class="record-meta">
+              <% if record.related_document %>
+                <strong><%= link_to record.related_document.title, library_document_path(kind: record.related_document.kind, slug: record.related_document.slug) %></strong>
+                ·
+              <% end %>
+              <%= l(record.created_at.to_date, format: :long) %>
+            </p>
+            <p><strong>Cue:</strong> <%= record.cue %></p>
+            <p><strong>Insight:</strong> <%= record.insight %></p>
+            <% if record.unlocks.present? %>
+              <p><strong>Unlocks:</strong> <%= record.unlocks %></p>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">Ainda sem learning records para esta trilha.</p>
+    <% end %>
+
+    <div class="context-divider"></div>
+
+    <%= form_with model: @learning_record, class: "stacked-form" do |form| %>
+      <%= form.hidden_field :study_document_id, value: @side_track.id %>
+
+      <label>
+        Anchor
+        <%= form.select :related_document_id, options_for_select([ [ "Sem anchor especifico", nil ] ] + @related_document_options), {}, class: "select-field" %>
+      </label>
+
+      <label>
+        Cue
+        <%= form.text_area :cue, rows: 2, placeholder: "Ex.: contexto longo nao e memoria bruta; e custo quadraticamente sensivel ao attention." %>
+      </label>
+
+      <label>
+        Insight
+        <%= form.text_area :insight, rows: 4, placeholder: "Ex.: ficou claro por que token budget, KV cache e batching afetam serving antes de qualquer RAG." %>
+      </label>
+
+      <label>
+        Unlocks
+        <%= form.text_area :unlocks, rows: 3, placeholder: "Ex.: consigo comparar finetuning vs RAG sem resposta generica." %>
+      </label>
+
+      <%= form.submit "Salvar learning record", class: "button" %>
+    <% end %>
+  </article>
+</section>

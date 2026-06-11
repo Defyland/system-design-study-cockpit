@@ -1,0 +1,34 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Side Tracks</p>
+  <h1>Trilhas paralelas para aprofundar fundamentos sem baguncar o curriculo canonico.</h1>
+  <p class="muted">
+    Use estas trilhas quando voce quiser builder-depth extra. Elas nao alteram a ordem dos 14 chapters principais.
+  </p>
+</section>
+
+<section class="chapter-list">
+  <% if @side_tracks.any? %>
+    <% @side_tracks.each do |side_track| %>
+      <article class="chapter-row">
+        <div class="chapter-number"><%= @chapter_counts.fetch(side_track.slug, 0) %></div>
+        <div>
+          <h2><%= link_to side_track.title, side_track_path(side_track.slug) %></h2>
+          <p class="muted">
+            <%= side_track.metadata["side_track_area_title"] %>
+            · <%= @record_counts.fetch(side_track.slug, 0) %> learning records
+          </p>
+          <% if side_track.study_mission %>
+            <p><strong>Mission:</strong> <%= truncate(side_track.study_mission.why_now, length: 120) %></p>
+          <% else %>
+            <p class="muted">Mission ainda nao definida.</p>
+          <% end %>
+        </div>
+        <%= link_to "Abrir", side_track_path(side_track.slug), class: "button secondary" %>
+      </article>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      Nenhuma trilha paralela importada ainda. Rode <code>bin/rails study:sync_content</code>.
+    </div>
+  <% end %>
+</section>

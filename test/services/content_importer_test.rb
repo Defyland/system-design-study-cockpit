@@ -242,6 +242,40 @@ class ContentImporterTest < ActiveSupport::TestCase
     assert_equal "Plan a Zero-Downtime Migration", document.title
   end
 
+  test "imports side track documents and enriches them from curriculum" do
+    source = FakeSource.new([
+      {
+        kind: "side_track_overview",
+        source_path: "areas/08-sistemas-ia/llm-foundations/README.md",
+        body_markdown: "# LLM Foundations\n\nBuilder-heavy track."
+      },
+      {
+        kind: "side_track_chapter",
+        source_path: "areas/08-sistemas-ia/llm-foundations/chapters/01-tokens-embeddings-and-training-windows.md",
+        body_markdown: "# Tokens, Embeddings and Training Windows\n\n## First Principles Learning Pass\n\nCheckpoint builder."
+      },
+      {
+        kind: "side_track_review_card",
+        source_path: "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md",
+        body_markdown: "# Tokens Recall\n\n## Recall\n\n- `Pergunta`: tokenizacao e embedding sao a mesma coisa?\n- `Resposta curta`: nao."
+      }
+    ], curriculum)
+
+    imported = Content::Importer.new(source: source).call
+    overview = imported.detect(&:side_track_overview?)
+    chapter = imported.detect(&:side_track_chapter?)
+    review_card = imported.detect(&:side_track_review_card?)
+
+    assert_equal "llm-foundations", overview.slug
+    assert_equal 1, overview.metadata.fetch("chapter_count")
+    assert_equal "llm-foundations-01-tokens-embeddings-and-training-windows", chapter.slug
+    assert_equal 1, chapter.position
+    assert_equal "LLM Foundations", chapter.metadata.fetch("side_track_title")
+    assert_equal "1/1", chapter.metadata.fetch("study_order")
+    assert_equal "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md", chapter.metadata.fetch("review_card_path")
+    assert_equal "areas/08-sistemas-ia/llm-foundations/chapters/01-tokens-embeddings-and-training-windows.md", review_card.metadata.fetch("chapter_path")
+  end
+
   private
 
   def curriculum
@@ -250,7 +284,8 @@ class ContentImporterTest < ActiveSupport::TestCase
         { "id" => "fase-1", "title" => "Fase 1 - Base forte" }
       ],
       "areas" => [
-        { "id" => "03-filas-e-consistencia", "title" => "Filas e Consistencia" }
+        { "id" => "03-filas-e-consistencia", "title" => "Filas e Consistencia" },
+        { "id" => "08-sistemas-ia", "title" => "Sistemas de IA" }
       ],
       "chapters" => [
         {
@@ -277,6 +312,29 @@ class ContentImporterTest < ActiveSupport::TestCase
             "path" => "decision-contrasts/05-idempotency-key-vs-unique-index.md"
           },
           "simulations" => [ "rate-limit-vs-load-shedding" ]
+        }
+      ],
+      "side_tracks" => [
+        {
+          "id" => "llm-foundations",
+          "title" => "LLM Foundations",
+          "area_id" => "08-sistemas-ia",
+          "path" => "areas/08-sistemas-ia/llm-foundations/README.md",
+          "source_map" => "areas/08-sistemas-ia/llm-foundations/source-map.md",
+          "reviews_readme" => "areas/08-sistemas-ia/llm-foundations/reviews/README.md",
+          "chapters" => [
+            {
+              "number" => 1,
+              "title" => "Tokens, Embeddings and Training Windows",
+              "path" => "areas/08-sistemas-ia/llm-foundations/chapters/01-tokens-embeddings-and-training-windows.md",
+              "review_card" => "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md",
+              "upstream" => [
+                "https://github.com/rasbt/LLMs-from-scratch/blob/main/ch02/01_main-chapter-code/ch02.ipynb"
+              ],
+              "bridge_topics" => [ "areas/08-sistemas-ia/topics/token-cost.md" ],
+              "bridge_cases" => [ "real-world-cases/05-product-scenarios/chatgpt-llm-product/README.md" ]
+            }
+          ]
         }
       ]
     }

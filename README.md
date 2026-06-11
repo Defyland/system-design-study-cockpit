@@ -9,10 +9,12 @@ O cockpit nao substitui os textos. Ele cria uma camada de treino em cima deles:
 - checkpoints extraidos dos cards de fixacao do Markdown
 - drills por chapter
 - biblioteca de fundamentos, componentes, sistemas de IA e casos reais
+- trilhas paralelas importadas do `curriculum.yml`, como `LLM Foundations`
 - simuladores guiados com parametros, metricas e registro de julgamento
 - prediction antes do reveal, confidence score e frase de decisao tecnica
 - misconception ledger e sessao adaptativa sob demanda
 - lembretes estilo post-it a partir de respostas hesitantes ou erradas
+- mission e learning records por trilha para guardar estado do aprendiz
 - sync local por filesystem e sync de producao via GitHub API
 
 ## Stack
@@ -72,6 +74,7 @@ O importador le:
 - `simulation-labs/`
 - `real-world-cases/**/README.md`
 - `decision-contrasts/`
+- side tracks declaradas em `curriculum.yml` com overview, source map, chapters e review cards
 
 ### Local
 

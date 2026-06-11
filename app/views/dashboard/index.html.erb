@@ -80,6 +80,25 @@
   </article>
 
   <article class="panel">
+    <h2>LLM Foundations</h2>
+    <% if @llm_foundations %>
+      <p class="muted">
+        <%= @llm_foundations.metadata["chapter_count"] %> chapters
+        · <%= @llm_foundations_record_count %> learning records
+      </p>
+      <% if @llm_foundations.study_mission %>
+        <p><strong>Mission:</strong> <%= truncate(@llm_foundations.study_mission.why_now, length: 96) %></p>
+      <% else %>
+        <p class="muted">Sem mission definida ainda.</p>
+      <% end %>
+      <%= link_to "Abrir trilha", side_track_path(@llm_foundations.slug), class: "button secondary" %>
+    <% else %>
+      <p class="muted">Sincronize o conteudo para importar a trilha paralela de IA.</p>
+      <%= link_to "Ver trilhas", side_tracks_path, class: "button secondary" %>
+    <% end %>
+  </article>
+
+  <article class="panel">
     <h2>Fundamentos e componentes</h2>
     <p class="muted">
       <%= @library_counts.fetch("foundation", 0) %> fundamentos

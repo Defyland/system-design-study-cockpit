@@ -21,5 +21,20 @@
     <p class="muted">Leia como consulta, depois volte ao chapter que puxou este tema.</p>
     <p><strong>Checkpoints:</strong> <%= @document.checkpoints.size %></p>
     <p><strong>Fonte:</strong> <%= @document.source_path %></p>
+
+    <% if @side_track %>
+      <div class="context-divider"></div>
+      <h2>Track Context</h2>
+      <p><strong>Trilha:</strong> <%= link_to @side_track.title, side_track_path(@side_track.slug) %></p>
+      <% if @document.metadata["study_order"].present? %>
+        <p><strong>Ordem:</strong> <%= @document.metadata["study_order"] %></p>
+      <% end %>
+      <% if @linked_review_card %>
+        <p><strong>Review:</strong> <%= link_to @linked_review_card.title, library_document_path(kind: @linked_review_card.kind, slug: @linked_review_card.slug) %></p>
+      <% end %>
+      <% if @linked_chapter %>
+        <p><strong>Chapter:</strong> <%= link_to @linked_chapter.title, library_document_path(kind: @linked_chapter.kind, slug: @linked_chapter.slug) %></p>
+      <% end %>
+    <% end %>
   </aside>
 </section>

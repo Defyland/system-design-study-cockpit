@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_07_122000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,6 +43,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_122000) do
     t.datetime "updated_at", null: false
     t.index ["study_document_id", "position"], name: "index_checkpoints_on_study_document_id_and_position"
     t.index ["study_document_id"], name: "index_checkpoints_on_study_document_id"
+  end
+
+  create_table "learning_records", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "cue", null: false
+    t.text "insight", null: false
+    t.bigint "related_document_id"
+    t.bigint "study_document_id", null: false
+    t.text "unlocks"
+    t.datetime "updated_at", null: false
+    t.index ["related_document_id"], name: "index_learning_records_on_related_document_id"
+    t.index ["study_document_id"], name: "index_learning_records_on_study_document_id"
   end
 
   create_table "misconception_events", force: :cascade do |t|
@@ -134,6 +146,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_122000) do
     t.index ["kind", "slug"], name: "index_study_documents_on_kind_and_slug", unique: true
   end
 
+  create_table "study_missions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "study_document_id", null: false
+    t.text "success_signal", null: false
+    t.datetime "updated_at", null: false
+    t.text "why_now", null: false
+    t.index ["study_document_id"], name: "index_study_missions_on_study_document_id", unique: true
+  end
+
   create_table "study_progresses", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "current_block_position", default: 1, null: false
@@ -147,10 +168,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_07_122000) do
 
   add_foreign_key "checkpoint_attempts", "checkpoints"
   add_foreign_key "checkpoints", "study_documents"
+  add_foreign_key "learning_records", "study_documents"
+  add_foreign_key "learning_records", "study_documents", column: "related_document_id"
   add_foreign_key "misconception_events", "study_documents"
   add_foreign_key "review_schedules", "checkpoints"
   add_foreign_key "review_schedules", "study_documents"
   add_foreign_key "simulation_attempts", "study_documents"
   add_foreign_key "study_blocks", "study_documents"
+  add_foreign_key "study_missions", "study_documents"
   add_foreign_key "study_progresses", "study_documents"
 end

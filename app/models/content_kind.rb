@@ -86,6 +86,25 @@ class ContentKind
       github_pattern: /\A.+\.md\z/
     ),
     Entry.new(
+      key: "side_track_overview",
+      label: "Side Tracks"
+    ),
+    Entry.new(
+      key: "side_track_reference",
+      label: "Side Track References",
+      library: true
+    ),
+    Entry.new(
+      key: "side_track_chapter",
+      label: "Side Track Chapters",
+      library: true
+    ),
+    Entry.new(
+      key: "side_track_review_card",
+      label: "Side Track Review Cards",
+      library: true
+    ),
+    Entry.new(
       key: "backend_principle",
       label: "Backend Principles",
       short_label: "Backend",

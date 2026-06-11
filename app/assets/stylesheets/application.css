@@ -421,6 +421,41 @@ textarea {
   width: 100%;
 }
 
+select {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: block;
+  font: inherit;
+  margin-top: 6px;
+  padding: 10px;
+  width: 100%;
+}
+
+.stacked-form {
+  display: grid;
+  gap: 14px;
+}
+
+.record-list {
+  display: grid;
+  gap: 12px;
+}
+
+.record-card {
+  background: #f7f4ed;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.record-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 0;
+}
+
 @media (max-width: 820px) {
   .topbar,
   .chapter-row {

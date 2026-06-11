@@ -18,7 +18,7 @@ module Content
     end
 
     def documents
-      DOCUMENT_SPECS.flat_map do |kind, spec|
+      imported = DOCUMENT_SPECS.flat_map do |kind, spec|
         entries = spec[:recursive] ? list_tree(spec.fetch(:directory)) : list_directory(spec.fetch(:directory))
 
         entries
@@ -32,6 +32,9 @@ module Content
             }
           end
       end
+
+      imported.concat(side_track_documents)
+      imported.uniq { |document| [ document.fetch(:kind), document.fetch(:source_path) ] }
     end
 
     def curriculum
@@ -88,6 +91,18 @@ module Content
       raise "GitHub request failed: #{uri.path} #{response.code} #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
       JSON.parse(response.body)
+    end
+
+    def side_track_documents
+      CurriculumGraph.side_track_document_specs(curriculum).map do |spec|
+        {
+          kind: spec.fetch(:kind),
+          source_path: spec.fetch(:source_path),
+          body_markdown: fetch_file(spec.fetch(:source_path))
+        }
+      end
+    rescue StandardError
+      []
     end
   end
 end

@@ -3,6 +3,8 @@ require "application_system_test_case"
 class StudyFlowTest < ApplicationSystemTestCase
   setup do
     MisconceptionEvent.delete_all
+    LearningRecord.delete_all
+    StudyMission.delete_all
     SimulationAttempt.delete_all
     Reminder.delete_all
     StudyDocument.destroy_all
@@ -70,5 +72,72 @@ class StudyFlowTest < ApplicationSystemTestCase
     assert_text "Arriscado"
     assert_equal 1, SimulationAttempt.where(simulation_slug: "load-balancer").count
     assert_equal 1, Reminder.where(source_slug: "load-balancer").count
+  end
+
+  test "student sets a side track mission and stores a learning record" do
+    overview = StudyDocument.create!(
+      kind: "side_track_overview",
+      slug: "llm-foundations",
+      title: "LLM Foundations",
+      source_path: "areas/08-sistemas-ia/llm-foundations/README.md",
+      position: 0,
+      body_markdown: "# LLM Foundations",
+      body_checksum: "llm-foundations",
+      metadata: {
+        "side_track_id" => "llm-foundations",
+        "side_track_area_title" => "Sistemas de IA",
+        "chapter_count" => 1
+      }
+    )
+    overview.create_study_progress!
+    overview.study_blocks.create!(position: 1, kind: "paragraph", content_markdown: "Trilha paralela.")
+
+    chapter = StudyDocument.create!(
+      kind: "side_track_chapter",
+      slug: "llm-foundations-01-tokens",
+      title: "Tokens, Embeddings and Training Windows",
+      source_path: "areas/08-sistemas-ia/llm-foundations/chapters/01-tokens-embeddings-and-training-windows.md",
+      position: 1,
+      body_markdown: "# Tokens, Embeddings and Training Windows",
+      body_checksum: "llm-foundations-01",
+      metadata: {
+        "side_track_id" => "llm-foundations",
+        "study_order" => "1/1",
+        "bridge_topics" => [ "areas/08-sistemas-ia/topics/token-cost.md" ],
+        "review_card_path" => "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md"
+      }
+    )
+    chapter.create_study_progress!
+
+    review_card = StudyDocument.create!(
+      kind: "side_track_review_card",
+      slug: "llm-foundations-01-tokens-review",
+      title: "Tokens Recall",
+      source_path: "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md",
+      position: 1,
+      body_markdown: "# Tokens Recall",
+      body_checksum: "llm-foundations-01-review",
+      metadata: {
+        "side_track_id" => "llm-foundations",
+        "chapter_path" => chapter.source_path
+      }
+    )
+    review_card.create_study_progress!
+
+    visit side_track_path("llm-foundations")
+    fill_in "Why now", with: "Quero entender modelo o suficiente para nao vender RAG como resposta universal."
+    fill_in "Success signal", with: "Consigo explicar tokenizacao, attention e finetuning com consequencia arquitetural."
+    click_button "Salvar mission"
+
+    assert_text "Mission salva."
+    fill_in "Cue", with: "Token budget nao e detalhe de API."
+    fill_in "Insight", with: "Ficou claro por que custo de contexto e serving dependem da estrutura do modelo."
+    fill_in "Unlocks", with: "Consigo discutir latencia antes de falar em cache."
+    click_button "Salvar learning record"
+
+    assert_text "Learning record salvo."
+    assert_text "Token budget nao e detalhe de API."
+    assert_equal 1, StudyMission.count
+    assert_equal 1, LearningRecord.count
   end
 end

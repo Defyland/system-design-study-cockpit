@@ -64,4 +64,28 @@ class ContentMarkdownParserTest < ActiveSupport::TestCase
     assert_equal "Spotify Personalization", parsed.fetch(:title)
     assert_equal 0, parsed.fetch(:position)
   end
+
+  test "prefixes side track slugs with the track id to avoid collisions" do
+    chapter = Content::MarkdownParser.new.parse(
+      kind: "side_track_chapter",
+      source_path: "areas/08-sistemas-ia/llm-foundations/chapters/01-tokens-embeddings-and-training-windows.md",
+      body_markdown: "# Tokens, Embeddings and Training Windows\n\nTexto."
+    )
+    review_card = Content::MarkdownParser.new.parse(
+      kind: "side_track_review_card",
+      source_path: "areas/08-sistemas-ia/llm-foundations/reviews/cards/01-tokens-embeddings-and-training-windows.md",
+      body_markdown: "# Recall\n\nTexto."
+    )
+    reference = Content::MarkdownParser.new.parse(
+      kind: "side_track_reference",
+      source_path: "areas/08-sistemas-ia/llm-foundations/source-map.md",
+      body_markdown: "# Source Map\n\nTexto."
+    )
+
+    assert_equal "llm-foundations-01-tokens-embeddings-and-training-windows", chapter.fetch(:slug)
+    assert_equal "llm-foundations-01-tokens-embeddings-and-training-windows", review_card.fetch(:slug)
+    assert_equal "llm-foundations-source-map", reference.fetch(:slug)
+    assert_equal 1, chapter.fetch(:position)
+    assert_equal 0, reference.fetch(:position)
+  end
 end

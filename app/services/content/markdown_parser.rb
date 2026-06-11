@@ -9,11 +9,11 @@ module Content
     def parse(kind:, source_path:, body_markdown:)
       {
         kind: kind,
-        slug: slug_for(source_path),
-        title: title_for(body_markdown, source_path),
+        slug: slug_for(kind, source_path),
+        title: title_for(kind, body_markdown, source_path),
         source_path: source_path,
         phase: phase_for(body_markdown),
-        position: position_for(source_path),
+        position: position_for(kind, source_path),
         body_markdown: body_markdown,
         body_checksum: Digest::SHA256.hexdigest("#{PARSER_VERSION}\n#{body_markdown}"),
         metadata: metadata_for(body_markdown),
@@ -24,26 +24,45 @@ module Content
 
     private
 
-    def slug_for(source_path)
+    def slug_for(kind, source_path)
+      return side_track_slug_for(source_path) if kind.start_with?("side_track_")
+
       return File.basename(File.dirname(source_path)) if File.basename(source_path) == "README.md"
 
       File.basename(source_path, ".md")
     end
 
-    def title_for(body_markdown, source_path)
+    def title_for(kind, body_markdown, source_path)
       body_markdown.each_line do |line|
         return line.delete_prefix("#").strip if line.start_with?("# ")
       end
 
-      slug_for(source_path).tr("-", " ").titleize
+      slug_for(kind, source_path).tr("-", " ").titleize
     end
 
     def phase_for(body_markdown)
       body_markdown[/`Study Order`:\s*`\d+\/14`\s*-\s*`([^`]+)`/, 1]
     end
 
-    def position_for(source_path)
+    def position_for(kind, source_path)
+      return 0 if %w[side_track_overview side_track_reference].include?(kind)
+
       File.basename(source_path)[/\A(?:chapter-)?(\d{2})/, 1].to_i
+    end
+
+    def side_track_slug_for(source_path)
+      parts = source_path.split("/")
+      track_id = parts[2]
+      basename =
+        if File.basename(source_path) == "README.md"
+          File.basename(File.dirname(source_path))
+        else
+          File.basename(source_path, ".md")
+        end
+
+      return track_id if basename == track_id
+
+      "#{track_id}-#{basename}"
     end
 
     def metadata_for(body_markdown)

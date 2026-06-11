@@ -9,7 +9,7 @@ module Content
     end
 
     def documents
-      DOCUMENT_PATTERNS.flat_map do |kind, pattern|
+      imported = DOCUMENT_PATTERNS.flat_map do |kind, pattern|
         Dir.glob(@root_path.join(pattern)).sort.reject { |path| skip_document?(kind, path) }.map do |path|
           pathname = Pathname(path)
 
@@ -20,6 +20,9 @@ module Content
           }
         end
       end
+
+      imported.concat(side_track_documents)
+      imported.uniq { |document| [ document.fetch(:kind), document.fetch(:source_path) ] }
     end
 
     def curriculum
@@ -33,6 +36,19 @@ module Content
 
     def skip_document?(kind, path)
       kind == "simulation_lab" && File.basename(path) == "README.md"
+    end
+
+    def side_track_documents
+      CurriculumGraph.side_track_document_specs(curriculum).filter_map do |spec|
+        pathname = @root_path.join(spec.fetch(:source_path))
+        next unless pathname.exist?
+
+        {
+          kind: spec.fetch(:kind),
+          source_path: spec.fetch(:source_path),
+          body_markdown: pathname.read
+        }
+      end
     end
   end
 end
