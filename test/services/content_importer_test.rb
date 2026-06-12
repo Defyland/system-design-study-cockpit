@@ -210,6 +210,23 @@ class ContentImporterTest < ActiveSupport::TestCase
     assert_equal "Data Contracts and Schema Evolution", document.title
   end
 
+  test "imports interview story bank documents as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "interview_story_bank",
+        source_path: "interview/story-bank/01-ruby-rails-backend-story-bank.md",
+        body_markdown: "# Ruby and Rails Backend Story Bank\n\nInterview narrative."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :interview_story_bank?
+    assert_equal "01-ruby-rails-backend-story-bank", document.slug
+    assert_equal "Ruby and Rails Backend Story Bank", document.title
+    assert_equal 1, document.position
+  end
+
   test "imports backend principle labs as library documents" do
     source = FakeSource.new([
       {

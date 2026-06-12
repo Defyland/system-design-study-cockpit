@@ -126,6 +126,15 @@
   </article>
 
   <article class="panel">
+    <h2>Interview Story Bank</h2>
+    <p class="muted">
+      <%= @library_counts.fetch("interview_story_bank", 0) %> narrativas STAR
+      · Rails, React e React Native
+    </p>
+    <%= link_to "Preparar entrevista", library_path(kind: "interview_story_bank"), class: "button secondary" %>
+  </article>
+
+  <article class="panel">
     <h2>Labs adicionais</h2>
     <p class="muted">
       <%= @library_counts.fetch("backend_lab", 0) %> backend

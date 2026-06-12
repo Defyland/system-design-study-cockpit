@@ -149,6 +149,17 @@ class ContentKind
       github_pattern: /\A.+\.md\z/
     ),
     Entry.new(
+      key: "interview_story_bank",
+      label: "Interview Story Bank",
+      short_label: "Interview",
+      library: true,
+      navigation: true,
+      dashboard: true,
+      filesystem_pattern: "interview/story-bank/*.md",
+      github_directory: "interview/story-bank",
+      github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
       key: "backend_lab",
       label: "Backend Principle Labs",
       short_label: "B Labs",
