@@ -8,7 +8,7 @@ O cockpit nao substitui os textos. Ele cria uma camada de treino em cima deles:
 - reader guiado com blocos de leitura
 - checkpoints extraidos dos cards de fixacao do Markdown
 - drills por chapter
-- biblioteca de fundamentos, componentes, sistemas de IA e casos reais
+- biblioteca de fundamentos, componentes, backend principles, backend labs, sistemas de IA e casos reais
 - trilhas paralelas importadas do `curriculum.yml`, como `LLM Foundations`
 - simuladores guiados com parametros, metricas e registro de julgamento
 - prediction antes do reveal, confidence score e frase de decisao tecnica
@@ -16,6 +16,12 @@ O cockpit nao substitui os textos. Ele cria uma camada de treino em cima deles:
 - lembretes estilo post-it a partir de respostas hesitantes ou erradas
 - mission e learning records por trilha para guardar estado do aprendiz
 - sync local por filesystem e sync de producao via GitHub API
+
+Arquitetura e contexto tecnico:
+
+- [docs/architecture.md](docs/architecture.md)
+- [docs/engineering-case-study.md](docs/engineering-case-study.md)
+- [docs/learning-journal.md](docs/learning-journal.md)
 
 ## Stack
 
@@ -71,6 +77,13 @@ O importador le:
 - `areas/06-foundations-distribuidas/topics/`
 - `areas/07-componentes-de-sistemas/cards/`
 - `areas/08-sistemas-ia/topics/`
+- `areas/09-backend-principles/cards/`
+- `areas/10-engineering-case-studies/cards/`
+- `areas/11-operational-playbooks/playbooks/`
+- `areas/12-engineering-practice/cards/`
+- `areas/13-backend-principle-labs/labs/`
+- `areas/14-engineering-case-study-labs/labs/`
+- `interview/story-bank/`
 - `simulation-labs/`
 - `real-world-cases/**/README.md`
 - `decision-contrasts/`
@@ -156,6 +169,9 @@ railway domain
 ```
 
 O `Dockerfile` tambem usa `bin/docker-entrypoint`, que executa `db:prepare` e, quando habilitado, `study:sync_content`.
+
+O template Kamal fica em `.kamal/secrets.sample`. O arquivo real `.kamal/secrets`
+fica somente local e esta ignorado pelo Git.
 
 ## Qualidade
 

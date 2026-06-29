@@ -2,6 +2,20 @@
 
 Registro curto das decisoes tecnicas. Entrada nova no topo.
 
+## 2026-06-29 - Documentar a arquitetura do cockpit e tirar o template Kamal do caminho de segredo real
+
+- **Arquitetura e case study explicitos** em `docs/architecture.md` e
+  `docs/engineering-case-study.md`. O cockpit ja tinha README forte e testes,
+  mas ainda faltava uma leitura curta de boundary para avaliacao tecnica. A
+  documentacao agora separa importacao de conteudo, camada adaptativa,
+  simulacoes e surfaces web, com referencias diretas a services, models e
+  testes.
+- **Template Kamal movido para `.kamal/secrets.sample`** e `.kamal/secrets`
+  passou a ser ignorado pelo Git. O arquivo rastreado nao tinha credencial bruta,
+  mas o caminho colidia com a semantica de segredo local e piorava a prontidao
+  para publicacao. A amostra preserva onboarding sem manter um arquivo de
+  runtime secreto dentro da superficie publicada.
+
 ## 2026-06-10 - Bump de Ruby e deploy gated
 
 - **Ruby 3.3.6 -> 3.4.9**, alinhado ao repo de conteudo `system-design-estudos`.
