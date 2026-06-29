@@ -205,3 +205,11 @@ Este MVP e propositalmente pequeno:
 A regra e simples: estudar em sequencia, responder rapido, simular trade-offs, revelar feedback e gerar lembretes do que precisa voltar.
 
 O desenho mais ambicioso do tutor adaptativo esta preservado em [docs/adaptive_tutor_blueprint.md](docs/adaptive_tutor_blueprint.md).
+
+## Licenca
+
+Este repositorio e publicado sob a MIT License. Veja
+[LICENSE.txt](LICENSE.txt).
+
+Isso deixa o cockpit, os simuladores e a camada adaptativa reutilizaveis para
+estudo e adaptacao interna.

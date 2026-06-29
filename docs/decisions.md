@@ -16,6 +16,16 @@ Registro curto das decisoes tecnicas. Entrada nova no topo.
   para publicacao. A amostra preserva onboarding sem manter um arquivo de
   runtime secreto dentro da superficie publicada.
 
+## 2026-06-29 - Publicar o cockpit sob MIT para reaproveitamento didatico
+
+- **Licenca explicita** em `LICENSE.txt` e no `README.md`. O cockpit ja e
+  publico, ensina adaptive drills, simulacoes e sincronizacao com
+  `system-design-estudos`, mas sem licenca explicita o contrato de reuse ficava
+  ambiguo.
+- **Tradeoff aceito:** forks podem reutilizar a UX e os services sem contribuir
+  de volta. Aqui isso e aceitavel porque o objetivo principal do repo e servir
+  como asset de estudo e portfolio, nao como produto fechado.
+
 ## 2026-06-10 - Bump de Ruby e deploy gated
 
 - **Ruby 3.3.6 -> 3.4.9**, alinhado ao repo de conteudo `system-design-estudos`.
