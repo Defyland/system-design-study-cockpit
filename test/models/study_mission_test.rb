@@ -25,11 +25,13 @@ class StudyMissionTest < ActiveSupport::TestCase
   private
 
   def create_document(kind:, slug:)
+    unique_slug = "#{slug}-#{SecureRandom.hex(4)}"
+
     StudyDocument.create!(
       kind: kind,
-      slug: slug,
+      slug: unique_slug,
       title: slug.tr("-", " ").titleize,
-      source_path: "tmp/#{kind}/#{slug}.md",
+      source_path: "tmp/#{kind}/#{unique_slug}.md",
       position: 0,
       body_markdown: "# #{slug.tr('-', ' ').titleize}",
       body_checksum: SecureRandom.hex,
