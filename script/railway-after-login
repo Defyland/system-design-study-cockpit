@@ -46,6 +46,7 @@ railway variables --service "${SERVICE_NAME}" \
   --set "GITHUB_TOKEN=${GITHUB_TOKEN}" \
   --set "STUDY_SYNC_ON_BOOT=true" \
   --set "STUDY_CONTENT_MODE=github" \
+  --set "STUDY_CONTENT_MIN_DOCUMENTS=333" \
   --set "STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos" \
   --set "STUDY_CONTENT_GITHUB_REF=main"
 

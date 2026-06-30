@@ -4,6 +4,17 @@
   <p class="muted">
     Material de apoio importado do repo de estudos. Use como consulta rapida enquanto percorre os chapters.
   </p>
+
+  <%= form_with url: library_path(kind: @kind), method: :get, class: "search-form" do |form| %>
+    <label>
+      Filtrar nesta biblioteca
+      <%= form.text_field :q, value: @query, placeholder: "Ex.: Rails, DSA, snippet, retry" %>
+    </label>
+    <div class="button-row">
+      <%= form.submit "Filtrar", class: "button" %>
+      <%= link_to "Limpar", library_path(kind: @kind), class: "button ghost" %>
+    </div>
+  <% end %>
 </section>
 
 <section class="chapter-list">

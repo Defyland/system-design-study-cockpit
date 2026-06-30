@@ -1,0 +1,54 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Busca</p>
+  <h1>Buscar o estudo certo</h1>
+  <p class="muted">
+    Filtre por tema e consulte rapido DSA, Rails, system design, snippets e reference docs.
+  </p>
+
+  <%= form_with url: search_path, method: :get, class: "search-form" do |form| %>
+    <label>
+      Termo
+      <%= form.text_field :q, value: @query, placeholder: "Ex.: DSA, Rails, rate limit, snippet, reference" %>
+    </label>
+
+    <label>
+      Kind
+      <%= form.select :kind, options_for_select([ [ "Todos os kinds", nil ] ] + @kind_options, @kind), {}, class: "select-field" %>
+    </label>
+
+    <%= form.hidden_field :quick_filter, value: @quick_filter %>
+    <div class="button-row">
+      <%= form.submit "Buscar", class: "button" %>
+      <%= link_to "Limpar", search_path, class: "button ghost" %>
+    </div>
+  <% end %>
+</section>
+
+<section class="filter-strip">
+  <% @quick_filters.each do |filter| %>
+    <% classes = [ "button", (@quick_filter == filter.key ? nil : "ghost") ].compact.join(" ") %>
+    <%= link_to filter.label, search_path(q: @query.presence, kind: @kind, quick_filter: filter.key), class: classes %>
+  <% end %>
+</section>
+
+<section class="chapter-list">
+  <% if @results.any? %>
+    <% @results.each do |document| %>
+      <article class="chapter-row">
+        <div class="chapter-number"><%= document.position.positive? ? document.position.to_s.rjust(2, "0") : "ref" %></div>
+        <div>
+          <h2><%= link_to document.title, library_document_path(kind: document.kind, slug: document.slug) %></h2>
+          <p class="muted">
+            <%= ContentKind.library_labels.fetch(document.kind, document.kind.humanize) %>
+            · <%= document.source_path %>
+          </p>
+        </div>
+        <%= link_to "Abrir", library_document_path(kind: document.kind, slug: document.slug), class: "button secondary" %>
+      </article>
+    <% end %>
+  <% else %>
+    <div class="empty-state">
+      Nenhum documento casou com esta busca.
+    </div>
+  <% end %>
+</section>

@@ -10,14 +10,16 @@ module Content
 
     def documents
       imported = DOCUMENT_PATTERNS.flat_map do |kind, pattern|
-        Dir.glob(@root_path.join(pattern)).sort.reject { |path| skip_document?(kind, path) }.map do |path|
-          pathname = Pathname(path)
+        Array(pattern).flat_map do |single_pattern|
+          Dir.glob(@root_path.join(single_pattern)).sort.reject { |path| skip_document?(kind, path) }.map do |path|
+            pathname = Pathname(path)
 
-          {
-            kind: kind,
-            source_path: pathname.relative_path_from(@root_path).to_s,
-            body_markdown: pathname.read
-          }
+            {
+              kind: kind,
+              source_path: pathname.relative_path_from(@root_path).to_s,
+              body_markdown: pathname.read
+            }
+          end
         end
       end
 

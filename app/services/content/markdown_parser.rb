@@ -5,6 +5,7 @@ module Content
     PARSER_VERSION = 4
     CHECKPOINT_HEADING = /\A\#{2,4}\s+.*(Fixacao|Recall|First Pass|Production Recall|Design Pass Recall)/i
     LABELLED_BULLET = /\A-\s+`([^`]+)`:\s*(.+)\z/
+    PATH_SLUG_KINDS = %w[reference_document].freeze
 
     def parse(kind:, source_path:, body_markdown:)
       {
@@ -25,6 +26,7 @@ module Content
     private
 
     def slug_for(kind, source_path)
+      return path_slug_for(source_path) if PATH_SLUG_KINDS.include?(kind)
       return side_track_slug_for(source_path) if kind.start_with?("side_track_")
 
       return File.basename(File.dirname(source_path)) if File.basename(source_path) == "README.md"
@@ -63,6 +65,10 @@ module Content
       return track_id if basename == track_id
 
       "#{track_id}-#{basename}"
+    end
+
+    def path_slug_for(source_path)
+      source_path.delete_suffix(".md").tr("/", "-")
     end
 
     def metadata_for(body_markdown)

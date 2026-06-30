@@ -70,6 +70,7 @@ Abra `http://localhost:3000`.
 O importador le:
 
 - `curriculum.yml`
+- guias e referencias Markdown do repo, incluindo `README.md`, `STUDY_ORDER.md`, `STUDY_PLAN.md`, `notes`, `examples`, `snippets` e journals
 - `chapters/`
 - `labs/chapters/`
 - `reviews/cards/`
@@ -122,6 +123,12 @@ Para sincronizar no boot do container:
 STUDY_SYNC_ON_BOOT=true
 ```
 
+Para exigir o baseline atual de conteudo no healthcheck:
+
+```sh
+STUDY_CONTENT_MIN_DOCUMENTS=333
+```
+
 ## Auth
 
 Em production, `STUDY_COCKPIT_PASSWORD` e obrigatoria.
@@ -141,7 +148,7 @@ O repo inclui `railway.json` para:
 
 - build via `Dockerfile`
 - `bundle exec rails db:prepare` antes do deploy
-- healthcheck em `/up`
+- healthcheck de conteudo em `/health/content`
 - restart em falha
 
 Variaveis minimas do servico Rails:
@@ -154,6 +161,7 @@ STUDY_COCKPIT_PASSWORD=...
 GITHUB_TOKEN=...
 STUDY_SYNC_ON_BOOT=true
 STUDY_CONTENT_MODE=github
+STUDY_CONTENT_MIN_DOCUMENTS=333
 STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos
 STUDY_CONTENT_GITHUB_REF=main
 ```
@@ -169,6 +177,14 @@ railway domain
 ```
 
 O `Dockerfile` tambem usa `bin/docker-entrypoint`, que executa `db:prepare` e, quando habilitado, `study:sync_content`.
+
+Validacao operacional local ou remota:
+
+```sh
+bin/rails study:readiness
+railway run --service web bin/rails study:readiness
+curl https://<host>/health/content
+```
 
 O template Kamal fica em `.kamal/secrets.sample`. O arquivo real `.kamal/secrets`
 fica somente local e esta ignorado pelo Git.

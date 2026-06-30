@@ -1,0 +1,37 @@
+<section class="panel hero-panel">
+  <p class="status-pill">Plano</p>
+  <h1>Plano de 14 dias</h1>
+  <p class="muted">
+    Sequencia curta para entrevistas backend, misturando DSA, Rails, system design, story bank e drills.
+  </p>
+</section>
+
+<section class="plan-grid">
+  <% @plan.days.each do |day| %>
+    <article class="panel plan-day">
+      <p class="status-pill"><%= day.label %></p>
+      <h2><%= day.focus %></h2>
+      <p class="muted"><%= day.objective %></p>
+
+      <% if day.documents.any? %>
+        <div class="plan-links">
+          <% day.documents.each do |document| %>
+            <p><%= link_to document.title, library_document_path(kind: document.kind, slug: document.slug) %></p>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="muted">Conteudo ainda nao sincronizado para este dia.</p>
+      <% end %>
+
+      <% if day.checkpoints.any? %>
+        <div class="context-divider"></div>
+        <h3>Checkpoints</h3>
+        <ul class="plan-checklist">
+          <% day.checkpoints.each do |checkpoint| %>
+            <li><%= checkpoint %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </article>
+  <% end %>
+</section>

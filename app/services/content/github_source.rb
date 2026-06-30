@@ -19,18 +19,20 @@ module Content
 
     def documents
       imported = DOCUMENT_SPECS.flat_map do |kind, spec|
-        entries = spec[:recursive] ? list_tree(spec.fetch(:directory)) : list_directory(spec.fetch(:directory))
+        Array(spec.fetch(:directory)).flat_map do |directory|
+          entries = spec[:recursive] ? list_tree(directory) : list_directory(directory)
 
-        entries
-          .select { |entry| importable_file?(entry, spec.fetch(:pattern)) }
-          .sort_by { |entry| entry.fetch("path") }
-          .map do |entry|
-            {
-              kind: kind,
-              source_path: entry.fetch("path"),
-              body_markdown: fetch_file(entry.fetch("path"))
-            }
-          end
+          entries
+            .select { |entry| importable_file?(entry, spec.fetch(:pattern)) }
+            .sort_by { |entry| entry.fetch("path") }
+            .map do |entry|
+              {
+                kind: kind,
+                source_path: entry.fetch("path"),
+                body_markdown: fetch_file(entry.fetch("path"))
+              }
+            end
+        end
       end
 
       imported.concat(side_track_documents)
@@ -78,7 +80,8 @@ module Content
     end
 
     def contents_uri(path)
-      URI("https://api.github.com/repos/#{@repo}/contents/#{path}?ref=#{@ref}")
+      normalized_path = path.presence
+      URI("https://api.github.com/repos/#{@repo}/contents/#{normalized_path}?ref=#{@ref}")
     end
 
     def request_json(uri)

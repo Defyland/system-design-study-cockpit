@@ -8,11 +8,32 @@ end
 require_relative "../config/environment"
 require "rails/test_help"
 
+module StudyContentReset
+  def reset_study_tables!
+    CheckpointAttempt.delete_all
+    ReviewSchedule.delete_all
+    Reminder.delete_all
+    MisconceptionEvent.delete_all
+    SimulationAttempt.delete_all
+    LearningRecord.delete_all
+    StudyMission.delete_all
+    Checkpoint.delete_all
+    StudyBlock.delete_all
+    StudyProgress.delete_all
+    StudyDocument.delete_all
+  end
+end
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
     parallelize(workers: Integer(ENV.fetch("RAILS_TEST_WORKERS", "1"), 10))
 
     # Add more helper methods to be used by all tests here...
+    include StudyContentReset
   end
+end
+
+class ActionDispatch::IntegrationTest
+  include StudyContentReset
 end

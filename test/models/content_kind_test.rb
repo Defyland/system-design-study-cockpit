@@ -11,6 +11,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_equal "operational_playbook", ContentKind.enum_mapping.fetch(:operational_playbook)
     assert_equal "engineering_practice", ContentKind.enum_mapping.fetch(:engineering_practice)
     assert_equal "interview_story_bank", ContentKind.enum_mapping.fetch(:interview_story_bank)
+    assert_equal "reference_document", ContentKind.enum_mapping.fetch(:reference_document)
     assert_equal "backend_lab", ContentKind.enum_mapping.fetch(:backend_lab)
     assert_equal "engineering_case_lab", ContentKind.enum_mapping.fetch(:engineering_case_lab)
     assert_equal "Foundations", ContentKind.library_labels.fetch("foundation")
@@ -22,6 +23,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_equal "Operational Playbooks", ContentKind.library_labels.fetch("operational_playbook")
     assert_equal "Engineering Practice", ContentKind.library_labels.fetch("engineering_practice")
     assert_equal "Interview Story Bank", ContentKind.library_labels.fetch("interview_story_bank")
+    assert_equal "Reference Docs", ContentKind.library_labels.fetch("reference_document")
     assert_equal "Backend Principle Labs", ContentKind.library_labels.fetch("backend_lab")
     assert_equal "Engineering Case Study Labs", ContentKind.library_labels.fetch("engineering_case_lab")
     assert_includes ContentKind.library_keys, "side_track_reference"
@@ -33,6 +35,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_includes ContentKind.library_keys, "operational_playbook"
     assert_includes ContentKind.library_keys, "engineering_practice"
     assert_includes ContentKind.library_keys, "interview_story_bank"
+    assert_includes ContentKind.library_keys, "reference_document"
     assert_includes ContentKind.library_keys, "backend_lab"
     assert_includes ContentKind.library_keys, "engineering_case_lab"
     assert_equal "chapters/chapter-*.md", ContentKind.filesystem_patterns.fetch("chapter")
@@ -41,6 +44,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_equal "areas/11-operational-playbooks/playbooks/*.md", ContentKind.filesystem_patterns.fetch("operational_playbook")
     assert_equal "areas/12-engineering-practice/cards/*.md", ContentKind.filesystem_patterns.fetch("engineering_practice")
     assert_equal "interview/story-bank/*.md", ContentKind.filesystem_patterns.fetch("interview_story_bank")
+    assert_equal ContentKind::REFERENCE_DOCUMENT_GLOBS, ContentKind.filesystem_patterns.fetch("reference_document")
     assert_equal "areas/13-backend-principle-labs/labs/*.md", ContentKind.filesystem_patterns.fetch("backend_lab")
     assert_equal "areas/14-engineering-case-study-labs/labs/*.md", ContentKind.filesystem_patterns.fetch("engineering_case_lab")
     assert_equal "real-world-cases", ContentKind.github_specs.fetch("real_world_case").fetch(:directory)
@@ -49,6 +53,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_equal "areas/11-operational-playbooks/playbooks", ContentKind.github_specs.fetch("operational_playbook").fetch(:directory)
     assert_equal "areas/12-engineering-practice/cards", ContentKind.github_specs.fetch("engineering_practice").fetch(:directory)
     assert_equal "interview/story-bank", ContentKind.github_specs.fetch("interview_story_bank").fetch(:directory)
+    assert_equal "", ContentKind.github_specs.fetch("reference_document").fetch(:directory)
     assert_equal "areas/13-backend-principle-labs/labs", ContentKind.github_specs.fetch("backend_lab").fetch(:directory)
     assert_equal "areas/14-engineering-case-study-labs/labs", ContentKind.github_specs.fetch("engineering_case_lab").fetch(:directory)
     assert_includes ContentKind.navigation_entries.map(&:key), "ai_system"
@@ -57,6 +62,7 @@ class ContentKindTest < ActiveSupport::TestCase
     assert_includes ContentKind.navigation_entries.map(&:key), "operational_playbook"
     assert_includes ContentKind.navigation_entries.map(&:key), "engineering_practice"
     assert_includes ContentKind.navigation_entries.map(&:key), "interview_story_bank"
+    assert_includes ContentKind.navigation_entries.map(&:key), "reference_document"
     assert_includes ContentKind.dashboard_keys, "backend_principle"
     assert_includes ContentKind.dashboard_keys, "engineering_case_study"
     assert_includes ContentKind.dashboard_keys, "operational_playbook"

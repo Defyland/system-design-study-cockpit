@@ -72,7 +72,7 @@ railway open
 No browser, verifique:
 
 ```txt
-/up
+/health/content
 /
 ```
 
@@ -89,8 +89,16 @@ STUDY_COCKPIT_PASSWORD=<from env>
 GITHUB_TOKEN=<from env>
 STUDY_SYNC_ON_BOOT=true
 STUDY_CONTENT_MODE=github
+STUDY_CONTENT_MIN_DOCUMENTS=333
 STUDY_CONTENT_GITHUB_REPO=Defyland/system-design-estudos
 STUDY_CONTENT_GITHUB_REF=main
+```
+
+Depois que o deploy subir, rode tambem:
+
+```sh
+railway run --service web bin/rails study:readiness
+curl https://<railway-domain>/health/content
 ```
 
 ## Deploy automatico via CI (gated)

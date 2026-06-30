@@ -1,4 +1,51 @@
 class ContentKind
+  REFERENCE_DOCUMENT_GLOBS = [
+    "{CASE_DRIVEN_STUDY,COURSE_OUTLINE,README,STUDY_ORDER,STUDY_PLAN}.md",
+    "areas/0[1-5]-*/README.md",
+    "areas/0[1-5]-*/notes.md",
+    "areas/0[1-5]-*/examples/**/*.md",
+    "areas/0[1-5]-*/snippets/**/*.md",
+    "areas/0[6-9]-*/README.md",
+    "areas/0[6-9]-*/notes.md",
+    "areas/1[0-4]-*/README.md",
+    "areas/1[0-4]-*/notes.md",
+    "areas/10-engineering-case-studies/learning-loop.md",
+    "areas/10-engineering-case-studies/sources.md",
+    "assets/ementa/README.md",
+    "bench/**/*.md",
+    "capstones/README.md",
+    "chapters/README.md",
+    "decision-contrasts/README.md",
+    "docs/{decisions,learning-journal}.md",
+    "labs/README.md",
+    "real-world-cases/ROADMAP.md",
+    "reviews/{README,day-00-pre-sleep-flashcards,day-01-anchor-recall,day-03-discrimination-pass,day-07-transfer-pass,day-14-interview-compression,day-30-retention-audit}.md",
+    "simulation-labs/README.md",
+    "simulation-labs/sim/README.md"
+  ].freeze
+
+  REFERENCE_DOCUMENT_REGEX = %r{\A(?:
+    CASE_DRIVEN_STUDY\.md|
+    COURSE_OUTLINE\.md|
+    README\.md|
+    STUDY_ORDER\.md|
+    STUDY_PLAN\.md|
+    assets/ementa/README\.md|
+    bench(?:/[^/]+)?/README\.md|
+    capstones/README\.md|
+    chapters/README\.md|
+    decision-contrasts/README\.md|
+    docs/(?:decisions|learning-journal)\.md|
+    labs/README\.md|
+    real-world-cases/ROADMAP\.md|
+    reviews/(?:README|day-00-pre-sleep-flashcards|day-01-anchor-recall|day-03-discrimination-pass|day-07-transfer-pass|day-14-interview-compression|day-30-retention-audit)\.md|
+    simulation-labs/README\.md|
+    simulation-labs/sim/README\.md|
+    areas/0[1-5]-[^/]+/(?:README\.md|notes\.md|examples/.+\.md|snippets/.+\.md)|
+    areas/(?:0[6-9]|1[0-4])-[^/]+/(?:README\.md|notes\.md)|
+    areas/10-engineering-case-studies/(?:learning-loop|sources)\.md
+  )\z}x
+
   Entry = Struct.new(
     :key,
     :label,
@@ -158,6 +205,17 @@ class ContentKind
       filesystem_pattern: "interview/story-bank/*.md",
       github_directory: "interview/story-bank",
       github_pattern: /\A.+\.md\z/
+    ),
+    Entry.new(
+      key: "reference_document",
+      label: "Reference Docs",
+      short_label: "Refs",
+      library: true,
+      navigation: true,
+      filesystem_pattern: REFERENCE_DOCUMENT_GLOBS,
+      github_directory: "",
+      github_pattern: REFERENCE_DOCUMENT_REGEX,
+      github_recursive: true
     ),
     Entry.new(
       key: "backend_lab",

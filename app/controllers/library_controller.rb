@@ -4,7 +4,12 @@ class LibraryController < ApplicationController
   def index
     @kind = params.fetch(:kind)
     @title = KIND_LABELS.fetch(@kind)
-    @documents = StudyDocument.where(kind: @kind).in_study_order
+    @query = params[:q].to_s.strip
+    @documents = if @query.present?
+      StudySearch.new(q: @query, kind: @kind).results
+    else
+      StudyDocument.where(kind: @kind).in_study_order
+    end
   end
 
   def show

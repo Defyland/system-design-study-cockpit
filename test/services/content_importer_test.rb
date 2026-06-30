@@ -227,6 +227,22 @@ class ContentImporterTest < ActiveSupport::TestCase
     assert_equal 1, document.position
   end
 
+  test "imports reference documents as library documents" do
+    source = FakeSource.new([
+      {
+        kind: "reference_document",
+        source_path: "areas/01-metodo-e-entrevistas/notes.md",
+        body_markdown: "# Notes\n\nResumo de entrevista."
+      }
+    ], nil)
+
+    document = Content::Importer.new(source: source).call.first
+
+    assert_predicate document, :reference_document?
+    assert_equal "areas-01-metodo-e-entrevistas-notes", document.slug
+    assert_equal "Notes", document.title
+  end
+
   test "imports backend principle labs as library documents" do
     source = FakeSource.new([
       {

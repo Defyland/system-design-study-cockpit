@@ -88,4 +88,22 @@ class ContentMarkdownParserTest < ActiveSupport::TestCase
     assert_equal 1, chapter.fetch(:position)
     assert_equal 0, reference.fetch(:position)
   end
+
+  test "uses the full source path as slug for reference documents to avoid README and notes collisions" do
+    readme = Content::MarkdownParser.new.parse(
+      kind: "reference_document",
+      source_path: "areas/01-metodo-e-entrevistas/README.md",
+      body_markdown: "# Metodo e Entrevistas\n\nTexto."
+    )
+    notes = Content::MarkdownParser.new.parse(
+      kind: "reference_document",
+      source_path: "areas/02-dados-e-armazenamento/notes.md",
+      body_markdown: "# Notes\n\nTexto."
+    )
+
+    assert_equal "areas-01-metodo-e-entrevistas-README", readme.fetch(:slug)
+    assert_equal "areas-02-dados-e-armazenamento-notes", notes.fetch(:slug)
+    assert_equal "Metodo e Entrevistas", readme.fetch(:title)
+    assert_equal "Notes", notes.fetch(:title)
+  end
 end

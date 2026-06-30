@@ -61,6 +61,40 @@
 </section>
 
 <section class="grid three">
+  <article class="panel hero-panel">
+    <h2>Backend Interview Foundations</h2>
+    <% if @backend_interview_foundations %>
+      <p class="muted">
+        <%= @backend_interview_foundations.metadata["chapter_count"] %> chapters
+        · <%= @backend_interview_foundations_record_count %> learning records
+      </p>
+      <% if @backend_interview_foundations.study_mission %>
+        <p><strong>Mission:</strong> <%= truncate(@backend_interview_foundations.study_mission.why_now, length: 96) %></p>
+      <% else %>
+        <p class="muted">Sem mission definida ainda.</p>
+      <% end %>
+      <div class="button-row">
+        <%= link_to "Abrir trilha", side_track_path(@backend_interview_foundations.slug), class: "button" %>
+        <%= link_to "Plano de 14 dias", study_plan_path, class: "button secondary" %>
+        <%= link_to "Buscar", search_path(quick_filter: "dsa"), class: "button ghost" %>
+      </div>
+    <% else %>
+      <p class="muted">Sincronize o conteudo para importar a trilha de entrevistas backend.</p>
+      <%= link_to "Ver trilhas", side_tracks_path, class: "button secondary" %>
+    <% end %>
+  </article>
+
+  <article class="panel">
+    <h2>Plano de 14 dias</h2>
+    <p class="muted"><%= @interview_plan.days.size %> dias encadeados no cockpit</p>
+    <div class="compact-list">
+      <% @interview_plan.days.first(3).each do |day| %>
+        <p><strong><%= day.label %>:</strong> <%= day.focus %></p>
+      <% end %>
+    </div>
+    <%= link_to "Abrir plano", study_plan_path, class: "button secondary" %>
+  </article>
+
   <article class="panel">
     <h2>Adaptativo</h2>
     <p class="muted">
@@ -131,7 +165,10 @@
       <%= @library_counts.fetch("interview_story_bank", 0) %> narrativas STAR
       · Rails, React e React Native
     </p>
-    <%= link_to "Preparar entrevista", library_path(kind: "interview_story_bank"), class: "button secondary" %>
+    <div class="button-row">
+      <%= link_to "Preparar entrevista", library_path(kind: "interview_story_bank"), class: "button secondary" %>
+      <%= link_to "Buscar snippets", search_path(quick_filter: "snippets"), class: "button ghost" %>
+    </div>
   </article>
 
   <article class="panel">
