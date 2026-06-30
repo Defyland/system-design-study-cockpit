@@ -29,7 +29,7 @@ class ContentReadinessReport
   end
 
   def min_documents
-    Integer(ENV.fetch("STUDY_CONTENT_MIN_DOCUMENTS", Rails.env.production? ? "300" : "1"), 10)
+    Integer(ENV.fetch("STUDY_CONTENT_MIN_DOCUMENTS", Rails.env.production? ? "333" : "1"), 10)
   end
 
   def backend_interview_foundations_present?
