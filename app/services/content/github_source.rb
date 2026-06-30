@@ -23,7 +23,7 @@ module Content
           entries = spec[:recursive] ? list_tree(directory) : list_directory(directory)
 
           entries
-            .select { |entry| importable_file?(entry, spec.fetch(:pattern)) }
+            .select { |entry| importable_file?(entry, spec.fetch(:pattern), recursive: spec[:recursive]) }
             .sort_by { |entry| entry.fetch("path") }
             .map do |entry|
               {
@@ -47,10 +47,11 @@ module Content
 
     private
 
-    def importable_file?(entry, pattern)
+    def importable_file?(entry, pattern, recursive: false)
       return false unless entry.fetch("type") == "file"
 
-      entry.fetch("path").match?(pattern) || entry.fetch("name").match?(pattern)
+      target = recursive ? entry.fetch("path") : entry.fetch("name")
+      target.match?(pattern)
     end
 
     def list_directory(path)
