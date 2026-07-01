@@ -27,20 +27,46 @@
       </section>
     <% end %>
 
-    <div class="story-bank-qa-list">
-      <% @story_bank_layout.questions.each do |question| %>
-        <details id="<%= question.anchor %>" class="story-bank-qa-card">
-          <summary>
-            <span class="story-bank-question-row">
-              <span class="status-pill">Q<%= question.index %></span>
-              <span class="story-bank-question-text"><%= question.prompt %></span>
-            </span>
-          </summary>
-          <div class="markdown-block story-bank-qa-answer">
-            <%= render_markdown(question.answer_markdown) %>
-          </div>
-        </details>
-      <% end %>
+    <% question_groups = @story_bank_layout.question_groups %>
+    <% active_group = question_groups.find { |group| group.questions.any? } || question_groups.first %>
+    <div class="story-bank-tabs">
+      <fieldset class="story-bank-tab-list">
+        <legend class="story-bank-tab-legend">Areas de perguntas</legend>
+        <% question_groups.each do |group| %>
+          <% tab_id = "story-bank-area-#{group.key}" %>
+          <%= radio_button_tag "story_bank_area", group.key, group.key == active_group.key, id: tab_id, class: "story-bank-tab-input" %>
+          <%= label_tag tab_id, class: "story-bank-tab" do %>
+            <span><%= group.label %></span>
+            <span class="story-bank-tab-count"><%= group.questions.size %></span>
+          <% end %>
+        <% end %>
+      </fieldset>
+
+      <div class="story-bank-tab-panels">
+        <% question_groups.each do |group| %>
+          <section class="story-bank-tab-panel" data-story-bank-area-panel="<%= group.key %>">
+            <% if group.questions.any? %>
+              <div class="story-bank-qa-list">
+                <% group.questions.each do |question| %>
+                  <details id="<%= question.anchor %>" class="story-bank-qa-card">
+                    <summary>
+                      <span class="story-bank-question-row">
+                        <span class="status-pill">Q<%= question.index %></span>
+                        <span class="story-bank-question-text"><%= question.prompt %></span>
+                      </span>
+                    </summary>
+                    <div class="markdown-block story-bank-qa-answer">
+                      <%= render_markdown(question.answer_markdown) %>
+                    </div>
+                  </details>
+                <% end %>
+              </div>
+            <% else %>
+              <p class="story-bank-empty">Nenhuma pergunta nesta area ainda.</p>
+            <% end %>
+          </section>
+        <% end %>
+      </div>
     </div>
 
     <section class="story-bank-context">
