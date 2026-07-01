@@ -5,7 +5,7 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 
   if [ "${STUDY_SYNC_ON_BOOT}" == "true" ]; then
-    ./bin/rails study:sync_content
+    ./bin/rails study:sync_content_non_blocking &
   fi
 fi
 

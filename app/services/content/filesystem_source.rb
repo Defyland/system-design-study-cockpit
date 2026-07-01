@@ -36,6 +36,8 @@ module Content
 
     private
 
+    attr_reader :root_path
+
     def skip_document?(kind, path)
       kind == "simulation_lab" && File.basename(path) == "README.md"
     end
@@ -51,6 +53,12 @@ module Content
           body_markdown: pathname.read
         }
       end
+    end
+
+    public
+
+    def source_location
+      root_path.to_s
     end
   end
 end

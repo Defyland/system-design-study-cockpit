@@ -45,6 +45,10 @@ module Content
       {}
     end
 
+    def source_location
+      "#{@repo}@#{@ref}"
+    end
+
     private
 
     def importable_file?(entry, pattern, recursive: false)

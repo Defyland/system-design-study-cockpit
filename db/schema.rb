@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,6 +43,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_110000) do
     t.datetime "updated_at", null: false
     t.index ["study_document_id", "position"], name: "index_checkpoints_on_study_document_id_and_position"
     t.index ["study_document_id"], name: "index_checkpoints_on_study_document_id"
+  end
+
+  create_table "content_sync_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "document_count"
+    t.text "error_message"
+    t.datetime "finished_at"
+    t.string "source_location"
+    t.string "source_mode", null: false
+    t.datetime "started_at", null: false
+    t.string "status", null: false
+    t.datetime "updated_at", null: false
+    t.index ["finished_at"], name: "index_content_sync_runs_on_finished_at"
+    t.index ["started_at"], name: "index_content_sync_runs_on_started_at"
+    t.index ["status"], name: "index_content_sync_runs_on_status"
   end
 
   create_table "learning_records", force: :cascade do |t|

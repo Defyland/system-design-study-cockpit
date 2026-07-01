@@ -24,9 +24,19 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       body_checksum: "backend-interview-foundations",
       metadata: { "chapter_count" => 6, "side_track_area_title" => "Metodo e Entrevistas" }
     )
+    StudyDocument.create!(
+      kind: "side_track_overview",
+      slug: "llm-foundations",
+      title: "LLM Foundations",
+      source_path: "areas/08-sistemas-ia/llm-foundations/README.md",
+      position: 0,
+      body_markdown: "# LLM Foundations",
+      body_checksum: "llm-foundations"
+    )
 
-    get root_path
+    queries = count_queries { get root_path }
 
+    assert_operator queries, :<=, 18
     assert_response :success
     assert_includes response.body, "Backend Interview Foundations"
     assert_includes response.body, "Plano de 14 dias"

@@ -129,8 +129,10 @@ class InterviewStudyPlan
   ].freeze
 
   def call
+    documents_by_ref = indexed_documents
+
     days = DOCUMENTS.each_with_index.map do |entry, index|
-      documents = entry.fetch(:refs).filter_map { |ref| find_document(ref) }
+      documents = entry.fetch(:refs).filter_map { |ref| documents_by_ref[lookup_key(ref)] }
 
       Day.new(
         index: index + 1,
@@ -138,7 +140,7 @@ class InterviewStudyPlan
         focus: entry.fetch(:focus),
         objective: entry.fetch(:objective),
         documents: documents,
-        checkpoints: documents.flat_map { |document| document.checkpoints.limit(2).pluck(:prompt) }.compact.uniq.first(5)
+        checkpoints: checkpoint_prompts_for(documents)
       )
     end
 
@@ -147,10 +149,35 @@ class InterviewStudyPlan
 
   private
 
-  def find_document(ref)
-    scope = StudyDocument.where(kind: ref.fetch(:kind))
-    return scope.find_by(slug: ref.fetch(:slug)) if ref[:slug]
+  def indexed_documents
+    @indexed_documents ||= load_documents.each_with_object({}) do |document, index|
+      index[[ document.kind, :slug, document.slug ]] = document
+      index[[ document.kind, :source_path, document.source_path ]] = document
+    end
+  end
 
-    scope.find_by(source_path: ref.fetch(:source_path))
+  def load_documents
+    refs = DOCUMENTS.flat_map { |entry| entry.fetch(:refs) }.uniq
+    kinds = refs.map { |ref| ref.fetch(:kind) }.uniq
+    slugs = refs.filter_map { |ref| ref[:slug] }
+    source_paths = refs.filter_map { |ref| ref[:source_path] }
+    scopes = []
+    base_scope = StudyDocument.where(kind: kinds)
+
+    scopes << base_scope.where(slug: slugs) if slugs.any?
+    scopes << base_scope.where(source_path: source_paths) if source_paths.any?
+
+    return [] if scopes.empty?
+
+    scopes.reduce { |combined_scope, scope| combined_scope.or(scope) }.includes(:checkpoints).to_a
+  end
+
+  def lookup_key(ref)
+    attribute = ref[:slug] ? :slug : :source_path
+    [ ref.fetch(:kind), attribute, ref.fetch(attribute) ]
+  end
+
+  def checkpoint_prompts_for(documents)
+    documents.flat_map { |document| document.checkpoints.first(2).map(&:prompt) }.compact.uniq.first(5)
   end
 end
