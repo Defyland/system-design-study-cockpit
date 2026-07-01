@@ -286,6 +286,107 @@ a {
   gap: 8px;
 }
 
+.story-bank-tabs {
+  display: grid;
+  gap: 10px;
+}
+
+.story-bank-tab-list {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+}
+
+.story-bank-tab-legend {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.story-bank-tab-input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.story-bank-tab {
+  align-items: center;
+  background: #f7f4ed;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: space-between;
+  line-height: 1.2;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.story-bank-tab-count {
+  align-items: center;
+  background: #dff1ed;
+  border-radius: 999px;
+  color: var(--accent-strong);
+  display: inline-flex;
+  font-size: 0.78rem;
+  justify-content: center;
+  min-width: 24px;
+  padding: 2px 7px;
+}
+
+.story-bank-tab-input:focus-visible + .story-bank-tab {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.story-bank-tab-panel {
+  display: none;
+}
+
+.story-bank-tab-panel:first-child {
+  display: grid;
+}
+
+.story-bank-tabs:has(.story-bank-tab-input:checked) .story-bank-tab-panel {
+  display: none;
+}
+
+.story-bank-tabs:has(#story-bank-area-resume:checked) [data-story-bank-area-panel="resume"],
+.story-bank-tabs:has(#story-bank-area-ruby:checked) [data-story-bank-area-panel="ruby"],
+.story-bank-tabs:has(#story-bank-area-rails:checked) [data-story-bank-area-panel="rails"],
+.story-bank-tabs:has(#story-bank-area-performance:checked) [data-story-bank-area-panel="performance"] {
+  display: grid;
+}
+
+.story-bank-tabs:has(#story-bank-area-resume:checked) .story-bank-tab[for="story-bank-area-resume"],
+.story-bank-tabs:has(#story-bank-area-ruby:checked) .story-bank-tab[for="story-bank-area-ruby"],
+.story-bank-tabs:has(#story-bank-area-rails:checked) .story-bank-tab[for="story-bank-area-rails"],
+.story-bank-tabs:has(#story-bank-area-performance:checked) .story-bank-tab[for="story-bank-area-performance"] {
+  background: #fffdf7;
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.story-bank-empty {
+  background: #f7f4ed;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  margin: 0;
+  padding: 12px;
+}
+
 .story-bank-qa-card {
   overflow: hidden;
 }

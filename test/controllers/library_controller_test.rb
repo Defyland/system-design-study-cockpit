@@ -43,6 +43,11 @@ class LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, response.body.scan("Narrativa Final - Backend Ruby / Rails").size
     assert_includes response.body, "story-bank-reader"
     assert_includes response.body, "Perguntas laterais"
+    assert_includes response.body, "story-bank-tabs"
+    assert_includes response.body, "Meu curriculo"
+    assert_includes response.body, "Ruby on Rails"
+    assert_includes response.body, "Performance"
+    assert_includes response.body, "story-bank-area-performance"
     assert_includes response.body, "<details id=\"story-bank-question-1\""
     assert_no_match(/<details[^>]+open/, response.body)
     assert_includes response.body, "Como voce escolhe entre lock otimista e pessimista?"
