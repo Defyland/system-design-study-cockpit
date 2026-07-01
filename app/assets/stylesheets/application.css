@@ -177,6 +177,15 @@ a {
   gap: 14px;
 }
 
+.story-bank-reader {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+}
+
+.story-bank-content {
+  gap: 10px;
+}
+
 .context-divider {
   border-top: 1px solid var(--line);
   margin: 18px 0;
@@ -219,6 +228,109 @@ a {
   color: #eef7f4;
   overflow-x: auto;
   padding: 14px;
+}
+
+.story-bank-narrative {
+  padding: 10px 18px;
+}
+
+.story-bank-sidebar {
+  align-self: start;
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  position: sticky;
+  top: 16px;
+}
+
+.story-bank-summary,
+.story-bank-qa-card {
+  background: #f7f4ed;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.story-bank-summary h2,
+.story-bank-context h3 {
+  margin: 0 0 8px;
+}
+
+.story-bank-summary {
+  padding: 12px 14px;
+}
+
+.story-bank-summary p,
+.story-bank-context p {
+  margin: 0 0 8px;
+}
+
+.story-bank-summary p:last-child,
+.story-bank-context p:last-child {
+  margin-bottom: 0;
+}
+
+.story-bank-note {
+  background: #fff7d7;
+  border-color: #e0c36a;
+  padding: 8px 14px;
+}
+
+.story-bank-note blockquote,
+.story-bank-note p:last-child {
+  margin-bottom: 0;
+}
+
+.story-bank-qa-list {
+  display: grid;
+  gap: 8px;
+}
+
+.story-bank-qa-card {
+  overflow: hidden;
+}
+
+.story-bank-qa-card summary {
+  cursor: pointer;
+  padding: 9px 12px;
+}
+
+.story-bank-qa-card[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.story-bank-question-row {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-left: 4px;
+}
+
+.story-bank-question-text {
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.story-bank-qa-answer {
+  background: transparent;
+  border: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  padding: 10px 12px 12px;
+}
+
+.story-bank-qa-answer > :first-child {
+  margin-top: 0;
+}
+
+.story-bank-qa-answer > :last-child {
+  margin-bottom: 0;
+}
+
+.story-bank-context {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
 }
 
 .checkpoint {
@@ -521,5 +633,11 @@ select {
   .diagram,
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .story-bank-sidebar {
+    max-height: none;
+    overflow: visible;
+    position: static;
   }
 }

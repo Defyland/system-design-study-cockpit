@@ -1,0 +1,65 @@
+<section class="reader story-bank-reader">
+  <article class="reader-content story-bank-content">
+    <div class="panel hero-panel">
+      <p class="status-pill"><%= @document.kind.humanize %></p>
+      <h1><%= @document.title %></h1>
+      <p class="muted"><%= @document.source_path %></p>
+      <div class="button-row">
+        <%= link_to "Voltar", library_path(kind: @kind), class: "button secondary" %>
+      </div>
+    </div>
+
+    <section class="markdown-block story-bank-narrative">
+      <%= render_markdown(@story_bank_layout.narrative_markdown) %>
+    </section>
+  </article>
+
+  <aside class="panel story-bank-sidebar">
+    <section class="story-bank-summary">
+      <h2>Perguntas laterais</h2>
+      <p class="muted">Use a narrativa na esquerda como fio principal. A coluna da direita fica como reserva para follow-ups e cavadas tecnicas.</p>
+      <p><strong>Q&A disponivel:</strong> <%= @story_bank_layout.questions.count %> respostas prontas para abrir rapido.</p>
+    </section>
+
+    <% if @story_bank_layout.qa_intro_markdown.present? %>
+      <section class="markdown-block story-bank-note">
+        <%= render_markdown(@story_bank_layout.qa_intro_markdown) %>
+      </section>
+    <% end %>
+
+    <div class="story-bank-qa-list">
+      <% @story_bank_layout.questions.each do |question| %>
+        <details id="<%= question.anchor %>" class="story-bank-qa-card">
+          <summary>
+            <span class="story-bank-question-row">
+              <span class="status-pill">Q<%= question.index %></span>
+              <span class="story-bank-question-text"><%= question.prompt %></span>
+            </span>
+          </summary>
+          <div class="markdown-block story-bank-qa-answer">
+            <%= render_markdown(question.answer_markdown) %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+
+    <section class="story-bank-context">
+      <h3>Uso rapido</h3>
+      <p><strong>Fonte:</strong> <%= @document.source_path %></p>
+      <p><strong>Checkpoints:</strong> <%= @document.checkpoints.size %></p>
+
+      <% if @side_track %>
+        <div class="context-divider"></div>
+        <p><strong>Trilha:</strong> <%= link_to @side_track.title, side_track_path(@side_track.slug) %></p>
+      <% end %>
+
+      <% if @linked_review_card %>
+        <p><strong>Review:</strong> <%= link_to @linked_review_card.title, library_document_path(kind: @linked_review_card.kind, slug: @linked_review_card.slug) %></p>
+      <% end %>
+
+      <% if @linked_chapter %>
+        <p><strong>Chapter:</strong> <%= link_to @linked_chapter.title, library_document_path(kind: @linked_chapter.kind, slug: @linked_chapter.slug) %></p>
+      <% end %>
+    </section>
+  </aside>
+</section>
