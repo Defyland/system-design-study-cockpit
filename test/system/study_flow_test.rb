@@ -74,6 +74,44 @@ class StudyFlowTest < ApplicationSystemTestCase
     assert_equal 1, Reminder.where(source_slug: "load-balancer").count
   end
 
+  test "student filters interview story bank side questions" do
+    story_bank = StudyDocument.create!(
+      kind: "interview_story_bank",
+      slug: "backend-voice-call",
+      title: "Backend Voice Call",
+      source_path: "interview/story-bank/backend-voice-call.md",
+      position: 1,
+      body_markdown: <<~MARKDOWN,
+        # Backend Voice Call
+
+        ## Abertura
+
+        Narrativa principal.
+
+        ## Q&A de Reserva - Follow-ups Tecnicos
+
+        ### 1. Locking otimista vs pessimista
+
+        **Q: Como voce escolhe entre lock otimista e pessimista?**
+
+        ### 5. Cache em API
+
+        **Q: Como voce usa cache em API de alto volume?**
+      MARKDOWN
+      body_checksum: "story-bank-filter"
+    )
+
+    visit library_document_path(kind: story_bank.kind, slug: story_bank.slug)
+
+    assert_text "Como voce escolhe entre lock otimista"
+    assert_text "Como voce usa cache"
+
+    fill_in "Buscar pergunta", with: "cache"
+
+    assert_no_text "Como voce escolhe entre lock otimista"
+    assert_text "Como voce usa cache"
+  end
+
   test "student sets a side track mission and stores a learning record" do
     overview = StudyDocument.create!(
       kind: "side_track_overview",

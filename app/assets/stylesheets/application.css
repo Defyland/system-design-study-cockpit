@@ -291,6 +291,33 @@ a {
   gap: 10px;
 }
 
+.story-bank-filter {
+  display: grid;
+  gap: 5px;
+}
+
+.story-bank-filter span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.story-bank-filter input {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+.story-bank-filter input:focus {
+  border-color: var(--accent);
+  outline: 2px solid #c9dedb;
+}
+
 .story-bank-tab-list {
   border: 0;
   display: grid;

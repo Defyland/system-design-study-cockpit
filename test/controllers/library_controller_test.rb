@@ -44,6 +44,8 @@ class LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "story-bank-reader"
     assert_includes response.body, "Perguntas laterais"
     assert_includes response.body, "story-bank-tabs"
+    assert_includes response.body, "data-controller=\"story-bank-filter\""
+    assert_includes response.body, "Buscar pergunta"
     assert_includes response.body, "Meu curriculo"
     assert_includes response.body, "Ruby on Rails"
     assert_includes response.body, "Performance"

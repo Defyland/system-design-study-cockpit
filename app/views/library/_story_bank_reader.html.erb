@@ -29,7 +29,12 @@
 
     <% question_groups = @story_bank_layout.question_groups %>
     <% active_group = question_groups.find { |group| group.questions.any? } || question_groups.first %>
-    <div class="story-bank-tabs">
+    <div class="story-bank-tabs" data-controller="story-bank-filter">
+      <label class="story-bank-filter">
+        <span>Buscar pergunta</span>
+        <input type="search" placeholder="Kafka, N+1, cache, Postgres..." data-story-bank-filter-target="query" data-action="input->story-bank-filter#filter">
+      </label>
+
       <fieldset class="story-bank-tab-list">
         <legend class="story-bank-tab-legend">Areas de perguntas</legend>
         <% question_groups.each do |group| %>
@@ -44,11 +49,11 @@
 
       <div class="story-bank-tab-panels">
         <% question_groups.each do |group| %>
-          <section class="story-bank-tab-panel" data-story-bank-area-panel="<%= group.key %>">
+          <section class="story-bank-tab-panel" data-story-bank-area-panel="<%= group.key %>" data-story-bank-filter-target="panel">
             <% if group.questions.any? %>
               <div class="story-bank-qa-list">
                 <% group.questions.each do |question| %>
-                  <details id="<%= question.anchor %>" class="story-bank-qa-card">
+                  <details id="<%= question.anchor %>" class="story-bank-qa-card" data-story-bank-filter-target="item">
                     <summary>
                       <span class="story-bank-question-row">
                         <span class="status-pill">Q<%= question.index %></span>
@@ -61,6 +66,7 @@
                   </details>
                 <% end %>
               </div>
+              <p class="story-bank-empty" hidden data-story-bank-filter-target="empty">Nenhuma pergunta encontrada nesta area.</p>
             <% else %>
               <p class="story-bank-empty">Nenhuma pergunta nesta area ainda.</p>
             <% end %>

@@ -39,6 +39,14 @@ class InterviewStoryBankLayoutTest < ActiveSupport::TestCase
         ### 79. SQL Injection
 
         Como evitar SQL Injection em Rails?
+
+        ### 123. Kafka em producao
+
+        O que voce precisa saber para usar Kafka em producao?
+
+        ### 130. Resumo para vaga Rails senior
+
+        Como voce resumiria sua aderencia a uma vaga Rails senior de alta escala?
       MARKDOWN
     )
 
@@ -48,15 +56,17 @@ class InterviewStoryBankLayoutTest < ActiveSupport::TestCase
     refute_includes layout.narrative_markdown, "# Narrativa Final - Backend Ruby / Rails"
     assert_includes layout.narrative_markdown, "## Abertura"
     assert_includes layout.qa_intro_markdown, "Use so quando cavar."
-    assert_equal 5, layout.questions.size
+    assert_equal 7, layout.questions.size
     assert_equal "Qual foi sua experiencia com Kafka?", layout.questions.first.prompt
     assert_equal "story-bank-question-1", layout.questions.first.anchor
     assert_equal "resume", layout.questions.first.area_key
     refute_includes layout.questions.first.answer_markdown, "**Q:"
     assert_includes layout.questions.first.answer_markdown, "Resposta sobre curriculo."
-    assert_equal "rails", layout.questions.last.area_key
+    assert_equal "rails", layout.questions.find { |question| question.prompt.include?("SQL Injection") }.area_key
+    assert_equal "performance", layout.questions.find { |question| question.prompt.include?("Kafka em producao") }.area_key
+    assert_equal "resume", layout.questions.find { |question| question.prompt.include?("vaga Rails senior") }.area_key
     assert_equal [ "resume", "ruby", "rails", "performance" ], layout.question_groups.map(&:key)
     assert_equal [ "Meu curriculo", "Ruby", "Ruby on Rails", "Performance" ], layout.question_groups.map(&:label)
-    assert_equal [ 1, 1, 2, 1 ], layout.question_groups.map { |group| group.questions.size }
+    assert_equal [ 2, 1, 2, 2 ], layout.question_groups.map { |group| group.questions.size }
   end
 end
