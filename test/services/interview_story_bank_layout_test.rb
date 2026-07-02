@@ -18,23 +18,23 @@ class InterviewStoryBankLayoutTest < ActiveSupport::TestCase
 
         > Use so quando cavar.
 
-        ### 1. Locking otimista vs pessimista
+        ### 14. Experiencia com Kafka
 
-        **Q: Como voce escolhe entre lock otimista e pessimista numa operacao financeira?**
+        **Q: Qual foi sua experiencia com Kafka?**
 
-        Resposta da primeira pergunta.
+        Resposta sobre curriculo.
 
-        ### 2. Active Record callbacks
-
-        Resposta da segunda pergunta.
-
-        ### 3. Minha trajetoria
-
-        Como voce conecta sua experiencia de produto com backend?
-
-        ### 4. Ruby object model
+        ### 32. Blocks, Proc e lambda
 
         Como voce explica blocks, procs e lambdas em Ruby?
+
+        ### 12. Fat model vs service object
+
+        Rails nao recomenda fat model?
+
+        ### 1. Locking otimista vs pessimista
+
+        Como voce escolhe entre lock otimista e pessimista numa operacao financeira?
       MARKDOWN
     )
 
@@ -45,11 +45,11 @@ class InterviewStoryBankLayoutTest < ActiveSupport::TestCase
     assert_includes layout.narrative_markdown, "## Abertura"
     assert_includes layout.qa_intro_markdown, "Use so quando cavar."
     assert_equal 4, layout.questions.size
-    assert_equal "Como voce escolhe entre lock otimista e pessimista numa operacao financeira?", layout.questions.first.prompt
+    assert_equal "Qual foi sua experiencia com Kafka?", layout.questions.first.prompt
     assert_equal "story-bank-question-1", layout.questions.first.anchor
-    assert_equal "performance", layout.questions.first.area_key
+    assert_equal "resume", layout.questions.first.area_key
     refute_includes layout.questions.first.answer_markdown, "**Q:"
-    assert_includes layout.questions.first.answer_markdown, "Resposta da primeira pergunta."
+    assert_includes layout.questions.first.answer_markdown, "Resposta sobre curriculo."
     assert_equal [ "resume", "ruby", "rails", "performance" ], layout.question_groups.map(&:key)
     assert_equal [ "Meu curriculo", "Ruby", "Ruby on Rails", "Performance" ], layout.question_groups.map(&:label)
     assert_equal [ 1, 1, 1, 1 ], layout.question_groups.map { |group| group.questions.size }

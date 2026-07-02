@@ -8,6 +8,12 @@ class InterviewStoryBankLayout
     [ "performance", "Performance" ]
   ].freeze
   DEFAULT_AREA_KEY = "rails"
+  AREA_BY_QUESTION_NUMBER = {
+    "resume" => [ 14, 16, 18, 19, 24, 25, 26, 27, 28 ],
+    "ruby" => [ 3, 32, 33, 34, 35 ],
+    "rails" => [ 9, 10, 11, 12, 13, 17, 20, 23, 29, 31 ],
+    "performance" => [ 1, 2, 4, 5, 6, 7, 8, 15, 21, 22, 30 ]
+  }.freeze
   AREA_MATCHERS = [
     [ "resume", /\b(curr[ií]culo|trajet[oó]ria|experi[eê]ncia|carreira|projeto|produto|time|lideran[cç]a|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025|2026)\b/i ],
     [ "performance", /\b(performance|throughput|lat[eê]ncia|cache|deadlock|lock|isolamento|[ií]ndice|index|sql|query|n\+1|puma|thread|fila|job|deploy|consist[eê]ncia|transa[cç][aã]o|concorr[eê]ncia|escala|alto volume|milh[oõ]es|timeout|mem[oó]ria)\b/i ],
@@ -38,13 +44,14 @@ class InterviewStoryBankLayout
     @questions ||= split_sections.fetch(:qa_source).scan(QUESTION_HEADING).each_with_index.map do |(prompt, answer_markdown), index|
       answer = normalized_markdown(answer_markdown)
       prompt_text = question_prompt(prompt, answer)
+      question_number = question_number_for(prompt)
 
       Question.new(
         index: index + 1,
         anchor: "story-bank-question-#{index + 1}",
         prompt: prompt_text,
         answer_markdown: answer_without_prompt(answer),
-        area_key: question_area_for(prompt_text, answer)
+        area_key: question_area_for(question_number, prompt_text, answer)
       )
     end
   end
@@ -87,7 +94,15 @@ class InterviewStoryBankLayout
     answer_markdown.sub(/\A\*\*Q:\s*.+?\*\*\s*/m, "").strip
   end
 
-  def question_area_for(prompt, answer_markdown)
+  def question_number_for(heading)
+    heading.to_s[/\A\s*(\d+)/, 1]&.to_i
+  end
+
+  def question_area_for(question_number, prompt, answer_markdown)
+    AREA_BY_QUESTION_NUMBER.each do |key, question_numbers|
+      return key if question_numbers.include?(question_number)
+    end
+
     text = "#{prompt} #{answer_markdown}"
     AREA_MATCHERS.each do |key, matcher|
       return key if text.match?(matcher)
