@@ -161,15 +161,29 @@ adapter handoff, and mechanics seat; see the current local gate evidence.
 
 ## Deployment gate
 
-- [ ] Record the tested commit SHA and Railway deployment ID without printing
+- [x] Record the tested commit SHA and Railway deployment ID without printing
   credentials or private database values.
-- [ ] Verify production `/up`, `/health/content`, `/english-arcade`, target
+- [x] Verify production `/up`, `/health/content`, `/english-arcade`, target
   selection, one wrong-answer Black-Box path, one reattempt, and a reload of
   the saved target.
-- [ ] Confirm the imported document count and latest successful sync in the
+- [x] Confirm the imported document count and latest successful sync in the
   health payload.
-- [ ] Confirm rollback can restore the previous release without deleting
+- [x] Confirm rollback can restore the previous release without deleting
   attempts or schedules.
+
+### Production evidence (2026-08-23)
+
+The tested release commit is `2a7ea22` (`Add English C2 Arcade interview
+path`). Railway deployment `088a4cf2-3e97-43ef-8748-4849f4c84d5e` reached
+`SUCCESS` from a clean detached worktree. Authenticated production smoke
+returned HTTP 200 for `/up`, `/health/content`, `/english-arcade`, and the JSON
+export. The health response was `status=ok` with
+`english_arcade_pack_readiness.ready=true`. The JSON projection contained 30
+plan days and no `correct_choice` or `answer_text` before reveal. A bounded
+authenticated React session verified target persistence after reload, a
+deliberately wrong answer, the required Feynman reveal, a five-field Black Box
+post-mortem, and a box-1 scheduled reattempt. No credentials or private
+database values are included here.
 
 ## Local gate evidence (2026-08-23)
 
@@ -192,10 +206,12 @@ the live target selector/session path is exercised against Railway.
 
 ## Known limitations and current fallback
 
-Real speech scoring is not part of this gate. The product cannot certify CEFR
-C2, and a 30-day path is a calibration and practice promise only. Production
-checks require the Rails integration and deployment credentials; they remain
-UNVERIFIED until evidence is captured.
+Real speech scoring is not part of this gate: browser speech capture is an
+optional transcript, not pronunciation or listening assessment. The product
+cannot certify CEFR C2, and a 30-day path is a calibration and practice promise
+only. Production uses the app's existing shared Basic Auth boundary and an
+anonymous/username-derived learner key; per-account identity and privacy
+isolation are future work if the cockpit becomes multi-user.
 
 Composer seat creation failed before execution because the desktop model
 validator rejected the requested Composer reasoning combination. The assigned
