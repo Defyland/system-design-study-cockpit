@@ -215,8 +215,8 @@ RuboCop                                               157 files, no offenses
 HTTP smoke (local Puma)                               /up 200; /health/content 200; /english-arcade 200; JSON export safe
 ```
 
-The deployment checkbox remains open until the tested commit is published and
-the live target selector/session path is exercised against Railway.
+The publication and live target/session checks are complete; only the
+operator-led rollback exercise remains intentionally unverified.
 
 ## Known limitations and current fallback
 
