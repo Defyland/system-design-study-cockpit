@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_23_010300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -58,6 +58,89 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_010000) do
     t.index ["finished_at"], name: "index_content_sync_runs_on_finished_at"
     t.index ["started_at"], name: "index_content_sync_runs_on_started_at"
     t.index ["status"], name: "index_content_sync_runs_on_status"
+  end
+
+  create_table "english_arcade_attempts", force: :cascade do |t|
+    t.string "answer_choice"
+    t.datetime "answered_at", null: false
+    t.string "attempt_kind", default: "initial", null: false
+    t.text "black_box_actual"
+    t.text "black_box_expected"
+    t.text "black_box_missing_signal"
+    t.text "black_box_preventive_rule"
+    t.text "black_box_repair"
+    t.text "black_box_retest_dates"
+    t.text "black_box_root_cause"
+    t.text "black_box_symptom"
+    t.text "black_box_targeted_exercise"
+    t.integer "box_after", default: 1, null: false
+    t.integer "box_before", default: 1, null: false
+    t.string "card_key", null: false
+    t.boolean "correct", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "diagnostic_evidence", default: {}, null: false
+    t.bigint "english_arcade_session_id", null: false
+    t.boolean "feedback_revealed", default: false, null: false
+    t.text "feynman_text"
+    t.string "learner_key", default: "anonymous", null: false
+    t.date "next_due_on"
+    t.bigint "parent_attempt_id"
+    t.text "postmortem_text"
+    t.jsonb "prompt_snapshot", default: {}, null: false
+    t.integer "quality_score", default: 0, null: false
+    t.integer "response_ms"
+    t.text "spoken_text"
+    t.string "state", default: "committed", null: false
+    t.string "target", null: false
+    t.text "typed_answer"
+    t.datetime "updated_at", null: false
+    t.string "variant_key", default: "initial", null: false
+    t.index ["attempt_kind"], name: "index_english_arcade_attempts_on_attempt_kind"
+    t.index ["correct"], name: "index_english_arcade_attempts_on_correct"
+    t.index ["english_arcade_session_id", "created_at"], name: "idx_english_arcade_attempts_session_created"
+    t.index ["english_arcade_session_id"], name: "index_english_arcade_attempts_on_english_arcade_session_id"
+    t.index ["learner_key", "target", "card_key", "created_at"], name: "idx_english_arcade_attempts_card_history"
+    t.index ["learner_key", "target", "card_key", "quality_score", "answered_at"], name: "idx_english_arcade_attempts_mastery"
+    t.index ["parent_attempt_id"], name: "index_english_arcade_attempts_on_parent_attempt_id"
+    t.index ["state"], name: "index_english_arcade_attempts_on_state"
+  end
+
+  create_table "english_arcade_cards", force: :cascade do |t|
+    t.integer "attempts_count", default: 0, null: false
+    t.integer "box", default: 1, null: false
+    t.string "card_key", null: false
+    t.integer "correct_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.date "due_on", null: false
+    t.integer "interval_days", default: 1, null: false
+    t.datetime "last_answered_at"
+    t.boolean "last_correct"
+    t.string "learner_key", default: "anonymous", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.string "target", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "due_on"], name: "idx_english_arcade_cards_due"
+    t.index ["learner_key", "target", "card_key"], name: "idx_english_arcade_cards_identity", unique: true
+    t.index ["learner_key", "target", "due_on"], name: "idx_english_arcade_cards_target_due"
+  end
+
+  create_table "english_arcade_sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "duration_seconds", default: 600, null: false
+    t.datetime "expires_at"
+    t.datetime "finished_at"
+    t.string "learner_key", default: "anonymous", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.string "mode", default: "daily", null: false
+    t.integer "question_count", default: 0, null: false
+    t.integer "score", default: 0, null: false
+    t.datetime "started_at", null: false
+    t.string "status", default: "active", null: false
+    t.string "target", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "created_at"], name: "idx_english_arcade_sessions_learner_created"
+    t.index ["learner_key", "status"], name: "idx_english_arcade_sessions_learner_status"
+    t.index ["target"], name: "index_english_arcade_sessions_on_target"
   end
 
   create_table "learning_records", force: :cascade do |t|
@@ -183,6 +266,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_010000) do
 
   add_foreign_key "checkpoint_attempts", "checkpoints"
   add_foreign_key "checkpoints", "study_documents"
+  add_foreign_key "english_arcade_attempts", "english_arcade_attempts", column: "parent_attempt_id"
+  add_foreign_key "english_arcade_attempts", "english_arcade_sessions"
   add_foreign_key "learning_records", "study_documents"
   add_foreign_key "learning_records", "study_documents", column: "related_document_id"
   add_foreign_key "misconception_events", "study_documents"

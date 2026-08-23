@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title><%= content_for(:title) || "System Design Study Cockpit" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -24,6 +24,7 @@
   </head>
 
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="topbar">
       <div>
         <%= link_to "Study Cockpit", root_path, class: "brand" %>
@@ -37,6 +38,7 @@
         <%= link_to "Plano", study_plan_path %>
         <%= link_to "Busca", search_path %>
         <%= link_to "Adaptativo", adaptive_session_path %>
+        <%= link_to "English Arcade", english_arcade_path %>
         <%= link_to "Misconceptions", misconceptions_path %>
         <%= link_to "Simuladores", simulations_path %>
         <%= link_to "Trilhas", side_tracks_path %>
@@ -46,7 +48,7 @@
       </nav>
     </header>
 
-    <main class="page">
+    <main class="page" id="main-content" tabindex="-1">
       <% flash.each do |type, message| %>
         <div class="flash <%= type %>"><%= message %></div>
       <% end %>

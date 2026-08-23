@@ -1,0 +1,1120 @@
+---
+contract_version: "1.1.0"
+target:
+  key: ruby
+  label: Ruby
+  blurb: >-
+    Talk about the object model, blocks and performance the way a senior Ruby
+    engineer does: concretely, with the mechanism named.
+  focus_areas:
+    - object model and method lookup
+    - blocks, procs and enumerables
+    - memory and performance
+    - concurrency and the GVL
+    - error handling and contracts
+  simulation:
+    minutes: 45
+    structure:
+      - label: Warm-up on idioms and readability
+        minutes: 8
+      - label: Object model deep dive
+        minutes: 12
+      - label: Performance and memory reasoning
+        minutes: 15
+      - label: Concurrency and failure handling
+        minutes: 10
+cards:
+  - id: ruby-card-mechanism-first
+    front: What makes a Ruby answer sound senior in English?
+    back: >-
+      Name the mechanism, not the vibe. "Method lookup walks the singleton class
+      first" beats "Ruby is flexible".
+    box: 1
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+      note: Surface area chapter used for Ruby interview vocabulary.
+  - id: ruby-card-gvl
+    front: How do you describe the GVL without overclaiming?
+    back: >-
+      Threads help with IO-bound work; the GVL prevents parallel execution of
+      Ruby bytecode, so CPU-bound work needs processes or Ractors.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: areas/09-backend-principles/cards/concurrency-parallelism.md
+      note: Concurrency card distinguishing concurrency from parallelism.
+  - id: ruby-card-enumerable
+    front: How should you justify an enumerable choice out loud?
+    back: >-
+      By the pass count and what is allocated: "each_with_object avoids building
+      an intermediate array on every iteration".
+    box: 1
+    source:
+      repo: original
+      path: english-arcade/ruby/enumerable-justification
+      note: Distilled from the enumerable items authored in this pack.
+items:
+  - id: ruby-01-blocks-vs-procs
+    version: "1.0.0"
+    target: ruby
+    topic: Blocks, procs and lambdas
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      What is the practical difference between a proc and a lambda?
+    context: >-
+      A screening call for a senior Ruby role. The interviewer is checking
+      whether you know the semantics well enough to say when the difference
+      actually bites in production code.
+    best_answer: >-
+      Two things matter in practice. A lambda checks its arity and a proc does
+      not, and return inside a lambda returns from the lambda while return
+      inside a proc returns from the enclosing method. That second one is what
+      causes surprising early exits in callback code.
+    distractors:
+      - text: >-
+          Lambdas are stricter and procs are more flexible, so generally you
+          would use a lambda when you want stricter behaviour and a proc when
+          you want something more permissive in your code.
+        trap: precision
+        why_wrong: >-
+          Restates "strict" without naming arity checking or return semantics,
+          so it demonstrates no actual knowledge.
+      - text: >-
+          The lambda is verifying the number of arguments and the proc is not
+          doing this, and also the return inside a proc is returning of the
+          method that is containing it.
+        trap: grammar
+        why_wrong: >-
+          Progressive forms misuse stative verbs and "returning of" is a
+          preposition error, both marking non-native production.
+      - text: >-
+          Honestly they are basically interchangeable in modern Ruby and I have
+          never had to think about the distinction in any real codebase I have
+          worked on over the years.
+        trap: content
+        why_wrong: >-
+          Factually wrong and dismissive; the return semantics difference causes
+          real bugs in callback-heavy code.
+    feedback:
+      register: >-
+        Confident and concrete. Senior answers name consequences, not
+        adjectives.
+      hedging: >-
+        No hedging required here; these semantics are well defined.
+      precision: >-
+        Say "arity" and "return semantics" explicitly rather than "stricter".
+      grammar: >-
+        Simple present for language rules: "a lambda checks", not "is
+        verifying".
+      pragmatics: >-
+        The word "in practice" earns credibility by anticipating the follow-up.
+    rephrase:
+      prompt: >-
+        Answer again, leading with the bug this difference causes in real code.
+      goal: Practise leading with consequence rather than definition.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Proc versus lambda arity and return semantics.
+      explain_to: A JavaScript developer new to Ruby closures.
+      constraint: Explain without using the word "lambda" more than once.
+      self_check: >-
+        Could your listener predict which one exits the method early?
+    black_box:
+      symptom: You described them with adjectives instead of semantics.
+      expected: Arity checking plus return-from-enclosing-method behaviour.
+      actual: >-
+        A "stricter versus flexible" gloss, or a claim they are interchangeable.
+      root_cause: >-
+        The distinction was memorised as a label rather than as a behaviour with
+        consequences.
+      repair: >-
+        Rehearse one sentence naming the bug: an early return from a callback.
+    recall:
+      active_recall_cue: >-
+        Which construct returns from the enclosing method, and why does that
+        matter?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+        note: Ruby interview surface area including closure semantics.
+      - repo: original
+        path: english-arcade/ruby/blocks-vs-procs
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-02-method-lookup
+    version: "1.0.0"
+    target: ruby
+    topic: Object model
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      When you call a method on an object, how does Ruby find it?
+    context: >-
+      A deep-dive round. The interviewer wants the lookup order stated
+      accurately, because it determines how modules, prepend and singleton
+      methods interact in a real codebase.
+    best_answer: >-
+      Ruby walks the ancestors chain in order. It starts with the singleton
+      class, then any prepended modules, then the class itself, then included
+      modules in reverse inclusion order, and then repeats that up the
+      superclass chain until it hits method_missing.
+    distractors:
+      - text: >-
+          It looks in the class first, and then if it does not find the method
+          there it goes up to the parent class, and it keeps going up until it
+          reaches Object at the top of the hierarchy.
+        trap: content
+        why_wrong: >-
+          Omits singleton class, prepend and module ordering, which is precisely
+          what a deep-dive question is testing.
+      - text: >-
+          Ruby is searching in the ancestors of the object, first in the
+          singleton, after in the modules that was prepended, and then it
+          continues for the superclass chain above.
+        trap: grammar
+        why_wrong: >-
+          "Was prepended" breaks agreement and "continues for" is the wrong
+          preposition, weakening otherwise correct content.
+      - text: >-
+          I would probably say it uses the ancestors chain, although I have to
+          admit I am not totally sure about where exactly prepended modules fit
+          into that ordering if I am honest.
+        trap: hedging
+        why_wrong: >-
+          Admitting the gap is fine, but leading with hedges buries the correct
+          part of the answer.
+    feedback:
+      register: >-
+        Precise and unhurried. Lookup order is a fact, so deliver it as one.
+      hedging: >-
+        If unsure about prepend, state what you know first and flag the gap
+        last.
+      precision: >-
+        Name every link in the chain; "goes up the hierarchy" is not an answer
+        at this level.
+      grammar: >-
+        Use "modules that were prepended" and "continues up the superclass
+        chain".
+      pragmatics: >-
+        Mentioning method_missing shows you know where the chain terminates.
+    rephrase:
+      prompt: >-
+        Give the same order but explain what changes when a module is prepended
+        instead of included.
+      goal: Test whether you can apply the chain rather than recite it.
+    language_focus: [precision, grammar, hedging]
+    feynman:
+      concept: Ancestors chain and method resolution order.
+      explain_to: A developer who only knows single inheritance.
+      constraint: Explain using a queue of people asked a question in turn.
+      self_check: >-
+        Can you say where prepend inserts itself relative to the class?
+    black_box:
+      symptom: You gave class-then-superclass and stopped.
+      expected: Singleton, prepended modules, class, included modules, upward.
+      actual: A simplified hierarchy walk, or hedging before content.
+      root_cause: >-
+        Everyday Ruby rarely exercises prepend, so the full order was never
+        rehearsed aloud.
+      repair: >-
+        Practise reciting the chain in one breath, then explain one consequence.
+    recall:
+      active_recall_cue: >-
+        What are the five stops in Ruby method lookup, in order?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+        note: Object model questions expected in senior Ruby screens.
+      - repo: original
+        path: english-arcade/ruby/method-lookup
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-03-enumerable-choice
+    version: "1.0.0"
+    target: ruby
+    topic: Enumerables
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      Why did you reach for each_with_object rather than reduce there?
+    context: >-
+      You are reviewing a snippet that builds a hash from a collection. The
+      interviewer is probing whether your idiom choices are deliberate or
+      habitual.
+    best_answer: >-
+      Because the accumulator is mutable and I do not want to depend on the
+      block returning it. With reduce you have to remember to return the hash on
+      every branch, and that is a classic source of nil bugs when someone adds a
+      condition later.
+    distractors:
+      - text: >-
+          Mostly because it reads better to me and it is the more idiomatic
+          choice in Ruby, so it is what I would normally reach for in that kind
+          of situation without thinking too hard.
+        trap: precision
+        why_wrong: >-
+          Appeals to taste and habit, which is exactly the answer the question
+          was designed to expose.
+      - text: >-
+          Because each_with_object is faster than reduce for building hashes, so
+          in a hot path it would make a measurable difference to the overall
+          performance of the method.
+        trap: content
+        why_wrong: >-
+          Invents a performance claim; the real reason is block-return safety,
+          not speed.
+      - text: >-
+          Because the accumulator is mutable and I do not want to depend of the
+          block that returns it, since with reduce you need to remember of
+          returning the hash in every branch.
+        trap: grammar
+        why_wrong: >-
+          "Depend of" and "remember of returning" are preposition and gerund
+          errors from Portuguese.
+    feedback:
+      register: >-
+        Matter-of-fact. Justify with maintenance risk rather than aesthetics.
+      hedging: >-
+        No hedge needed; this is a defensible design preference with a reason.
+      precision: >-
+        Name the failure mode: a branch that forgets to return the accumulator.
+      grammar: >-
+        "Depend on", "remember to return"; both take fixed prepositions.
+      pragmatics: >-
+        Anticipating the future edit ("when someone adds a condition") shows
+        team-level thinking.
+    rephrase:
+      prompt: >-
+        Answer again as a code review comment aimed at a mid-level engineer.
+      goal: Shift register from spoken defence to written guidance.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      "Depender de" vira "depend on". Preposicao fixa, nao traduza direto.
+    feynman:
+      concept: Accumulator safety in reduce versus each_with_object.
+      explain_to: A developer who learned reduce in JavaScript.
+      constraint: Explain using a shopping basket passed between people.
+      self_check: >-
+        Did you name the bug that appears after a later edit?
+    black_box:
+      symptom: You justified the choice with readability or invented speed.
+      expected: Block-return dependency and the nil bug it causes.
+      actual: >-
+        An appeal to idiom, or a false performance claim.
+      root_cause: >-
+        Idioms absorbed by imitation rather than by understanding the failure
+        they prevent.
+      repair: >-
+        For each idiom you use, be able to state the bug it prevents.
+    recall:
+      active_recall_cue: >-
+        What must every branch of a reduce block remember to do?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: interview/story-bank/03-ruby-rails-senior-question-bank.md
+        note: Senior Ruby question bank covering idiom justification.
+      - repo: original
+        path: english-arcade/ruby/enumerable-choice
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-04-memory-allocation
+    version: "1.0.0"
+    target: ruby
+    topic: Memory and performance
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      This endpoint allocates heavily under load. How would you approach it?
+    context: >-
+      A production performance discussion. The interviewer wants a method, not a
+      list of tricks, and is listening for whether you measure before you
+      change anything.
+    best_answer: >-
+      I would measure first, with allocation profiling on a representative
+      request, and look at what is being allocated rather than guessing. Usually
+      it is string interpolation in a loop or an intermediate array from a chain
+      of maps, and both have cheap fixes once you can see them.
+    distractors:
+      - text: >-
+          I would freeze all the string literals, avoid using map and select
+          together, and replace the loops with more efficient methods to reduce
+          the number of objects being created.
+        trap: pragmatics
+        why_wrong: >-
+          Jumps to fixes without measuring, which is the exact anti-pattern a
+          senior performance question screens for.
+      - text: >-
+          I would look into it and try a few things to see what helps, since
+          performance work is quite unpredictable and it often depends on what
+          the specific bottleneck turns out to be.
+        trap: precision
+        why_wrong: >-
+          Names no tool, no signal and no hypothesis, so it conveys no method at
+          all.
+      - text: >-
+          Frankly the real answer is that Ruby is slow and allocates too much,
+          so beyond a point you are fighting the runtime and the honest fix is a
+          different language for this endpoint.
+        trap: register
+        why_wrong: >-
+          Blaming the runtime reads as defeatist and skips the work the question
+          is actually asking for.
+    feedback:
+      register: >-
+        Methodical and calm. Performance answers should sound like an
+        investigation.
+      hedging: >-
+        Hedge the cause ("usually it is") but never the method.
+      precision: >-
+        Name the profiling approach and the two most common culprits.
+      grammar: >-
+        "Allocation profiling on a representative request" is the natural
+        collocation.
+      pragmatics: >-
+        Measure-then-change is the expected ordering; inverting it costs the
+        point.
+    rephrase:
+      prompt: >-
+        Give the same approach as if reporting to a tech lead who wants a
+        one-line plan.
+      goal: Compress method into a single actionable sentence.
+    language_focus: [pragmatics, precision, register]
+    feynman:
+      concept: Measure-first discipline for allocation problems.
+      explain_to: A developer who optimises by intuition.
+      constraint: Explain using a doctor ordering tests before prescribing.
+      self_check: >-
+        Did you name what you would measure before what you would change?
+    black_box:
+      symptom: You listed optimisations before naming any measurement.
+      expected: Profile a representative request, then fix what it shows.
+      actual: A grab bag of tricks, vagueness, or blaming the runtime.
+      root_cause: >-
+        Performance knowledge stored as remedies rather than as a diagnostic
+        loop.
+      repair: >-
+        Always open with the signal you would collect and where.
+    recall:
+      active_recall_cue: >-
+        What are the two most common allocation culprits in a Ruby request path?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/scaling-performance.md
+        note: Performance principles emphasising measurement before change.
+      - repo: original
+        path: english-arcade/ruby/memory-allocation
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-05-gvl-concurrency
+    version: "1.0.0"
+    target: ruby
+    topic: Concurrency
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      Will adding threads make this job faster?
+    context: >-
+      The job spends most of its time waiting on HTTP calls to a payment
+      provider. The interviewer is checking whether you can reason about the GVL
+      without either overclaiming or dismissing threads entirely.
+    best_answer: >-
+      For this job yes, because the time is spent waiting on IO and the global
+      lock is released during those waits, so other threads can proceed. If the
+      same job were CPU-bound I would need processes or Ractors instead, since
+      bytecode execution cannot overlap.
+    distractors:
+      - text: >-
+          No, because Ruby has a global interpreter lock, so threads never run
+          in parallel and adding more of them cannot make anything faster in any
+          situation you might encounter.
+        trap: content
+        why_wrong: >-
+          Overgeneralises the GVL. It is released around IO, which is exactly
+          the case in question.
+      - text: >-
+          It might help a bit, possibly, depending on various factors around how
+          the job is structured and what it spends its time doing, so it is
+          quite hard to say definitively.
+        trap: hedging
+        why_wrong: >-
+          The deciding factor is knowable and simple; hedging here hides that
+          you know it.
+      - text: >-
+          Yes because this job is passing the most part of the time waiting the
+          HTTP calls, and during this wait the lock is liberated for the other
+          threads can continue.
+        trap: grammar
+        why_wrong: >-
+          "Waiting the calls", "liberated" and "for the other threads can" are
+          direct calques that obscure correct reasoning.
+    feedback:
+      register: >-
+        Decisive with a stated condition. This is a yes-with-because question.
+      hedging: >-
+        Replace hedges with the condition: IO-bound yes, CPU-bound no.
+      precision: >-
+        Say the lock is released around IO, which is the load-bearing fact.
+      grammar: >-
+        "Waiting on HTTP calls", "the lock is released", "so that other threads
+        can".
+      pragmatics: >-
+        Volunteering the CPU-bound contrast pre-empts the obvious follow-up.
+    rephrase:
+      prompt: >-
+        Answer again for a job that hashes passwords instead of calling an API.
+      goal: Force the contrast case to be reasoned, not recited.
+    language_focus: [precision, grammar, hedging]
+    pt_help: >-
+      "Esperar algo" e "wait for something". "Liberado" tecnico e "released",
+      nao "liberated".
+    feynman:
+      concept: GVL release around IO versus CPU-bound execution.
+      explain_to: A developer from a language with real thread parallelism.
+      constraint: Explain using one shared kitchen and several waiters.
+      self_check: >-
+        Can you state the one property that decides the answer?
+    black_box:
+      symptom: You dismissed threads outright or hedged without a condition.
+      expected: IO-bound benefits, CPU-bound needs processes or Ractors.
+      actual: A blanket GVL claim, or vagueness about the deciding factor.
+      root_cause: >-
+        The GVL learned as a slogan rather than as a rule with a boundary.
+      repair: >-
+        Answer every concurrency question by first classifying the workload.
+    recall:
+      active_recall_cue: >-
+        When is the global lock released, and what does that permit?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/concurrency-parallelism.md
+        note: Concurrency versus parallelism distinctions for backend work.
+      - repo: original
+        path: english-arcade/ruby/gvl-concurrency
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-06-error-contracts
+    version: "1.0.0"
+    target: ruby
+    topic: Error handling
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      When would you raise instead of returning a result object?
+    context: >-
+      A design conversation about a service class. The interviewer wants a clear
+      boundary rule rather than a preference, and is listening for how you talk
+      about caller expectations.
+    best_answer: >-
+      I raise when the caller cannot reasonably continue and the condition is
+      genuinely exceptional, such as a broken invariant. I return a result
+      object when failure is an expected outcome the caller must branch on, like
+      a declined payment, because that belongs in the type rather than in
+      control flow.
+    distractors:
+      - text: >-
+          I generally prefer result objects because exceptions are expensive and
+          they make the control flow harder to follow, so I try to avoid raising
+          wherever it is reasonably possible.
+        trap: precision
+        why_wrong: >-
+          States a blanket preference and leans on a cost claim instead of the
+          caller-expectation boundary the question asks for.
+      - text: >-
+          It depends on the team conventions really, since different codebases
+          handle this differently and I would follow whatever pattern was
+          already established in the project.
+        trap: pragmatics
+        why_wrong: >-
+          Deferring to convention avoids the design judgement the question was
+          asked to elicit.
+      - text: >-
+          I raise when the caller cannot continue and the situation is really
+          exceptional, and I return a result when the failure is expected that
+          the caller need to treat, like a payment refused.
+        trap: grammar
+        why_wrong: >-
+          "The caller need" drops agreement and "expected that the caller need
+          to treat" garbles the relative clause.
+    feedback:
+      register: >-
+        Principled and concise. Boundary rules should sound settled.
+      hedging: >-
+        No hedging on your own rule; hedge only when applying it to an unknown
+        codebase.
+      precision: >-
+        "Expected outcome the caller must branch on" is the distinction that
+        matters.
+      grammar: >-
+        "The caller has to handle", "a declined payment"; watch third-person
+        agreement.
+      pragmatics: >-
+        Giving a domain example makes an abstract rule verifiable.
+    rephrase:
+      prompt: >-
+        State the same rule in one sentence, then give a counter-example where
+        you would break it.
+      goal: Test whether the rule is understood or memorised.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Exceptions for broken invariants, results for expected failures.
+      explain_to: A developer who wraps everything in begin/rescue.
+      constraint: Explain using a card payment being declined.
+      self_check: >-
+        Can you classify three failures using your own rule?
+    black_box:
+      symptom: You gave a preference or deferred to team convention.
+      expected: A boundary based on whether the caller must branch on failure.
+      actual: >-
+        A bare preference for results, or deferral to team convention.
+      root_cause: >-
+        Error handling internalised as style rather than as an interface
+        contract.
+      repair: >-
+        Rehearse the rule with one exceptional and one expected example.
+    recall:
+      active_recall_cue: >-
+        What property decides between raising and returning a result?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        note: Error handling and fault tolerance boundaries.
+      - repo: original
+        path: english-arcade/ruby/error-contracts
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-07-metaprogramming-restraint
+    version: "1.0.0"
+    target: ruby
+    topic: Metaprogramming
+    difficulty: 3
+    interview_stage: architecture_review
+    prompt: >-
+      Would you use define_method here, or is that overkill?
+    context: >-
+      A code review of a class that generates a dozen near-identical predicate
+      methods. The interviewer wants to know whether you can weigh cleverness
+      against the cost of debugging it later.
+    best_answer: >-
+      I would, but only because the generated names are derived from a constant
+      list that lives right next to it. My rule is that generated methods must
+      be greppable, so if a reader cannot find the name by searching, I write
+      them out explicitly instead.
+    distractors:
+      - text: >-
+          Yes, definitely. It removes the duplication and Ruby gives us these
+          tools for exactly this kind of situation, so not using them would mean
+          writing more code than necessary.
+        trap: content
+        why_wrong: >-
+          Optimises for line count and ignores the discoverability cost that
+          makes metaprogramming expensive to maintain.
+      - text: >-
+          No, I would avoid metaprogramming entirely. It always makes code
+          harder to understand and debug, and explicit methods are better in
+          every situation regardless of the context.
+        trap: precision
+        why_wrong: >-
+          An absolute rule with no boundary, which is as unconsidered as the
+          opposite absolute.
+      - text: >-
+          I would use it, but only if the names are coming from a constant list
+          that stays near of the code, because the methods generated need to be
+          possible to find with a search.
+        trap: grammar
+        why_wrong: >-
+          "Near of" and "possible to find" are calques; the idiomatic forms are
+          "next to" and "greppable" or "findable".
+    feedback:
+      register: >-
+        Balanced senior judgement: yes with a named constraint.
+      hedging: >-
+        Conditional approval is not hedging; it is the correct shape here.
+      precision: >-
+        "Greppable" is the concrete criterion that turns taste into a rule.
+      grammar: >-
+        "Next to it", "derived from", "written out explicitly".
+      pragmatics: >-
+        Framing it as a personal rule invites the interviewer to challenge the
+        rule, which is a good conversation to have.
+    rephrase:
+      prompt: >-
+        Give the same judgement as a review comment that a junior would not find
+        discouraging.
+      goal: Practise constructive register in code review.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Discoverability as the cost of generated methods.
+      explain_to: A developer who loves clever abstractions.
+      constraint: Explain using someone searching a building directory.
+      self_check: >-
+        Does your rule tell you what to do in both directions?
+    black_box:
+      symptom: You answered with an absolute yes or an absolute no.
+      expected: Conditional approval with a discoverability criterion.
+      actual: >-
+        An appeal to removing duplication, or a blanket ban on metaprogramming.
+      root_cause: >-
+        Judging technique by preference rather than by maintenance cost.
+      repair: >-
+        Attach every "it depends" to a criterion someone else could apply.
+    recall:
+      active_recall_cue: >-
+        What single property makes generated methods acceptable?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/architecture-decision-records.md
+        note: Decision framing used for judgement calls in review.
+      - repo: original
+        path: english-arcade/ruby/metaprogramming-restraint
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-08-frozen-strings
+    version: "1.0.0"
+    target: ruby
+    topic: Strings and mutation
+    difficulty: 1
+    interview_stage: technical_screen
+    prompt: >-
+      What does the frozen string literal comment actually buy you?
+    context: >-
+      A warm-up question. The interviewer is calibrating your level, and a
+      precise short answer here earns a harder question next rather than more of
+      the same.
+    best_answer: >-
+      It makes string literals in that file frozen, so repeated literals share
+      one object instead of allocating a new string every time the line runs. In
+      a hot path that removes a lot of short-lived garbage, and it also catches
+      accidental mutation early.
+    distractors:
+      - text: >-
+          It makes the strings in the file immutable so that they cannot be
+          changed by accident, which is generally safer and is considered a good
+          practice in most modern Ruby codebases today.
+        trap: precision
+        why_wrong: >-
+          Half the answer. It misses the allocation benefit, which is the reason
+          it appears in performance-sensitive files.
+      - text: >-
+          It makes the whole program use less memory because every string in the
+          application becomes shared, so you only ever have one copy of any
+          given string value.
+        trap: content
+        why_wrong: >-
+          Overstates the scope: the magic comment is per-file and applies to
+          literals, not to every string.
+      - text: >-
+          The literals of string in the file are becoming frozen, then the
+          literals repeated are sharing the same object instead of allocate a
+          new string each time.
+        trap: grammar
+        why_wrong: >-
+          Progressive aspect and "instead of allocate" break the sentence;
+          "instead of allocating" is required.
+    feedback:
+      register: >-
+        Brief and precise. Warm-ups reward economy.
+      hedging: >-
+        None needed; this is a small factual question.
+      precision: >-
+        Mention both effects, sharing and mutation safety, and the file scope.
+      grammar: >-
+        After "instead of" use a gerund: "instead of allocating".
+      pragmatics: >-
+        Answer fully but stop; padding a warm-up wastes the round.
+    rephrase:
+      prompt: >-
+        Answer again in under fifteen words without losing either effect.
+      goal: Practise compression on easy questions.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      Depois de "instead of" sempre vem gerundio: "instead of allocating".
+    feynman:
+      concept: Frozen string literals, object sharing and file scope.
+      explain_to: A developer who has never profiled allocations.
+      constraint: Explain using printed name badges reused at an event.
+      self_check: >-
+        Did you say what the scope of the comment is?
+    black_box:
+      symptom: You gave only immutability, or overstated the scope.
+      expected: Per-file literal freezing, object sharing, mutation safety.
+      actual: A safety-only answer, or a program-wide claim.
+      root_cause: >-
+        The pragma copied from other files without reading what it does.
+      repair: >-
+        Pair every pragma you use with a one-line statement of its scope.
+    recall:
+      active_recall_cue: >-
+        What scope does the frozen string literal pragma apply to?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/scaling-performance.md
+        note: Allocation-aware performance practices.
+      - repo: original
+        path: english-arcade/ruby/frozen-strings
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-09-testing-boundaries
+    version: "1.0.0"
+    target: ruby
+    topic: Testing
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      How do you decide what to mock in a test?
+    context: >-
+      The interviewer has seen candidates who mock everything and candidates who
+      mock nothing. They want to hear a boundary rule you could defend in a
+      pull request.
+    best_answer: >-
+      I mock at the edges I do not own, so third-party HTTP and clock or random
+      sources, and let everything inside my boundary run for real. Mocking my
+      own objects usually means the seam is wrong, not that I need another mock.
+    distractors:
+      - text: >-
+          I try to mock as little as possible so the tests are realistic,
+          although sometimes you have to mock things that are slow or awkward to
+          set up in the test environment.
+        trap: precision
+        why_wrong: >-
+          Describes a tendency, not a boundary. "Slow or awkward" is not a rule
+          anyone else could apply.
+      - text: >-
+          I mock every dependency of the class under test, because a unit test
+          should test one unit in complete isolation from everything else in the
+          system around it.
+        trap: content
+        why_wrong: >-
+          Produces tests that assert on their own mocks and break on every
+          refactor while catching nothing.
+      - text: >-
+          I make mock of the edges that I do not own, like the HTTP of third
+          party and the clock, and I let run for real everything that is inside
+          of my boundary.
+        trap: grammar
+        why_wrong: >-
+          "Make mock of", "the HTTP of third party" and the inverted "I let run
+          for real" are all non-idiomatic constructions.
+    feedback:
+      register: >-
+        Opinionated but reasoned, which is what a testing question rewards.
+      hedging: >-
+        None needed; state the rule and the smell that signals a bad seam.
+      precision: >-
+        "Edges I do not own" is a rule; "as little as possible" is not.
+      grammar: >-
+        "I mock the edges", "third-party HTTP", "let everything inside run for
+        real".
+      pragmatics: >-
+        The design smell you added turns a testing answer into an architecture
+        answer, which raises your level.
+    rephrase:
+      prompt: >-
+        Explain the same rule to someone who insists on mocking every
+        collaborator.
+      goal: Practise persuading rather than stating.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Mocking boundaries and what over-mocking reveals about design.
+      explain_to: A developer whose tests break on every refactor.
+      constraint: Explain using a restaurant that fakes its suppliers.
+      self_check: >-
+        Does your rule tell you when the design is wrong, not just the test?
+    black_box:
+      symptom: You described a tendency instead of a boundary.
+      expected: Mock unowned edges; treat self-mocking as a design smell.
+      actual: >-
+        A vague "as little as possible", or total isolation of the unit.
+      root_cause: >-
+        Testing habits formed by tooling defaults rather than by ownership
+        boundaries.
+      repair: >-
+        Ask "do I own this?" before every mock you write.
+    recall:
+      active_recall_cue: >-
+        What does needing to mock your own object usually indicate?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/testing-code-quality.md
+        note: Testing boundaries and code quality practices.
+      - repo: original
+        path: english-arcade/ruby/testing-boundaries
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-10-legacy-refactor
+    version: "1.0.0"
+    target: ruby
+    topic: Working with legacy code
+    difficulty: 3
+    interview_stage: behavioural_probe
+    prompt: >-
+      Tell me about a time you had to change code you did not understand.
+    context: >-
+      A behavioural probe inside a technical loop. The interviewer wants a real
+      sequence of actions, told in past tense, with the safety measures made
+      explicit.
+    best_answer: >-
+      I inherited a billing calculation with no tests and a lot of branching. I
+      pinned the current behaviour with characterisation tests over real inputs
+      first, so I had a safety net, and only then extracted the branches. The
+      tests caught two cases where I had misread the original intent.
+    distractors:
+      - text: >-
+          I read through the code very carefully until I understood it, then I
+          refactored it to be much cleaner and easier to follow, and after that
+          the team found it far simpler to work with.
+        trap: precision
+        why_wrong: >-
+          No safety mechanism named. Reading carefully is not a strategy for
+          changing untested code.
+      - text: >-
+          I would start by writing characterisation tests to pin the existing
+          behaviour, and then I would refactor incrementally while keeping those
+          tests green throughout the process.
+        trap: grammar
+        why_wrong: >-
+          Answers a behavioural question in the conditional; the interviewer
+          asked what you did, so it must be past tense.
+      - text: >-
+          Honestly the code was terrible and whoever wrote it clearly had no
+          idea what they were doing, so I rewrote the whole thing properly from
+          scratch and it was much better afterwards.
+        trap: register
+        why_wrong: >-
+          Criticising absent colleagues is a serious red flag, and a full
+          rewrite signals poor risk judgement.
+    feedback:
+      register: >-
+        Neutral about predecessors. Describe the code, never the person.
+      hedging: >-
+        No hedging in a past-tense story; you either did it or you did not.
+      precision: >-
+        Name the technique, characterisation tests, and what it caught.
+      grammar: >-
+        Behavioural answers stay in past simple: "I pinned", "I extracted".
+      pragmatics: >-
+        Ending with what the tests caught proves the method worked rather than
+        merely sounding good.
+    rephrase:
+      prompt: >-
+        Tell the same story in three sentences, keeping the outcome measurable.
+      goal: Practise STAR compression without losing evidence.
+    language_focus: [grammar, register, precision]
+    pt_help: >-
+      Pergunta com "tell me about a time" exige passado simples. Condicional
+      soa como resposta hipotetica e perde ponto.
+    feynman:
+      concept: Characterisation tests as a safety net for legacy change.
+      explain_to: A developer about to refactor untested code.
+      constraint: Explain using scaffolding on a building.
+      self_check: >-
+        Did your story include evidence the safety net worked?
+    black_box:
+      symptom: You answered hypothetically, or blamed the previous author.
+      expected: Past-tense sequence with a named safety technique and a result.
+      actual: Conditional phrasing, vague care, or criticism of colleagues.
+      root_cause: >-
+        Behavioural questions rehearsed as opinions rather than as stories.
+      repair: >-
+        Keep three past-tense stories ready, each ending in a measurable
+        outcome.
+    recall:
+      active_recall_cue: >-
+        What do you write before changing untested legacy behaviour?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: interview/story-bank/01-ruby-rails-backend-story-bank.md
+        note: Backend story bank used for past-tense narrative shape.
+      - repo: original
+        path: english-arcade/ruby/legacy-refactor
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-11-symbol-vs-string
+    version: "1.0.0"
+    target: ruby
+    topic: Symbols and memory
+    difficulty: 1
+    interview_stage: recruiter_screen
+    prompt: >-
+      Why do Ruby developers use symbols for hash keys?
+    context: >-
+      An early screen with a technically literate recruiter. The answer needs to
+      be correct but jargon-light, because your audience will relay it to an
+      engineer later.
+    best_answer: >-
+      Symbols are reused rather than recreated, so the same key does not
+      allocate a new object every time it appears. That makes them cheap for
+      fixed identifiers like configuration keys, where the set of names is known
+      and small.
+    distractors:
+      - text: >-
+          Because symbols are faster than strings in Ruby, so using them for
+          keys makes the code perform better overall, which matters quite a lot
+          in a large application.
+        trap: precision
+        why_wrong: >-
+          "Faster" without a mechanism is unverifiable, and speed is a
+          consequence of reuse rather than the reason itself.
+      - text: >-
+          Symbols are interned in the symbol table so they are not garbage
+          collected in the same way, which historically created a denial of
+          service vector via unbounded symbol creation from user input.
+        trap: register
+        why_wrong: >-
+          Accurate but pitched far above the audience; a recruiter cannot relay
+          this usefully.
+      - text: >-
+          Because the symbols are reutilised instead of created again, then the
+          same key is not allocating a new object each time that it appears in
+          the code.
+        trap: grammar
+        why_wrong: >-
+          "Reutilised" is not idiomatic and "each time that it appears" adds a
+          redundant relative pronoun.
+    feedback:
+      register: >-
+        Match the listener. Plain, correct, and free of internals.
+      hedging: >-
+        None needed for a simple factual answer.
+      precision: >-
+        Reuse is the mechanism; name it before any performance claim.
+      grammar: >-
+        "Reused", not "reutilised"; "every time it appears", no "that".
+      pragmatics: >-
+        Giving a concrete use case helps a non-engineer repeat your answer
+        accurately.
+    rephrase:
+      prompt: >-
+        Give the same answer to a staff engineer instead, adding the detail you
+        left out.
+      goal: Practise scaling register up as well as down.
+    language_focus: [register, precision, grammar]
+    feynman:
+      concept: Symbol reuse versus string allocation for fixed identifiers.
+      explain_to: A recruiter with no Ruby background.
+      constraint: No mention of garbage collection or interning.
+      self_check: >-
+        Could your listener repeat this to an engineer without errors?
+    black_box:
+      symptom: You said "faster" or dived into the symbol table.
+      expected: Reuse of one object, with a fixed-identifier use case.
+      actual: An unexplained performance claim, or internals dumped on a
+        recruiter.
+      root_cause: >-
+        Not adjusting depth to the listener, which is a pragmatics failure
+        rather than a knowledge gap.
+      repair: >-
+        Decide the listener's level before the first sentence, every time.
+    recall:
+      active_recall_cue: >-
+        What property of symbols makes them cheap as fixed keys?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+        note: Screening-level Ruby questions and expected depth.
+      - repo: original
+        path: english-arcade/ruby/symbol-vs-string
+        note: Original interview phrasing authored for this pack.
+  - id: ruby-12-admitting-a-gap
+    version: "1.0.0"
+    target: ruby
+    topic: Handling unknowns
+    difficulty: 2
+    interview_stage: deep_dive
+    prompt: >-
+      How does Ractor isolation actually work at the object level?
+    context: >-
+      You have read about Ractors but never shipped one. The interviewer is
+      probing the edge of your knowledge, and how you handle the edge matters
+      more than the gap itself.
+    best_answer: >-
+      I know the shape rather than the internals. Objects have to be shareable
+      or copied when they cross a Ractor boundary, which is what prevents shared
+      mutable state. I have not shipped one in production, so I would not want
+      to guess at the deeper mechanics.
+    distractors:
+      - text: >-
+          Ractors use a message-passing model similar to actors, where each one
+          has isolated memory and objects are deeply frozen automatically when
+          they are sent between them.
+        trap: content
+        why_wrong: >-
+          Confidently states mechanics that are not accurate, which is far worse
+          than admitting the boundary.
+      - text: >-
+          I am afraid I do not really know, sorry. I have not used Ractors at
+          all and I would not be able to tell you anything useful about how they
+          work internally.
+        trap: pragmatics
+        why_wrong: >-
+          Discards the partial knowledge you do have, which the interviewer
+          would have credited.
+      - text: >-
+          I know more the shape than the internals, the objects need to be
+          shareable or copied when they are crossing the boundary of a Ractor,
+          and this is what avoid the shared mutable state.
+        trap: grammar
+        why_wrong: >-
+          "This is what avoid" drops agreement and the progressive "are
+          crossing" misstates a general rule.
+    feedback:
+      register: >-
+        Calm and honest. Naming the limit of your experience reads as senior,
+        not weak.
+      hedging: >-
+        This is where hedging is correct: hedge the internals, assert the shape.
+      precision: >-
+        Give the part you are sure of in full before drawing the line.
+      grammar: >-
+        "This is what prevents", "when they cross"; simple present for rules.
+      pragmatics: >-
+        Offering what you know first turns a gap into a partial credit answer.
+    rephrase:
+      prompt: >-
+        Say the same thing while offering how you would find the answer after
+        the call.
+      goal: Practise converting a gap into initiative.
+    language_focus: [hedging, grammar, pragmatics]
+    pt_help: >-
+      Admitir limite em ingles nao precisa de "sorry". Diga o que sabe, depois
+      marque a fronteira.
+    feynman:
+      concept: Ractor boundaries requiring shareable or copied objects.
+      explain_to: A developer worried about thread safety in Ruby.
+      constraint: Explain using sealed containers passed between rooms.
+      self_check: >-
+        Did you assert what you know before naming what you do not?
+    black_box:
+      symptom: You bluffed the internals, or gave up the whole question.
+      expected: Assert the shape, mark the limit, offer no invented mechanics.
+      actual: Confident inaccuracy, or a blanket "I do not know".
+      root_cause: >-
+        Fear that partial knowledge sounds worse than either extreme.
+      repair: >-
+        Practise the two-move answer: what I know, then where my experience
+        stops.
+    recall:
+      active_recall_cue: >-
+        What must be true of an object crossing a Ractor boundary?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/concurrency-parallelism.md
+        note: Concurrency models referenced when discussing isolation.
+      - repo: original
+        path: english-arcade/ruby/admitting-a-gap
+        note: Original interview phrasing authored for this pack.

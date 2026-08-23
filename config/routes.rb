@@ -5,6 +5,12 @@ Rails.application.routes.draw do
   resources :drills, only: %i[index]
   resource :study_plan, only: %i[show]
   resource :adaptive_session, only: %i[show]
+  resource :english_arcade, only: %i[show], controller: :english_arcade do
+    post :finish, on: :member
+  end
+  get "english-arcade", to: "english_arcade#show", as: :english_arcade_launcher
+  resources :english_arcade_sessions, only: %i[create], path: "english-arcade/sessions", controller: :english_arcade
+  post "english-arcade/attempts", to: "english_arcade#attempt", as: :english_arcade_attempts
   get "search", to: "search#index", as: :search
   resources :misconceptions, only: %i[index]
   resources :simulations, only: %i[index show], param: :slug do

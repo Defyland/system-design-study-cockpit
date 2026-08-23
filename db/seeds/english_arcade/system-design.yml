@@ -1,0 +1,1135 @@
+---
+contract_version: "1.1.0"
+target:
+  key: system_design
+  label: System Design
+  blurb: >-
+    Drive the conversation: requirements, volume, source of truth, failure,
+    trade-offs. The language of judgement is what gets assessed.
+  focus_areas:
+    - requirements and scoping
+    - volume estimation
+    - write and read paths
+    - source of truth and consistency
+    - failure, trade-offs and Rails mapping
+  simulation:
+    minutes: 45
+    structure:
+      - label: Requirements and constraints
+        minutes: 8
+      - label: Volume estimation and capacity
+        minutes: 7
+      - label: High-level design and data model
+        minutes: 15
+      - label: Failure modes and bottlenecks
+        minutes: 10
+      - label: Trade-offs and the 10x version
+        minutes: 5
+templates:
+  - id: sd-delivery
+    label: System design delivery framework
+    applies_to: architecture_review
+    steps:
+      - Ask what the main product action is and what must stay fast.
+      - Establish what cannot duplicate, be lost, or leak.
+      - Estimate peak volume out loud before choosing components.
+      - State the request or event path and name the source of truth.
+      - Name two or three real bottlenecks.
+      - Give the version now and the version at ten times the load.
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+      note: The checklist this delivery order follows, step for step.
+  - id: sd-incident
+    label: Senior production answer template
+    applies_to: deep_dive
+    steps:
+      - State the impact on the critical path.
+      - Say what you would protect first.
+      - Name the first metrics or dashboards you would read.
+      - Give the smallest safe mitigation.
+      - State the rollback condition.
+      - Say what you would not touch mid-incident.
+      - Name the follow-up investigation after stabilising.
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+      note: Impact-first incident structure used verbatim as the answer spine.
+cards:
+  - id: system_design-card-requirements-first
+    front: What are the first two questions in any system design round?
+    back: >-
+      What is the main product action, and what must not duplicate, be lost or
+      leak. Components come after those answers.
+    box: 1
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+      note: Opening questions from the interview checklist.
+  - id: system_design-card-source-of-truth
+    front: Why name the source of truth early?
+    back: >-
+      Because every consistency, cache and failure answer depends on it. Without
+      it, later answers contradict each other.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
+      note: Write-path reasoning anchored on the authoritative store.
+  - id: system_design-card-ten-x
+    front: How do you close a system design answer?
+    back: >-
+      With the version now and the version at ten times the load, plus the
+      limit that would force you to evolve it.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+      note: Now-versus-10x framing from the checklist.
+items:
+  - id: system_design-01-requirements-first
+    version: "1.0.0"
+    target: system_design
+    topic: Requirements
+    difficulty: 1
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Design a URL shortener for us. Where do you want to start?
+    context: >-
+      The classic opener. The interviewer is watching whether you scope before
+      you architect, because candidates who start naming components usually
+      design the wrong system.
+    best_answer: >-
+      Before components, two questions. What main action are we optimising for—
+      creating links or resolving them—because the read path is usually much
+      heavier? And must a custom alias stay unique forever? That determines
+      whether I need a strong uniqueness guarantee.
+    distractors:
+      - text: >-
+          I would start with the API design, so a POST endpoint to create a
+          short link and a GET that redirects, and then work out the database
+          schema and the caching layer from there.
+        trap: pragmatics
+        why_wrong: >-
+          Starts building before scoping, so the design is committed before the
+          read-write ratio is even known.
+      - text: >-
+          I would use a key-value store for the mappings with a cache in front,
+          and generate the short codes with a hash or a counter depending on the
+          requirements we settle on.
+        trap: content
+        why_wrong: >-
+          Names the components first and defers requirements to the end, which
+          inverts the entire exercise.
+      - text: >-
+          Before the components, two questions. Which is the main action that we
+          are optimising, to create links or to resolve them, because normally
+          the path of read is much more heavy.
+        trap: grammar
+        why_wrong: >-
+          "Which is" for "what is", "path of read" and "more heavy" are three
+          distinct transfer errors.
+    feedback:
+      register: >-
+        Collaborative and controlled. You are setting the agenda, politely.
+      hedging: >-
+        None; questions are the strength here, not hedges.
+      precision: >-
+        Each question must change the design; say why it does.
+      grammar: >-
+        "What is the main action", "the read path", "much heavier".
+      pragmatics: >-
+        Explaining why you are asking stops it sounding like stalling.
+    rephrase:
+      prompt: >-
+        Ask two different scoping questions that would change the design just as
+        much.
+      goal: Prove the questions were reasoned, not memorised.
+    language_focus: [pragmatics, precision, grammar]
+    pt_help: >-
+      "Qual e" em pergunta aberta e "what is", nao "which is". "Which" implica
+      opcoes fechadas.
+    feynman:
+      concept: Scoping before architecture.
+      explain_to: A candidate who starts by drawing boxes.
+      constraint: Explain using an architect meeting a client.
+      self_check: >-
+        Would each answer actually change your design?
+    black_box:
+      symptom: You named components or endpoints before scoping.
+      expected: Two questions that change the design, with the reason stated.
+      actual: An API sketch, or a component list with deferred requirements.
+      root_cause: >-
+        Anxiety about silence pushing you to produce something visible fast.
+      repair: >-
+        Open every design round with the main action and the invariant.
+    recall:
+      active_recall_cue: >-
+        Which two questions open a system design round?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        note: Before-architecture questions from the checklist.
+      - repo: system-design-estudos
+        path: real-world-cases/05-product-scenarios/bitly-url-shortener/README.md
+        note: URL shortener case referenced for scoping, not copied.
+  - id: system_design-02-volume-estimation
+    version: "1.0.0"
+    target: system_design
+    topic: Estimation
+    difficulty: 2
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Roughly what kind of load are we talking about here?
+    context: >-
+      You have been given a hundred million daily active users. The interviewer
+      wants arithmetic out loud, with assumptions stated, and no false
+      precision.
+    best_answer: >-
+      Let me work it through. A hundred million users doing roughly ten actions
+      a day is a billion events, which is about twelve thousand per second
+      averaged. Traffic is never flat, so I would design for perhaps five times
+      that at peak and treat sixty thousand per second as the number.
+    distractors:
+      - text: >-
+          It would be a very high load, in the order of millions of requests, so
+          we would definitely need horizontal scaling and a distributed
+          architecture to handle that kind of traffic properly.
+        trap: precision
+        why_wrong: >-
+          Skips the arithmetic entirely, so the architecture that follows rests
+          on no number at all.
+      - text: >-
+          Assuming an average of 11.57 requests per second per thousand users
+          and a peak factor of 4.7, we would be looking at approximately 54,300
+          requests per second at the busiest hour.
+        trap: register
+        why_wrong: >-
+          False precision from invented constants; estimation should be visibly
+          rounded and challengeable.
+      - text: >-
+          Let me make the calculation. A hundred million of users doing ten
+          actions per day gives a billion of events, that is around twelve
+          thousand for second in the average.
+        trap: grammar
+        why_wrong: >-
+          "A hundred million of users", "a billion of events" and "for second"
+          add Portuguese prepositions English does not use.
+    feedback:
+      register: >-
+        Think aloud. Estimation is a performance of reasoning, not a result.
+      hedging: >-
+        Hedge the multiplier ("perhaps five times"), never the arithmetic.
+      precision: >-
+        Round numbers signal honest estimation; decimals signal invention.
+      grammar: >-
+        "A hundred million users", "a billion events", "per second".
+      pragmatics: >-
+        Announcing the peak assumption invites the interviewer to correct it.
+    rephrase:
+      prompt: >-
+        Redo the estimate assuming the product is read-heavy at fifty to one.
+      goal: Practise adjusting an estimate rather than restarting it.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      "Um milhao de usuarios" vira "a million users", sem "of". So use "of"
+      com "millions of users".
+    feynman:
+      concept: Order-of-magnitude estimation with a peak factor.
+      explain_to: A candidate who freezes at mental arithmetic.
+      constraint: Use only round numbers and one multiplication at a time.
+      self_check: >-
+        Did you state the peak assumption separately from the average?
+    black_box:
+      symptom: You gave an adjective, or invented decimal precision.
+      expected: Stated assumptions, rounded arithmetic, explicit peak factor.
+      actual: >-
+        A vague "very high load", or fabricated constants.
+      root_cause: >-
+        Mental arithmetic in a second language feeling riskier than vagueness.
+      repair: >-
+        Rehearse the users-times-actions-divided-by-86400 chain until automatic.
+    recall:
+      active_recall_cue: >-
+        What do you multiply the average rate by, and why?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
+        note: Delivery framework including estimation discipline.
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
+        note: Capacity planning and headroom reasoning.
+  - id: system_design-03-source-of-truth
+    version: "1.0.0"
+    target: system_design
+    topic: Source of truth
+    difficulty: 3
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      You have the same data in three places now. Which one is authoritative?
+    context: >-
+      Your design has a database, a cache and a search index holding overlapping
+      data. The interviewer wants to know whether you can say which one wins
+      when they disagree.
+    best_answer: >-
+      The database. The cache and the index are derived views that can be
+      rebuilt from it, so if they disagree the database wins and I rebuild them.
+      That also tells me the index can lag, but a write must not be acknowledged
+      until the database has it.
+    distractors:
+      - text: >-
+          They should all be kept in sync so that they hold consistent data, and
+          I would make sure updates propagate to all three whenever anything
+          changes in the system.
+        trap: content
+        why_wrong: >-
+          Wishes away the problem. Distributed components diverge, and the
+          design must define who wins when they do.
+      - text: >-
+          The database is the main store and the others are for performance, so
+          it would be the one to trust if there were any discrepancies between
+          them at any point.
+        trap: precision
+        why_wrong: >-
+          Right answer, but "for performance" misses that derived views define
+          the recovery and acknowledgement rules.
+      - text: >-
+          The database. The cache and the index are views derived that can be
+          reconstructed from it, then if they disagree the database wins and I
+          reconstruct the others.
+        trap: grammar
+        why_wrong: >-
+          "Views derived" inverts the adjective and "reconstruct" is a heavier
+          false friend than the natural "rebuild".
+    feedback:
+      register: >-
+        Definitive. This is a question that must be answered, not balanced.
+      hedging: >-
+        None; ambiguity here is a design flaw.
+      precision: >-
+        Derived and rebuildable is the concept; it drives lag and
+        acknowledgement.
+      grammar: >-
+        "Derived views", "rebuilt from it", "acknowledged".
+      pragmatics: >-
+        Deriving the acknowledgement rule from the answer shows systems
+        thinking.
+    rephrase:
+      prompt: >-
+        State the rule for when a write may be acknowledged, in one sentence.
+      goal: Turn a principle into an implementable contract.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Authoritative store versus derived views.
+      explain_to: A developer who treats the cache as a second database.
+      constraint: Explain using an original document and photocopies.
+      self_check: >-
+        Did you say what may lag and what may not?
+    black_box:
+      symptom: You promised consistency, or named the database without the rule.
+      expected: Database authoritative; cache and index derived and rebuildable.
+      actual: A sync aspiration, or a performance-only justification.
+      root_cause: >-
+        Treating divergence as a bug rather than as a normal condition to
+        design for.
+      repair: >-
+        For every store in a design, say whether it is truth or a view.
+    recall:
+      active_recall_cue: >-
+        What may lag behind the source of truth, and what may not?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: chapters/chapter-09-search-indexing-and-permission-aware-retrieval.md
+        note: Search index as a derived view of authoritative data.
+      - repo: system-design-estudos
+        path: decision-contrasts/04-search-index-vs-relational-querying.md
+        note: Index versus relational querying contrast.
+  - id: system_design-04-write-path
+    version: "1.0.0"
+    target: system_design
+    topic: Write path
+    difficulty: 3
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Walk me through what happens when a payment request arrives twice.
+    context: >-
+      Networks retry and clients double-submit, so duplicate requests are
+      normal. The interviewer wants the write path described with the
+      duplicate-safety mechanism built in.
+    best_answer: >-
+      The client sends an idempotency key with the request. The first one
+      inserts a row with that key inside the transaction that records the
+      charge, and the second collides on the unique index and returns the
+      original result instead of charging again.
+    distractors:
+      - text: >-
+          The service checks whether a payment already exists for that order,
+          and if it does it returns the existing one rather than creating a
+          duplicate charge for the customer.
+        trap: content
+        why_wrong: >-
+          A read-then-write check is a race; two concurrent requests can both
+          find nothing and both charge.
+      - text: >-
+          We would need idempotency to handle that properly, so the system
+          should be designed so that repeating the same request does not have
+          any additional effect beyond the first one.
+        trap: precision
+        why_wrong: >-
+          Defines idempotency instead of describing the mechanism that
+          implements it.
+      - text: >-
+          The client sends one key of idempotency with the request. The first
+          inserts a row with this key inside of the transaction, and the second
+          collides in the unique index.
+        trap: grammar
+        why_wrong: >-
+          "Key of idempotency", "inside of" and "collides in" are compound-noun
+          and preposition errors.
+    feedback:
+      register: >-
+        Sequential and concrete; describe the path, not the property.
+      hedging: >-
+        None; the mechanism is standard.
+      precision: >-
+        "Inside the transaction" is what makes the guarantee hold.
+      grammar: >-
+        "An idempotency key", "inside the transaction", "collides on the
+        index".
+      pragmatics: >-
+        Returning the original result answers the client-experience question
+        implicitly.
+    rephrase:
+      prompt: >-
+        Describe what the client sees in both cases, in two sentences.
+      goal: Shift from mechanism to observable contract.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Idempotency keys enforced within the write transaction.
+      explain_to: A developer whose retry logic double-charged a customer.
+      constraint: Explain using a cloakroom ticket.
+      self_check: >-
+        Did you say what the second request returns?
+    black_box:
+      symptom: You used an existence check, or defined the property.
+      expected: Key inserted in the transaction; duplicate collides and returns
+        the original.
+      actual: A read-then-write guard, or a definition of idempotency.
+      root_cause: >-
+        Reasoning about duplicates sequentially instead of concurrently.
+      repair: >-
+        Trace two simultaneous requests through every write path you design.
+    recall:
+      active_recall_cue: >-
+        Where must the idempotency key be written for the guarantee to hold?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
+        note: Idempotent write path under ambiguous failure.
+      - repo: system-design-estudos
+        path: real-world-cases/03-async-workflows-and-payments/stripe-idempotent-payments/README.md
+        note: Payment idempotency case referenced by path, not copied.
+  - id: system_design-05-read-path-caching
+    version: "1.0.0"
+    target: system_design
+    topic: Read path
+    difficulty: 2
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Your cache node just died at peak traffic. What happens next?
+    context: >-
+      A failure question about a component candidates usually present as pure
+      benefit. The interviewer wants to know whether you have thought about the
+      moment it disappears.
+    best_answer: >-
+      If the cache disappears, every request hits the database at once: a
+      thundering herd it was never sized for. I would use request coalescing so
+      one lookup per key reaches the origin, and keep headroom for the rest.
+    distractors:
+      - text: >-
+          The requests would fall back to the database, which would be slower
+          but the system would keep working, and then the cache would warm up
+          again once it comes back online.
+        trap: content
+        why_wrong: >-
+          Assumes graceful degradation. If the database were sized for full
+          traffic the cache would not have been necessary.
+      - text: >-
+          We would see increased latency and load on the database, so it would
+          be important to have monitoring in place to detect that situation
+          quickly and respond to it.
+        trap: precision
+        why_wrong: >-
+          Observes the symptom and proposes alerting rather than a design that
+          survives the event.
+      - text: >-
+          All the requests that were being served of the cache go to the
+          database at the same time, that is a herd thundering for which the
+          database was never dimensioned.
+        trap: grammar
+        why_wrong: >-
+          "Served of", post-posed "herd thundering" and "dimensioned" as a false
+          friend all break the sentence.
+    feedback:
+      register: >-
+        Sober about failure. Caches are load-bearing, so say so.
+      hedging: >-
+        None; the herd behaviour is predictable.
+      precision: >-
+        Coalescing and headroom are concrete; "monitoring" is not a mitigation.
+      grammar: >-
+        "Served from the cache", "a thundering herd", "sized for".
+      pragmatics: >-
+        Naming the mitigation converts an observation into a design.
+    rephrase:
+      prompt: >-
+        Explain what you would set the origin concurrency limit to, and why.
+      goal: Push the mitigation to a concrete parameter.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Dimensionar" e "size" ou "capacity plan". "Dimension" nao se usa assim.
+    feynman:
+      concept: Thundering herd on cache loss and request coalescing.
+      explain_to: A developer who added a cache purely for speed.
+      constraint: Explain using a motorway losing a lane at rush hour.
+      self_check: >-
+        Did you say why the database cannot simply absorb it?
+    black_box:
+      symptom: You assumed graceful fallback, or proposed monitoring.
+      expected: Thundering herd, coalescing, deliberate origin headroom.
+      actual: A degradation assumption, or an alerting plan.
+      root_cause: >-
+        Caches modelled as optimisations rather than as capacity dependencies.
+      repair: >-
+        For every cache, state what breaks the moment it is empty.
+    recall:
+      active_recall_cue: >-
+        What protects the origin when a cache disappears?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
+        note: Hot key and origin protection playbook.
+      - repo: system-design-estudos
+        path: decision-contrasts/01-read-replica-vs-cache-aside.md
+        note: Replica versus cache-aside contrast.
+  - id: system_design-06-failure-modes
+    version: "1.0.0"
+    target: system_design
+    topic: Failure modes
+    difficulty: 3
+    interview_stage: deep_dive
+    template: sd-incident
+    prompt: >-
+      The payment provider is timing out in production. What do you do first?
+    context: >-
+      A live incident scenario. The interviewer wants the impact-first structure,
+      because the ordering of your response reveals whether you have handled a
+      real outage.
+    best_answer: >-
+      First the impact: checkout is the critical path, so I protect order
+      acceptance even if capture is delayed. I would read provider errors and
+      queue depth, then stop aggressive retries because they amplify load on a
+      failing dependency.
+    distractors:
+      - text: >-
+          I would investigate the root cause of the timeouts by looking at the
+          logs and traces to understand exactly why the provider is failing to
+          respond within the expected time.
+        trap: pragmatics
+        why_wrong: >-
+          Diagnosis before containment. During an incident, stopping the bleeding
+          precedes understanding it.
+      - text: >-
+          I would increase the timeout and add more retries so that the requests
+          have a better chance of succeeding while the provider is having
+          problems on their side.
+        trap: content
+        why_wrong: >-
+          Amplifies load on a struggling dependency, which is the textbook way
+          to turn degradation into a full outage.
+      - text: >-
+          First the impact: the checkout is the path critical, then I protect
+          the capacity of accept orders even if the capture stays delayed for
+          some time.
+        trap: grammar
+        why_wrong: >-
+          "Path critical", "the capacity of accept" and the dangling clause all
+          break the response under pressure.
+    feedback:
+      register: >-
+        Calm and ordered. Incident language is sequenced, never exploratory.
+      hedging: >-
+        None; state what you protect first.
+      precision: >-
+        Naming retry amplification shows you know how outages escalate.
+      grammar: >-
+        "The critical path", "the ability to accept orders", "already failing".
+      pragmatics: >-
+        Impact, protection, signal, mitigation is the expected order.
+    rephrase:
+      prompt: >-
+        Give the same answer as a message in an incident channel.
+      goal: Practise written incident register under time pressure.
+    language_focus: [pragmatics, grammar, precision]
+    pt_help: >-
+      Adjetivo antes do substantivo: "the critical path", nunca "the path
+      critical".
+    feynman:
+      concept: Containment before diagnosis during an incident.
+      explain_to: An engineer whose instinct is to read logs first.
+      constraint: Explain using a burst pipe in a house.
+      self_check: >-
+        Did you protect something before investigating anything?
+    black_box:
+      symptom: You investigated first, or increased retries.
+      expected: Impact, protection, first signals, stop amplifying retries.
+      actual: Root-cause analysis, or retry escalation.
+      root_cause: >-
+        Incident response practised as debugging rather than as triage.
+      repair: >-
+        Rehearse the seven-step incident template until the order is automatic.
+    recall:
+      active_recall_cue: >-
+        What comes before diagnosis in an incident?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+        note: Senior production answer template used as the response spine.
+      - repo: system-design-estudos
+        path: chapters/chapter-05-durable-workflows-retries-and-compensation.md
+        note: Retry and compensation behaviour under failure.
+  - id: system_design-07-tradeoff-defence
+    version: "1.0.0"
+    target: system_design
+    topic: Trade-offs
+    difficulty: 3
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Why not just use a simpler solution here?
+    context: >-
+      You proposed an event backbone. The interviewer is testing whether you can
+      defend complexity honestly, including admitting when the simpler option
+      would in fact be right.
+    best_answer: >-
+      For today's volume the simpler option would genuinely be fine, and I would
+      probably ship it. I would move to the backbone when we have more than two
+      consumers of the same events, because that is when point-to-point
+      integrations start multiplying faster than the team can maintain them.
+    distractors:
+      - text: >-
+          Because the simpler solution would not scale as the system grows, and
+          it is better to build the right architecture from the start rather
+          than have to migrate everything later on.
+        trap: content
+        why_wrong: >-
+          Speculative future-proofing, which is how teams pay complexity costs
+          for load that never arrives.
+      - text: >-
+          You are right, we could probably use something simpler for now, it
+          would likely be sufficient for the requirements we have discussed so
+          far in this conversation.
+        trap: hedging
+        why_wrong: >-
+          Abandons the proposal at the first challenge without naming when it
+          would become correct.
+      - text: >-
+          For the volume of today the option simpler would be sufficient and I
+          would probably ship it, but I would pass to the backbone when we have
+          more than two consumers of the same events.
+        trap: grammar
+        why_wrong: >-
+          "Volume of today", "option simpler" and "pass to" invert English
+          modifier order and idiom.
+    feedback:
+      register: >-
+        Honest and secure. Conceding correctly is a seniority signal.
+      hedging: >-
+        None; give the threshold instead of softening the position.
+      precision: >-
+        "More than two consumers" is a testable trigger, unlike "as it grows".
+      grammar: >-
+        "Today's volume", "the simpler option", "move to the backbone".
+      pragmatics: >-
+        Agreeing while keeping the condition keeps authority intact.
+    rephrase:
+      prompt: >-
+        State the threshold as something a team could put in a ticket.
+      goal: Convert judgement into an operational trigger.
+    language_focus: [precision, grammar, hedging]
+    feynman:
+      concept: Complexity justified by a measurable threshold.
+      explain_to: An architect who designs for hypothetical scale.
+      constraint: Explain using when a family needs a second car.
+      self_check: >-
+        Is your threshold observable without guessing?
+    black_box:
+      symptom: You defended by future scale, or capitulated entirely.
+      expected: Concede for now, with a measurable trigger to escalate.
+      actual: Future-proofing, or immediate retreat.
+      root_cause: >-
+        Treating a challenge as either an attack or a verdict.
+      repair: >-
+        Answer complexity challenges with a number, not a prediction.
+    recall:
+      active_recall_cue: >-
+        What makes a complexity threshold credible?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: decision-contrasts/06-queue-vs-event-backbone.md
+        note: Queue versus event backbone decision contrast.
+      - repo: system-design-estudos
+        path: chapters/chapter-04-event-backbone-partitions-and-consumer-scale.md
+        note: Consumer scale reasoning behind the threshold.
+  - id: system_design-08-rails-mapping
+    version: "1.0.0"
+    target: system_design
+    topic: Rails mapping
+    difficulty: 2
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      How would this design actually look in the stack you know best?
+    context: >-
+      An invitation to ground the architecture in something concrete. The
+      interviewer wants to check that your design is buildable, not just
+      diagrammable.
+    best_answer: >-
+      As a Rails application it is a controller that validates and enqueues, a
+      job that talks to the provider, and Postgres as the source of truth with
+      the idempotency key as a unique index. The parts I would watch are
+      connection pool limits and job retry behaviour.
+    distractors:
+      - text: >-
+          I would build it with microservices so that each part can scale
+          independently, with a message broker between them and separate
+          databases for each service in the system.
+        trap: content
+        why_wrong: >-
+          Answers with an architectural style rather than mapping the design
+          onto a stack, and adds distribution nobody asked for.
+      - text: >-
+          It would map reasonably well onto a standard web framework with a
+          database and a background job system handling the asynchronous parts
+          of the workflow.
+        trap: precision
+        why_wrong: >-
+          Generic to the point of saying nothing; no component, constraint or
+          risk is named.
+      - text: >-
+          Like a Rails application it is one controller that validates and puts
+          in queue, one job that talks with the provider, and Postgres like
+          source of truth with the key in a unique index.
+        trap: grammar
+        why_wrong: >-
+          "Like" for "as", "puts in queue" and "talks with" are three idiom
+          errors that reduce fluency.
+    feedback:
+      register: >-
+        Concrete and buildable. Name real components.
+      hedging: >-
+        None; you were asked about your own stack.
+      precision: >-
+        Naming pool limits and retry behaviour shows operational awareness.
+      grammar: >-
+        "As a Rails application", "enqueues", "talks to the provider".
+      pragmatics: >-
+        Volunteering what you would watch pre-empts the risk question.
+    rephrase:
+      prompt: >-
+        Name the first thing that would break at ten times the load.
+      goal: Connect the mapping to the scaling story.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Como" no sentido de funcao e "as", nao "like": "as a Rails application".
+    feynman:
+      concept: Mapping an abstract design onto a concrete stack.
+      explain_to: A candidate who designs only in boxes and arrows.
+      constraint: Name no technology you have not used.
+      self_check: >-
+        Did you name a limit specific to your stack?
+    black_box:
+      symptom: You proposed microservices, or stayed generic.
+      expected: Concrete components plus stack-specific constraints.
+      actual: An architectural style, or a framework-agnostic sketch.
+      root_cause: >-
+        Designing at a level of abstraction that avoids commitment.
+      repair: >-
+        Ground every design in components you have personally operated.
+    recall:
+      active_recall_cue: >-
+        Which two Rails-specific limits matter in this design?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        note: Rails-first reading section of the checklist.
+      - repo: system-design-estudos
+        path: real-world-cases/01-platforms-and-apps/github-rails-and-mysql-at-scale/README.md
+        note: Rails at scale case referenced by path, not copied.
+  - id: system_design-09-consistency-choice
+    version: "1.0.0"
+    target: system_design
+    topic: Consistency
+    difficulty: 3
+    interview_stage: deep_dive
+    template: sd-delivery
+    prompt: >-
+      Can this part of the system tolerate eventual consistency?
+    context: >-
+      A feed shows content counts alongside a balance display. The interviewer
+      wants you to separate the two rather than answer for the system as a
+      whole.
+    best_answer: >-
+      It depends on the field. A view count can lag a few seconds without harm;
+      a balance cannot, because a stale number could let someone overdraw. I
+      would require strong consistency for money and accept eventual consistency
+      elsewhere.
+    distractors:
+      - text: >-
+          Yes, eventual consistency is fine for most user-facing features since
+          the delay is usually small enough that users will not notice it in
+          practice.
+        trap: content
+        why_wrong: >-
+          Applies one answer to the whole system, which is exactly the mistake
+          the question is designed to catch.
+      - text: >-
+          I would prefer strong consistency wherever possible, since it makes
+          the system easier to reason about and avoids a whole class of bugs
+          caused by stale reads.
+        trap: pragmatics
+        why_wrong: >-
+          A blanket preference that pays coordination cost across the entire
+          system for the sake of a few fields.
+      - text: >-
+          Depends of which part, and this is the useful answer. A count of views
+          can delay some seconds and nobody is harmed, but a balance cannot
+          because the user can overdraw.
+        trap: grammar
+        why_wrong: >-
+          "Depends of", "count of views" and "can delay some seconds" are
+          preposition and compound-noun errors.
+    feedback:
+      register: >-
+        Discriminating. Refusing a single global answer is the point.
+      hedging: >-
+        "It depends" is correct here only because you immediately resolve it.
+      precision: >-
+        Tie each choice to a concrete harm, such as overdrawing.
+      grammar: >-
+        "It depends on", "a view count", "can lag by a few seconds".
+      pragmatics: >-
+        Splitting the question is itself the demonstration of seniority.
+    rephrase:
+      prompt: >-
+        Name a third field in the same product and place it on the spectrum.
+      goal: Prove the criterion generalises.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Depender de" e "depend on", sempre. Erro muito frequente e caro.
+    feynman:
+      concept: Per-field consistency requirements driven by harm.
+      explain_to: A developer who sets one consistency level per system.
+      constraint: Explain using a bank balance and a like counter.
+      self_check: >-
+        Did you name the harm that forces the strong guarantee?
+    black_box:
+      symptom: You answered globally, in either direction.
+      expected: Per-field decision, justified by the harm of staleness.
+      actual: A blanket yes, or a blanket preference for strong consistency.
+      root_cause: >-
+        Consistency treated as a system setting rather than a per-datum
+        requirement.
+      repair: >-
+        Ask what a user could do wrongly with a stale value.
+    recall:
+      active_recall_cue: >-
+        What decides whether a field can be eventually consistent?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/06-foundations-distribuidas/topics/consistency-models.md
+        note: Consistency models and their guarantees.
+      - repo: system-design-estudos
+        path: areas/06-foundations-distribuidas/topics/cap-theorem.md
+        note: CAP trade-offs behind the per-field decision.
+  - id: system_design-10-bottleneck-naming
+    version: "1.0.0"
+    target: system_design
+    topic: Bottlenecks
+    difficulty: 2
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      Where does this design break first as traffic grows?
+    context: >-
+      Your design is on the whiteboard and working. The interviewer wants to see
+      whether you can attack your own architecture before they do.
+    best_answer: >-
+      The database write path, most likely. Reads scale out with replicas and
+      cache, but every write still lands on one primary, so that is the first
+      hard ceiling. After that it would be the fanout job, because its work
+      grows with followers per post rather than with posts.
+    distractors:
+      - text: >-
+          It would depend on the traffic patterns and how the load is
+          distributed, so I would want to monitor the system and see where the
+          bottlenecks appear in practice.
+        trap: pragmatics
+        why_wrong: >-
+          Defers a design question to observation, when the primary write
+          ceiling is predictable from the architecture itself.
+      - text: >-
+          The application servers would be the first constraint, but since they
+          are stateless we can scale them horizontally without much difficulty
+          as traffic increases.
+        trap: content
+        why_wrong: >-
+          Names the component that is easiest to scale, which means the real
+          ceiling has not been identified.
+      - text: >-
+          The path of write of the database, probably. The reads scale with
+          replicas and cache, but all the writes continue arriving in one only
+          primary, that is the first ceiling hard.
+        trap: grammar
+        why_wrong: >-
+          Stacked "of" possessives, "one only primary" and "ceiling hard" break
+          the sentence throughout.
+    feedback:
+      register: >-
+        Self-critical without being apologetic about the design.
+      hedging: >-
+        "Most likely" is appropriate; the ordering is a judgement.
+      precision: >-
+        Say why fanout scales badly: work per post grows with followers.
+      grammar: >-
+        "The database write path", "a single primary", "a hard ceiling".
+      pragmatics: >-
+        Naming two bottlenecks in order shows you have thought past the first.
+    rephrase:
+      prompt: >-
+        Say what you would change first once you hit that ceiling.
+      goal: Extend diagnosis into an evolution plan.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Identifying the least scalable component in a design.
+      explain_to: A candidate who presents designs as finished.
+      constraint: Explain using the narrowest point of a funnel.
+      self_check: >-
+        Did you name the component that cannot simply be duplicated?
+    black_box:
+      symptom: You deferred to monitoring, or named a stateless tier.
+      expected: The single-primary write path, then fanout amplification.
+      actual: An observation plan, or the easiest component to scale.
+      root_cause: >-
+        Not distinguishing components that duplicate from components that
+        coordinate.
+      repair: >-
+        Ask which component cannot be horizontally duplicated.
+    recall:
+      active_recall_cue: >-
+        Which part of a standard design usually has the first hard ceiling?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: chapters/chapter-14-feed-ranking-and-fanout-trade-offs.md
+        note: Fanout cost and consumer scale trade-offs.
+      - repo: system-design-estudos
+        path: decision-contrasts/11-fanout-on-write-vs-fanout-on-read.md
+        note: Fanout-on-write versus fanout-on-read contrast.
+  - id: system_design-11-scope-control
+    version: "1.0.0"
+    target: system_design
+    topic: Managing the round
+    difficulty: 2
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      We have fifteen minutes left and we have not covered storage. How do you
+      want to use the time?
+    context: >-
+      A time-management moment disguised as a question. The interviewer is
+      handing you control of the remaining agenda to see what you prioritise.
+    best_answer: >-
+      I would spend ten minutes on the data model and access patterns, where most
+      risk sits, then keep five for failure modes. I would leave ranking
+      undiscussed before storage hand-waved: storage decisions are harder to
+      reverse.
+    distractors:
+      - text: >-
+          Let us cover storage then, I can walk through the schema and the
+          database choice and then we can see how much time is left for the
+          other topics afterwards.
+        trap: precision
+        why_wrong: >-
+          Accepts the topic without allocating the time or saying what gets
+          dropped, so the round can still overrun.
+      - text: >-
+          Whatever you think would be most valuable to cover, I am happy to go
+          into whichever area you feel is most relevant for the role we are
+          discussing today.
+        trap: pragmatics
+        why_wrong: >-
+          Returns a decision that was deliberately given to you, forfeiting the
+          prioritisation signal.
+      - text: >-
+          I would pass ten minutes in the data model and the patterns of access,
+          because is there that stays the biggest risk, and keep five for the
+          modes of failure.
+        trap: grammar
+        why_wrong: >-
+          "Pass ten minutes", missing subject and two inverted compound nouns
+          break an otherwise sound plan.
+    feedback:
+      register: >-
+        Decisive and calm. Owning the agenda reads as senior.
+      hedging: >-
+        None; allocate the minutes explicitly.
+      precision: >-
+        Reversibility is the criterion that justifies the priority.
+      grammar: >-
+        "Spend ten minutes on", "access patterns", "failure modes".
+      pragmatics: >-
+        Saying what you sacrifice makes the prioritisation credible.
+    rephrase:
+      prompt: >-
+        Give the same plan if only five minutes remained.
+      goal: Force a harder prioritisation with the same reasoning.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Passar tempo" e "spend time". "Pass time" significa outra coisa.
+    feynman:
+      concept: Prioritising by reversibility under time pressure.
+      explain_to: A candidate who tries to cover everything.
+      constraint: Explain using packing for a trip with one bag.
+      self_check: >-
+        Did you name what you are choosing not to cover?
+    black_box:
+      symptom: You accepted the topic without a plan, or deferred the choice.
+      expected: Explicit minute allocation justified by reversibility.
+      actual: An open-ended walkthrough, or handing the decision back.
+      root_cause: >-
+        Treating the interviewer as the owner of an agenda they just delegated.
+      repair: >-
+        When given the agenda, allocate time and name the sacrifice.
+    recall:
+      active_recall_cue: >-
+        Which property makes a design decision worth prioritising?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
+        note: Delivery framework and round management.
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/examples/interview-walkthrough-marketplace-search.md
+        note: Worked walkthrough showing time allocation in practice.
+  - id: system_design-12-ten-x-version
+    version: "1.0.0"
+    target: system_design
+    topic: Scaling narrative
+    difficulty: 3
+    interview_stage: architecture_review
+    template: sd-delivery
+    prompt: >-
+      What would you change if this had ten times the traffic?
+    context: >-
+      The closing question of most design rounds. The interviewer wants a
+      staged evolution rather than a redesign, since redesigning signals the
+      first version was not thought through.
+    best_answer: >-
+      Not the shape, mostly the boundaries. I would partition the write path by
+      tenant so no single primary carries everything, move fanout from the
+      request to a consumer group, and add regional read capacity. The data
+      model stays, which is deliberate, because that is the expensive thing to
+      change.
+    distractors:
+      - text: >-
+          I would need to redesign several parts of the system to handle that
+          scale, probably moving to a distributed database and splitting the
+          application into separate services.
+        trap: content
+        why_wrong: >-
+          A redesign at ten times implies the first design had no headroom,
+          which undermines everything you presented.
+      - text: >-
+          I would add more servers and scale the database vertically, and
+          introduce caching in more places to reduce the load on the backend
+          components of the system.
+        trap: precision
+        why_wrong: >-
+          Adds resources without addressing the single-primary write ceiling,
+          which is what actually binds.
+      - text: >-
+          Not the shape, principally the boundaries. I would partition the path
+          of write for tenant so that no primary carries everything, and pass
+          the fanout of the request for a group of consumers.
+        trap: grammar
+        why_wrong: >-
+          "Principally", "path of write", "for tenant" and "group of consumers"
+          are four transfer errors in two sentences.
+    feedback:
+      register: >-
+        Confident continuity. Evolution, not reinvention.
+      hedging: >-
+        "Mostly" appropriately signals that some things do change.
+      precision: >-
+        Saying what stays, and why, is as strong as what changes.
+      grammar: >-
+        "Partition by tenant", "the write path", "a consumer group".
+      pragmatics: >-
+        Defending the unchanged data model shows deliberate design.
+    rephrase:
+      prompt: >-
+        Name the one thing you would have designed differently from the start.
+      goal: Practise self-critique without undermining the design.
+    language_focus: [precision, grammar, hedging]
+    feynman:
+      concept: Staged evolution versus redesign under load growth.
+      explain_to: A candidate who rebuilds the design at every follow-up.
+      constraint: Explain using widening a road rather than rebuilding a city.
+      self_check: >-
+        Did you say what deliberately stays the same?
+    black_box:
+      symptom: You redesigned, or only added resources.
+      expected: Partitioned writes, async fanout, regional reads, model intact.
+      actual: A microservices migration, or vertical scaling.
+      root_cause: >-
+        Not designing the first version with a stated evolution path.
+      repair: >-
+        Design every system with the next boundary already identified.
+    recall:
+      active_recall_cue: >-
+        What should stay the same when traffic grows tenfold?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: chapters/chapter-02-pod-isolation-and-tenant-routing.md
+        note: Tenant partitioning and pod isolation as a scaling boundary.
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        note: Now-versus-10x closing framing from the checklist.

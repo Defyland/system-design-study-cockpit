@@ -1,0 +1,1191 @@
+---
+contract_version: "1.1.0"
+target:
+  key: dsa
+  label: DSA and Algorithms
+  blurb: >-
+    Say the pattern, state the invariant, defend the complexity. In an English
+    interview the reasoning is graded before the code is.
+  focus_areas:
+    - pattern selection and naming
+    - invariants and loop reasoning
+    - complexity and trade-off language
+    - Ruby runtime traps
+    - thinking aloud under time pressure
+  simulation:
+    minutes: 45
+    structure:
+      - label: Clarify and restate
+        minutes: 5
+      - label: Name the pattern and the invariant
+        minutes: 5
+      - label: Code while narrating
+        minutes: 20
+      - label: Test, trace and fix out loud
+        minutes: 10
+      - label: Complexity and scaling follow-up
+        minutes: 5
+templates:
+  - id: dsa-narration
+    label: DSA narration template
+    applies_to: live_coding
+    steps:
+      - Restate the problem and confirm the input contract.
+      - Name the pattern out loud and say why it fits this input.
+      - State the invariant the loop or recursion preserves.
+      - Code while narrating decisions, not keystrokes.
+      - Trace one small example including an edge case.
+      - Give time and space complexity and name the dominant term.
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+      note: Pattern-selection chapter this narration order is built on.
+  - id: dsa-recovery
+    label: Mid-problem recovery template
+    applies_to: live_coding
+    steps:
+      - Say plainly that you found a problem, without apologising twice.
+      - Name the failing case concretely.
+      - State the smallest fix you believe is correct.
+      - Re-trace and confirm the invariant still holds.
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+      note: Impact-first recovery order reused for live-coding mistakes.
+cards:
+  - id: dsa-card-pattern-first
+    front: How do you open a live-coding answer in English?
+    back: >-
+      Pattern name, why it fits this input shape, then the invariant. Code only
+      after the interviewer has heard the plan.
+    box: 1
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+      note: Opening-minute discipline for algorithm rounds.
+  - id: dsa-card-invariant
+    front: What counts as an invariant rather than a description of the loop?
+    back: >-
+      A property true at a fixed point of every iteration. "It moves forward and
+      updates the answer" is control flow, not an invariant.
+    box: 1
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+      note: Core problems where invariants are stated explicitly.
+  - id: dsa-card-hedging
+    front: How much hedging belongs in a complexity claim?
+    back: >-
+      None on the bound itself. Hedge only a genuinely data-dependent worst
+      case: "linear in n, worst case an array with no repeats".
+    box: 2
+    source:
+      repo: original
+      path: english-arcade/dsa/hedging-calibration
+      note: Distilled from the hedging failures authored in this pack.
+items:
+  - id: dsa-01-pattern-naming
+    version: "1.0.0"
+    target: dsa
+    topic: Pattern selection
+    difficulty: 1
+    interview_stage: live_coding
+    template: dsa-narration
+    prompt: >-
+      Before you start coding, can you tell me how you are thinking about this
+      one?
+    context: >-
+      Live coding round. You have an array of integers and need the longest run
+      of distinct values. The interviewer wants the approach spoken before any
+      syntax appears on screen.
+    best_answer: >-
+      This looks like a sliding-window problem, because the answer is a
+      contiguous run and I can extend the right edge and pull the left edge in
+      when a duplicate appears. I would keep a hash of the last index of each
+      value, so shrinking is one jump rather than a scan.
+    distractors:
+      - text: >-
+          I think maybe it could possibly be some kind of window thing, if that
+          makes sense, but I am not really sure yet, so perhaps I could just try
+          something and we can see how it goes from there.
+        trap: hedging
+        why_wrong: >-
+          Stacked hedges read as low confidence. One hedge is fine at C2; four
+          in a row signals you have no plan.
+      - text: >-
+          Obviously it is a sliding window. Anyone who has done these knows that
+          immediately, so I will just write it. There is not much to discuss
+          about the approach here before the code.
+        trap: register
+        why_wrong: >-
+          Dismissive framing closes the conversation the interviewer opened and
+          makes a collaborative round feel adversarial.
+      - text: >-
+          I am going to make a window that walks in the array and every time it
+          has a repeated it comes back the left for to remove the repeated value
+          until the window stays clean again for continue.
+        trap: grammar
+        why_wrong: >-
+          Preposition and infinitive errors ("walks in", "for to remove") come
+          straight from Portuguese and pull attention away from correct logic.
+    feedback:
+      register: >-
+        Neutral professional register: confident, collaborative, no slang and no
+        showing off.
+      hedging: >-
+        One calibrated hedge such as "this looks like" keeps you open to
+        correction without sounding lost.
+      precision: >-
+        Name the pattern and the data structure. "Hash of the last index" is
+        precise; "some kind of map" is not.
+      grammar: >-
+        "Walks through the array" and "in order to remove" are the natural
+        collocations; avoid the Portuguese "for to" pattern.
+      pragmatics: >-
+        The interviewer asked how you are thinking, so lead with approach rather
+        than code or a verdict on difficulty.
+    rephrase:
+      prompt: >-
+        Say the same approach again in two sentences, as if the interviewer had
+        just told you there is only a minute left.
+      goal: Compress without losing the pattern name or the invariant.
+    language_focus: [hedging, precision, register]
+    pt_help: >-
+      "Sliding window" nao se traduz em entrevista. Diga o nome em ingles e
+      explique o porque.
+    feynman:
+      concept: Sliding window over a contiguous run with a uniqueness constraint.
+      explain_to: A junior developer who has never heard the term "window".
+      constraint: Do not use the words "window" or "pointer" in the explanation.
+      self_check: >-
+        Could your listener say why the left edge ever moves, without seeing
+        code?
+    black_box:
+      symptom: You opened with syntax or with a long hedge instead of a plan.
+      expected: Pattern named in the first sentence, with the reason it fits.
+      actual: >-
+        A vague gesture at an approach, or code appearing before any spoken
+        plan.
+      root_cause: >-
+        Either the pattern was not recognised, or the English for committing to
+        it felt riskier than staying vague.
+      repair: >-
+        Rehearse the sentence "This looks like X, because the answer is Y" until
+        it is automatic for five patterns.
+    recall:
+      active_recall_cue: >-
+        Which pattern fits a contiguous run with a uniqueness constraint, and
+        what does the hash store?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+        note: Pattern selection and naming discipline for the opening minute.
+      - repo: original
+        path: english-arcade/dsa/pattern-naming
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-02-invariant-statement
+    version: "1.0.0"
+    target: dsa
+    topic: Invariants
+    difficulty: 2
+    interview_stage: live_coding
+    template: dsa-narration
+    prompt: >-
+      What exactly does your loop keep true on every iteration?
+    context: >-
+      You are halfway through a two-pointer solution and the interviewer stops
+      you to check whether you can state the property that makes the algorithm
+      correct, rather than merely passing the tests.
+    best_answer: >-
+      At the top of every iteration the segment between the two pointers holds
+      only distinct values, and everything left of the slow pointer has already
+      been counted. That is what lets me move the fast pointer forward without
+      rechecking anything behind it.
+    distractors:
+      - text: >-
+          The loop keeps going until the end of the array, and each time it
+          checks the current element and updates the answer if the answer needs
+          updating, then moves forward and repeats that process.
+        trap: precision
+        why_wrong: >-
+          This describes control flow, not an invariant. It would stay true of
+          almost any loop and proves nothing about correctness.
+      - text: >-
+          Since the beginning the segment between the two pointers is having
+          only distinct values and all the values in the left of the slow
+          pointer was already counted before we advance the fast one.
+        trap: grammar
+        why_wrong: >-
+          "Is having" misuses a stative verb and "was already counted" breaks
+          agreement, undercutting otherwise correct reasoning.
+      - text: >-
+          Honestly it just works. I have solved this shape of problem plenty of
+          times and the invariant is the usual one for two pointers, so I would
+          rather spend the time on code than on the proof.
+        trap: pragmatics
+        why_wrong: >-
+          Refusing the question loses the exact signal being probed, which is
+          whether you reason or pattern-match.
+    feedback:
+      register: >-
+        Explaining correctness is a senior register moment: measured, specific,
+        no appeal to experience alone.
+      hedging: >-
+        Do not hedge an invariant. It either holds or it does not, so state it
+        flatly.
+      precision: >-
+        An invariant is a property true at a fixed point in the loop, not a
+        description of what the loop does.
+      grammar: >-
+        Use simple present for invariants ("holds", "have been counted") and
+        avoid progressive forms of stative verbs.
+      pragmatics: >-
+        Answer the correctness question directly before returning to the code.
+    rephrase:
+      prompt: >-
+        Restate the invariant beginning with "At the top of each iteration" and
+        stop after one sentence.
+      goal: Force a single precise claim instead of a narration.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Loop invariant as the property that makes an algorithm correct.
+      explain_to: A tester who trusts examples more than proofs.
+      constraint: Use a queue at a bakery as the only example.
+      self_check: >-
+        Did you state something that stays true, rather than something that
+        happens?
+    black_box:
+      symptom: Your answer narrated the loop body instead of naming a property.
+      expected: A single sentence that is true at a fixed point of each pass.
+      actual: A step-by-step retelling of what the code does.
+      root_cause: >-
+        Confusing behaviour with correctness, often because the invariant was
+        never made explicit while solving.
+      repair: >-
+        Before coding, write the invariant as one sentence starting "At the top
+        of each iteration".
+    recall:
+      active_recall_cue: >-
+        What is the difference between an invariant and a description of the
+        loop body?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+        note: Core problem walkthroughs where invariants are made explicit.
+      - repo: original
+        path: english-arcade/dsa/invariant-statement
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-03-complexity-defence
+    version: "1.0.0"
+    target: dsa
+    topic: Complexity
+    difficulty: 2
+    interview_stage: live_coding
+    template: dsa-narration
+    prompt: >-
+      You said linear time. Can you defend that, including the space you are
+      using?
+    context: >-
+      Your solution passes the examples. The interviewer wants the cost analysis
+      stated cleanly, including the part candidates usually skip, which is the
+      memory the hash occupies.
+    best_answer: >-
+      Each index is visited at most twice, once by each pointer, so time is
+      linear in the length of the input. Space is bounded by the number of
+      distinct values in the window rather than the whole array, so worst case
+      it is also linear, and that worst case is an array with no repeats.
+    distractors:
+      - text: >-
+          It is O of n because we only have one loop in the code, and the space
+          is O of one because I am only using a single hash variable rather than
+          creating any new arrays inside the function.
+        trap: content
+        why_wrong: >-
+          Counting loops is not analysis, and a hash that grows with the input
+          is not constant space. The claim is simply false.
+      - text: >-
+          I would say it is probably around linear, more or less, although it
+          might depend a bit on the data and on how Ruby handles the hash, so I
+          would not want to commit to a firm number here.
+        trap: hedging
+        why_wrong: >-
+          Complexity is a commitment. Hedging the bound itself reads as not
+          knowing it.
+      - text: >-
+          The complexity is linear. Next question. I do not think there is
+          anything else worth adding about memory because everyone uses a hash
+          for this and it is completely standard practice.
+        trap: pragmatics
+        why_wrong: >-
+          The interviewer explicitly asked about space, so skipping it ignores
+          the actual request.
+    feedback:
+      register: >-
+        Confident and factual. Complexity is one of the few places where flat
+        assertion is the correct register.
+      hedging: >-
+        Hedge the worst case if it is genuinely data-dependent, never the bound
+        itself.
+      precision: >-
+        Say what the bound is in terms of, such as distinct values in the
+        window, rather than a vague "n".
+      grammar: >-
+        Read complexity aloud as "O of n" or "linear in n"; both are natural,
+        "O n" alone is not.
+      pragmatics: >-
+        Cover both axes the question named, time and space, in the order asked.
+    rephrase:
+      prompt: >-
+        Give the same analysis but name the worst-case input explicitly in your
+        first sentence.
+      goal: Practise leading with the case that stresses the bound.
+    language_focus: [precision, hedging, pragmatics]
+    feynman:
+      concept: Auxiliary space of a sliding window versus input size.
+      explain_to: A developer who believes two passes means quadratic time.
+      constraint: No formulas; use counting visits per element only.
+      self_check: >-
+        Can you name the input that makes the memory peak, in one phrase?
+    black_box:
+      symptom: You gave a bound without the space half, or hedged the bound.
+      expected: Time and space, each with the reason and the worst case.
+      actual: A partial or over-hedged claim, or loop-counting as analysis.
+      root_cause: >-
+        Treating complexity as a label recalled from practice rather than a
+        claim derived from visits and storage.
+      repair: >-
+        Practise the two-sentence form: visits per element for time, what grows
+        for space.
+    recall:
+      active_recall_cue: >-
+        What input makes the auxiliary space of a sliding window peak?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+        note: Complexity vocabulary used when defending a chosen pattern.
+      - repo: original
+        path: english-arcade/dsa/complexity-defence
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-04-ruby-default-trap
+    version: "1.0.0"
+    target: dsa
+    topic: Ruby runtime traps
+    difficulty: 3
+    interview_stage: live_coding
+    template: dsa-recovery
+    prompt: >-
+      Your counter hash is behaving oddly on the second test. What do you think
+      is happening?
+    context: >-
+      You wrote a frequency counter with a default value and then mutated that
+      default. Every key now shares one object, and the interviewer is watching
+      how you diagnose it in English.
+    best_answer: >-
+      I passed a single default object to the hash, so every missing key hands
+      back that same array and my pushes all land in one place. I should use the
+      block form instead, which builds a fresh array per key and assigns it, so
+      each key gets its own storage.
+    distractors:
+      - text: >-
+          Ruby is caching the hash somewhere between the two test runs, so state
+          from the first case is leaking into the second. I would reset the
+          variable at the start of the method to clear it.
+        trap: content
+        why_wrong: >-
+          Misdiagnoses shared object identity as cross-run caching, which sends
+          the fix in the wrong direction entirely.
+      - text: >-
+          There is something strange going on with the hash, it is not doing
+          what I expected it to do at all, and I am not entirely sure why that
+          would be happening in this particular situation.
+        trap: precision
+        why_wrong: >-
+          Names no mechanism. At C2 the expected move is to describe the cause,
+          not the symptom.
+      - text: >-
+          I am so sorry, this is really embarrassing, I completely messed this
+          up and should have seen it immediately, I apologise, let me try to fix
+          it quickly and hopefully it works this time.
+        trap: register
+        why_wrong: >-
+          Repeated apology shifts the round from technical to emotional and
+          wastes the recovery window.
+    feedback:
+      register: >-
+        Own the bug once, in neutral language, then move straight to the
+        mechanism.
+      hedging: >-
+        "I think what is happening is" is the right amount of hedge while
+        diagnosing live.
+      precision: >-
+        Say "the same object" rather than "it is weird"; identity is the actual
+        cause.
+      grammar: >-
+        Present continuous fits a live symptom ("my pushes are landing"); simple
+        present fits the rule.
+      pragmatics: >-
+        Diagnose, propose the fix, re-run. Apologising is not one of the steps.
+    rephrase:
+      prompt: >-
+        Explain the same bug to a teammate in a pull request comment, in two
+        sentences.
+      goal: Shift from spoken diagnosis to concise written register.
+    language_focus: [precision, register, grammar]
+    pt_help: >-
+      "Vergonha" nao cabe aqui. Em ingles tecnico, assuma o erro uma vez e siga
+      para a causa.
+    feynman:
+      concept: Shared default object versus a per-key default block.
+      explain_to: A developer who has only used languages with value defaults.
+      constraint: Explain it using one shared notebook handed to many people.
+      self_check: >-
+        Did you explain why the block form fixes it, not just that it does?
+    black_box:
+      symptom: You described the symptom or apologised instead of diagnosing.
+      expected: Name shared object identity as the cause, then the block-form fix.
+      actual: >-
+        A vague "it is weird" reaction, or an unrelated caching theory.
+      root_cause: >-
+        Under pressure the vocabulary for object identity is missing, so the
+        answer defaults to emotion or vagueness.
+      repair: >-
+        Drill the sentence "every key is handed back the same object" until it
+        arrives before the apology does.
+    recall:
+      active_recall_cue: >-
+        Why does a hash default object get shared across keys?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+        note: Ruby runtime traps that surface during live coding.
+      - repo: original
+        path: english-arcade/dsa/ruby-default-trap
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-05-clarifying-question
+    version: "1.0.0"
+    target: dsa
+    topic: Clarifying the contract
+    difficulty: 1
+    interview_stage: technical_screen
+    template: dsa-narration
+    prompt: >-
+      Do you have any questions before you begin?
+    context: >-
+      The statement says "find the top k items" but never defines tie-breaking
+      or whether the input fits in memory. This opening is scored on whether you
+      ask, and on how you ask.
+    best_answer: >-
+      Two things, if you do not mind. First, how should I break ties when two
+      items have the same count, by insertion order or by value? Second, can I
+      assume the input fits comfortably in memory, or should I design for a
+      stream?
+    distractors:
+      - text: >-
+          No questions, the statement seems clear enough and I would rather
+          start writing code now so I do not lose time. We can deal with edge
+          cases later if they come up.
+        trap: pragmatics
+        why_wrong: >-
+          Declining the invitation forfeits easy signal, and the tie-breaking
+          rule genuinely changes the data structure.
+      - text: >-
+          Sorry, could you just possibly clarify a little bit what you actually
+          mean by top, because I am not completely certain I have understood the
+          question properly at all?
+        trap: hedging
+        why_wrong: >-
+          Over-apologetic stacking makes a reasonable question sound like
+          confusion about the entire problem.
+      - text: >-
+          I need you to tell me the tie-breaking rule and confirm the input size
+          before I start, otherwise I cannot be expected to produce a correct
+          solution in the time available.
+        trap: register
+        why_wrong: >-
+          Demanding rather than asking inverts the dynamic of the round and
+          reads as inflexible.
+    feedback:
+      register: >-
+        Polite and efficient. "If you do not mind" is enough softening for a
+        direct request.
+      hedging: >-
+        Hedge the request, never the content of the question itself.
+      precision: >-
+        Ask about the two unknowns that change your design, not about trivia.
+      grammar: >-
+        Embedded questions keep statement order: "how I should break ties" when
+        embedded, not "how should I break ties".
+      pragmatics: >-
+        Numbering your questions ("two things") helps the interviewer track you.
+    rephrase:
+      prompt: >-
+        Ask the same two questions in a single sentence without sounding rushed.
+      goal: Compress requests while keeping politeness intact.
+    language_focus: [pragmatics, hedging, register]
+    feynman:
+      concept: Requirement clarification as design input, not as politeness.
+      explain_to: A candidate who thinks questions look like weakness.
+      constraint: Use only the top-k example, no abstractions.
+      self_check: >-
+        Can you name how each answer would change your data structure?
+    black_box:
+      symptom: You said "no questions" or asked something that changed nothing.
+      expected: Two questions whose answers alter the design.
+      actual: Silence, or a vague request to restate the problem.
+      root_cause: >-
+        Treating questions as risk rather than as the cheapest signal in the
+        round.
+      repair: >-
+        Keep two default questions ready: tie-breaking and input size.
+    recall:
+      active_recall_cue: >-
+        Which two unknowns most often change a top-k design?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        note: Question-first discipline reused for algorithm rounds.
+      - repo: original
+        path: english-arcade/dsa/clarifying-question
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-06-mid-problem-recovery
+    version: "1.0.0"
+    target: dsa
+    topic: Recovering from a mistake
+    difficulty: 3
+    interview_stage: live_coding
+    template: dsa-recovery
+    prompt: >-
+      You have gone quiet. What is going on in your head right now?
+    context: >-
+      You noticed two minutes ago that your recursion never handles the empty
+      subtree, and you have been silently editing. The interviewer cannot see
+      your reasoning and is prompting you to narrate.
+    best_answer: >-
+      I went internal for a moment, apologies. I found a case my recursion does
+      not handle, an empty subtree, where it returns nil and the caller expects
+      a number. I am adding a base case that returns zero, then I will re-trace
+      the small example to confirm nothing else shifted.
+    distractors:
+      - text: >-
+          Nothing, everything is fine, I am just concentrating on getting this
+          part written properly and then I will explain the whole thing once it
+          is finished and working the way I want.
+        trap: pragmatics
+        why_wrong: >-
+          Denying the problem removes the interviewer from the loop, and silent
+          debugging is exactly what the round penalises.
+      - text: >-
+          I am stuck, I really do not know what is wrong, this is not going well
+          at all and I am worried I will not finish in time, maybe I should just
+          start the whole thing again from scratch.
+        trap: register
+        why_wrong: >-
+          Catastrophising invites the interviewer to lose confidence, and the
+          restart proposal discards working code.
+      - text: >-
+          I have found one case that is not handling, the empty subtree, so I am
+          putting a base case for return zero and after I will make the trace
+          again for confirm that nothing more changed.
+        trap: grammar
+        why_wrong: >-
+          "Is not handling" and "for confirm" are direct Portuguese calques that
+          reduce perceived fluency under pressure.
+    feedback:
+      register: >-
+        One brief acknowledgement, then straight to substance. Never
+        catastrophise.
+      hedging: >-
+        Do not hedge a diagnosis you are sure of; hedge only consequences you
+        have not verified.
+      precision: >-
+        Name the failing case and the wrong return value, not just "a bug".
+      grammar: >-
+        Use "does not handle" for a property and "in order to confirm" for
+        purpose.
+      pragmatics: >-
+        Narration is as much the deliverable here as the code is.
+    rephrase:
+      prompt: >-
+        Say the same recovery without the word "sorry" and without losing
+        politeness.
+      goal: Break the reflex apology while keeping a collaborative tone.
+    language_focus: [grammar, register, pragmatics]
+    pt_help: >-
+      "Para confirmar" vira "to confirm" ou "in order to confirm", nunca "for
+      confirm".
+    feynman:
+      concept: Narrated recovery as a signal of engineering maturity.
+      explain_to: A candidate who believes silence hides mistakes.
+      constraint: Explain using a surgeon talking through an operation.
+      self_check: >-
+        Did you state the failing case before proposing any fix?
+    black_box:
+      symptom: You debugged silently, or spiralled into apology.
+      expected: Brief acknowledgement, named failing case, smallest fix, re-trace.
+      actual: Long silence, denial, or a proposal to restart from scratch.
+      root_cause: >-
+        Panic plus missing phrases for narrating uncertainty in a second
+        language.
+      repair: >-
+        Rehearse the four-move recovery until it survives being nervous.
+    recall:
+      active_recall_cue: >-
+        What are the four moves of a clean live-coding recovery?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+        note: Impact-first recovery sequence adapted to live coding.
+      - repo: original
+        path: english-arcade/dsa/mid-problem-recovery
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-07-tradeoff-language
+    version: "1.0.0"
+    target: dsa
+    topic: Time and space trade-offs
+    difficulty: 2
+    interview_stage: deep_dive
+    template: dsa-narration
+    prompt: >-
+      Could you do this with less memory, and would you want to?
+    context: >-
+      Your hash-based solution is linear in both time and space. The interviewer
+      is testing whether you can hold two options in the air and choose one with
+      a stated reason rather than defaulting.
+    best_answer: >-
+      I could sort first and scan, which drops the extra memory to effectively
+      nothing but pushes time to n log n. Which one wins depends on whether
+      memory or latency is the binding constraint. On a request path I would
+      keep the hash; for a batch job over a large file I would sort.
+    distractors:
+      - text: >-
+          Yes, sorting would use less memory. It would be slower though, so it
+          depends really. Both options have advantages and disadvantages and
+          either could be reasonable depending on the situation.
+        trap: precision
+        why_wrong: >-
+          States the trade-off but never chooses. "It depends" without the
+          deciding condition is an empty answer.
+      - text: >-
+          No, the hash approach is correct and I would not change it. Memory is
+          cheap now and optimising for it is premature, so I would keep what I
+          have and move on to the next part.
+        trap: pragmatics
+        why_wrong: >-
+          Refuses the alternative the interviewer explicitly offered, which
+          reads as inflexibility.
+      - text: >-
+          If I would sort the array first, then I will not need the hash anymore
+          and the memory would be much less, but the time will become worse
+          because sorting is more slow than a linear scan.
+        trap: grammar
+        why_wrong: >-
+          "If I would" breaks the conditional and "more slow" replaces the
+          comparative "slower".
+    feedback:
+      register: >-
+        Balanced and decisive. Senior engineers name a default and the condition
+        that flips it.
+      hedging: >-
+        "Depends on whether" is precise hedging; "it depends really" is not.
+      precision: >-
+        Attach each option to a concrete context, such as request path versus
+        batch job.
+      grammar: >-
+        Second conditional takes "if I sorted... I would need", never "if I
+        would sort".
+      pragmatics: >-
+        Answer both halves of the question: the feasibility and the preference.
+    rephrase:
+      prompt: >-
+        Give the same answer but start from the constraint that would make you
+        switch.
+      goal: Practise leading with the deciding condition.
+    language_focus: [precision, grammar, hedging]
+    feynman:
+      concept: Time-space trade-off chosen by binding constraint.
+      explain_to: A product manager deciding between two builds.
+      constraint: Use luggage and a locker as the only analogy.
+      self_check: >-
+        Did you name the condition that flips your default?
+    black_box:
+      symptom: You listed both options and stopped, or refused one outright.
+      expected: A default plus the constraint that would change it.
+      actual: >-
+        A bare "it depends" with no named condition.
+      root_cause: >-
+        Avoiding commitment because committing in English feels riskier than
+        staying balanced.
+      repair: >-
+        Always finish a trade-off with "I would default to X; I would switch if
+        Y".
+    recall:
+      active_recall_cue: >-
+        What condition makes sorting preferable to hashing here?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: decision-contrasts/README.md
+        note: Decision-contrast framing applied to algorithm-level choices.
+      - repo: original
+        path: english-arcade/dsa/tradeoff-language
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-08-scaling-followup
+    version: "1.0.0"
+    target: dsa
+    topic: Scaling follow-up
+    difficulty: 3
+    interview_stage: deep_dive
+    template: dsa-narration
+    prompt: >-
+      Now suppose the input does not fit on one machine. What changes?
+    context: >-
+      The classic final follow-up. The interviewer wants to see whether you can
+      move from an in-memory algorithm to a distributed framing without
+      abandoning the reasoning you already established.
+    best_answer: >-
+      The counting stays the same, but it moves. I would partition by key so
+      every occurrence of a value lands on the same node, count locally, then
+      merge the per-node top k. The merge is only correct because counts for a
+      key are never split across partitions.
+    distractors:
+      - text: >-
+          I would use a distributed system, probably a big data framework, and
+          it would handle the partitioning and shuffling automatically, so the
+          algorithm would not really need to change much at all.
+        trap: precision
+        why_wrong: >-
+          Names a category of tool instead of the property that makes the merge
+          correct, which is the actual answer.
+      - text: >-
+          That is a very good question, and honestly it is quite a big topic.
+          There are many possible approaches and it would depend on a lot of
+          factors that we have not discussed here.
+        trap: pragmatics
+        why_wrong: >-
+          Flattery plus deferral fills time without answering, which is
+          immediately visible to an experienced interviewer.
+      - text: >-
+          You will have to split the data in several machines and each machine
+          makes the count of its part, and in the final you join all the counts
+          for to know which are the top ones.
+        trap: grammar
+        why_wrong: >-
+          "Split in", "in the final" and "for to know" are L1 transfer errors
+          that mark the answer as non-native under pressure.
+    feedback:
+      register: >-
+        Keep the measured register you used for the single-machine answer.
+      hedging: >-
+        No hedge is needed on partitioning by key; it is the standard correct
+        move.
+      precision: >-
+        The load-bearing sentence is why the merge is safe, not which framework
+        you would pick.
+      grammar: >-
+        Use "partition by key", "split across machines" and "in the end".
+      pragmatics: >-
+        Connect back to your earlier solution rather than restarting from zero.
+    rephrase:
+      prompt: >-
+        Explain the same design to a product manager who does not know what
+        partitioning is.
+      goal: Test whether precision survives a change of audience.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Partition-then-merge and the key-locality property.
+      explain_to: An operations manager counting votes across regions.
+      constraint: Use a national election count as the only example.
+      self_check: >-
+        Did you say why the merge cannot double count?
+    black_box:
+      symptom: You named a tool instead of a correctness property.
+      expected: Partition by key, count locally, merge, plus why that is safe.
+      actual: A framework name, or deferral dressed as nuance.
+      root_cause: >-
+        Reaching for vocabulary that sounds senior instead of the reasoning that
+        is senior.
+      repair: >-
+        Practise finishing distributed answers with "this is correct because".
+    recall:
+      active_recall_cue: >-
+        Why must all occurrences of a key land on the same partition?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/04-system-design-canonical-problems.md
+        note: Canonical scaling follow-ups that pair with algorithm rounds.
+      - repo: original
+        path: english-arcade/dsa/scaling-followup
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-09-whiteboard-thinking-aloud
+    version: "1.0.0"
+    target: dsa
+    topic: Thinking aloud
+    difficulty: 2
+    interview_stage: live_coding
+    template: dsa-narration
+    prompt: >-
+      Could you keep talking me through it as you go?
+    context: >-
+      You are comfortable with the algorithm but tend to fall silent while
+      typing. The interviewer needs a running commentary to assess reasoning,
+      and silence reads as uncertainty even when the code is correct.
+    best_answer: >-
+      Sure. I am setting up the map first so lookups are constant, then the
+      outer loop walks the array once. Right here I am deliberately checking the
+      complement before inserting, otherwise an element could pair with itself.
+    distractors:
+      - text: >-
+          Okay so now I type the map, and then I type the for loop, and then
+          inside the loop I type the if statement, and now I am typing the
+          return at the end of the function.
+        trap: precision
+        why_wrong: >-
+          Narrating keystrokes carries no information. The interviewer can see
+          the screen; what they cannot see is why.
+      - text: >-
+          Yeah sure no worries, so basically I am just gonna throw a map in here
+          real quick and then kinda loop over the thing and see what sticks, and
+          that should pretty much do it.
+        trap: register
+        why_wrong: >-
+          Casual filler and "see what sticks" suggest improvisation rather than
+          a considered plan.
+      - text: >-
+          I am putting the map for make the search faster and after I pass in
+          all the elements of the array for see if the complement is existing
+          there before to insert it.
+        trap: grammar
+        why_wrong: >-
+          "For make", "for see" and "before to insert" are infinitive-of-purpose
+          errors carried over from Portuguese.
+    feedback:
+      register: >-
+        Professional but relaxed. Contractions are fine; "gonna" and "kinda" are
+        not.
+      hedging: >-
+        Narration rarely needs hedges. Say what you are doing and why.
+      precision: >-
+        Explain decisions, not keystrokes. The word "otherwise" is doing the
+        real work in the strong answer.
+      grammar: >-
+        Purpose takes "to make" or "in order to make", never "for make".
+      pragmatics: >-
+        Match the requested behaviour immediately; the interviewer asked for
+        commentary, so give it without discussion.
+    rephrase:
+      prompt: >-
+        Narrate the same three lines again, but justify one decision with the
+        word "because".
+      goal: Convert description into reasoning.
+    language_focus: [precision, register, grammar]
+    pt_help: >-
+      Finalidade em ingles usa "to" ou "in order to". "For + verbo" e o erro
+      mais comum de brasileiros em entrevista.
+    feynman:
+      concept: Commentary as evidence of reasoning during live coding.
+      explain_to: An engineer who codes brilliantly but silently.
+      constraint: Explain using a chef describing choices, not movements.
+      self_check: >-
+        Would a listener who could not see the screen learn anything?
+    black_box:
+      symptom: You went quiet, or narrated what was visible on screen.
+      expected: Spoken reasons for decisions, especially rejected alternatives.
+      actual: Silence, keystroke narration, or filler.
+      root_cause: >-
+        Speaking and coding compete for working memory in a second language.
+      repair: >-
+        Practise narrating only at decision points, not continuously.
+    recall:
+      active_recall_cue: >-
+        What separates useful narration from keystroke narration?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+        note: Operating system for speaking while solving.
+      - repo: original
+        path: english-arcade/dsa/thinking-aloud
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-10-edge-case-enumeration
+    version: "1.0.0"
+    target: dsa
+    topic: Edge cases
+    difficulty: 2
+    interview_stage: live_coding
+    template: dsa-narration
+    prompt: >-
+      What would you test before you call this done?
+    context: >-
+      Your implementation handles the sample input. The interviewer wants to
+      hear whether you can enumerate the cases that break naive solutions,
+      spoken as a short and confident list.
+    best_answer: >-
+      Three cases. An empty input, which should return zero rather than raise. A
+      single element, where the window never shrinks. And an array that is
+      entirely duplicates, which is the case that stresses the left pointer
+      moving more than once in a single step.
+    distractors:
+      - text: >-
+          I would test it with some different inputs to make sure it works
+          properly in all the situations, including some bigger ones and maybe
+          some strange ones that might cause problems.
+        trap: precision
+        why_wrong: >-
+          "Some strange ones" names nothing. Edge cases are only credible when
+          enumerated concretely.
+      - text: >-
+          I tested it with the example already and it gave the right answer, so
+          I think it is fine and we can probably move on to the next part of the
+          problem now.
+        trap: content
+        why_wrong: >-
+          One passing example is not a test plan, and the duplicate-heavy case
+          is precisely where this algorithm fails.
+      - text: >-
+          I would test the empty array, that must return zero and not raise, the
+          array with one element only, where the window never shrink, and the
+          array with all duplicates.
+        trap: grammar
+        why_wrong: >-
+          "Never shrink" drops third-person agreement, a small slip that stands
+          out in an otherwise correct list.
+    feedback:
+      register: >-
+        Crisp and enumerated. Announcing "three cases" signals control.
+      hedging: >-
+        No hedging needed on a test list; these either matter or they do not.
+      precision: >-
+        Each case should name the behaviour you expect, not just the input.
+      grammar: >-
+        Third-person singular "shrinks", and "return zero rather than raise" for
+        the contrast.
+      pragmatics: >-
+        Signposting with a count makes the list easy for the interviewer to
+        follow and score.
+    rephrase:
+      prompt: >-
+        Give the same three cases and add the reason each one is dangerous.
+      goal: Move from listing to justifying.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Edge cases as the inputs that break the invariant.
+      explain_to: A QA engineer with no algorithm background.
+      constraint: Explain without naming any data structure.
+      self_check: >-
+        Does each case you named stress a different part of the logic?
+    black_box:
+      symptom: Your list was vague or stopped at the happy path.
+      expected: Named inputs, each with the expected behaviour.
+      actual: >-
+        A vague "some different inputs", or reliance on one passing example.
+      root_cause: >-
+        Testing treated as reassurance rather than as adversarial search.
+      repair: >-
+        Keep a standing triple: empty, single, all-identical.
+    recall:
+      active_recall_cue: >-
+        Which three inputs stress almost every array algorithm?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+        note: Worked problems and their failing inputs.
+      - repo: original
+        path: english-arcade/dsa/edge-case-enumeration
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-11-disagreeing-with-interviewer
+    version: "1.0.0"
+    target: dsa
+    topic: Disagreement
+    difficulty: 3
+    interview_stage: live_coding
+    template: dsa-recovery
+    prompt: >-
+      I think your solution is quadratic, is it not?
+    context: >-
+      The interviewer is wrong, possibly deliberately. Your solution is linear.
+      The round is now testing whether you can hold your ground in English
+      without either capitulating or becoming combative.
+    best_answer: >-
+      I do not think so, but let me walk through it and you can tell me where I
+      have gone wrong. The inner loop only advances the left pointer, and that
+      pointer never resets, so across the whole run it moves at most n times in
+      total rather than n times per element.
+    distractors:
+      - text: >-
+          Oh, you are probably right, sorry, I did not think about that
+          carefully enough. Let me look at it again and see if I can find a
+          better approach that avoids the nested structure.
+        trap: pragmatics
+        why_wrong: >-
+          Capitulating to an incorrect claim is the failure mode this question
+          is designed to expose.
+      - text: >-
+          No, it is definitely linear. The inner loop does not run n times for
+          each element, that is a common misunderstanding of amortised analysis
+          and it does not apply to this code.
+        trap: register
+        why_wrong: >-
+          Correct content, but "a common misunderstanding" lectures the
+          interviewer and creates friction unnecessarily.
+      - text: >-
+          I am not agree with that, because the internal loop is not running for
+          each element, it advances only the left pointer and this pointer is
+          not resetting never during the execution.
+        trap: grammar
+        why_wrong: >-
+          "I am not agree" and the double negative "not resetting never" are
+          both L1 transfer errors that weaken a correct rebuttal.
+    feedback:
+      register: >-
+        Firm and collaborative. Invite correction while making your case.
+      hedging: >-
+        "I do not think so" is the ideal calibrated opener: clear disagreement,
+        no aggression.
+      precision: >-
+        Win the point with the amortised argument, not with the assertion.
+      grammar: >-
+        "I disagree" or "I do not agree", never "I am not agree"; use one
+        negative per clause.
+      pragmatics: >-
+        Offering to be corrected keeps the interviewer on your side while you
+        defend the answer.
+    rephrase:
+      prompt: >-
+        Disagree again in one sentence, then immediately offer your evidence.
+      goal: Practise brevity in disagreement.
+    language_focus: [register, grammar, pragmatics]
+    pt_help: >-
+      "Nao concordo" e "I disagree" ou "I do not agree". "I am not agree" e erro
+      classico e muito visivel.
+    feynman:
+      concept: Amortised analysis defended under social pressure.
+      explain_to: A peer who counts nested loops to judge complexity.
+      constraint: Explain using total distance walked, not code.
+      self_check: >-
+        Did you disagree and provide evidence in the same breath?
+    black_box:
+      symptom: You folded, or you won the point rudely.
+      expected: Calibrated disagreement plus the amortised argument.
+      actual: Apology and retreat, or a lecture.
+      root_cause: >-
+        Disagreeing politely in a second language is harder than being either
+        silent or blunt.
+      repair: >-
+        Memorise "I do not think so, but let me walk through it" as your opener.
+    recall:
+      active_recall_cue: >-
+        Why does a never-resetting pointer keep a nested loop linear?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+        note: Complexity reasoning used to defend a solution.
+      - repo: original
+        path: english-arcade/dsa/disagreeing-politely
+        note: Original interview phrasing authored for this pack.
+  - id: dsa-12-time-pressure-triage
+    version: "1.0.0"
+    target: dsa
+    topic: Time pressure
+    difficulty: 3
+    interview_stage: live_coding
+    template: dsa-recovery
+    prompt: >-
+      We have about five minutes left. How do you want to use them?
+    context: >-
+      Your solution is written but untested, and you know one edge case is
+      probably broken. The interviewer is handing you the triage decision, and
+      how you spend the time is itself the assessment.
+    best_answer: >-
+      I would spend three minutes tracing the duplicate-heavy case, because that
+      is where I think the bug is, and keep the last two for complexity. I would
+      rather leave with a verified weakness named than with an untested solution
+      that looks finished.
+    distractors:
+      - text: >-
+          I would like to finish the optimisation I was thinking about earlier,
+          because the current version is not as efficient as it could be and I
+          would prefer to show you the better approach if there is time.
+        trap: content
+        why_wrong: >-
+          Optimising untested code is the wrong triage; correctness precedes
+          performance in every interview rubric.
+      - text: >-
+          Whatever you prefer, really. I am happy to do whichever part you think
+          would be most useful, so I will follow your lead on how we should use
+          the remaining time here.
+        trap: pragmatics
+        why_wrong: >-
+          The question delegated the decision to you; handing it back forfeits
+          the signal entirely.
+      - text: >-
+          Five minutes is not enough time for finish everything, so I will make
+          the test of the duplicate case and after I explain the complexity if
+          it remains some time.
+        trap: grammar
+        why_wrong: >-
+          "For finish", "make the test" and "if it remains some time" are
+          calques that obscure otherwise sound triage.
+    feedback:
+      register: >-
+        Decisive and calm. Naming a known weakness reads as confidence, not
+        failure.
+      hedging: >-
+        Hedge the location of the bug ("where I think"), never the plan.
+      precision: >-
+        Allocate the minutes explicitly; vague intent is not a plan.
+      grammar: >-
+        "Enough time to finish", "run the test", and "if there is time left".
+      pragmatics: >-
+        Take the decision you were offered and justify it in one clause.
+    rephrase:
+      prompt: >-
+        State the same plan in one sentence, leading with what you would
+        sacrifice.
+      goal: Practise making the trade-off explicit under pressure.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Triage under a hard deadline, correctness before optimisation.
+      explain_to: A junior engineer who optimises before testing.
+      constraint: Explain using an exam with unanswered questions left.
+      self_check: >-
+        Did you say what you were choosing not to do?
+    black_box:
+      symptom: You optimised, or handed the decision back to the interviewer.
+      expected: An explicit minute allocation with correctness first.
+      actual: Deference, or polishing code that was never verified.
+      root_cause: >-
+        Time pressure plus reluctance to name a suspected bug out loud.
+      repair: >-
+        Default to: verify the weakest case, then state complexity.
+    recall:
+      active_recall_cue: >-
+        With five minutes left and untested code, what comes first?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+        note: Prioritisation language reused for end-of-round triage.
+      - repo: original
+        path: english-arcade/dsa/time-pressure-triage
+        note: Original interview phrasing authored for this pack.

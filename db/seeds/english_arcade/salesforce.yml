@@ -1,0 +1,1075 @@
+---
+contract_version: "1.1.0"
+target:
+  key: salesforce
+  label: Salesforce
+  blurb: >-
+    Talk about governor limits, bulkification and platform trade-offs the way a
+    senior Salesforce engineer does, with the stakeholder in the room.
+  focus_areas:
+    - governor limits and bulkification
+    - Apex and trigger design
+    - Flow versus code decisions
+    - integration patterns and security
+    - stakeholder trade-offs and customisation debt
+  simulation:
+    minutes: 45
+    structure:
+      - label: Limits and data volume warm-up
+        minutes: 8
+      - label: Apex and automation design deep dive
+        minutes: 15
+      - label: Integration and security boundaries
+        minutes: 12
+      - label: Stakeholder trade-offs and debt
+        minutes: 10
+cards:
+  - id: salesforce-card-bulkification
+    front: What is the first thing to say about any trigger?
+    back: >-
+      That it handles collections, not single records. Queries and DML belong
+      outside the loop, because the platform enforces limits per transaction.
+    box: 1
+    source:
+      repo: original
+      path: english-arcade/salesforce/bulkification
+      note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-card-flow-vs-apex
+    front: How do you choose between Flow and Apex without dogma?
+    back: >-
+      By who maintains it and how complex the logic is. Flow for declarative
+      admin-owned rules; Apex when logic needs tests, reuse or bulk control.
+    box: 2
+    source:
+      repo: original
+      path: english-arcade/salesforce/flow-vs-apex
+      note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-card-stakeholder
+    front: How do you decline a customisation request well?
+    back: >-
+      Name the ongoing cost in their terms, then offer the configuration path
+      that meets the same business outcome.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: areas/12-engineering-practice/cards/architecture-decision-records.md
+      note: Decision framing reused for platform customisation choices.
+items:
+  - id: salesforce-01-bulkification
+    version: "1.0.0"
+    target: salesforce
+    topic: Governor limits
+    difficulty: 1
+    interview_stage: technical_screen
+    prompt: >-
+      What is wrong with putting a SOQL query inside a for loop?
+    context: >-
+      The most common Salesforce screening question. The interviewer wants the
+      limit named and the correct pattern described, since this single habit
+      causes most production failures.
+    best_answer: >-
+      It burns one query per record, so a bulk update of two hundred records
+      hits the governor limit and the whole transaction fails. I would query
+      once outside the loop, keep the results in a map keyed by ID, and look up
+      from the map inside the loop.
+    distractors:
+      - text: >-
+          It is inefficient and slows down the transaction, so it is better
+          practice to move the query outside the loop where possible to improve
+          performance for the user.
+        trap: precision
+        why_wrong: >-
+          Frames a hard platform limit as a performance preference; the
+          transaction fails outright rather than running slowly.
+      - text: >-
+          It can cause problems if there are a lot of records, so I would add a
+          check on the collection size and process them in smaller batches to
+          stay within the limits.
+        trap: content
+        why_wrong: >-
+          Batching around a query in a loop treats the symptom; the query
+          belongs outside the loop entirely.
+      - text: >-
+          It makes one query for each record, then a bulk update of two hundred
+          records reaches the limit of the governor and all the transaction
+          fails in that moment.
+        trap: grammar
+        why_wrong: >-
+          "Makes one query", "limit of the governor" and "all the transaction"
+          are compound-noun and quantifier errors.
+    feedback:
+      register: >-
+        Direct and platform-specific. Limits are facts, so state them.
+      hedging: >-
+        None; the transaction failure is deterministic.
+      precision: >-
+        Say "governor limit" and give the map pattern, not just "move it out".
+      grammar: >-
+        "One query per record", "the governor limit", "the whole transaction".
+      pragmatics: >-
+        Giving the map pattern answers the implied "so what would you do"
+        follow-up.
+    rephrase:
+      prompt: >-
+        Explain the same rule to an admin who writes Flows rather than Apex.
+      goal: Translate a code constraint into declarative terms.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      "Todo o" antes de substantivo singular e "the whole": "the whole
+      transaction", nao "all the transaction".
+    feynman:
+      concept: Per-transaction query limits and the map lookup pattern.
+      explain_to: A developer from a stack with no query limits.
+      constraint: Explain using a shop with a daily delivery quota.
+      self_check: >-
+        Did you say what happens at the limit, not just that it is slower?
+    black_box:
+      symptom: You called it inefficient, or proposed batching.
+      expected: Governor limit hit, transaction fails, query outside with a map.
+      actual: A performance framing, or a batch-size workaround.
+      root_cause: >-
+        Platform limits treated as performance guidance rather than as hard
+        ceilings.
+      repair: >-
+        Say "the transaction fails" whenever you describe a governor limit.
+    recall:
+      active_recall_cue: >-
+        What happens when a transaction exceeds the SOQL query limit?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/salesforce/bulkification
+        note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-02-trigger-framework
+    version: "1.0.0"
+    target: salesforce
+    topic: Trigger design
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      Why would you keep only one trigger per object in this org?
+    context: >-
+      The org has three triggers on Account, added by different teams over
+      several years. The interviewer wants the ordering problem named
+      explicitly.
+    best_answer: >-
+      Because the platform does not guarantee the order two triggers on the same
+      object will run in, so behaviour depends on something you cannot control
+      or test reliably. With one trigger delegating to a handler, the sequence is
+      explicit in code and reviewable.
+    distractors:
+      - text: >-
+          Because it keeps the code organised and easier to maintain, since
+          everything related to that object is in one place rather than spread
+          across several different files.
+        trap: precision
+        why_wrong: >-
+          Organisation is a side effect. The actual reason is nondeterministic
+          execution order.
+      - text: >-
+          Because multiple triggers on the same object consume more of the
+          governor limits, so consolidating them reduces the resource usage of
+          the transaction overall.
+        trap: content
+        why_wrong: >-
+          Trigger count is not what consumes limits; the queries and DML inside
+          them are.
+      - text: >-
+          Because the platform does not guarantee the order that two triggers in
+          the same object will execute, then the behaviour depends of something
+          that you cannot control.
+        trap: grammar
+        why_wrong: >-
+          "Triggers in the same object" and "depends of" are preposition errors
+          that recur constantly for Portuguese speakers.
+    feedback:
+      register: >-
+        Architectural and specific.
+      hedging: >-
+        None; the ordering guarantee genuinely does not exist.
+      precision: >-
+        "Not guaranteed" and "cannot test reliably" carry the argument.
+      grammar: >-
+        "Triggers on the same object", "depends on".
+      pragmatics: >-
+        Contrasting with the handler pattern gives the interviewer the fix
+        alongside the diagnosis.
+    rephrase:
+      prompt: >-
+        Explain the risk to a project manager deciding whether to fund the
+        refactor.
+      goal: Convert an ordering guarantee into business risk.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Depender de" e "depend on", sempre. Nunca "depend of".
+    feynman:
+      concept: Nondeterministic trigger order and explicit sequencing.
+      explain_to: An admin who added a second trigger last week.
+      constraint: Explain using two people editing the same document.
+      self_check: >-
+        Did you say what you cannot test?
+    black_box:
+      symptom: You cited tidiness, or invented a limits rationale.
+      expected: Execution order is not guaranteed; a handler makes it explicit.
+      actual: An organisation argument, or a governor-limit claim.
+      root_cause: >-
+        Best practices absorbed from style guides rather than from platform
+        semantics.
+      repair: >-
+        For each platform rule you follow, name the guarantee it replaces.
+    recall:
+      active_recall_cue: >-
+        What does the platform not guarantee about multiple triggers?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/salesforce/trigger-framework
+        note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-03-flow-vs-apex
+    version: "1.0.0"
+    target: salesforce
+    topic: Automation choice
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      Would you build this in Flow or in Apex?
+    context: >-
+      A field update with two conditions that the operations team expects to
+      adjust monthly. The interviewer is testing whether you optimise for the
+      people who will maintain it.
+    best_answer: >-
+      Flow, because the logic is simple and the operations team can change it
+      without a deployment. I would move to Apex once it needs bulk control,
+      reuse across objects, or test coverage that Flow cannot express, since at
+      that point the maintenance advantage disappears.
+    distractors:
+      - text: >-
+          Apex, because it is version controlled and properly testable, which
+          makes it more maintainable in the long run than declarative automation
+          that lives only in the org.
+        trap: pragmatics
+        why_wrong: >-
+          Optimises for engineering preference over the stated stakeholder need,
+          which is monthly self-service change.
+      - text: >-
+          It depends on the complexity and on the team's preferences, since both
+          are valid approaches and different orgs handle this kind of decision
+          differently.
+        trap: precision
+        why_wrong: >-
+          Names variables without applying them to the case described in the
+          prompt.
+      - text: >-
+          Flow, because the logic is simple and the team of operations can
+          change it without need a deployment, but I would pass to Apex when it
+          needs control of bulk.
+        trap: grammar
+        why_wrong: >-
+          "Team of operations", "without need" and "control of bulk" invert
+          English compound nouns.
+    feedback:
+      register: >-
+        Stakeholder-aware. The maintainer decides, not the technology.
+      hedging: >-
+        None; the prompt supplies the deciding constraint.
+      precision: >-
+        Name the three conditions that would flip you to Apex.
+      grammar: >-
+        "The operations team", "without needing a deployment", "bulk control".
+      pragmatics: >-
+        Answering with the migration trigger shows you plan for change.
+    rephrase:
+      prompt: >-
+        Answer again if the same logic had to run on a million records nightly.
+      goal: Test whether the escalation condition is real.
+    language_focus: [pragmatics, grammar, precision]
+    feynman:
+      concept: Automation choice driven by maintainer and complexity.
+      explain_to: A developer who considers declarative tools inferior.
+      constraint: Explain using who holds the keys to a room.
+      self_check: >-
+        Did you name who changes it after you leave?
+    black_box:
+      symptom: You chose Apex by preference, or refused to decide.
+      expected: Flow for admin-maintained simple logic; Apex on the named
+        triggers.
+      actual: A testability argument, or an unresolved "it depends".
+      root_cause: >-
+        Optimising for the builder's comfort rather than the owner's autonomy.
+      repair: >-
+        Ask who will change this in six months before choosing the tool.
+    recall:
+      active_recall_cue: >-
+        Which three conditions move logic from Flow to Apex?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/salesforce/flow-vs-apex
+        note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-04-integration-pattern
+    version: "1.0.0"
+    target: salesforce
+    topic: Integration
+    difficulty: 3
+    interview_stage: architecture_review
+    prompt: >-
+      An external system needs to know when an opportunity closes. How would you
+      wire that up?
+    context: >-
+      A design question with a trap. Calling out synchronously from a trigger is
+      the obvious approach and the wrong one, and the interviewer wants to see
+      whether you know why.
+    best_answer: >-
+      Not synchronously from the trigger, because an external call inside the
+      transaction couples my save to their availability. I would publish a
+      platform event or enqueue an async job, so the record commits regardless
+      and delivery retries on its own.
+    distractors:
+      - text: >-
+          I would make a callout from the trigger using a future method so that
+          it runs asynchronously and the external system gets notified as soon
+          as the record is updated.
+        trap: precision
+        why_wrong: >-
+          Partly right, since future methods are async, but it offers no retry
+          or delivery guarantee and does not scale in bulk.
+      - text: >-
+          I would set up an outbound message or a scheduled job that queries for
+          recently closed opportunities and sends them across at regular
+          intervals to the other system.
+        trap: content
+        why_wrong: >-
+          Polling adds latency and a state-tracking problem the platform's event
+          model already solves.
+      - text: >-
+          Not synchronous from the trigger, because one callout external inside
+          of the transaction couples my save with the availability of them.
+        trap: grammar
+        why_wrong: >-
+          Post-posed adjective, "inside of" and "the availability of them" are
+          three separate transfer errors.
+    feedback:
+      register: >-
+        Decisive about the anti-pattern before offering the alternative.
+      hedging: >-
+        None; synchronous callouts in triggers are a known failure mode.
+      precision: >-
+        Coupling the commit to their uptime is the argument that wins.
+      grammar: >-
+        "An external callout", "inside the transaction", "their availability".
+      pragmatics: >-
+        Mentioning retry closes the reliability question before it is asked.
+    rephrase:
+      prompt: >-
+        Explain what the user sees if the external system is down, under each
+        design.
+      goal: Make coupling visible through user experience.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Decoupling a commit from an external dependency.
+      explain_to: A developer who calls APIs directly from triggers.
+      constraint: Explain using a shop that cannot sell if its supplier is
+        closed.
+      self_check: >-
+        Did you say what commits even when the other side is unavailable?
+    black_box:
+      symptom: You called out from the trigger, or fell back to polling.
+      expected: Platform event or async job; commit independent of their uptime.
+      actual: A future-method callout, or a scheduled poll.
+      root_cause: >-
+        Integration modelled as notification rather than as a reliability
+        boundary.
+      repair: >-
+        Ask what should happen to the save if the other system is down.
+    recall:
+      active_recall_cue: >-
+        What does a synchronous callout couple your transaction to?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/webhooks.md
+        note: Event and webhook delivery patterns.
+      - repo: original
+        path: english-arcade/salesforce/integration-pattern
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-05-sharing-model
+    version: "1.0.0"
+    target: salesforce
+    topic: Security
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      Does your Apex class respect the user's record access by default?
+    context: >-
+      A security question that catches many candidates. The interviewer wants to
+      know whether you understand that Apex runs in system context unless you
+      say otherwise.
+    best_answer: >-
+      No, Apex runs in system context by default, so it ignores sharing rules
+      unless the class is declared with sharing. Field and object permissions
+      are separate again, and need stripInaccessible or explicit checks, since
+      sharing only governs record visibility.
+    distractors:
+      - text: >-
+          Yes, the platform enforces the security model consistently, so a user
+          running Apex can only ever see the records their profile and sharing
+          rules allow them to access.
+        trap: content
+        why_wrong: >-
+          The opposite of the default behaviour, and this misunderstanding
+          causes real data exposure.
+      - text: >-
+          It depends on how the class has been written and configured, since
+          there are various security considerations involved in Apex that affect
+          what a user can see.
+        trap: precision
+        why_wrong: >-
+          True but empty. It names neither the default nor the keyword that
+          changes it.
+      - text: >-
+          No, the Apex executes in context of system by default, then it ignores
+          the rules of sharing unless the class is declared with sharing
+          explicitly.
+        trap: grammar
+        why_wrong: >-
+          "Context of system" and "rules of sharing" invert the English compound
+          nouns.
+    feedback:
+      register: >-
+        Precise and slightly cautionary; this is a data-exposure question.
+      hedging: >-
+        None; the default is unambiguous.
+      precision: >-
+        Separating record sharing from field-level security is what earns the
+        point.
+      grammar: >-
+        "System context", "sharing rules", "declared with sharing".
+      pragmatics: >-
+        Volunteering the field-level gap shows you have handled real audits.
+    rephrase:
+      prompt: >-
+        Explain the difference between sharing and field-level security in one
+        sentence each.
+      goal: Separate two things candidates routinely conflate.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: System context, sharing rules and field-level security.
+      explain_to: A developer who assumes the platform enforces everything.
+      constraint: Explain using a building pass versus a filing cabinet key.
+      self_check: >-
+        Did you name both layers, not just sharing?
+    black_box:
+      symptom: You said the platform enforces it, or hedged.
+      expected: System context by default; sharing and FLS are separate layers.
+      actual: An enforcement claim, or an unspecific "it depends".
+      root_cause: >-
+        Assuming platform security is uniform across execution contexts.
+      repair: >-
+        For each Apex class, state its sharing declaration out loud.
+    recall:
+      active_recall_cue: >-
+        What does "with sharing" control, and what does it not?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/auth-authz.md
+        note: Authorisation layers and access boundaries.
+      - repo: original
+        path: english-arcade/salesforce/sharing-model
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-06-large-data-volume
+    version: "1.0.0"
+    target: salesforce
+    topic: Data volume
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      A report on a fifty million row object times out. What can you actually do?
+    context: >-
+      A large data volume question. The interviewer wants platform-specific
+      levers rather than generic database advice that does not apply here.
+    best_answer: >-
+      I would check whether the filters are selective enough to use an index,
+      since a non-selective filter forces a full scan. Beyond that the levers
+      are skinny tables, custom indexes via support, or archiving cold data.
+    distractors:
+      - text: >-
+          I would add indexes on the columns used in the report filters and
+          optimise the query so that it can run more efficiently against the
+          large table.
+        trap: content
+        why_wrong: >-
+          You cannot add indexes directly on the platform; custom indexes go
+          through support, which changes the plan entirely.
+      - text: >-
+          I would suggest reducing the date range of the report so it returns
+          fewer records, which would let it complete within the timeout for most
+          users running it.
+        trap: precision
+        why_wrong: >-
+          A workaround that changes the requirement rather than addressing
+          selectivity or storage strategy.
+      - text: >-
+          I would verify if the filters are selective enough for use an index,
+          because a filter not selective obligates a scan complete of the
+          object.
+        trap: grammar
+        why_wrong: >-
+          "For use", post-posed adjectives and "obligates" as a false friend all
+          break the sentence.
+    feedback:
+      register: >-
+        Platform-literate. Generic database advice is visible immediately here.
+      hedging: >-
+        None on selectivity; hedge which lever applies until you see the data.
+      precision: >-
+        Selectivity first, then the four platform-specific options.
+      grammar: >-
+        "Selective enough to use an index", "forces a full scan", "requires".
+      pragmatics: >-
+        Offering off-platform reporting shows you know when to stop fighting
+        the tool.
+    rephrase:
+      prompt: >-
+        Explain selectivity to an admin who thinks any filter helps.
+      goal: Teach the concept that decides everything else.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Obrigar" e "force" ou "require". "Obligate" existe mas nao se usa assim.
+    feynman:
+      concept: Filter selectivity and platform data strategies.
+      explain_to: An admin building reports on a huge object.
+      constraint: Explain using an index at the back of a book.
+      self_check: >-
+        Did you name a lever that does not require a code change?
+    black_box:
+      symptom: You proposed adding indexes directly, or shrank the requirement.
+      expected: Selectivity check, then skinny tables, custom indexes,
+        archiving.
+      actual: Generic index advice, or a scope reduction.
+      root_cause: >-
+        Applying general database knowledge without the platform's constraints.
+      repair: >-
+        Ask what you are permitted to change before proposing a fix.
+    recall:
+      active_recall_cue: >-
+        What determines whether a report filter can use an index?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/10-engineering-case-studies/cards/read-heavy-postgresql-scaling.md
+        note: Read-heavy scaling patterns adapted to platform constraints.
+      - repo: original
+        path: english-arcade/salesforce/large-data-volume
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-07-test-coverage
+    version: "1.0.0"
+    target: salesforce
+    topic: Testing
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      How do you feel about the seventy-five percent coverage requirement?
+    context: >-
+      An invitation to complain, or to show judgement. The interviewer wants to
+      know whether you treat coverage as the goal or as a floor.
+    best_answer: >-
+      It is a deployment gate rather than a quality measure. I can reach it with
+      tests that assert nothing, so I write bulk cases, negative cases and
+      permission cases because those catch real defects, and the coverage number
+      then takes care of itself.
+    distractors:
+      - text: >-
+          It is a reasonable requirement that ensures teams write tests, since
+          without a mandatory threshold many projects would end up with very
+          little test coverage at all.
+        trap: precision
+        why_wrong: >-
+          Defends the policy without distinguishing coverage from assertion
+          quality, which is the actual insight.
+      - text: >-
+          Honestly it is quite frustrating, because it forces you to write tests
+          for trivial code just to hit the number rather than focusing on what
+          actually matters.
+        trap: register
+        why_wrong: >-
+          Complaining about a platform constraint in an interview reads as
+          inflexible rather than as insightful.
+      - text: >-
+          It is a gate of deployment more than a measure of quality, because I
+          can arrive there with tests that do not assert nothing about the
+          behaviour.
+        trap: grammar
+        why_wrong: >-
+          Compound-noun inversion plus a double negative undercut a good point.
+    feedback:
+      register: >-
+        Constructive. Reframe the constraint rather than resenting it.
+      hedging: >-
+        None; state the distinction plainly.
+      precision: >-
+        Naming the three test categories is what proves the point.
+      grammar: >-
+        "A deployment gate", "assert nothing"; one negative per clause.
+      pragmatics: >-
+        Ending with "takes care of itself" shows the priority order clearly.
+    rephrase:
+      prompt: >-
+        Describe one test you would write that coverage metrics would not
+        reward.
+      goal: Prove the distinction with a concrete example.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      Dupla negativa nao existe: "tests that assert nothing" ou "do not assert
+      anything".
+    feynman:
+      concept: Coverage as a gate versus assertions as quality.
+      explain_to: A team optimising for the coverage percentage.
+      constraint: Explain using attendance versus participation.
+      self_check: >-
+        Did you name test types rather than complain about the number?
+    black_box:
+      symptom: You defended the metric, or complained about it.
+      expected: Gate not measure, plus bulk, negative and permission tests.
+      actual: Policy justification, or frustration.
+      root_cause: >-
+        Coverage internalised as the objective rather than as a threshold.
+      repair: >-
+        Talk about assertions whenever someone mentions coverage.
+    recall:
+      active_recall_cue: >-
+        Which three test categories catch defects coverage alone misses?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/testing-code-quality.md
+        note: Testing quality signals beyond coverage.
+      - repo: original
+        path: english-arcade/salesforce/test-coverage
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-08-declining-customisation
+    version: "1.0.0"
+    target: salesforce
+    topic: Stakeholder management
+    difficulty: 3
+    interview_stage: behavioural_probe
+    prompt: >-
+      A stakeholder wants a custom object that duplicates standard
+      functionality. What do you say?
+    context: >-
+      A judgement and communication probe. The interviewer wants to hear whether
+      you can decline in business language rather than in platform jargon.
+    best_answer: >-
+      I would ask what the standard object stops them doing, because usually
+      there is one specific gap rather than a general mismatch. If it is a field
+      or a page layout, I would solve that. If they genuinely need a different
+      lifecycle, the custom object becomes justified.
+    distractors:
+      - text: >-
+          I would explain that using standard objects is the recommended
+          approach and that custom objects create technical debt and
+          maintenance overhead that the organisation will have to carry.
+        trap: register
+        why_wrong: >-
+          Leads with platform doctrine and abstract debt, which stakeholders
+          hear as obstruction.
+      - text: >-
+          I would build what they asked for, since they understand their
+          business process better than I do and it is not really my place to
+          question the requirement itself.
+        trap: pragmatics
+        why_wrong: >-
+          Abdicates the advisory part of the role, which is exactly what the
+          question is assessing.
+      - text: >-
+          I would ask what the standard object impedes them of doing, because
+          normally exists one gap specific instead of a mismatch general.
+        trap: grammar
+        why_wrong: >-
+          "Impedes them of doing", the missing expletive subject and post-posed
+          adjectives all break the sentence.
+    feedback:
+      register: >-
+        Curious rather than corrective. Questions open, doctrine closes.
+      hedging: >-
+        None needed; the question itself is the diplomacy.
+      precision: >-
+        "What does it stop you doing" is the sentence that finds the real
+        requirement.
+      grammar: >-
+        "Stops them from doing", "there is usually one specific gap".
+      pragmatics: >-
+        Conceding when the custom object is justified makes the pushback
+        credible.
+    rephrase:
+      prompt: >-
+        Write the same response as a short message to the stakeholder.
+      goal: Practise written stakeholder register.
+    language_focus: [register, grammar, pragmatics]
+    feynman:
+      concept: Requirement discovery before refusal.
+      explain_to: A consultant who says no by citing best practice.
+      constraint: Do not use the phrase "technical debt".
+      self_check: >-
+        Did you leave a path where they get the custom object?
+    black_box:
+      symptom: You refused with doctrine, or built it without question.
+      expected: Ask what the standard object blocks; solve the specific gap.
+      actual: A best-practice lecture, or uncritical compliance.
+      root_cause: >-
+        Treating stakeholder requests as decisions rather than as symptoms.
+      repair: >-
+        Answer every request with a question about the blocked outcome.
+    recall:
+      active_recall_cue: >-
+        What question separates a real gap from a preference?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/architecture-decision-records.md
+        note: Decision framing for platform customisation.
+      - repo: original
+        path: english-arcade/salesforce/declining-customisation
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-09-async-apex-choice
+    version: "1.0.0"
+    target: salesforce
+    topic: Asynchronous Apex
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      Which async option would you use to process two million records?
+    context: >-
+      A limits question with a clear answer. The interviewer wants the choice
+      plus the property that makes it the only viable one at that volume.
+    best_answer: >-
+      Batch Apex, because it chunks the records and each chunk gets its own set
+      of governor limits. Queueable and future methods run in a single
+      transaction, so at two million records they would hit the limits long
+      before finishing.
+    distractors:
+      - text: >-
+          I would use Queueable Apex, since it is the more modern option and it
+          supports chaining jobs together, which gives more flexibility than the
+          older batch interface.
+        trap: content
+        why_wrong: >-
+          Modernity is irrelevant at this volume; a single transaction cannot
+          process two million records.
+      - text: >-
+          Any of the asynchronous options would work, so I would choose based on
+          what the rest of the codebase already uses for consistency with
+          existing patterns.
+        trap: precision
+        why_wrong: >-
+          Volume is the deciding factor and it was stated in the question, so
+          consistency is not the criterion here.
+      - text: >-
+          Batch Apex, because it divides the records in chunks and each chunk
+          receives its own set of limits, different of Queueable that executes
+          in one only transaction.
+        trap: grammar
+        why_wrong: >-
+          "Divides in", "different of" and "one only transaction" are three
+          preposition and quantifier errors.
+    feedback:
+      register: >-
+        Direct and quantitative.
+      hedging: >-
+        None; the volume decides it.
+      precision: >-
+        Per-chunk limits is the property that matters, so lead with it.
+      grammar: >-
+        "Chunks the records", "unlike Queueable", "a single transaction".
+      pragmatics: >-
+        Explaining why the alternatives fail is stronger than naming the winner.
+    rephrase:
+      prompt: >-
+        Answer again for two thousand records that must finish within a minute.
+      goal: Check that the criterion changes with the constraints.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Per-chunk governor limits in Batch Apex.
+      explain_to: A developer who treats all async options as equivalent.
+      constraint: Explain using deliveries split across several vans.
+      self_check: >-
+        Did you say why the alternatives fail at this volume?
+    black_box:
+      symptom: You chose by modernity or by codebase consistency.
+      expected: Batch Apex; per-chunk limits versus a single transaction.
+      actual: A Queueable preference, or deference to existing patterns.
+      root_cause: >-
+        Choosing tools by familiarity rather than by the stated volume.
+      repair: >-
+        Let the number in the question select the mechanism.
+    recall:
+      active_recall_cue: >-
+        What does Batch Apex give you that Queueable does not?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/salesforce/async-apex-choice
+        note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-10-managed-package-limits
+    version: "1.0.0"
+    target: salesforce
+    topic: Working with constraints
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      A managed package is blocking the change you need. How do you handle that?
+    context: >-
+      You cannot edit the package code. The interviewer wants to see how you
+      operate inside a hard constraint without either giving up or breaking
+      upgradeability.
+    best_answer: >-
+      I would work around the boundary rather than through it, using the vendor's
+      extension points and raising a support case for the rest. I would avoid
+      anything that breaks upgradeability, which becomes a far larger problem.
+    distractors:
+      - text: >-
+          I would look for a way to override the behaviour from outside the
+          package, perhaps with a trigger that corrects the result afterwards so
+          the end state is what we need.
+        trap: content
+        why_wrong: >-
+          Correcting after the fact creates a fragile hidden dependency on the
+          package's internal behaviour.
+      - text: >-
+          I would tell the stakeholder that it is not possible because of the
+          managed package, since there is nothing we can do about third-party
+          code that we do not control.
+        trap: pragmatics
+        why_wrong: >-
+          Stops at the constraint instead of exploring extension points or
+          vendor engagement.
+      - text: >-
+          I would work around of the boundary instead of through it, using the
+          points of extension that the vendor exposes and opening one case of
+          support for the rest.
+        trap: grammar
+        why_wrong: >-
+          "Around of", "points of extension" and "case of support" all invert
+          English compound nouns.
+    feedback:
+      register: >-
+        Pragmatic and non-defeatist.
+      hedging: >-
+        None; the constraint is real and so is the approach.
+      precision: >-
+        Upgradeability is the criterion that rules options in or out.
+      grammar: >-
+        "Work around the boundary", "extension points", "a support case".
+      pragmatics: >-
+        Naming what you would refuse to do is as informative as the plan.
+    rephrase:
+      prompt: >-
+        Explain the risk of the override approach to a delivery manager.
+      goal: Make an invisible future cost concrete.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Extension points and upgradeability as a constraint.
+      explain_to: A developer who patches around vendor code.
+      constraint: Explain using a rented flat you cannot rewire.
+      self_check: >-
+        Did you name what you would refuse to do?
+    black_box:
+      symptom: You patched around it, or declared it impossible.
+      expected: Vendor extension points, support case, upgradeability
+        preserved.
+      actual: A corrective trigger, or a flat refusal.
+      root_cause: >-
+        Constraints treated as walls rather than as shaped boundaries.
+      repair: >-
+        Ask what the vendor supports before deciding nothing is possible.
+    recall:
+      active_recall_cue: >-
+        Which property must a managed-package workaround preserve?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/10-engineering-case-studies/cards/legacy-displacement-and-transitional-architecture.md
+        note: Working within constraints of systems you do not own.
+      - repo: original
+        path: english-arcade/salesforce/managed-package-limits
+        note: Original interview phrasing authored for this pack.
+  - id: salesforce-11-explaining-limits-to-business
+    version: "1.0.0"
+    target: salesforce
+    topic: Communication
+    difficulty: 2
+    interview_stage: behavioural_probe
+    prompt: >-
+      How would you explain a governor limit to a non-technical stakeholder?
+    context: >-
+      A translation test. The interviewer wants an analogy that survives
+      repetition, since your explanation will be relayed to people who never
+      spoke to you.
+    best_answer: >-
+      I would say the platform is shared, so it caps how much any one process
+      can do in a single run, the way a shared road has a weight limit for
+      lorries. It is not about our code being slow; it is a ceiling we design
+      within, and it is why we split large jobs into batches.
+    distractors:
+      - text: >-
+          I would explain that Salesforce enforces governor limits on things
+          like SOQL queries and DML statements per transaction, so our code has
+          to stay within those thresholds.
+        trap: register
+        why_wrong: >-
+          Uses the exact jargon the question asked you to avoid, so the listener
+          cannot relay it.
+      - text: >-
+          I would tell them it is a technical constraint of the platform and
+          that they do not really need to worry about the details, we just have
+          to work within it on our side.
+        trap: pragmatics
+        why_wrong: >-
+          Withholding the reasoning prevents the stakeholder from making
+          informed scope decisions.
+      - text: >-
+          I would say that the platform is shared, then it limits how much one
+          only process can make in one execution, like a road shared that has a
+          limit of weight.
+        trap: grammar
+        why_wrong: >-
+          "One only process", "make" for do and post-posed adjectives all break
+          the analogy.
+    feedback:
+      register: >-
+        Plain language with one durable analogy.
+      hedging: >-
+        None; simplicity is the requirement.
+      precision: >-
+        Correcting the "our code is slow" assumption is essential.
+      grammar: >-
+        "Any one process", "a shared road", "a weight limit".
+      pragmatics: >-
+        Connecting the limit to batching explains your design decisions in
+        advance.
+    rephrase:
+      prompt: >-
+        Give the same explanation without any analogy at all.
+      goal: Test whether the concept survives without the metaphor.
+    language_focus: [register, grammar, pragmatics]
+    pt_help: >-
+      "Fazer" no sentido de executar e "do", nao "make". E adjetivo antes:
+      "a shared road".
+    feynman:
+      concept: Shared-platform limits explained without jargon.
+      explain_to: A sales director asking why a job runs overnight.
+      constraint: Use exactly one analogy and no product terms.
+      self_check: >-
+        Could they repeat it accurately to someone else?
+    black_box:
+      symptom: You used jargon, or withheld the explanation.
+      expected: Shared-resource analogy, plus why it drives batching.
+      actual: Platform terminology, or a "do not worry" deflection.
+      root_cause: >-
+        Not adjusting explanation depth to the listener's decision needs.
+      repair: >-
+        Decide what the listener must be able to repeat, then explain that.
+    recall:
+      active_recall_cue: >-
+        What misconception must your explanation correct?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/salesforce/explaining-limits-to-business
+        note: Authored for this pack; corpus has no Salesforce material.
+  - id: salesforce-12-inherited-org
+    version: "1.0.0"
+    target: salesforce
+    topic: Legacy orgs
+    difficulty: 3
+    interview_stage: behavioural_probe
+    prompt: >-
+      Describe how you would approach an org you have just inherited.
+    context: >-
+      A first-ninety-days question. The interviewer wants a sequence that starts
+      with observation, since candidates who start by changing things are a
+      known risk.
+    best_answer: >-
+      I would map what runs before changing anything: automation on the busiest
+      objects, the integrations and their owners, and where the data volume
+      sits. Then I would fix what breaks most often, which buys credibility.
+    distractors:
+      - text: >-
+          I would review the code and configuration for anything that does not
+          follow best practices, and put together a plan to bring the org up to
+          a proper standard over time.
+        trap: pragmatics
+        why_wrong: >-
+          Starts from compliance with an external standard rather than from what
+          the business currently depends on.
+      - text: >-
+          I would start by talking to the users to understand their pain points,
+          and then prioritise the changes that would have the biggest impact on
+          their daily work.
+        trap: precision
+        why_wrong: >-
+          Reasonable but incomplete: without the automation and integration map
+          you cannot predict what a change breaks.
+      - text: >-
+          I would map what executes before change anything, like all the
+          automation in the objects more busy, the integrations and who are the
+          owners of them.
+        trap: grammar
+        why_wrong: >-
+          "Before change", "objects more busy" and "owners of them" break
+          gerund, comparative and possessive forms.
+    feedback:
+      register: >-
+        Measured and non-judgemental about what you inherited.
+      hedging: >-
+        None; this is a plan, so state it.
+      precision: >-
+        Automation, integrations and data volume are the three maps that
+        matter.
+      grammar: >-
+        "Before changing anything", "the busiest objects", "their owners".
+      pragmatics: >-
+        The credibility argument shows you understand organisational reality.
+    rephrase:
+      prompt: >-
+        Give your first week only, in three concrete actions.
+      goal: Force prioritisation inside a plan.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Observation before change in an inherited system.
+      explain_to: An engineer who wants to refactor in week one.
+      constraint: Explain using a new doctor taking over a patient list.
+      self_check: >-
+        Did you say what you would fix first, and why that one?
+    black_box:
+      symptom: You started from best practices, or from users alone.
+      expected: Map automation, integrations and volume; fix the frequent
+        breakage.
+      actual: A standards audit, or an incomplete discovery plan.
+      root_cause: >-
+        Prioritising improvement over understanding what production depends on.
+      repair: >-
+        Sequence discovery before change, and say why explicitly.
+    recall:
+      active_recall_cue: >-
+        Which three things do you map before changing an inherited org?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/10-engineering-case-studies/cards/legacy-displacement-and-transitional-architecture.md
+        note: Legacy displacement and discovery sequencing.
+      - repo: original
+        path: english-arcade/salesforce/inherited-org
+        note: Original interview phrasing authored for this pack.

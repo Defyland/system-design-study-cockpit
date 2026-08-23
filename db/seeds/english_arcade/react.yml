@@ -1,0 +1,1072 @@
+---
+contract_version: "1.1.0"
+target:
+  key: react
+  label: React
+  blurb: >-
+    Talk about rendering, state and effects the way a senior front-end engineer
+    does, with the user-visible consequence named.
+  focus_areas:
+    - rendering and reconciliation
+    - state ownership and lifting
+    - effects and data fetching
+    - accessibility
+    - performance and measurement
+  simulation:
+    minutes: 45
+    structure:
+      - label: Component and state design warm-up
+        minutes: 8
+      - label: Effects and data fetching deep dive
+        minutes: 15
+      - label: Accessibility and semantics
+        minutes: 10
+      - label: Performance measurement and trade-offs
+        minutes: 12
+cards:
+  - id: react-card-effect-purpose
+    front: When is useEffect the right tool?
+    back: >-
+      Only for synchronising with something outside React. Derived values belong
+      in render; event responses belong in handlers.
+    box: 1
+    source:
+      repo: original
+      path: english-arcade/react/effect-purpose
+      note: Authored for this pack; the corpus has no React effects reference.
+  - id: react-card-accessibility
+    front: How do you justify a semantic element over a div?
+    back: >-
+      By what assistive technology receives: a button gets focus, keyboard
+      activation and a role for free; a div gets none of them.
+    box: 1
+    source:
+      repo: original
+      path: english-arcade/react/accessibility-justification
+      note: Authored for this pack; no accessibility card exists in the corpus.
+  - id: react-card-measure-first
+    front: How should you open a React performance answer?
+    back: >-
+      With the measurement, not the fix. Profile, find what re-renders and why,
+      then decide whether memoisation is even relevant.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: areas/09-backend-principles/cards/scaling-performance.md
+      note: Measure-before-change discipline applied to the client.
+items:
+  - id: react-01-state-ownership
+    version: "1.0.0"
+    target: react
+    topic: State ownership
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      Two sibling components need the same value. How do you handle that?
+    context: >-
+      A common design question early in a front-end screen. The interviewer is
+      checking whether you reach for the simplest correct answer before
+      reaching for a library.
+    best_answer: >-
+      I would lift the state to their closest common parent and pass it down,
+      since that is the smallest change that keeps one source of truth. I would
+      only reach for context or a store if the value had to cross many levels or
+      be shared far outside this subtree.
+    distractors:
+      - text: >-
+          I would put it in a global store so that both components can access it
+          directly, which avoids passing props through the parent and keeps the
+          components independent of each other.
+        trap: content
+        why_wrong: >-
+          Reaches for global state to solve a local problem, which trades a
+          two-line change for application-wide coupling.
+      - text: >-
+          There are several options here, you could lift the state up, or use
+          context, or a state management library, and each of them has different
+          trade-offs depending on the situation.
+        trap: precision
+        why_wrong: >-
+          Lists options without choosing, so it demonstrates awareness but no
+          judgement.
+      - text: >-
+          I would lift the state for the parent more close and pass it for
+          below, because this is the change more small that maintains one only
+          source of truth.
+        trap: grammar
+        why_wrong: >-
+          Comparative forms and adjective order are wrong throughout; English
+          uses "closest" and "smallest".
+    feedback:
+      register: >-
+        Direct and proportionate. Simple problems deserve simple answers.
+      hedging: >-
+        None needed; state the default and the escalation condition.
+      precision: >-
+        Say "closest common parent" and name what would change your mind.
+      grammar: >-
+        Use synthetic comparatives: "closest", "smallest", not "more close".
+      pragmatics: >-
+        Naming the escalation condition pre-empts the "what if it grows"
+        follow-up.
+    rephrase:
+      prompt: >-
+        Answer again for a value needed by twenty components across the app.
+      goal: Test whether the escalation rule is real or decorative.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      Comparativos curtos em ingles usam -er/-est: "closer", "smallest". Nao
+      use "more close".
+    feynman:
+      concept: Lifting state to the closest common ancestor.
+      explain_to: A developer who installs a store for every shared value.
+      constraint: Explain using two people sharing one calendar.
+      self_check: >-
+        Did you name the condition that justifies global state?
+    black_box:
+      symptom: You reached for a store, or listed options without deciding.
+      expected: Lift to the closest common parent; escalate only on distance.
+      actual: Global state by default, or an unresolved menu of options.
+      root_cause: >-
+        Defaulting to the most powerful tool instead of the smallest sufficient
+        one.
+      repair: >-
+        Answer with the default first, then the condition that overrides it.
+    recall:
+      active_recall_cue: >-
+        What justifies moving shared state out of a common parent?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: interview/story-bank/02-react-react-native-story-bank.md
+        note: React story bank covering component and state discussions.
+      - repo: original
+        path: english-arcade/react/state-ownership
+        note: Original interview phrasing authored for this pack.
+  - id: react-02-effect-misuse
+    version: "1.0.0"
+    target: react
+    topic: Effects
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      Why would you avoid computing this filtered list inside useEffect?
+    context: >-
+      The candidate's code stores a filtered array in state and recomputes it in
+      an effect when the source changes. The interviewer wants the reasoning
+      about renders, not just the alternative.
+    best_answer: >-
+      Because it is derived data, not synchronisation. Doing it in an effect
+      means an extra render every time the source changes, and it creates a
+      window where the list and its source disagree. I would compute it during
+      render instead.
+    distractors:
+      - text: >-
+          Because useEffect runs after the render, so it would be slightly
+          slower than doing the calculation directly, and performance matters in
+          a list that could become large.
+        trap: precision
+        why_wrong: >-
+          Frames it as micro-performance and misses the correctness problem,
+          which is the inconsistent intermediate state.
+      - text: >-
+          I would keep it in the effect but add the source array to the
+          dependency list, so that it recomputes correctly whenever the source
+          changes and stays in sync properly.
+        trap: content
+        why_wrong: >-
+          Fixes the trigger but keeps the redundant state and the extra render
+          that caused the problem.
+      - text: >-
+          Because this is data derived, not synchronisation, so making it in an
+          effect provokes one render more each time that the source is changing.
+        trap: grammar
+        why_wrong: >-
+          Adjective order, "making it in an effect" and "one render more" are
+          all calques that obscure a correct point.
+    feedback:
+      register: >-
+        Explanatory rather than corrective; you are teaching the distinction.
+      hedging: >-
+        None; derived versus synchronised is a clean dichotomy.
+      precision: >-
+        The inconsistent window is the strongest argument, stronger than the
+        extra render.
+      grammar: >-
+        "Derived data", "doing it in an effect", "one extra render".
+      pragmatics: >-
+        Offering the alternative in the same breath keeps it constructive.
+    rephrase:
+      prompt: >-
+        Explain the same point to someone who insists the effect version works
+        fine.
+      goal: Practise persuasion when the bug is not yet visible.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Derived state versus external synchronisation.
+      explain_to: A developer who uses effects for every update.
+      constraint: Explain using a total printed on a receipt.
+      self_check: >-
+        Did you name the moment when the two values disagree?
+    black_box:
+      symptom: You argued performance, or fixed only the dependency array.
+      expected: Derived data belongs in render; effects are for external sync.
+      actual: A micro-optimisation claim, or a patched dependency list.
+      root_cause: >-
+        Effects understood as a lifecycle hook rather than as a synchronisation
+        boundary.
+      repair: >-
+        Ask "is anything outside React involved?" before writing an effect.
+    recall:
+      active_recall_cue: >-
+        What is the only job an effect should be doing?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/effect-misuse
+        note: Authored for this pack; corpus has no React effects reference.
+  - id: react-03-key-prop
+    version: "1.0.0"
+    target: react
+    topic: Reconciliation
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      What actually goes wrong when you use the array index as a key?
+    context: >-
+      Almost every candidate knows the rule. The interviewer is filtering for
+      the ones who can describe the observable bug rather than reciting the
+      warning.
+    best_answer: >-
+      React matches elements by key, so if the list reorders, the index still
+      points at position rather than identity. The visible symptom is component
+      state attaching to the wrong row, like a checked checkbox following the
+      position instead of the item.
+    distractors:
+      - text: >-
+          It causes performance problems because React cannot efficiently
+          determine which items have changed, so it ends up re-rendering more of
+          the list than it actually needs to.
+        trap: content
+        why_wrong: >-
+          Performance is secondary and often negligible; the real failure is
+          misplaced state, which is a correctness bug.
+      - text: >-
+          It is considered bad practice and React will show a warning in the
+          console about it, so you should always use a stable unique identifier
+          from your data instead of the index.
+        trap: precision
+        why_wrong: >-
+          Cites the rule and the warning without explaining any mechanism, which
+          is exactly what this question filters for.
+      - text: >-
+          React is matching the elements for the key, so if the list reorders
+          the index continues pointing for the position instead of the identity
+          of the item.
+        trap: grammar
+        why_wrong: >-
+          "Matching for", "pointing for" and the progressive aspect all break a
+          statement of general behaviour.
+    feedback:
+      register: >-
+        Concrete. Name the symptom a user would report.
+      hedging: >-
+        None needed; the reconciliation behaviour is deterministic.
+      precision: >-
+        State attaching to the wrong row is the detail that proves
+        understanding.
+      grammar: >-
+        "Matches by key", "points at position"; simple present for behaviour.
+      pragmatics: >-
+        A user-visible example is more persuasive than the rule itself.
+    rephrase:
+      prompt: >-
+        Describe the bug as a QA ticket, without mentioning React internals.
+      goal: Translate a framework concept into observable behaviour.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Keys as identity during reconciliation.
+      explain_to: A tester who reported a checkbox behaving strangely.
+      constraint: Explain using numbered seats versus named tickets.
+      self_check: >-
+        Did you describe something a user could see?
+    black_box:
+      symptom: You cited performance or the console warning.
+      expected: State attaches to position, so it follows the wrong item.
+      actual: A re-render claim, or an appeal to best practice.
+      root_cause: >-
+        The rule memorised from lint output rather than from a reproduction.
+      repair: >-
+        Reproduce it once with a checkbox list; the memory becomes permanent.
+    recall:
+      active_recall_cue: >-
+        What visible symptom does an index key produce on reorder?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/key-prop
+        note: Authored for this pack; corpus has no reconciliation reference.
+  - id: react-04-data-fetching
+    version: "1.0.0"
+    target: react
+    topic: Data fetching
+    difficulty: 3
+    interview_stage: architecture_review
+    prompt: >-
+      How do you handle a request that resolves after the user has navigated
+      away?
+    context: >-
+      A race-condition question. The interviewer wants to know whether you think
+      about out-of-order responses, which is where most hand-rolled fetching
+      breaks.
+    best_answer: >-
+      I would make the effect cancel its own work on cleanup, either with an
+      abort signal or an ignore flag, so a late response cannot write into a
+      component that has moved on. Otherwise two overlapping requests can land
+      out of order and the older one wins.
+    distractors:
+      - text: >-
+          I would check whether the component is still mounted before calling
+          setState, which avoids the warning about updating state on an
+          unmounted component.
+        trap: content
+        why_wrong: >-
+          Targets a console warning rather than the ordering bug, and the
+          mounted check does not fix stale data on a still-mounted component.
+      - text: >-
+          I would use a data fetching library, since they handle all of this
+          automatically including caching, deduplication and cancellation, so
+          there is no need to solve it manually.
+        trap: pragmatics
+        why_wrong: >-
+          A defensible production choice, but it dodges the mechanism the
+          interviewer is probing.
+      - text: >-
+          I would make the effect cancel the own work in the cleanup, with a
+          signal of abort, then a response late cannot write in a component that
+          already changed.
+        trap: grammar
+        why_wrong: >-
+          "The own work", "signal of abort" and "response late" all invert
+          English possessive and adjective order.
+    feedback:
+      register: >-
+        Technical and specific; this is a mechanism question.
+      hedging: >-
+        None; cancellation on cleanup is the standard answer.
+      precision: >-
+        Out-of-order arrival is the real risk, not the unmount warning.
+      grammar: >-
+        "Its own work", "an abort signal", "a late response".
+      pragmatics: >-
+        You may mention a library, but only after showing the mechanism.
+    rephrase:
+      prompt: >-
+        Explain the same race to a backend engineer using request timing.
+      goal: Practise cross-discipline explanation.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      Ingles poe o adjetivo antes: "a late response", "an abort signal". Nao
+      traduza a ordem do portugues.
+    feynman:
+      concept: Out-of-order responses and effect cleanup.
+      explain_to: A developer who only checks whether the component is mounted.
+      constraint: Explain using two letters posted on different days.
+      self_check: >-
+        Did you explain why the older response can win?
+    black_box:
+      symptom: You solved the unmount warning, or deferred to a library.
+      expected: Cleanup cancels work so late responses cannot write.
+      actual: A mounted check, or an immediate library recommendation.
+      root_cause: >-
+        Async bugs modelled as lifecycle errors rather than as ordering
+        problems.
+      repair: >-
+        For every fetch, ask what happens if the previous one returns second.
+    recall:
+      active_recall_cue: >-
+        Why is an is-mounted check insufficient for overlapping requests?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/data-fetching-race
+        note: Authored for this pack; corpus has no client data-fetching card.
+  - id: react-05-accessibility
+    version: "1.0.0"
+    target: react
+    topic: Accessibility
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      Why does it matter whether this clickable element is a div or a button?
+    context: >-
+      The candidate has built a clickable card with an onClick on a div. The
+      interviewer wants to know whether accessibility is part of how you think
+      or an afterthought.
+    best_answer: >-
+      A button gets keyboard activation, focus order and the right role for
+      free, whereas a div gets none of them. To make the div equivalent I would
+      have to add a role, a tabindex and key handlers, and at that point I have
+      reimplemented a button badly.
+    distractors:
+      - text: >-
+          It is better for accessibility to use a button, since screen readers
+          understand semantic elements better and it is generally recommended to
+          use the correct HTML element for the job.
+        trap: precision
+        why_wrong: >-
+          States the conclusion without naming a single behaviour that is lost,
+          so it reads as received wisdom.
+      - text: >-
+          It does not really matter as long as you add an onClick handler,
+          because the click behaviour is identical and you can always add an
+          aria-label if a screen reader needs one.
+        trap: content
+        why_wrong: >-
+          Factually wrong: a div is not focusable and does not respond to Enter
+          or Space, so keyboard users cannot activate it at all.
+      - text: >-
+          A button receives the activation for keyboard, the order of focus and
+          the correct role for free, but a div does not receive nothing of this
+          automatically.
+        trap: grammar
+        why_wrong: >-
+          "Order of focus" inverts the compound noun and "does not receive
+          nothing" is a double negative.
+    feedback:
+      register: >-
+        Matter-of-fact rather than moralising; list the mechanics.
+      hedging: >-
+        None; these are concrete platform behaviours.
+      precision: >-
+        Name the three things you get free: focus, keyboard activation, role.
+      grammar: >-
+        "Keyboard activation", "focus order", and one negative per clause.
+      pragmatics: >-
+        The reimplementation point wins the argument without lecturing.
+    rephrase:
+      prompt: >-
+        Make the same case to a designer who prefers the div for styling
+        reasons.
+      goal: Practise advocacy across disciplines.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      Dupla negativa nao existe em ingles padrao: "does not get any of this",
+      nunca "does not get nothing".
+    feynman:
+      concept: Semantic elements and free platform behaviour.
+      explain_to: A designer who cares about visual consistency.
+      constraint: Do not use the word "accessibility" at all.
+      self_check: >-
+        Did you name what a keyboard-only user cannot do?
+    black_box:
+      symptom: You appealed to best practice, or claimed it does not matter.
+      expected: Focus, keyboard activation and role, lost with a div.
+      actual: Received wisdom, or a false equivalence with aria-label.
+      root_cause: >-
+        Accessibility learned as a checklist rather than as platform behaviour.
+      repair: >-
+        Try activating your own component with the keyboard only, once.
+    recall:
+      active_recall_cue: >-
+        Which three behaviours does a native button provide for free?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/accessibility-semantics
+        note: Authored for this pack; corpus has no accessibility reference.
+  - id: react-06-memoisation
+    version: "1.0.0"
+    target: react
+    topic: Performance
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      Would wrapping this component in memo help?
+    context: >-
+      The component re-renders often, but its props include an inline object
+      created by the parent. The interviewer wants to see whether you understand
+      why memo would silently do nothing here.
+    best_answer: >-
+      Not as written: the parent creates a new object every render, so the
+      shallow comparison always fails. I would stabilise that prop or pass
+      primitives, and profile before adding memo at all.
+    distractors:
+      - text: >-
+          Yes, memo prevents unnecessary re-renders when the props have not
+          changed, so it would stop this component from re-rendering every time
+          the parent updates.
+        trap: content
+        why_wrong: >-
+          Misses that the props do change by reference every render, so memo
+          adds cost and changes nothing.
+      - text: >-
+          It might help, it is hard to say without seeing more of the code and
+          understanding how often the component actually re-renders in practice
+          and what it is doing.
+        trap: hedging
+        why_wrong: >-
+          The decisive detail, the inline object, is visible in the prompt, so
+          the hedge signals you did not spot it.
+      - text: >-
+          Not like it is written, because the parent is creating a new object in
+          each render, then the comparison shallow is failing always and the
+          memo does not serve for nothing.
+        trap: grammar
+        why_wrong: >-
+          Adjective order, adverb placement and "does not serve for nothing" are
+          all transfer errors.
+    feedback:
+      register: >-
+        Analytical. Point at the specific line that decides the answer.
+      hedging: >-
+        Do not hedge when the deciding evidence is in front of you.
+      precision: >-
+        Reference equality is the mechanism; name it explicitly.
+      grammar: >-
+        "The shallow comparison always fails", "as written".
+      pragmatics: >-
+        Adding the profile-first caveat shows discipline without deflecting.
+    rephrase:
+      prompt: >-
+        Give the same answer assuming the prop were already stable.
+      goal: Force the reasoning to adapt rather than repeat.
+    language_focus: [precision, hedging, grammar]
+    feynman:
+      concept: Reference equality in shallow prop comparison.
+      explain_to: A developer who memoises everything by default.
+      constraint: Explain using two identical letters in different envelopes.
+      self_check: >-
+        Did you identify what makes the comparison fail?
+    black_box:
+      symptom: You said yes, or hedged despite visible evidence.
+      expected: New object each render defeats shallow comparison.
+      actual: A generic memo endorsement, or an unnecessary hedge.
+      root_cause: >-
+        Memoisation treated as a switch rather than as a comparison with
+        preconditions.
+      repair: >-
+        Before memoising, check every prop for a fresh reference.
+    recall:
+      active_recall_cue: >-
+        What kind of prop silently defeats memo?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/scaling-performance.md
+        note: Measure-first performance discipline applied to the client.
+      - repo: original
+        path: english-arcade/react/memoisation
+        note: Original interview phrasing authored for this pack.
+  - id: react-07-controlled-inputs
+    version: "1.0.0"
+    target: react
+    topic: Forms
+    difficulty: 1
+    interview_stage: technical_screen
+    prompt: >-
+      Would you make this input controlled or uncontrolled?
+    context: >-
+      A single search field inside a large form. The interviewer wants a
+      decision with a reason, since both answers can be correct depending on
+      what the component needs.
+    best_answer: >-
+      Controlled, because I need to react to each keystroke for the suggestions.
+      If I only needed the value on submit I would leave it uncontrolled and
+      read it from the form, which avoids re-rendering the whole form on every
+      character.
+    distractors:
+      - text: >-
+          Controlled, because that is the standard React approach and it keeps
+          the component state as the single source of truth for the value of the
+          input at all times.
+        trap: precision
+        why_wrong: >-
+          Correct choice, wrong reasoning. Convention is not a requirement, and
+          the answer never mentions what the component needs.
+      - text: >-
+          Uncontrolled, because controlled inputs cause a re-render on every
+          keystroke which is bad for performance, especially in a form with many
+          fields like this one.
+        trap: content
+        why_wrong: >-
+          Optimises away the behaviour the feature requires; suggestions cannot
+          work without per-keystroke value.
+      - text: >-
+          Controlled, because I need to react in each keystroke for the
+          suggestions, but if I needed the value only in the submit I would let
+          it uncontrolled and read of the form.
+        trap: grammar
+        why_wrong: >-
+          "React in", "in the submit", "let it uncontrolled" and "read of" are
+          four preposition errors.
+    feedback:
+      register: >-
+        Decisive with a requirement-based reason.
+      hedging: >-
+        None; the requirement decides it.
+      precision: >-
+        Tie the choice to the feature, not to convention.
+      grammar: >-
+        "React to each keystroke", "on submit", "leave it uncontrolled".
+      pragmatics: >-
+        Giving the counterfactual shows you know both patterns.
+    rephrase:
+      prompt: >-
+        Answer again for a field that only matters when the form is submitted.
+      goal: Practise applying the rule in the opposite direction.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Controlled versus uncontrolled inputs by requirement.
+      explain_to: A developer who always picks controlled.
+      constraint: Explain using a form filled in pencil versus read aloud.
+      self_check: >-
+        Did the feature requirement decide your answer?
+    black_box:
+      symptom: You justified by convention or by performance alone.
+      expected: Per-keystroke need decides controlled; submit-only decides
+        uncontrolled.
+      actual: >-
+        An appeal to convention, or a performance-driven wrong choice.
+      root_cause: >-
+        Pattern choice driven by habit rather than by what the component must
+        do.
+      repair: >-
+        Ask what the component needs to know, and when.
+    recall:
+      active_recall_cue: >-
+        What requirement forces a controlled input?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: interview/story-bank/02-react-react-native-story-bank.md
+        note: React story bank covering component-level decisions.
+      - repo: original
+        path: english-arcade/react/controlled-inputs
+        note: Original interview phrasing authored for this pack.
+  - id: react-08-error-boundaries
+    version: "1.0.0"
+    target: react
+    topic: Error handling
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      Where would you put error boundaries in this application?
+    context: >-
+      A dashboard composed of independent widgets. The interviewer wants a
+      placement strategy tied to what the user should still be able to do when
+      one part fails.
+    best_answer: >-
+      Around each widget rather than at the root, so one failing chart does not
+      blank the whole dashboard. I would keep a root boundary as a last resort,
+      but the useful granularity is wherever a failure should stay local to that
+      region.
+    distractors:
+      - text: >-
+          At the top level of the application, so that any error anywhere is
+          caught in one place and the user sees a consistent error screen rather
+          than a broken page.
+        trap: content
+        why_wrong: >-
+          Maximises blast radius: one widget failure takes down every other
+          widget the user could still have used.
+      - text: >-
+          I would add them wherever errors are likely to happen, particularly
+          around components that do data fetching or handle external input from
+          third parties.
+        trap: precision
+        why_wrong: >-
+          "Where errors are likely" is unknowable in advance; placement should
+          follow containment, not prediction.
+      - text: >-
+          Around each widget instead of in the root, then one graphic that fails
+          does not turn blank all the dashboard for the user that is using it.
+        trap: grammar
+        why_wrong: >-
+          "In the root", "turn blank all the dashboard" and the trailing
+          relative clause are all non-idiomatic.
+    feedback:
+      register: >-
+        Design-level and user-focused.
+      hedging: >-
+        None; containment is a clear principle.
+      precision: >-
+        Blast radius is the criterion; say it in user terms.
+      grammar: >-
+        "At the root", "blank the whole dashboard", "stay local".
+      pragmatics: >-
+        Keeping a root boundary as a fallback shows completeness.
+    rephrase:
+      prompt: >-
+        Explain your placement rule in terms of what the user can still do.
+      goal: Convert an architectural rule into user outcomes.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Error boundary granularity and blast radius.
+      explain_to: A product owner deciding what degraded mode looks like.
+      constraint: Explain using circuit breakers in a house.
+      self_check: >-
+        Can you say what still works when one widget fails?
+    black_box:
+      symptom: You placed one boundary at the root, or guessed at risk.
+      expected: Per-region boundaries sized by containment, root as fallback.
+      actual: A single global handler, or prediction-based placement.
+      root_cause: >-
+        Error handling framed as catching rather than as limiting damage.
+      repair: >-
+        Ask what should survive the failure before deciding where to catch it.
+    recall:
+      active_recall_cue: >-
+        What decides the granularity of an error boundary?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        note: Fault tolerance and blast radius principles.
+      - repo: original
+        path: english-arcade/react/error-boundaries
+        note: Original interview phrasing authored for this pack.
+  - id: react-09-list-virtualisation
+    version: "1.0.0"
+    target: react
+    topic: Rendering large lists
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      The table slows down at ten thousand rows. What would you do?
+    context: >-
+      A performance question with an obvious answer and a less obvious cost. The
+      interviewer wants both the technique and what it breaks.
+    best_answer: >-
+      I would virtualise so only the visible rows are in the DOM. The cost is
+      that browser find, text selection across the whole table and print all
+      stop working normally, so I would confirm with the product side that none
+      of those matter before committing to it.
+    distractors:
+      - text: >-
+          I would virtualise the list so that only the rows currently visible in
+          the viewport are rendered, which keeps the DOM small and the scrolling
+          smooth even with very large datasets.
+        trap: precision
+        why_wrong: >-
+          Correct technique with no mention of what it costs, which is the half
+          the question was actually probing.
+      - text: >-
+          I would add pagination instead, since ten thousand rows is not
+          something a user can meaningfully scan anyway and smaller pages are
+          easier to render quickly.
+        trap: pragmatics
+        why_wrong: >-
+          A legitimate product suggestion, but it changes the requirement rather
+          than answering the engineering question.
+      - text: >-
+          I would virtualise for only the rows visible stay in the DOM, but the
+          cost is that the search of the browser and the selection of text stop
+          of working normally.
+        trap: grammar
+        why_wrong: >-
+          "For only... stay", "the search of the browser" and "stop of working"
+          are three structural errors.
+    feedback:
+      register: >-
+        Balanced. Naming the cost is what makes the recommendation credible.
+      hedging: >-
+        None on the technique; verify the constraints with the product side.
+      precision: >-
+        Browser find and print are the costs candidates almost never mention.
+      grammar: >-
+        "Only the visible rows", "browser find", "stop working".
+      pragmatics: >-
+        Checking product tolerance before committing is the senior move.
+    rephrase:
+      prompt: >-
+        Answer again for a table users are required to print.
+      goal: Test whether the trade-off is understood or recited.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Virtualisation and what leaves the DOM with it.
+      explain_to: A user who relies on browser find in the table.
+      constraint: Explain using a window onto a long scroll of paper.
+      self_check: >-
+        Did you name a capability the user loses?
+    black_box:
+      symptom: You gave the technique without its cost.
+      expected: Virtualise, plus loss of find, selection and print.
+      actual: A clean recommendation with no trade-off, or a scope change.
+      root_cause: >-
+        Techniques learned as solutions rather than as exchanges.
+      repair: >-
+        For every optimisation, name what stops working.
+    recall:
+      active_recall_cue: >-
+        What browser capabilities does virtualisation break?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/list-virtualisation
+        note: Authored for this pack; corpus has no client rendering card.
+  - id: react-10-code-review-tone
+    version: "1.0.0"
+    target: react
+    topic: Code review
+    difficulty: 2
+    interview_stage: behavioural_probe
+    prompt: >-
+      Describe how you would raise a design concern on a colleague's pull
+      request.
+    context: >-
+      A collaboration probe. The interviewer wants to hear whether your written
+      English can carry a disagreement without creating friction, since most
+      review happens asynchronously.
+    best_answer: >-
+      I would ask about the constraint before proposing anything: what happens
+      if the parent re-renders here? If they have a reason I have not seen, the
+      question surfaces it; if not, they usually reach the fix themselves.
+    distractors:
+      - text: >-
+          I would point out clearly what is wrong with the approach and suggest
+          the correct alternative, since being direct saves everyone time and
+          avoids ambiguity in the review.
+        trap: register
+        why_wrong: >-
+          Directness without a question presumes you have the full context,
+          which is often false in review.
+      - text: >-
+          I would probably not say anything if it is a minor thing, since it is
+          not worth creating friction over small details and the code works well
+          enough as it is.
+        trap: pragmatics
+        why_wrong: >-
+          Avoidance is the opposite failure and lets known problems ship
+          silently.
+      - text: >-
+          I would ask about the constraint before to propose something, like
+          what happens if the parent makes re-render here, instead of saying
+          that this is wrong.
+        trap: grammar
+        why_wrong: >-
+          "Before to propose" and "makes re-render" are infinitive and light-verb
+          errors common in Portuguese speakers.
+    feedback:
+      register: >-
+        Curious rather than corrective; questions travel better in writing.
+      hedging: >-
+        A question is the hedge. Nothing else is needed.
+      precision: >-
+        Give the actual sentence you would write, not a description of it.
+      grammar: >-
+        "Before proposing", "if the parent re-renders".
+      pragmatics: >-
+        Explaining why the question works shows deliberate collaboration.
+    rephrase:
+      prompt: >-
+        Write the same comment for a colleague who has already pushed back once.
+      goal: Practise escalating without hardening the disagreement.
+    language_focus: [register, grammar, pragmatics]
+    pt_help: >-
+      Depois de "before" use gerundio: "before proposing". "Before to" nao
+      existe.
+    feynman:
+      concept: Question-first review as context discovery.
+      explain_to: An engineer whose reviews generate arguments.
+      constraint: Explain without using the word "polite".
+      self_check: >-
+        Would your comment still work if they were right?
+    black_box:
+      symptom: You asserted, or stayed silent.
+      expected: A question about the constraint, with the exact wording.
+      actual: A blunt correction, or conflict avoidance.
+      root_cause: >-
+        Written disagreement in a second language feels binary: harsh or
+        silent.
+      repair: >-
+        Convert every review objection into a question about a constraint.
+    recall:
+      active_recall_cue: >-
+        What does a question achieve that an assertion does not?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/testing-code-quality.md
+        note: Code quality collaboration practices.
+      - repo: original
+        path: english-arcade/react/code-review-tone
+        note: Original interview phrasing authored for this pack.
+  - id: react-11-hydration
+    version: "1.0.0"
+    target: react
+    topic: Server rendering
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      What causes a hydration mismatch, in your experience?
+    context: >-
+      A server-rendering question. The interviewer wants a concrete cause you
+      have actually hit, since the generic answer is easy to recite and tells
+      them nothing.
+    best_answer: >-
+      Usually something that differs between server and client at render time.
+      The one I hit most is dates formatted in local time, because the server
+      and the browser are in different timezones, so the markup differs and
+      React discards it.
+    distractors:
+      - text: >-
+          It happens when the HTML rendered on the server does not match what
+          React renders on the client, so React has to discard the server markup
+          and re-render everything.
+        trap: precision
+        why_wrong: >-
+          Defines the term rather than naming a cause, which is what the
+          question asked for.
+      - text: >-
+          It is usually caused by using browser APIs like window or localStorage
+          during the initial render, since those are not available on the server
+          and cause errors.
+        trap: content
+        why_wrong: >-
+          Those typically throw rather than mismatch; conflating the two shows
+          the answer is theoretical.
+      - text: >-
+          Normally is something that differs between the server and the client
+          in the moment of render, like the dates formatted in local time
+          because the timezones are differents.
+        trap: grammar
+        why_wrong: >-
+          Missing subject, "in the moment of" and the pluralised adjective
+          "differents" are all transfer errors.
+    feedback:
+      register: >-
+        Experiential. "The one I hit most" is worth more than a definition.
+      hedging: >-
+        "Usually" is appropriate for a class of causes.
+      precision: >-
+        The timezone example is specific enough to be verified.
+      grammar: >-
+        Always include the subject: "it is usually"; adjectives never pluralise.
+      pragmatics: >-
+        Answering "in your experience" with an actual experience matters.
+    rephrase:
+      prompt: >-
+        Give a second cause you have seen, in one sentence.
+      goal: Prove the first answer was not the only one you had.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      Adjetivos em ingles nao tem plural: "different", nunca "differents".
+    feynman:
+      concept: Server and client render divergence.
+      explain_to: A developer new to server rendering.
+      constraint: Explain using two people drawing from the same description.
+      self_check: >-
+        Did you name a cause you could reproduce?
+    black_box:
+      symptom: You defined the term or named an error that is not a mismatch.
+      expected: A concrete divergence such as locale-dependent formatting.
+      actual: A restatement of the definition, or a browser-API error.
+      root_cause: >-
+        Answering from documentation rather than from debugging experience.
+      repair: >-
+        Keep one real reproduction per concept you claim experience with.
+    recall:
+      active_recall_cue: >-
+        Which everyday formatting choice reliably causes mismatches?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: original
+        path: english-arcade/react/hydration-mismatch
+        note: Authored for this pack; corpus has no server-rendering card.
+  - id: react-12-scope-negotiation
+    version: "1.0.0"
+    target: react
+    topic: Estimation
+    difficulty: 2
+    interview_stage: behavioural_probe
+    prompt: >-
+      How long would this component take you to build?
+    context: >-
+      A deceptively simple question. The interviewer is assessing whether you
+      can estimate in English without either padding vaguely or committing to a
+      number you cannot defend.
+    best_answer: >-
+      A day for the happy path, and probably another for the states that are not
+      in the design yet, empty, loading and error. If those are already
+      specified, it is closer to a day and a half. Which of those do you already
+      have?
+    distractors:
+      - text: >-
+          It is quite hard to say without knowing more about the requirements,
+          since it really depends on a lot of factors like the design and the
+          data and the edge cases involved.
+        trap: hedging
+        why_wrong: >-
+          Refuses to estimate at all, which reads as inability rather than as
+          rigour.
+      - text: >-
+          About two days. That should be enough time to build it properly and
+          handle everything that might come up during the implementation of the
+          component.
+        trap: precision
+        why_wrong: >-
+          A number with no breakdown cannot be negotiated, defended or revised
+          when scope changes.
+      - text: >-
+          One day for the happy path and probably more one for the states that
+          are not yet in the design, like empty, loading and of error.
+        trap: grammar
+        why_wrong: >-
+          "More one" inverts "another one" and "of error" adds a Portuguese
+          preposition.
+    feedback:
+      register: >-
+        Confident and collaborative; end by returning a question.
+      hedging: >-
+        Hedge the unknown scope, not the estimate itself.
+      precision: >-
+        Break the number into parts so it can be negotiated.
+      grammar: >-
+        "Another day", "empty, loading and error states".
+      pragmatics: >-
+        Closing with a question converts an estimate into a scoping
+        conversation.
+    rephrase:
+      prompt: >-
+        Give the same estimate to someone who wants a single number.
+      goal: Hold the breakdown while satisfying the request.
+    language_focus: [hedging, grammar, pragmatics]
+    feynman:
+      concept: Estimation as decomposition plus assumptions.
+      explain_to: A manager who wants one number for a roadmap.
+      constraint: Explain using a builder quoting for a room.
+      self_check: >-
+        Could someone negotiate scope from your answer?
+    black_box:
+      symptom: You refused to estimate, or gave a bare number.
+      expected: A split estimate with the unknown named, ending in a question.
+      actual: >-
+        A bare "it depends", or an undefended figure.
+      root_cause: >-
+        Treating estimates as commitments rather than as conditional models.
+      repair: >-
+        Always estimate in two parts: known work and unspecified states.
+    recall:
+      active_recall_cue: >-
+        What makes an estimate negotiable rather than binding?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
+        note: Estimation and headroom reasoning.
+      - repo: original
+        path: english-arcade/react/scope-negotiation
+        note: Original interview phrasing authored for this pack.

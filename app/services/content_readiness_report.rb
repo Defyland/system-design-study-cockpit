@@ -1,3 +1,5 @@
+require "yaml"
+
 class ContentReadinessReport
   HEALTHY_STATUSES = %w[ok warning].freeze
 
@@ -23,10 +25,10 @@ class ContentReadinessReport
     {
       status: status,
       adapter: adapter,
-      database: ActiveRecord::Base.connection_db_config.database,
       study_documents: study_document_count,
       reference_documents: reference_document_count,
       side_tracks: side_track_count,
+      english_arcade_pack_readiness: arcade_pack_readiness,
       backend_interview_foundations_present: backend_interview_foundations_present?,
       content_bootstrapped: content_bootstrapped?,
       latest_sync_status: latest_sync&.status,
@@ -54,6 +56,7 @@ class ContentReadinessReport
   def status
     return "degraded" unless adapter == "postgresql"
     return "degraded" unless content_bootstrapped?
+    return "warning" unless arcade_pack_readiness.fetch("ready")
     return "warning" unless sync_observed?
     return "warning" if latest_sync_failed?
 
@@ -76,6 +79,45 @@ class ContentReadinessReport
 
   def latest_sync_failed?
     latest_sync&.failed?
+  end
+
+  def arcade_pack_readiness
+    return @arcade_pack_readiness if defined?(@arcade_pack_readiness)
+
+    required_fields = %w[prompt context best_answer distractors feedback rephrase]
+    directory = Rails.root.join("db/seeds/english_arcade")
+    packs = {}
+    if directory.directory?
+      Dir.glob(directory.join("*.yml")).sort.each do |path|
+        target = File.basename(path, ".yml").tr("-", "_")
+        next unless %w[dsa ruby rails react golang elixir salesforce system_design].include?(target)
+
+        payload = YAML.safe_load_file(path, aliases: false) || {}
+        items = Array(payload["items"])
+        packs[target] = {
+          "item_count" => items.length,
+          "missing_fields" => required_fields.select { |field| items.any? { |item| !item.is_a?(Hash) || item[field].blank? } }
+        }
+      end
+    end
+    missing_targets = %w[dsa ruby rails react golang elixir salesforce system_design] - packs.keys
+    @arcade_pack_readiness = {
+      "minimum_items_per_target" => 12,
+      "target_count" => packs.length,
+      "item_count" => packs.values.sum { |pack| pack.fetch("item_count") },
+      "targets" => packs,
+      "missing_targets" => missing_targets,
+      "ready" => missing_targets.empty? && packs.values.all? { |pack| pack.fetch("item_count") >= 12 && pack.fetch("missing_fields").empty? }
+    }
+  rescue Psych::SyntaxError, Errno::ENOENT, TypeError
+    @arcade_pack_readiness = {
+      "minimum_items_per_target" => 12,
+      "target_count" => 0,
+      "item_count" => 0,
+      "targets" => {},
+      "missing_targets" => %w[dsa ruby rails react golang elixir salesforce system_design],
+      "ready" => false
+    }
   end
 
   def latest_sync

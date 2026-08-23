@@ -1,0 +1,300 @@
+<% content_for :title, "English C2 Arcade" %>
+
+<style>
+  .english-arcade { --arcade-ink: #17252a; --arcade-muted: #5e6c70; --arcade-line: #ccd8d4; --arcade-panel: #fffdf7; --arcade-accent: #176b70; --arcade-accent-soft: #e4f1ed; --arcade-warn: #fff2c2; --arcade-danger: #8d352e; color: var(--arcade-ink); display: grid; gap: 18px; }
+  .english-arcade * { box-sizing: border-box; }
+  html, body { max-width: 100vw; overflow-x: hidden; }
+  .arcade-hero, .arcade-panel { background: var(--arcade-panel); border: 1px solid var(--arcade-line); border-radius: 12px; padding: clamp(16px, 3vw, 28px); min-width: 0; }
+  .arcade-hero { background: linear-gradient(135deg, #e5f2ee, #fff9df); border-color: #b9d0c7; }
+  .arcade-kicker { color: var(--arcade-accent); font-size: .76rem; font-weight: 800; letter-spacing: .08em; }
+  .arcade-hero h1, .arcade-panel h2, .arcade-panel h3 { line-height: 1.2; margin: 6px 0 10px; }
+  .arcade-muted { color: var(--arcade-muted); }
+  .arcade-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); align-items: start; }
+  .arcade-targets { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+  .arcade-target { position: relative; }
+  .arcade-target input { accent-color: var(--arcade-accent); cursor: pointer; height: 18px; left: 10px; opacity: 1; position: absolute; top: 10px; width: 18px; z-index: 2; }
+  .arcade-target label { background: #f6faf7; border: 1px solid var(--arcade-line); border-radius: 9px; cursor: pointer; display: grid; gap: 3px; min-height: 64px; padding: 10px 10px 10px 38px; }
+  .arcade-target input:checked + label { background: var(--arcade-accent-soft); border-color: var(--arcade-accent); box-shadow: 0 0 0 2px #bcded4; }
+  .arcade-target input:focus-visible + label, .arcade-choice:focus-visible, .arcade-button:focus-visible, .arcade-text:focus-visible { outline: 3px solid #f0b429; outline-offset: 2px; }
+  .arcade-target small { color: var(--arcade-muted); font-size: .75rem; }
+  .arcade-modes, .arcade-actions, .arcade-choice-list, .arcade-stats, .arcade-history { display: grid; gap: 8px; }
+  .arcade-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+  .arcade-mode { align-items: center; background: #f6faf7; border: 1px solid var(--arcade-line); border-radius: 8px; display: flex; gap: 8px; min-height: 44px; padding: 9px; }
+  .arcade-button { background: var(--arcade-accent); border: 0; border-radius: 7px; color: #fff; cursor: pointer; display: inline-block; font: inherit; font-weight: 800; min-height: 44px; padding: 10px 14px; text-decoration: none; }
+  .arcade-button.secondary { background: #dce9e5; color: #174f53; }
+  .arcade-button.ghost { background: transparent; border: 1px solid var(--arcade-line); color: var(--arcade-ink); }
+  .arcade-button[disabled] { cursor: not-allowed; opacity: .45; }
+  .arcade-session-bar { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+  .arcade-session-meta, .arcade-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+  .arcade-pill { background: var(--arcade-accent-soft); border-radius: 999px; color: #1b5d5c; font-size: .8rem; font-weight: 800; padding: 4px 9px; }
+  .arcade-pill.warn { background: var(--arcade-warn); color: #6c5315; }
+  .arcade-timer { font-variant-numeric: tabular-nums; font-weight: 900; min-width: 4.8rem; text-align: center; }
+  .arcade-question { display: grid; gap: 14px; }
+  .arcade-question h2 { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
+  .arcade-context { background: #f7f4ed; border-left: 4px solid #bbcfca; padding: 10px 12px; }
+  .arcade-choice-list { border: 0; margin: 0; padding: 0; }
+  .arcade-choice { align-items: flex-start; background: #fbfcfa; border: 1px solid var(--arcade-line); border-radius: 8px; cursor: pointer; display: flex; gap: 10px; min-height: 44px; padding: 11px; }
+  .arcade-choice:hover { border-color: var(--arcade-accent); }
+  .arcade-choice input { flex: 0 0 auto; margin-top: 4px; }
+  .arcade-choice .choice-key { color: var(--arcade-accent); font-weight: 900; min-width: 1.2rem; }
+  .arcade-capture { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; }
+  .arcade-capture label { display: grid; gap: 5px; }
+  .arcade-text { border: 1px solid var(--arcade-line); border-radius: 7px; font: inherit; padding: 9px; width: 100%; }
+  .arcade-voice { align-self: end; white-space: nowrap; }
+  .arcade-actions { align-items: center; display: flex; flex-wrap: wrap; }
+  .arcade-feedback { background: #f6faf7; border: 1px solid #a8cbbd; border-radius: 10px; display: grid; gap: 8px; padding: 14px; }
+  .arcade-feedback.wrong { background: #fff5f0; border-color: #e0aaa1; }
+  .arcade-answer { background: #fffdf7; border-left: 4px solid var(--arcade-accent); padding: 8px 10px; }
+  .arcade-followups { display: flex; flex-wrap: wrap; gap: 8px; }
+  .arcade-black-box { display: grid; gap: 10px; margin-top: 10px; }
+  .arcade-black-box label { display: grid; gap: 5px; }
+  .arcade-followups a { font-size: .9rem; }
+  .arcade-history article { background: #f7f4ed; border: 1px solid var(--arcade-line); border-radius: 8px; padding: 10px 12px; }
+  .arcade-history p { margin: 3px 0 0; }
+  .arcade-progress { background: #f7f4ed; border: 1px solid var(--arcade-line); border-radius: 8px; margin-top: 10px; padding: 10px 12px; }
+  .arcade-progress summary { cursor: pointer; font-weight: 800; min-height: 44px; padding: 10px 0; }
+  .arcade-progress ol { display: grid; gap: 8px; margin: 8px 0 0; padding-left: 1.5rem; }
+  .arcade-progress li { padding-left: 3px; }
+  .arcade-progress li small { color: var(--arcade-muted); display: block; margin-top: 3px; }
+  .arcade-evidence { display: grid; gap: 5px; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); margin-top: 8px; }
+  .arcade-evidence span { background: #fffdf7; border: 1px solid var(--arcade-line); border-radius: 6px; padding: 6px 8px; }
+  @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 24px 14px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-grid { grid-template-columns: 1fr; } .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } .arcade-voice { justify-self: start; } }
+</style>
+
+<section class="english-arcade" data-controller="english-arcade" data-english-arcade-duration-seconds-value="<%= @arcade_session&.duration_seconds || 0 %>" data-english-arcade-remaining-seconds-value="<%= @arcade_session&.remaining_seconds || 0 %>" data-english-arcade-active-value="<%= @arcade_session&.active? && !@arcade_session.expired? %>" data-english-arcade-finish-url-value="<%= @arcade_session ? finish_english_arcade_path(session_id: @arcade_session.id) : "" %>">
+  <header class="arcade-hero">
+    <span class="arcade-kicker">English C2 · closed-book interview practice</span>
+    <h1>English C2 Arcade</h1>
+    <p class="arcade-muted">Choose one target, answer before feedback appears, then turn each miss into a Black Box post-mortem and a scheduled reattempt. This is a measurable path, not a promise of C2 in 30 days.</p>
+  </header>
+
+  <section class="arcade-panel" aria-labelledby="arcade-launcher-title">
+    <div class="arcade-session-bar">
+      <div>
+        <h2 id="arcade-launcher-title">Choose your interview target</h2>
+        <p class="arcade-muted">Your last target is remembered in this browser and on the session record.</p>
+      </div>
+      <% if @arcade_session %>
+        <span class="arcade-pill"><%= @arcade_session.status.humanize %></span>
+      <% end %>
+    </div>
+
+    <%= form_with url: english_arcade_sessions_path, scope: :english_arcade_session, local: true do |form| %>
+      <div class="arcade-targets" role="radiogroup" aria-label="Interview target">
+        <% @targets.each do |key, target| %>
+          <div class="arcade-target">
+            <%= form.radio_button :target, key, checked: key == @selected_target, id: "english-arcade-target-#{key}" %>
+            <%= form.label "target_#{key}", for: "english-arcade-target-#{key}" do %>
+              <strong><%= target[:label] %></strong>
+              <small><%= target[:focus] %></small>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="arcade-modes" role="radiogroup" aria-label="Session length">
+        <% @modes.each do |key, mode| %>
+          <label class="arcade-mode">
+            <%= form.radio_button :mode, key, checked: key == @selected_mode %>
+            <span><strong><%= mode[:label] %></strong><br><small class="arcade-muted"><%= mode[:duration_seconds] / 60 %> minutes · feedback after submit</small></span>
+          </label>
+        <% end %>
+      </div>
+
+      <div class="arcade-actions">
+        <%= button_tag(@arcade_session ? "Start another session" : "Start closed-book session", type: "submit", class: "arcade-button") %>
+        <span class="arcade-muted" aria-live="polite"><%= @schedule_summary[:due] %> cards due · <%= @schedule_summary[:mastered] %> in box 5</span>
+      </div>
+      <p class="arcade-muted">30-day diagnostic: <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> Black Box reviews.</p>
+      <div class="arcade-actions">
+        <%= link_to "Export 30-day progress JSON", english_arcade_path(format: :json, session_id: @arcade_session&.id), class: "arcade-button ghost", aria: { label: "Export the 30-day progress and practice plan as JSON" } %>
+      </div>
+      <details class="arcade-progress">
+        <summary>Open the 30-day practice plan</summary>
+        <p class="arcade-muted">Daily goals accumulate review and interleaving. Weak-area repair is evidence work, not a CEFR score.</p>
+        <ol>
+          <% @thirty_day_plan.each do |day| %>
+            <li>
+              <strong>Day <%= day.fetch("day") %>:</strong> <%= day.fetch("goal") %>
+              <small><strong>Review:</strong> <%= day.fetch("review") %> <strong>Interleave:</strong> <%= day.fetch("interleaving") %> <strong>Weak area:</strong> <%= day.fetch("weak_area_remediation") %></small>
+              <% if day.fetch("mocks").any? %>
+                <small><strong>Full mocks:</strong> <%= day.fetch("mocks").map { |mock| mock.fetch("label") }.join(" · ") %></small>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      </details>
+    <% end %>
+  </section>
+
+  <% if @arcade_session %>
+    <div class="arcade-grid">
+      <div class="arcade-panel arcade-question">
+        <div class="arcade-session-bar">
+          <div>
+            <span class="arcade-kicker"><%= @plan.mode_label %></span>
+            <h2><%= @plan.target_label %></h2>
+          </div>
+          <div class="arcade-session-meta">
+            <span class="arcade-pill">Score <%= @arcade_session.score %></span>
+            <span class="arcade-pill">Answered <%= @arcade_session.question_count %></span>
+            <span class="arcade-pill arcade-timer" data-english-arcade-target="countdown" aria-live="polite">--:--</span>
+          </div>
+        </div>
+
+        <% if @feedback_attempt && @feedback %>
+          <section class="arcade-feedback <%= @feedback_attempt.correct? ? "correct" : "wrong" %>" data-english-arcade-target="feedback" aria-live="assertive" tabindex="-1">
+            <strong><%= @feedback_attempt.correct? ? "Good call — now make it precise." : "Black Box: the miss is evidence, not a verdict." %></strong>
+            <p><%= @feedback.fetch("register") %></p>
+            <p><%= @feedback.fetch("precision") %></p>
+            <div class="arcade-answer"><strong>Answer after attempt:</strong> <%= @feedback.fetch("answer") %></div>
+            <% if @feedback["selected"].present? %><p class="arcade-muted">You chose: <%= @feedback.fetch("selected") %></p><% end %>
+            <% if @feedback_attempt.correct? || @feedback_attempt.black_box_complete? %>
+              <div class="arcade-followups">
+              <% if @feedback_card %>
+                <%= link_to "Retry this question", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "retry", attempt_id: @feedback_attempt.id), class: "arcade-button secondary" %>
+                <%= link_to "Rephrase for a stakeholder", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "rephrase", attempt_id: @feedback_attempt.id), class: "arcade-button ghost" %>
+                <%= link_to "Add an extension", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "extension", attempt_id: @feedback_attempt.id), class: "arcade-button ghost" %>
+                <%= link_to "Continue to next card", english_arcade_path(session_id: @arcade_session.id), class: "arcade-button ghost" %>
+              <% end %>
+              </div>
+            <% else %>
+              <p class="arcade-muted">Complete the five Black Box fields before scheduling or continuing.</p>
+            <% end %>
+            <% unless @feedback_attempt.correct? %>
+              <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true do |form| %>
+                <%= form.hidden_field :attempt_id, value: @feedback_attempt.id %>
+                <%= form.hidden_field :phase, value: "postmortem" %>
+                <%= form.hidden_field :card_key, value: @feedback_attempt.card_key %>
+                <fieldset class="arcade-black-box" aria-labelledby="black-box-title">
+                  <legend id="black-box-title"><strong>Black Box post-mortem</strong> <small class="arcade-muted">all five fields are required</small></legend>
+                  <label for="english-arcade-black-box-root-cause">Actionable root cause
+                    <%= form.text_area :black_box_root_cause, id: "english-arcade-black-box-root-cause", rows: 2, class: "arcade-text", required: true, value: @feedback_attempt.black_box_root_cause %>
+                  </label>
+                  <label for="english-arcade-black-box-missing-signal">Missing mental model / signal
+                    <%= form.text_area :black_box_missing_signal, id: "english-arcade-black-box-missing-signal", rows: 2, class: "arcade-text", required: true, value: @feedback_attempt.black_box_missing_signal %>
+                  </label>
+                  <label for="english-arcade-black-box-preventive-rule">Preventive rule
+                    <%= form.text_area :black_box_preventive_rule, id: "english-arcade-black-box-preventive-rule", rows: 2, class: "arcade-text", required: true, value: @feedback_attempt.black_box_preventive_rule %>
+                  </label>
+                  <label for="english-arcade-black-box-targeted-exercise">Targeted exercise
+                    <%= form.text_area :black_box_targeted_exercise, id: "english-arcade-black-box-targeted-exercise", rows: 2, class: "arcade-text", required: true, value: @feedback_attempt.black_box_targeted_exercise %>
+                  </label>
+                  <label for="english-arcade-black-box-retest-dates">Retest dates
+                    <%= form.text_area :black_box_retest_dates, id: "english-arcade-black-box-retest-dates", rows: 2, class: "arcade-text", required: true, value: @feedback_attempt.black_box_retest_dates %>
+                  </label>
+                  <%= form.submit "Save post-mortem", class: "arcade-button secondary" %>
+                </fieldset>
+              <% end %>
+            <% end %>
+          </section>
+        <% end %>
+
+        <% if @pending_attempt && @current_card && @arcade_session.active? %>
+          <section class="arcade-feedback" aria-labelledby="feynman-title" aria-live="polite">
+            <span class="arcade-kicker">Commit recorded · feedback still locked</span>
+            <h2 id="feynman-title">Feynman pass before the reveal</h2>
+            <p class="arcade-context">Explain why you chose that option in your own words. This is the closed-book reasoning trace; the answer and diagnostic stay server-side until you commit this pass.</p>
+            <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submitFeynman" } do |form| %>
+              <%= form.hidden_field :attempt_id, value: @pending_attempt.id %>
+              <%= form.hidden_field :phase, value: "feynman" %>
+              <%= form.hidden_field :card_key, value: @pending_attempt.card_key %>
+              <%= form.label :feynman_text, "Say or write the reasoning" %>
+              <%= form.text_area :feynman_text, rows: 5, class: "arcade-text", placeholder: "I chose this because… The trade-off I would verify is…", autofocus: true, required: true %>
+              <div class="arcade-actions">
+                <%= form.submit "Reveal feedback", class: "arcade-button" %>
+                <span class="arcade-muted">The reveal grades the committed choice, not the prose.</span>
+              </div>
+            <% end %>
+          </section>
+        <% elsif @current_card && @arcade_session.active? && (!@feedback_attempt || @feedback_attempt.correct? || @feedback_attempt.black_box_complete?) %>
+          <div>
+            <span class="arcade-kicker"><%= @exercise == "initial" ? "Closed-book question" : @exercise.humanize %></span>
+            <h2><%= @current_card.prompt %></h2>
+            <p class="arcade-context"><%= @current_card.context %><% if @exercise == "rephrase" %> <strong><%= @current_card.rephrase_prompt %></strong><% elsif @exercise == "extension" %> <strong><%= @current_card.extension_prompt %></strong><% end %></p>
+          </div>
+
+          <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submit", english_arcade_target: "form" } do |form| %>
+            <%= form.hidden_field :card_key, value: @current_card.key %>
+            <%= form.hidden_field :attempt_kind, value: @exercise, data: { english_arcade_target: "attemptKind" } %>
+            <%= form.hidden_field :parent_attempt_id, value: @feedback_attempt&.id %>
+            <%= form.hidden_field :response_ms, value: nil, data: { english_arcade_target: "responseMs" } %>
+            <fieldset class="arcade-choice-list">
+              <legend class="arcade-muted">Choose the strongest answer before revealing feedback.</legend>
+              <% @current_card.options.each_with_index do |choice, index| %>
+                <label class="arcade-choice" data-english-arcade-target="choice" data-choice-index="<%= index + 1 %>">
+                  <%= form.radio_button :answer_choice, choice.id, required: true %>
+                  <span class="choice-key"><%= (index + 1).to_s %></span>
+                  <span><%= choice.text %></span>
+                </label>
+              <% end %>
+            </fieldset>
+
+            <div class="arcade-capture">
+              <label>
+                <span><strong>Typed thought (optional)</strong> <small class="arcade-muted">captured with the commit</small></span>
+                <%= form.text_area :typed_answer, rows: 3, class: "arcade-text", placeholder: "Capture your reasoning after committing to a choice…", data: { english_arcade_target: "typed" } %>
+              </label>
+              <div>
+                <%= form.hidden_field :spoken_text, data: { english_arcade_target: "spoken" } %>
+                <button type="button" class="arcade-button secondary arcade-voice" data-english-arcade-target="voiceButton" data-action="english-arcade#toggleVoice" hidden>Capture voice</button>
+                <small class="arcade-muted" data-english-arcade-target="voiceStatus" aria-live="polite"></small>
+              </div>
+            </div>
+
+            <div class="arcade-actions">
+              <%= form.submit "Commit answer", class: "arcade-button", data: { english_arcade_target: "submit" } %>
+              <%= form.button "Skip and open Black Box", type: "submit", name: "english_arcade_attempt[answer_status]", value: "skip", formnovalidate: true, class: "arcade-button ghost", data: { skip: "true", english_arcade_target: "submit" } %>
+              <span class="arcade-muted">Keys 1–4 choose · Enter commits · Escape focuses the answer</span>
+            </div>
+          <% end %>
+        <% elsif @arcade_session.completed? || @arcade_session.expired? %>
+          <div class="arcade-feedback"><strong>Session closed.</strong><p>Start another drill to keep the loop moving, or review the history panel for your diagnostic trail.</p></div>
+        <% else %>
+          <div class="arcade-feedback"><strong>No cards are available yet.</strong><p>Start another session after the content handoff supplies its target pack.</p></div>
+        <% end %>
+      </div>
+
+      <aside class="arcade-panel" aria-labelledby="arcade-history-title">
+        <h2 id="arcade-history-title">Learning loop</h2>
+        <p class="arcade-muted">Wrong → box 1 (daily). Correct answers climb through 2d, 4d, weekly, and 2-weekly intervals.</p>
+        <div class="arcade-stats">
+          <span class="arcade-pill"><%= @schedule_summary[:due] %> due now</span>
+          <span class="arcade-pill"><%= @schedule_summary[:learning] %> learning</span>
+          <span class="arcade-pill"><%= @schedule_summary[:mastered] %> box 5</span>
+        </div>
+        <h3>30-day diagnostic</h3>
+        <p class="arcade-muted"><%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> Black Box reviews across <%= @progress_30_days[:targets] %> targets.</p>
+        <details class="arcade-progress">
+          <summary>Evidence axes (practice only)</summary>
+          <div class="arcade-evidence">
+            <span>Typed captures: <strong><%= @progress_30_days.fetch(:capture_evidence).fetch("typed_count") %></strong></span>
+            <span>Spoken captures: <strong><%= @progress_30_days.fetch(:capture_evidence).fetch("spoken_count") %></strong></span>
+            <span>Response-time samples: <strong><%= @progress_30_days.fetch(:response_time_evidence).fetch("count") %></strong></span>
+            <span>Average response: <strong><%= @progress_30_days.fetch(:response_time_evidence).fetch("average_ms") || "—" %> ms</strong></span>
+          </div>
+          <p class="arcade-muted"><strong>Feedback evidence:</strong> <%= @progress_30_days.fetch(:feedback_evidence).map { |axis, evidence| "#{axis} #{evidence.fetch("observations")}" }.join(" · ") %></p>
+          <p class="arcade-muted"><strong>Target accuracy:</strong> <%= @progress_30_days.fetch(:target_accuracy).map { |target, evidence| "#{target.humanize} #{evidence.fetch("accuracy") || "—"}" }.join(" · ") %></p>
+          <p class="arcade-muted"><strong>Language skills:</strong> <%= @progress_30_days.fetch(:skill_evidence).map { |skill, evidence| "#{skill.humanize}: #{evidence.fetch("status")}" }.join(" · ") %></p>
+          <p class="arcade-muted"><%= @progress_30_days.fetch(:score_note) %></p>
+        </details>
+        <div class="arcade-actions">
+          <%= button_to "Finish and save session", finish_english_arcade_path(session_id: @arcade_session.id), method: :post, class: "arcade-button secondary" if @arcade_session.active? %>
+        </div>
+        <h3>Recent attempts</h3>
+        <div class="arcade-history">
+          <% if @history.any? %>
+            <% @history.each do |attempt| %>
+              <article>
+                <strong><%= attempt.target.humanize %> · <%= attempt.attempt_kind.humanize %></strong>
+                <p class="arcade-muted"><%= attempt.correct? ? "Correct" : "Needs another pass" %> · box <%= attempt.box_before %> → <%= attempt.box_after %> · <%= attempt.answered_at.to_fs(:short) %></p>
+              </article>
+            <% end %>
+          <% else %>
+            <p class="arcade-muted">No attempts yet. Your first answer establishes the baseline.</p>
+          <% end %>
+        </div>
+      </aside>
+    </div>
+  <% end %>
+</section>

@@ -1,0 +1,1099 @@
+---
+contract_version: "1.1.0"
+target:
+  key: rails
+  label: Ruby on Rails
+  blurb: >-
+    Explain the request lifecycle, query design and background work the way a
+    senior Rails engineer does, with the failure mode named.
+  focus_areas:
+    - request lifecycle and boundaries
+    - Active Record and query design
+    - background jobs and idempotency
+    - caching and invalidation
+    - security and observability
+  simulation:
+    minutes: 45
+    structure:
+      - label: Lifecycle and boundaries warm-up
+        minutes: 8
+      - label: Query and data-access deep dive
+        minutes: 15
+      - label: Jobs, retries and idempotency
+        minutes: 12
+      - label: Security, caching and observability
+        minutes: 10
+cards:
+  - id: rails-card-n-plus-one
+    front: How do you describe an N+1 without sounding rehearsed?
+    back: >-
+      Name the query count, the fix, and the check: "one query per row, fixed
+      with includes, verified by asserting query count in a test".
+    box: 1
+    source:
+      repo: system-design-estudos
+      path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+      note: Rails interview surface area covering query problems.
+  - id: rails-card-idempotency
+    front: What makes a job safe to retry?
+    back: >-
+      A stable idempotency key plus a uniqueness constraint at the database
+      level, so a duplicate delivery collides instead of double-charging.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
+      note: Idempotent writes under ambiguous failure.
+  - id: rails-card-cache-invalidation
+    front: How do you talk about cache invalidation credibly?
+    back: >-
+      Prefer key-based expiry over manual deletion, and say what staleness the
+      product can tolerate before choosing a TTL.
+    box: 2
+    source:
+      repo: system-design-estudos
+      path: areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
+      note: Cache and origin protection playbook.
+items:
+  - id: rails-01-n-plus-one
+    version: "1.0.0"
+    target: rails
+    topic: Query design
+    difficulty: 1
+    interview_stage: technical_screen
+    prompt: >-
+      This index page is slow. What is the first thing you would look at?
+    context: >-
+      A listing page renders 50 records, each showing its author name. Response
+      time grew as data grew. The interviewer wants a diagnosis, not a list of
+      generic performance advice.
+    best_answer: >-
+      I would check the query log for an N+1 first, because the symptom scales
+      with row count. If each row triggers its own author lookup, the fix is
+      preloading the association, and I would lock it in with a test that
+      asserts the query count rather than trusting it stays fixed.
+    distractors:
+      - text: >-
+          I would add caching to the page so that the expensive rendering only
+          happens once, and then most requests would be served from the cache
+          and would be much faster for users.
+        trap: content
+        why_wrong: >-
+          Caches the symptom and leaves the N+1 in place, so the first request
+          and every invalidation stay slow.
+      - text: >-
+          I would look at the database and see if there are any missing indexes,
+          then I would probably add some indexes on the columns that are being
+          used in the queries on that page.
+        trap: precision
+        why_wrong: >-
+          Plausible but unfocused. The scaling-with-rows symptom points at query
+          count, not at index selectivity.
+      - text: >-
+          I would verify the log of queries for to find an N+1, because this
+          symptom is growing together with the number of rows that the page is
+          showing to the user.
+        trap: grammar
+        why_wrong: >-
+          "For to find" and "is growing together with" are calques that make
+          correct reasoning sound unsure.
+    feedback:
+      register: >-
+        Diagnostic and specific. Name the hypothesis before the fix.
+      hedging: >-
+        Hedge the hypothesis ("I would check first"), never the method.
+      precision: >-
+        Tie the symptom to the cause: cost scaling with row count means query
+        count.
+      grammar: >-
+        "In order to find" or simply "to find"; "scales with the number of
+        rows".
+      pragmatics: >-
+        Mentioning the regression test answers the unasked question about
+        durability.
+    rephrase:
+      prompt: >-
+        Explain the same diagnosis to a product manager asking why the page got
+        slow.
+      goal: Keep the mechanism intact while dropping the jargon.
+    language_focus: [precision, grammar, pragmatics]
+    pt_help: >-
+      "Para encontrar" e "to find". "For to" nao existe em ingles.
+    feynman:
+      concept: N+1 queries and preloading.
+      explain_to: A product manager who only sees the page being slow.
+      constraint: Explain using a waiter making one trip per dish.
+      self_check: >-
+        Did you connect the symptom to why it grows with data?
+    black_box:
+      symptom: You proposed caching or indexes before naming query count.
+      expected: N+1 hypothesis, preload fix, query-count regression test.
+      actual: A generic performance remedy applied without diagnosis.
+      root_cause: >-
+        Performance answers recalled as a menu of fixes rather than as a
+        diagnosis.
+      repair: >-
+        Always state which symptom points at which cause before any fix.
+    recall:
+      active_recall_cue: >-
+        Which symptom distinguishes an N+1 from a missing index?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
+        note: Rails query problems expected in senior screens.
+      - repo: original
+        path: english-arcade/rails/n-plus-one
+        note: Original interview phrasing authored for this pack.
+  - id: rails-02-transaction-boundaries
+    version: "1.0.0"
+    target: rails
+    topic: Transactions
+    difficulty: 3
+    interview_stage: deep_dive
+    prompt: >-
+      Why should you avoid enqueueing a job inside a transaction?
+    context: >-
+      A payment flow writes a record and enqueues a confirmation email in the
+      same transaction. The interviewer is checking whether you understand the
+      race rather than merely repeating the rule.
+    best_answer: >-
+      Because the worker can pick the job up before the transaction commits, and
+      then it queries a row that does not exist yet. I would enqueue after
+      commit, using an after_commit callback or an outbox row written inside the
+      same transaction and dispatched separately.
+    distractors:
+      - text: >-
+          Because transactions should be kept as short as possible, and
+          enqueueing a job inside one holds the database connection for longer
+          than necessary while the queue write happens.
+        trap: content
+        why_wrong: >-
+          Names a real but secondary concern; the actual failure is the worker
+          racing the commit and finding nothing.
+      - text: >-
+          Because it can cause problems with consistency if the transaction
+          rolls back later on, which could leave the system in a state that is
+          not entirely correct.
+        trap: precision
+        why_wrong: >-
+          Gestures at inconsistency without naming the race, so it does not
+          demonstrate the mechanism.
+      - text: >-
+          Because the worker can catch the job before the transaction do the
+          commit, and after it makes a query for a row that is not existing yet
+          in the database.
+        trap: grammar
+        why_wrong: >-
+          "Do the commit", "makes a query for" and "is not existing" all break
+          idiom and verb aspect.
+    feedback:
+      register: >-
+        Precise and unhurried; this is a mechanism question.
+      hedging: >-
+        None needed. The race is deterministic enough to state plainly.
+      precision: >-
+        Say "before the transaction commits" and "the row does not exist yet".
+      grammar: >-
+        "Before the transaction commits", "queries a row", "does not exist yet".
+      pragmatics: >-
+        Offering both after_commit and the outbox shows you know the scaling
+        path.
+    rephrase:
+      prompt: >-
+        Explain the same race to a developer who has never seen it happen.
+      goal: Make an invisible timing bug concrete.
+    language_focus: [precision, grammar, hedging]
+    feynman:
+      concept: Commit-visibility race between writer and worker.
+      explain_to: A developer who thinks the queue is instant.
+      constraint: Explain using a letter posted before the address is written.
+      self_check: >-
+        Did you say what the worker sees when it wins the race?
+    black_box:
+      symptom: You cited transaction length or vague inconsistency.
+      expected: Worker reads before commit; fix with after_commit or outbox.
+      actual: A secondary concern, or unnamed "consistency problems".
+      root_cause: >-
+        The rule learned as a convention without ever seeing the failure.
+      repair: >-
+        Practise describing the interleaving in two clauses.
+    recall:
+      active_recall_cue: >-
+        What does the worker find if it dequeues before the commit lands?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
+        note: Write-path ordering and ambiguous failure.
+      - repo: original
+        path: english-arcade/rails/transaction-boundaries
+        note: Original interview phrasing authored for this pack.
+  - id: rails-03-idempotent-jobs
+    version: "1.0.0"
+    target: rails
+    topic: Background jobs
+    difficulty: 3
+    interview_stage: architecture_review
+    prompt: >-
+      Your job runs twice for the same payment. How do you make that safe?
+    context: >-
+      At-least-once delivery means duplicates are normal, not exceptional. The
+      interviewer wants to hear a database-level guarantee rather than an
+      application-level check.
+    best_answer: >-
+      I would derive an idempotency key from the payment, store it with a unique
+      index, and let the second insert fail on the constraint. Checking in Ruby
+      first is a race; the constraint holds under concurrency.
+    distractors:
+      - text: >-
+          At the start of the job I would check whether the payment has already
+          been processed, and if it has I would return early without doing the
+          work a second time.
+        trap: content
+        why_wrong: >-
+          A read-then-write check is exactly the race the question targets; two
+          workers can both read "not processed".
+      - text: >-
+          I would configure the queue so that jobs are only delivered once,
+          which removes the duplicate problem at the source rather than handling
+          it inside the job itself.
+        trap: content
+        why_wrong: >-
+          Exactly-once delivery is not something a queue can generally promise;
+          the design must tolerate duplicates.
+      - text: >-
+          I would make an idempotency key of the payment and save it with a
+          unique index, then the second insert will broke in the constraint
+          instead of processing again.
+        trap: grammar
+        why_wrong: >-
+          "Make a key of", "will broke" and "break in the constraint" are form
+          and idiom errors on otherwise correct reasoning.
+    feedback:
+      register: >-
+        Firm and architectural. Guarantees belong in the database.
+      hedging: >-
+        No hedging; the constraint either exists or it does not.
+      precision: >-
+        Contrast the race explicitly with the constraint that removes it.
+      grammar: >-
+        "Derive a key from", "the insert will fail on the constraint".
+      pragmatics: >-
+        Pre-empting the naive check shows you have hit this in production.
+    rephrase:
+      prompt: >-
+        Give the same answer while explaining why at-least-once delivery is
+        normal.
+      goal: Connect the fix to the delivery guarantee that forces it.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Idempotency keys enforced by a unique constraint.
+      explain_to: A developer who trusts an if-statement to prevent duplicates.
+      constraint: Explain using two people booking the same seat.
+      self_check: >-
+        Did you explain why the Ruby-side check is insufficient?
+    black_box:
+      symptom: You proposed a read-then-write check or exactly-once delivery.
+      expected: Idempotency key plus a database uniqueness constraint.
+      actual: An application-level guard, or reliance on the queue.
+      root_cause: >-
+        Concurrency reasoned about sequentially, so the interleaving is
+        invisible.
+      repair: >-
+        For any duplicate-prevention answer, ask where two workers could
+        interleave.
+    recall:
+      active_recall_cue: >-
+        Why is a uniqueness constraint safer than an existence check?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: decision-contrasts/05-idempotency-key-vs-unique-index.md
+        note: Idempotency key versus unique index contrast.
+      - repo: original
+        path: english-arcade/rails/idempotent-jobs
+        note: Original interview phrasing authored for this pack.
+  - id: rails-04-strong-parameters
+    version: "1.0.0"
+    target: rails
+    topic: Security
+    difficulty: 2
+    interview_stage: technical_screen
+    prompt: >-
+      What is strong parameters actually protecting you from?
+    context: >-
+      A security-flavoured screen. The interviewer wants the specific attack
+      named, because candidates often describe the mechanism without knowing
+      what it prevents.
+    best_answer: >-
+      Mass assignment. Without it, a request could set any attribute the model
+      exposes, so someone could submit an admin flag alongside their profile
+      fields and escalate their own privileges. Permitting an explicit list
+      means unexpected keys are ignored rather than trusted.
+    distractors:
+      - text: >-
+          It protects against invalid data being saved to the database by making
+          sure that only the correct parameters are permitted through to the
+          model layer during an update.
+        trap: precision
+        why_wrong: >-
+          Describes filtering as validation and never names privilege
+          escalation, which is the actual threat.
+      - text: >-
+          It protects against SQL injection, because the parameters are
+          sanitised before they reach the database and cannot be used to inject
+          arbitrary queries into the application.
+        trap: content
+        why_wrong: >-
+          Wrong vulnerability entirely; injection is handled by parameter
+          binding in Active Record.
+      - text: >-
+          It protects of the mass assignment, because without this a request
+          could to set any attribute that the model is exposing, like a flag of
+          admin.
+        trap: grammar
+        why_wrong: >-
+          "Protects of", "could to set" and "a flag of admin" are three distinct
+          transfer errors in one sentence.
+    feedback:
+      register: >-
+        Direct. Security answers should name the attack in the first two words.
+      hedging: >-
+        None. Naming the vulnerability is a factual claim.
+      precision: >-
+        Give the concrete escalation example; abstractions are unconvincing
+        here.
+      grammar: >-
+        "Protects against", "could set", "an admin flag".
+      pragmatics: >-
+        Explaining the ignore-versus-trust behaviour pre-empts the follow-up
+        about unexpected keys.
+    rephrase:
+      prompt: >-
+        Explain the same risk in a sentence a non-technical stakeholder would
+        act on.
+      goal: Translate a security mechanism into business risk.
+    language_focus: [precision, grammar, register]
+    pt_help: >-
+      "Proteger de" em ingles e "protect against". Preposicao fixa.
+    feynman:
+      concept: Mass assignment and privilege escalation.
+      explain_to: A stakeholder deciding whether to fund a security fix.
+      constraint: Explain using a form with hidden extra fields.
+      self_check: >-
+        Did you name what an attacker gains, not just what is blocked?
+    black_box:
+      symptom: You described filtering, or named the wrong vulnerability.
+      expected: Mass assignment, with a privilege-escalation example.
+      actual: Validation language, or an SQL injection claim.
+      root_cause: >-
+        Security features learned as configuration rather than as threat
+        responses.
+      repair: >-
+        For each protection you use, be able to name the attack it stops.
+    recall:
+      active_recall_cue: >-
+        What can an attacker achieve without strong parameters?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/backend-security.md
+        note: Backend security fundamentals including mass assignment.
+      - repo: original
+        path: english-arcade/rails/strong-parameters
+        note: Original interview phrasing authored for this pack.
+  - id: rails-05-caching-strategy
+    version: "1.0.0"
+    target: rails
+    topic: Caching
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      Where would you put a cache in this read path, and how would you expire
+      it?
+    context: >-
+      A dashboard aggregates data from several tables and is read far more often
+      than it is written. The interviewer wants a specific placement and an
+      invalidation story, not a general endorsement of caching.
+    best_answer: >-
+      I would cache the aggregate at the fragment level, keyed on the most
+      recent updated_at across the inputs, so a write naturally produces a new
+      key. That avoids manual expiry entirely, and I would confirm with the
+      product side how stale the numbers may be before choosing any TTL.
+    distractors:
+      - text: >-
+          I would cache the query results in Redis with a reasonable TTL, maybe
+          five minutes, and then clear the cache manually whenever any of the
+          underlying records are updated by the application.
+        trap: precision
+        why_wrong: >-
+          Combines a TTL with manual expiry, which is the fragile pattern
+          key-based invalidation exists to replace.
+      - text: >-
+          Caching this would be premature. I would first make sure the queries
+          themselves are properly optimised, and only introduce a cache if that
+          turned out not to be enough.
+        trap: pragmatics
+        why_wrong: >-
+          Reasonable instinct but refuses the question asked, which was where
+          and how, not whether.
+      - text: >-
+          I would make the cache of the aggregate in the level of fragment, with
+          the key based in the updated_at more recent, then a write is
+          generating a new key automatically.
+        trap: grammar
+        why_wrong: >-
+          "Make the cache of", "in the level of" and "based in" are all
+          preposition and idiom errors.
+    feedback:
+      register: >-
+        Concrete and product-aware. Mentioning tolerance for staleness raises
+        the level.
+      hedging: >-
+        Hedge the TTL until you know the product tolerance; do not hedge the
+        strategy.
+      precision: >-
+        Key-based expiry is the specific technique; name it rather than
+        describing it.
+      grammar: >-
+        "Cache at the fragment level", "keyed on", "based on".
+      pragmatics: >-
+        Asking the product question inside the answer shows collaboration
+        without stalling.
+    rephrase:
+      prompt: >-
+        Answer again for a case where the data must never be stale.
+      goal: Force the strategy to adapt to a harder constraint.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Key-based cache expiry versus manual invalidation.
+      explain_to: A developer who deletes cache keys by hand.
+      constraint: Explain using dated newspaper editions.
+      self_check: >-
+        Did you make writes produce new keys rather than delete old ones?
+    black_box:
+      symptom: You mixed TTL with manual clearing, or refused to place a cache.
+      expected: Fragment cache keyed on latest updated_at, plus staleness
+        tolerance.
+      actual: Manual invalidation, or a deflection to query tuning.
+      root_cause: >-
+        Cache invalidation treated as cleanup instead of as key design.
+      repair: >-
+        Ask what changes the key before asking what deletes the entry.
+    recall:
+      active_recall_cue: >-
+        What makes key-based expiry safer than manual deletion?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
+        note: Cache placement and origin protection playbook.
+      - repo: original
+        path: english-arcade/rails/caching-strategy
+        note: Original interview phrasing authored for this pack.
+  - id: rails-06-service-objects
+    version: "1.0.0"
+    target: rails
+    topic: Application architecture
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      When does logic belong in a service object rather than in the model?
+    context: >-
+      The codebase has both fat models and a sprawling services directory. The
+      interviewer wants a boundary you can defend, not a preference for one
+      layer.
+    best_answer: >-
+      I keep behaviour that belongs to one record on the model, and move
+      orchestration across records or external systems into a service. The test
+      is ownership: if logic needs a gateway and two aggregates, no single model
+      owns it.
+    distractors:
+      - text: >-
+          I put business logic in service objects and keep models thin, because
+          fat models become hard to maintain and service objects are easier to
+          test in isolation from the rest.
+        trap: precision
+        why_wrong: >-
+          A blanket policy rather than a boundary, and it produces anaemic
+          models with logic scattered across services.
+      - text: >-
+          It depends on the size of the method really. If it starts getting too
+          long or complicated then I would extract it into a service object to
+          keep things readable.
+        trap: content
+        why_wrong: >-
+          Length is not a design criterion; it moves code without changing
+          ownership.
+      - text: >-
+          I maintain in the model the behaviour that belongs of one record, and
+          I move for a service the orchestration between several records or
+          systems externals.
+        trap: grammar
+        why_wrong: >-
+          "Belongs of", "move for" and post-posed "systems externals" break
+          idiom and adjective order.
+    feedback:
+      register: >-
+        Architectural and calm. Offer a test someone else could apply.
+      hedging: >-
+        None; a boundary rule should be stated as a rule.
+      precision: >-
+        "Ownership" is the criterion; length and testability are consequences.
+      grammar: >-
+        "Belongs to", "move into a service", "external systems".
+      pragmatics: >-
+        The concrete example makes the rule checkable rather than aspirational.
+    rephrase:
+      prompt: >-
+        Apply your rule out loud to sending a welcome email after signup.
+      goal: Test the rule against a case rather than restating it.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Ownership as the boundary between model and service.
+      explain_to: A developer who extracts services whenever a method grows.
+      constraint: Explain using who signs a contract between two companies.
+      self_check: >-
+        Does your rule ever tell you to keep logic in the model?
+    black_box:
+      symptom: You gave a layer preference or used length as the criterion.
+      expected: Ownership test; single-record behaviour stays on the model.
+      actual: >-
+        An appeal to thin models, or extraction triggered by method size.
+      root_cause: >-
+        Architecture patterns adopted as style guides rather than as boundaries.
+      repair: >-
+        Ask "which single record owns this?" before extracting anything.
+    recall:
+      active_recall_cue: >-
+        What question decides whether logic has a home on a model?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+        note: Application boundaries and the service layer.
+      - repo: original
+        path: english-arcade/rails/service-objects
+        note: Original interview phrasing authored for this pack.
+  - id: rails-07-observability
+    version: "1.0.0"
+    target: rails
+    topic: Observability
+    difficulty: 2
+    interview_stage: deep_dive
+    prompt: >-
+      A customer says checkout is broken but your dashboards are green. What
+      now?
+    context: >-
+      An incident-flavoured question. The interviewer wants to hear whether you
+      can reason about the gap between aggregate metrics and one user's
+      experience.
+    best_answer: >-
+      Green dashboards usually mean the aggregate is fine, so I would look for
+      the population my metrics hide. I would trace that specific request by
+      correlation ID, then check whether errors are concentrated in one tenant,
+      one region or one client version rather than spread across the average.
+    distractors:
+      - text: >-
+          I would ask the customer for more details about exactly what they were
+          doing, and try to reproduce the problem myself in a staging
+          environment to see whether it happens there too.
+        trap: pragmatics
+        why_wrong: >-
+          Reasonable but slow, and it ignores the production evidence already
+          available through tracing.
+      - text: >-
+          If the dashboards are green then the system is working correctly, so
+          it is most likely a client-side problem or a misunderstanding on the
+          customer's side about how the feature works.
+        trap: content
+        why_wrong: >-
+          Trusts aggregates over a user report, which is how long-tail failures
+          stay invisible for weeks.
+      - text: >-
+          The dashboards green are meaning that the aggregate is fine, then I
+          would search the population that my metrics are hiding, like one
+          tenant or one version of client.
+        trap: grammar
+        why_wrong: >-
+          Adjective order, progressive aspect on a stative verb and "one version
+          of client" all mark non-native production.
+    feedback:
+      register: >-
+        Curious rather than defensive. Never imply the customer is mistaken.
+      hedging: >-
+        "Usually means" is well calibrated for an inference about metrics.
+      precision: >-
+        Name the dimensions you would slice by; that is the whole answer.
+      grammar: >-
+        "Green dashboards mean", "one client version", "hidden by the average".
+      pragmatics: >-
+        Starting from the trace shows you use evidence before hypotheses.
+    rephrase:
+      prompt: >-
+        Answer again assuming you have no distributed tracing available.
+      goal: Force reasoning without the convenient tool.
+    language_focus: [precision, grammar, register]
+    feynman:
+      concept: Aggregate metrics hiding a concentrated failure population.
+      explain_to: A manager who trusts a green dashboard.
+      constraint: Explain using average rainfall across a country.
+      self_check: >-
+        Did you name at least two dimensions to slice by?
+    black_box:
+      symptom: You dismissed the report or went straight to reproduction.
+      expected: Trace the request, then slice by tenant, region and version.
+      actual: Deferring to the dashboard, or a slow staging investigation.
+      root_cause: >-
+        Treating monitoring as a verdict rather than as a sampled summary.
+      repair: >-
+        Ask "what population would this metric hide?" during every incident.
+    recall:
+      active_recall_cue: >-
+        Which dimensions most often hide a failure inside a green average?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/09-backend-principles/cards/logging-monitoring-observability.md
+        note: Observability practices for backend services.
+      - repo: original
+        path: english-arcade/rails/observability
+        note: Original interview phrasing authored for this pack.
+  - id: rails-08-migration-safety
+    version: "1.0.0"
+    target: rails
+    topic: Migrations
+    difficulty: 3
+    interview_stage: architecture_review
+    prompt: >-
+      How would you rename a column on a large table without downtime?
+    context: >-
+      The table has tens of millions of rows and the application is deployed
+      continuously. The interviewer wants the multi-step dance, expressed as an
+      ordered plan.
+    best_answer: >-
+      I would not rename in place. Add the new column, write to both, backfill
+      in batches, switch reads once the data matches, and drop the old column in
+      a later deploy. Old and new code run together during a rollout.
+    distractors:
+      - text: >-
+          I would use a rename_column migration but run it during a low-traffic
+          window, such as overnight, so that the impact on users would be
+          minimal even if it locks briefly.
+        trap: content
+        why_wrong: >-
+          Still breaks running code that references the old name, and lock
+          duration is not the main risk.
+      - text: >-
+          I would add the new column and copy the data across, then update the
+          application to use the new one and remove the old column once
+          everything is working correctly.
+        trap: precision
+        why_wrong: >-
+          Right shape but omits dual writes and batching, which is where
+          large-table migrations actually fail.
+      - text: >-
+          I would add the column new, write in the two during some time, make
+          the backfill for batches, and after change the reads when the data is
+          equal.
+        trap: grammar
+        why_wrong: >-
+          Adjective order, "write in the two" and "for batches" break the plan's
+          readability despite correct steps.
+    feedback:
+      register: >-
+        Procedural and confident. Ordered plans are exactly what this question
+        rewards.
+      hedging: >-
+        None; each step is a known technique.
+      precision: >-
+        Dual writes and batched backfill are the load-bearing details.
+      grammar: >-
+        "The new column", "write to both", "backfill in batches".
+      pragmatics: >-
+        Explaining why the steps exist, mixed-version deploys, proves you have
+        done it.
+    rephrase:
+      prompt: >-
+        Compress the plan into a checklist a teammate could execute.
+      goal: Convert narrative into an executable sequence.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Expand-migrate-contract under continuous deployment.
+      explain_to: A developer who has only migrated small tables.
+      constraint: Explain using replacing a bridge while traffic flows.
+      self_check: >-
+        Is every step safe if the deploy stops halfway?
+    black_box:
+      symptom: You renamed in place, or skipped dual writes and batching.
+      expected: Add, dual write, batched backfill, switch reads, drop later.
+      actual: A maintenance-window rename, or a three-step simplification.
+      root_cause: >-
+        Not accounting for old and new code running at the same time.
+      repair: >-
+        Check each migration step against a half-finished rollout.
+    recall:
+      active_recall_cue: >-
+        Why must the old column survive the deploy that stops using it?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/11-operational-playbooks/playbooks/database-migration-and-backfill.md
+        note: Migration and backfill playbook.
+      - repo: original
+        path: english-arcade/rails/migration-safety
+        note: Original interview phrasing authored for this pack.
+  - id: rails-09-active-record-scopes
+    version: "1.0.0"
+    target: rails
+    topic: Active Record
+    difficulty: 1
+    interview_stage: technical_screen
+    prompt: >-
+      What is the difference between a scope and a class method here?
+    context: >-
+      A warm-up on Active Record idiom. The interviewer is checking whether you
+      know the chainability guarantee rather than treating them as
+      interchangeable styles.
+    best_answer: >-
+      A scope always returns a relation, even when the condition is nil, so it
+      stays chainable. A class method can accidentally return nil and break the
+      chain, which is why conditional filters are safer as scopes or need an
+      explicit relation fallback.
+    distractors:
+      - text: >-
+          They are basically the same thing under the hood, and it is mostly a
+          matter of style and team preference which one you choose to use in any
+          given situation.
+        trap: content
+        why_wrong: >-
+          Ignores the nil-safety guarantee, which is the practical difference
+          that causes real breakage.
+      - text: >-
+          Scopes are defined with the scope keyword and class methods are
+          defined with def self, so the syntax is different but they achieve
+          broadly similar outcomes in practice.
+        trap: precision
+        why_wrong: >-
+          Describes syntax rather than behaviour, which answers a different
+          question than the one asked.
+      - text: >-
+          A scope is returning always a relation, even when the condition is
+          nil, then it continues chainable, but a class method can return nil
+          and break the chain.
+        trap: grammar
+        why_wrong: >-
+          Adverb placement and progressive aspect are both off for stating a
+          general rule.
+    feedback:
+      register: >-
+        Short and precise; warm-ups reward economy.
+      hedging: >-
+        None needed; the chainability guarantee is not a matter of opinion.
+      precision: >-
+        Chainability under a nil condition is the whole answer.
+      grammar: >-
+        "A scope always returns", "stays chainable"; adverb before the verb.
+      pragmatics: >-
+        Mentioning the fallback shows you know how to make class methods safe
+        too.
+    rephrase:
+      prompt: >-
+        Answer again by describing the bug a broken chain produces.
+      goal: Anchor an idiom question in an observable failure.
+    language_focus: [precision, grammar, pragmatics]
+    feynman:
+      concept: Relation-returning guarantee and chainability.
+      explain_to: A developer whose filter chain returned nil in production.
+      constraint: Explain using a conveyor belt that must never be empty.
+      self_check: >-
+        Did you say what happens when the condition is nil?
+    black_box:
+      symptom: You described syntax or called them interchangeable.
+      expected: Scopes always return a relation, so chains survive nil.
+      actual: A style comparison, or a syntax description.
+      root_cause: >-
+        Idiom differences learned by convention rather than by failure.
+      repair: >-
+        Tie each idiom to the runtime error its absence produces.
+    recall:
+      active_recall_cue: >-
+        What does a scope guarantee that a class method does not?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: interview/story-bank/03-ruby-rails-senior-question-bank.md
+        note: Senior Rails question bank on Active Record idiom.
+      - repo: original
+        path: english-arcade/rails/active-record-scopes
+        note: Original interview phrasing authored for this pack.
+  - id: rails-10-incident-narrative
+    version: "1.0.0"
+    target: rails
+    topic: Incident response
+    difficulty: 3
+    interview_stage: behavioural_probe
+    prompt: >-
+      Walk me through an outage you were involved in.
+    context: >-
+      A behavioural probe in a senior loop. The interviewer is listening for
+      impact first, then containment, then the durable fix, told without
+      blaming anyone.
+    best_answer: >-
+      Checkout failed for about a fifth of users after a deploy. We rolled back
+      first, then confirmed recovery from the error rate rather than intuition.
+      The cause was a query that lost its index after a column change, so we
+      added a query-plan check to the pipeline.
+    distractors:
+      - text: >-
+          Someone on the team deployed a change without testing it properly and
+          it broke checkout, so we had to roll it back and afterwards we talked
+          about being more careful with deploys.
+        trap: register
+        why_wrong: >-
+          Blames an individual and ends in an intention rather than a mechanism,
+          which reads as a weak post-mortem culture.
+      - text: >-
+          We had an incident where the site was down for a while, it was quite
+          stressful, and we fixed it as quickly as we could and then things went
+          back to normal afterwards.
+        trap: precision
+        why_wrong: >-
+          No impact figure, no containment step and no durable fix, so nothing
+          is assessable.
+      - text: >-
+          The checkout was failing for a fifth of the users after one deploy, so
+          first we stopped the bleeding with a rollback and after we confirmed
+          the recovery for the rate of errors.
+        trap: grammar
+        why_wrong: >-
+          "After we confirmed" as a connector and "for the rate of errors"
+          weaken an otherwise well-structured story.
+    feedback:
+      register: >-
+        Blameless throughout. Describe systems and decisions, never people.
+      hedging: >-
+        Hedge only the estimate ("about a fifth"), never the sequence.
+      precision: >-
+        Impact, containment, cause, durable fix. Missing any one weakens it.
+      grammar: >-
+        "Then we confirmed", "from the error rate", "after a deploy".
+      pragmatics: >-
+        Ending with the pipeline check proves the lesson became a mechanism.
+    rephrase:
+      prompt: >-
+        Tell it again in four sentences, one per stage.
+      goal: Enforce the impact-containment-cause-fix skeleton.
+    language_focus: [register, precision, grammar]
+    pt_help: >-
+      "Depois" como conector e "then", nao "after". "After" precisa de
+      complemento.
+    feynman:
+      concept: Blameless incident narrative with a durable fix.
+      explain_to: A candidate who tells outage stories as drama.
+      constraint: No adjectives about how stressful it was.
+      self_check: >-
+        Does your story end in a mechanism rather than an intention?
+    black_box:
+      symptom: You blamed a person, or told it without numbers.
+      expected: Impact, containment, cause, durable fix, blameless throughout.
+      actual: A drama retelling, or an intention to be more careful.
+      root_cause: >-
+        Incident stories rehearsed emotionally rather than structurally.
+      repair: >-
+        Practise the four-stage skeleton with one real number in stage one.
+    recall:
+      active_recall_cue: >-
+        What are the four stages of a strong incident narrative?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
+        note: Incident severity and triage structure.
+      - repo: original
+        path: english-arcade/rails/incident-narrative
+        note: Original interview phrasing authored for this pack.
+  - id: rails-11-api-versioning
+    version: "1.0.0"
+    target: rails
+    topic: API design
+    difficulty: 2
+    interview_stage: architecture_review
+    prompt: >-
+      A client depends on a field you want to remove. How do you proceed?
+    context: >-
+      A public API with external consumers you cannot deploy. The interviewer is
+      testing whether you treat the response shape as a contract rather than as
+      implementation detail.
+    best_answer: >-
+      The response shape is a contract, so I cannot remove it unilaterally. I
+      would mark it deprecated in the docs, measure who still requests it,
+      contact those consumers with a timeline, and only remove it in a new
+      version once usage has actually reached zero.
+    distractors:
+      - text: >-
+          I would remove the field and announce it in the changelog, since it is
+          deprecated anyway and consumers should be keeping up with the release
+          notes we publish.
+        trap: pragmatics
+        why_wrong: >-
+          Shifts responsibility onto consumers and breaks integrations you were
+          told exist.
+      - text: >-
+          I would keep the field forever and just stop populating it, returning
+          null, so nothing breaks structurally even though the data is no longer
+          there for anyone.
+        trap: content
+        why_wrong: >-
+          Silently changing semantics is worse than removal because failures
+          become invisible and downstream.
+      - text: >-
+          The shape of the response is a contract, then I cannot remove it
+          alone. I would mark like deprecated in the docs and measure who
+          continues asking for this field.
+        trap: grammar
+        why_wrong: >-
+          "Mark like deprecated" and "remove it alone" misuse idiom; "mark as
+          deprecated" and "unilaterally" are required.
+    feedback:
+      register: >-
+        Responsible and consumer-aware, which is the seniority signal here.
+      hedging: >-
+        None on the contract principle; hedge only the timeline.
+      precision: >-
+        Measuring actual usage is what separates a plan from a hope.
+      grammar: >-
+        "Mark as deprecated", "remove it unilaterally", "in a new version".
+      pragmatics: >-
+        Naming the zero-usage condition gives the interviewer a concrete gate.
+    rephrase:
+      prompt: >-
+        Draft the same decision as a two-sentence note to the affected client.
+      goal: Practise external-facing register.
+    language_focus: [pragmatics, grammar, precision]
+    feynman:
+      concept: Response shape as a consumer contract.
+      explain_to: A developer who owns only internal services.
+      constraint: Explain using a printed catalogue already mailed out.
+      self_check: >-
+        Did you name the measurable condition for removal?
+    black_box:
+      symptom: You removed it, or hollowed it out silently.
+      expected: Deprecate, measure usage, notify, remove in a new version.
+      actual: A changelog announcement, or returning null indefinitely.
+      root_cause: >-
+        Treating the API surface as implementation rather than as a contract.
+      repair: >-
+        Ask who you cannot deploy for before changing any response shape.
+    recall:
+      active_recall_cue: >-
+        What condition must hold before you delete a public field?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/api-versioning-deprecation-and-contract-tests.md
+        note: API versioning, deprecation and contract tests.
+      - repo: original
+        path: english-arcade/rails/api-versioning
+        note: Original interview phrasing authored for this pack.
+  - id: rails-12-pushing-back-on-scope
+    version: "1.0.0"
+    target: rails
+    topic: Stakeholder negotiation
+    difficulty: 3
+    interview_stage: behavioural_probe
+    prompt: >-
+      Product wants this shipped Friday and you think it is unsafe. What do you
+      say to them?
+    context: >-
+      A negotiation probe. The interviewer wants to hear whether you can decline
+      a deadline without becoming an obstacle, in language a non-engineer would
+      accept.
+    best_answer: >-
+      I would name the specific risk rather than resisting the date. Something
+      like: we can ship Friday if we put it behind a flag for internal users
+      only, because the migration has not been tested at production volume yet.
+      That gives them the date and me the safety.
+    distractors:
+      - text: >-
+          I would explain that it is not possible to ship safely by Friday and
+          that we need more time to do it properly, because rushing it would
+          create technical debt we would regret.
+        trap: pragmatics
+        why_wrong: >-
+          Refuses without offering a path, which is how engineers acquire a
+          reputation for blocking delivery.
+      - text: >-
+          I would ship it on Friday as requested, since product owns the
+          prioritisation decision, and then raise my concerns in writing so
+          there is a record if something goes wrong afterwards.
+        trap: register
+        why_wrong: >-
+          Compliance plus a paper trail is defensive, and it protects you rather
+          than the customer.
+      - text: >-
+          I would say the risk specific instead of resisting the date, like we
+          can ship in Friday behind a flag for internal users, because the
+          migration was not tested in production volume.
+        trap: grammar
+        why_wrong: >-
+          Adjective order, "ship in Friday" and "tested in production volume"
+          are all preposition and order errors.
+    feedback:
+      register: >-
+        Collaborative, never obstructive. Offer the conditional yes.
+      hedging: >-
+        Hedge nothing about the risk; hedge the mitigation if it is unproven.
+      precision: >-
+        Name the untested thing. "It is risky" is not negotiable, "the migration
+        is untested at volume" is.
+      grammar: >-
+        "The specific risk", "ship on Friday", "at production volume".
+      pragmatics: >-
+        Giving them the date while changing the exposure is the senior move.
+    rephrase:
+      prompt: >-
+        Say the same thing in a message to a product manager, in two sentences.
+      goal: Practise written negotiation register.
+    language_focus: [pragmatics, register, grammar]
+    pt_help: >-
+      Adjetivo vem antes do substantivo em ingles: "the specific risk", nunca
+      "the risk specific".
+    feynman:
+      concept: Conditional yes as a negotiation tool.
+      explain_to: An engineer who says no to protect quality.
+      constraint: Explain without using the words "technical debt".
+      self_check: >-
+        Did your answer preserve the date and reduce the exposure?
+    black_box:
+      symptom: You refused outright, or complied and documented dissent.
+      expected: A conditional yes with the specific untested risk named.
+      actual: A blocked deadline, or defensive compliance.
+      root_cause: >-
+        Framing safety and delivery as opposites rather than as scope levers.
+      repair: >-
+        Practise the form "we can ship X if we do Y, because Z is unverified".
+    recall:
+      active_recall_cue: >-
+        What shape turns a refusal into a negotiation?
+      leitner_start_box: 1
+      mastery_threshold: 8
+    sources:
+      - repo: system-design-estudos
+        path: areas/12-engineering-practice/cards/progressive-delivery-and-feature-flags.md
+        note: Progressive delivery and feature flags as scope levers.
+      - repo: original
+        path: english-arcade/rails/pushing-back-on-scope
+        note: Original interview phrasing authored for this pack.
