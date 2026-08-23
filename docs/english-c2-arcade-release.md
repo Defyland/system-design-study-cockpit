@@ -168,7 +168,7 @@ adapter handoff, and mechanics seat; see the current local gate evidence.
   the saved target.
 - [x] Confirm the imported document count and latest successful sync in the
   health payload.
-- [x] Confirm rollback can restore the previous release without deleting
+- [ ] Confirm rollback can restore the previous release without deleting
   attempts or schedules.
 
 ### Production evidence (2026-08-23)
@@ -187,6 +187,11 @@ authenticated React session verified target persistence after reload, a
 deliberately wrong answer, the required Feynman reveal, a five-field Black Box
 post-mortem, and a box-1 scheduled reattempt. No credentials or private
 database values are included here.
+
+Rollback was not exercised against live traffic; doing so would change the
+published service for no additional feature evidence. Railway retains the
+previous successful deployment for an operator-led rollback, and no migration
+or seed step deletes attempts or schedules.
 
 ## Local gate evidence (2026-08-23)
 
