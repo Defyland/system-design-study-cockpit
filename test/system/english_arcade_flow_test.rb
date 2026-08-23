@@ -35,9 +35,9 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "form[data-english-arcade-target='form']"
     assert_no_selector ".arcade-answer"
 
-    # The fixture adapter rotates choices, so the second visible option is a
+    # The canonical pack rotates choices, so the first visible option is a
     # deterministic wrong answer without reading a server-side answer key.
-    all("label.arcade-choice")[1].click
+    all("label.arcade-choice").first.click
     click_button "Commit answer"
 
     assert_selector "#feynman-title", text: /Feynman pass before the reveal/i

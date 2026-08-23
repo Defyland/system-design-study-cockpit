@@ -308,6 +308,7 @@ class EnglishArcadeSessionBuilder
       answer = item["best_answer"] || item["answer"]
       distractors = Array(item["distractors"]).filter_map { |entry| entry.is_a?(Hash) ? entry["text"] : entry }
       choices = [ answer, *distractors ].first(4).map.with_index { |text, choice_index| { id: (("a".ord + choice_index).chr), text: text.to_s } }
+      correct_choice = choices.first.fetch(:id)
       rotated = choices.rotate((index + target.length) % choices.length)
       feedback = stringify(item["feedback"] || {})
       rephrase = item["rephrase"].is_a?(Hash) ? item["rephrase"]["prompt"] : item["rephrase"]
@@ -320,7 +321,7 @@ class EnglishArcadeSessionBuilder
         prompt: item["prompt"].to_s,
         context: item["context"].to_s,
         choices: rotated,
-        correct_choice: rotated.first.fetch(:id),
+        correct_choice: correct_choice,
         answer_text: answer.to_s,
         feedback: feedback,
         rephrase_prompt: rephrase.to_s,

@@ -36,6 +36,14 @@ class EnglishArcadeSessionBuilderTest < ActiveSupport::TestCase
     assert_equal "answer-within-contract", grade.diagnostic_evidence.fetch("signal")
   end
 
+  test "keeps the canonical answer key attached when choices are rotated" do
+    card = @builder.card_for(target: "react", card_key: "react-01-state-ownership")
+    correct = card.options.find { |choice| choice.id == card.correct_choice }
+
+    assert_equal card.answer_text, correct.text
+    assert @builder.grade(card: card, answer_choice: card.correct_choice).correct
+  end
+
   test "uses a replaceable content adapter" do
     adapter = Class.new do
       def self.cards_for(target)
