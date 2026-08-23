@@ -173,9 +173,12 @@ adapter handoff, and mechanics seat; see the current local gate evidence.
 
 ### Production evidence (2026-08-23)
 
-The tested release commit is `2a7ea22` (`Add English C2 Arcade interview
+The tested runtime commit is `2a7ea22` (`Add English C2 Arcade interview
 path`). Railway deployment `088a4cf2-3e97-43ef-8748-4849f4c84d5e` reached
-`SUCCESS` from a clean detached worktree. Authenticated production smoke
+`SUCCESS` from a clean detached worktree. A documentation-only follow-up
+commit `6d29972` was then published as deployment
+`a49d7f7b-4a70-450c-b003-4c63b9121a14`, also reaching `SUCCESS`. Authenticated
+production smoke on the runtime release
 returned HTTP 200 for `/up`, `/health/content`, `/english-arcade`, and the JSON
 export. The health response was `status=ok` with
 `english_arcade_pack_readiness.ready=true`. The JSON projection contained 30
