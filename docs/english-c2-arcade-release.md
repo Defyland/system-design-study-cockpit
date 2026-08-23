@@ -188,6 +188,12 @@ deliberately wrong answer, the required Feynman reveal, a five-field Black Box
 post-mortem, and a box-1 scheduled reattempt. No credentials or private
 database values are included here.
 
+The canonical answer-key rotation fix is commit `e6c6011` (`Keep canonical
+Arcade answer keys stable`), deployed from a clean worktree as
+`6f07bd3e-30e3-4c76-ae78-cd7f64cd38c7` with `SUCCESS`. A fresh production React
+session then accepted the canonical answer, revealed `correct=true`, and
+advanced the card to box 2 with a 2-day interval.
+
 Rollback was not exercised against live traffic; doing so would change the
 published service for no additional feature evidence. Railway retains the
 previous successful deployment for an operator-led rollback, and no migration
@@ -202,9 +208,9 @@ ruby lib/english_arcade/validate.rb                 8/8 packs, 96 items, 24 card
 english_arcade:validate / qa / health               valid; pack_minima_ready=true; status=ok
 corpus import (first and second run)                 1080 records, 334 links, persisted_documents=0 on both runs
 focused content/import/search/health tests           14 runs, 107 assertions, 0 failures, 0 errors
-focused Rails/system Arcade suite                   26 runs, 1040 assertions, 0 failures, 0 errors, 0 skips
+focused Rails/system Arcade suite                   13 runs, 115 assertions, 0 failures, 0 errors, 0 skips
 system flow/accessibility                            4 runs, 45 assertions, 0 failures, 0 errors
-full Rails suite                                      115 runs, 1612 assertions, 0 failures, 0 errors, 0 skips
+full Rails suite                                      116 runs, 1614 assertions, 0 failures, 0 errors, 0 skips
 RuboCop                                               157 files, no offenses
 HTTP smoke (local Puma)                               /up 200; /health/content 200; /english-arcade 200; JSON export safe
 ```
