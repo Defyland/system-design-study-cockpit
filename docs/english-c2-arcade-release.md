@@ -199,7 +199,7 @@ corpus import (first and second run)                 1080 records, 334 links, pe
 focused content/import/search/health tests           14 runs, 107 assertions, 0 failures, 0 errors
 focused Rails/system Arcade suite                   26 runs, 1040 assertions, 0 failures, 0 errors, 0 skips
 system flow/accessibility                            4 runs, 45 assertions, 0 failures, 0 errors
-full Rails suite                                      115 runs, 1611 assertions, 0 failures, 0 errors, 0 skips
+full Rails suite                                      115 runs, 1612 assertions, 0 failures, 0 errors, 0 skips
 RuboCop                                               157 files, no offenses
 HTTP smoke (local Puma)                               /up 200; /health/content 200; /english-arcade 200; JSON export safe
 ```
