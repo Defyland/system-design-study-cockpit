@@ -5,15 +5,28 @@ class EnglishArcadeCorpusTest < ActiveSupport::TestCase
     report = Content::EnglishArcadeImporter.new.result
     counts = report.records.group_by(&:kind).transform_values(&:size)
 
-    assert_equal 14, counts.fetch("chapter")
-    assert_equal 14, counts.fetch("lab")
-    assert_equal 4, counts.fetch("capstone")
-    assert_equal 16, counts.fetch("decision_contrast")
-    assert_equal 14, counts.fetch("review_card")
-    assert_equal 1, counts.fetch("curriculum")
-    assert_equal 860, counts.fetch("legacy_arcade_item")
+    if corpus_checkout_available?
+      assert_equal 14, counts.fetch("chapter")
+      assert_equal 14, counts.fetch("lab")
+      assert_equal 4, counts.fetch("capstone")
+      assert_equal 16, counts.fetch("decision_contrast")
+      assert_equal 14, counts.fetch("review_card")
+      assert_equal 1, counts.fetch("curriculum")
+    else
+      assert_empty report.records.select { |record| %w[chapter lab capstone decision_contrast review_card curriculum].include?(record.kind) }
+    end
+    legacy_records = report.records.select { |record| record.kind == "legacy_arcade_item" }
+    if legacy_seed_available?
+      assert_equal 860, legacy_records.size
+    else
+      assert_empty legacy_records
+    end
     canonical_links = report.links.reject { |link| link.relation == "pack_source" }
-    assert_equal 237, canonical_links.uniq { |link| [ link.source_id, link.target_source_id, link.relation ] }.size
+    if corpus_checkout_available?
+      assert_equal 237, canonical_links.uniq { |link| [ link.source_id, link.target_source_id, link.relation ] }.size
+    else
+      assert_empty canonical_links
+    end
     assert_equal report.links.size, report.links.uniq { |link| [ link.source_id, link.target_source_id, link.relation ] }.size
     assert report.links.select { |link| link.relation == "pack_source" }.all? { |link| link.target_source_id.start_with?("system-design-estudos:") }
     assert_empty report.warnings
@@ -24,6 +37,16 @@ class EnglishArcadeCorpusTest < ActiveSupport::TestCase
   end
 
   test "search retrieves corpus records and legacy Arcade anchors by stable identity" do
+    unless corpus_checkout_available?
+      if legacy_seed_available?
+        legacy = EnglishArcadeSearch.new(query: "english-arcade:legacy:item:tech-deep-100", include_study_documents: false).results
+        assert_equal [ "english-arcade:legacy:item:tech-deep-100" ], legacy.map(&:source_id)
+      end
+      pack = EnglishArcadeSearch.new(query: "english-arcade:packs/dsa/dsa-01-pattern-naming", kind: "interview_pack", include_study_documents: false).results
+      assert_equal [ "english-arcade:packs/dsa/dsa-01-pattern-naming" ], pack.map(&:source_id)
+      return
+    end
+
     chapter = EnglishArcadeSearch.new(query: "chapter-01-relational-scaling", include_study_documents: false).results
     assert chapter.any? { |result| result.source_id == "system-design-estudos:chapters/chapter-01-relational-scaling-and-operational-discipline.md" }
 
@@ -39,9 +62,11 @@ class EnglishArcadeCorpusTest < ActiveSupport::TestCase
     contrast = EnglishArcadeSearch.new(query: "read-replica-vs-cache-aside", kind: "decision_contrast", include_study_documents: false).results
     assert_equal [ "system-design-estudos:decision-contrasts/01-read-replica-vs-cache-aside.md" ], contrast.map(&:source_id)
 
-    legacy = EnglishArcadeSearch.new(query: "english-arcade:legacy:item:tech-deep-100", include_study_documents: false).results
-    assert_equal [ "english-arcade:legacy:item:tech-deep-100" ], legacy.map(&:source_id)
-    assert_equal "legacy_arcade_item", legacy.first.kind
+    if legacy_seed_available?
+      legacy = EnglishArcadeSearch.new(query: "english-arcade:legacy:item:tech-deep-100", include_study_documents: false).results
+      assert_equal [ "english-arcade:legacy:item:tech-deep-100" ], legacy.map(&:source_id)
+      assert_equal "legacy_arcade_item", legacy.first.kind
+    end
 
     pack = EnglishArcadeSearch.new(query: "english-arcade:packs/dsa/dsa-01-pattern-naming", kind: "interview_pack", include_study_documents: false).results
     assert_equal [ "english-arcade:packs/dsa/dsa-01-pattern-naming" ], pack.map(&:source_id)
@@ -64,5 +89,15 @@ class EnglishArcadeCorpusTest < ActiveSupport::TestCase
     assert_equal [ "salesforce" ], readiness.fetch("elective_targets")
     assert_equal 12, pack_records.count { |record| record.target == "databases" }
     assert_equal 12, pack_records.count { |record| record.target == "general" }
+  end
+
+  private
+
+  def corpus_checkout_available?
+    Content::EnglishArcadeImporter.new.corpus_root.join("curriculum.yml").file?
+  end
+
+  def legacy_seed_available?
+    Content::EnglishArcadeImporter.new.arcade_root.join(Content::EnglishArcadeImporter::LEGACY_SEED_PATH).file?
   end
 end
