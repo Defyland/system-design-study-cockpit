@@ -122,10 +122,11 @@ class EnglishArcadeExperienceProvenanceTest < ActiveSupport::TestCase
         assert_equal sha, files.fetch(path).fetch("commit")
         source = source_file("backend-challenges", path)
         # The local release checkout includes the referenced project repos;
-        # GitHub CI checks out only this cockpit repository. Keep commit proof
-        # strict whenever the evidence checkout is available, while retaining
-        # the stable path/SHA assertions in a source-less CI checkout.
-        if source.file?
+        # GitHub CI checks out only this cockpit repository with shallow
+        # history. Keep commit proof strict whenever the source and historical
+        # object are available, while retaining path/SHA assertions in a
+        # source-less or shallow CI checkout.
+        if source.file? && verify_source_commit?("backend-challenges", path, sha)
           assert file_exists_at_commit?("backend-challenges", path, sha), "#{id}: #{path}@#{sha}"
         end
       end
@@ -152,10 +153,11 @@ class EnglishArcadeExperienceProvenanceTest < ActiveSupport::TestCase
       assert_match /\A[0-9a-f]{7,64}\z/, file.fetch("commit")
       source = source_file(provenance.fetch("repository"), file.fetch("path"))
       # The private evidence repositories are present in the local release
-      # checkout, but GitHub CI checks out this repository alone. Preserve the
-      # strict file and commit proof when available; in a source-less checkout
-      # still validate the safe relative path and immutable-looking SHA shape.
-      if source.file?
+      # checkout, but GitHub CI checks out this repository alone with shallow
+      # history. Preserve strict file and commit proof when available; in a
+      # source-less or shallow checkout still validate the safe relative path
+      # and immutable-looking SHA shape.
+      if source.file? && verify_source_commit?(provenance.fetch("repository"), file.fetch("path"), file.fetch("commit"))
         assert file_exists_at_commit?(provenance.fetch("repository"), file.fetch("path"), file.fetch("commit")), file.inspect
       end
     end
@@ -183,5 +185,16 @@ class EnglishArcadeExperienceProvenanceTest < ActiveSupport::TestCase
     path_in_repo = repository == "system-design-estudos" ? relative_path : relative_path.split("/", 2).last
     _stdout, _stderr, status = Open3.capture3("git", "-C", repo.to_s, "cat-file", "-e", "#{sha}:#{path_in_repo}")
     status.success?
+  end
+
+  def verify_source_commit?(repository, relative_path, sha)
+    repo = repository == "system-design-estudos" ? Rails.root.parent.join(repository) : Rails.root.parent.join(relative_path.split("/").first)
+    _stdout, _stderr, commit_status = Open3.capture3("git", "-C", repo.to_s, "cat-file", "-e", "#{sha}^{commit}")
+    return true if commit_status.success?
+
+    # A missing object is an allowed CI boundary only for an explicitly
+    # shallow checkout; a full checkout with a bad SHA must still fail below.
+    stdout, _stderr, shallow_status = Open3.capture3("git", "-C", repo.to_s, "rev-parse", "--is-shallow-repository")
+    !(shallow_status.success? && stdout.strip == "true")
   end
 end
