@@ -1,24 +1,66 @@
 # English C2 Arcade release checklist
 
+> Historical prior-release record: any deployment, local-count, or 8/96/1080
+> evidence below describes the earlier release only. This pending expansion is
+> not deployed and must not be represented as current production evidence until
+> its release checks are recorded.
+
 This is a release gate for the English-first interview-learning path in the
 cockpit. It describes practice evidence and a 30-day route; it must never say
 that the product guarantees CEFR C2 in 30 days.
 
+The exact daily calendar, baseline, mock catalogue, gate thresholds and
+project-provenance inventory are in
+`docs/english-c2-arcade-30-day-program.md`.
+
 ## Contract under test
 
-The fixture at
+The historical fixture at
 `test/english_arcade/fixtures/english_c2_arcade.yml` is the executable content
-contract. It requires exactly eight target packs, with 12 items in each pack:
+legacy compatibility evidence. It requires exactly eight target packs and does
+not define current canonical coverage.
 
-`dsa`, `ruby`, `rails`, `react`, `golang`, `elixir`, `salesforce`, and
-`system_design`.
+The pending expansion contract (not current production) has 14 selectable
+packs, 176 items and 42 Leitner cards. Thirteen packs are canonical: the eight
+technical tracks, General Conversation, Career Narrative, and the Rails, Go
+and Elixir Experience packs. They total 164 canonical items. Salesforce is
+directly selectable but is a 1.0 legacy/elective pack: it is
+critical-ineligible and never supplies critical credit. The launcher exposes 16 choices: 14 packs
+plus mixed and interview. Browser voice capture is absent: typed production
+only, with an external-platform handoff boundary for any speaking/listening
+work.
 
-Every item has a natural interview prompt, context, one answer, at least two
-plausible distractors, register/hedging/precision/grammar/pragmatics feedback,
-a rephrase prompt, an extension prompt, and a source reference. DSA and system
-design also expose a 45-minute simulation mode. The system-design pack links to
-the `system-design-estudos` corpus by repository and path; it does not copy the
-corpus into the app.
+The transversal critical-thinking contract is therefore 13 canonical targets,
+164 items and 39 canonical cards. Each critical item requires a server-observed
+problem frame, evidence classifications, a comparison or rejected alternative,
+a counterexample/failure mode, a confidence choice and a change-my-mind signal.
+Typed semantic reasoning is `not_assessed`; fact-contract accuracy, structural
+artifact presence and confidence-choice Brier evidence retain separate sources
+and `assessment_scope` values. Self-rubric is optional, validated when supplied
+and report-only; it cannot alter correctness, quality, Leitner, mastery or a
+gate.
+
+The `fact_contract` metric is authored-reference evidence; artifact fields are
+structural observations and Brier is based on the learner's confidence choice
+only.
+
+Every item has a natural interview prompt, context, one complete answer, at
+least two plausible distractors, register/hedging/precision/grammar/pragmatics
+feedback, rephrase/follow-up/compression prompts, Feynman and actionable Black
+Box work, recall metadata, and a source reference. The four experience packs
+also require structured file-at-commit provenance, verified claims,
+confirmation gaps, a safe interview version and confidentiality risk. DSA and
+System Design each expose three official 45-minute mocks. The system-design
+pack links to the `system-design-estudos` corpus by repository and path; it does
+not copy the corpus into the app.
+
+All 164 canonical items require authored follow-up and compression prompts;
+the seven core technical packs contain 168 item-specific adaptive prompts for
+their 84 items. Exact duplicates, conservative repeated n-grams, non-question
+follow-ups, non-actionable compressions and answer leakage fail validation.
+Canonical production packs are authoritative at runtime: a missing, malformed
+or loader-failed pack stays unavailable and is never replaced by a generic
+fixture.
 
 The fixture validator rejects missing fields, duplicate IDs, invalid source
 references, answer/distractor collisions, answer text in learner-visible
@@ -45,14 +87,19 @@ The learning loop is:
 - a reattempt that preserves the selected target.
 
 Leitner boxes use 1/2/4/7/14 days for boxes 1–5. A wrong answer resets to box
-1; a correct answer advances one box. Mastery requires at least 8/10 on two
-attempts separated by about seven days where feasible. A score is practice
-evidence, not a CEFR assessment.
+1; a correct answer advances one box. Commit freezes opaque answer tokens,
+variant and content digest; Feynman precedes reveal; follow-up and delayed
+variants have their own prompts; and future prompts are not projected into an
+initial snapshot. Mastery requires at least 8/10 on two critical variants with
+distinct digests separated by at least seven days. Rephrase, compression and
+extension remain practice-only. A score is practice evidence, not a CEFR
+assessment.
 
 ## Rails and persistence gates
 
 - [ ] `GET /english-arcade` renders `section.english-arcade[data-controller='english-arcade']`
-  and semantic target/session-length radio groups with all eight targets.
+  and semantic target/session-length radio groups. The pending launcher has
+  16 choices: 14 packs plus mixed and interview; Salesforce is elective.
 - [ ] Saving a target persists `target_key`; reloading the launcher selects the
   same target, and the next item comes from that target.
 - [ ] An attempt, Feynman text, Black-Box text, score, confidence, target,
@@ -66,6 +113,39 @@ evidence, not a CEFR assessment.
 - [ ] The import path stores target-linked material as structured records, and
   the normal search path finds an imported target item without embedding a
   second standalone React build.
+- [ ] The 30-day plan contains 30 daily 90-minute sessions, an exact 13-item
+  baseline, all 56 experience items once, two new experience items on each day
+  D3–D28, and no new assignments on D29–D30.
+- [ ] Eleven named mocks are server-authoritative and phased. Ordinary timed sessions do
+  not count; altered target/mode/anchor/order, duplicate/outsider attempts,
+  missing typed/Feynman/Black Box evidence, a missing challenge/defence, or less
+  than 90% elapsed time fail closed. Thirteen scheduled delayed variants run
+  across D8–D20; D7 delayed credit is exactly zero.
+- [ ] The six DSA/System Design mocks use distinct scenario briefs and an
+  ordered server-time phase ledger. Every phase requires a typed artifact,
+  exactly 90% of its own timebox, matching stored length and immutable order;
+  early, reordered, duplicated, tampered or expired submissions do not mutate
+  qualifying evidence.
+- [ ] Unrevealed history exposes neither correctness nor answer/provenance.
+  Follow-up gates count only `follow_up`; compression, rephrase and extension
+  remain separate adaptation metrics.
+- [ ] Gates D7/D14/D21/D30 use unique canonical assignment IDs, target
+  intersections and scheduled delayed IDs; repetitions and outsider cards do
+  not count. Their critical thresholds are D7 `6 pairs / ≥6 targets / 0
+  delayed`, D14 `13 / 13 / 7`, D21 `20 / 13 / 13`, and D30 `26 / ≥2 per target
+  / 13`, with D30 delayed success `≥80%`. Future gates stay pending; reached
+  deficient gates fail and expose a seven-day recovery path.
+
+## Critical evidence contract
+
+For every canonical critical item the learner follows closed-book attempt →
+Feynman → feedback → actionable Black Box after an error → Leitner/SRS →
+reattempt. The server accepts only `initial`, `follow_up` and `delayed_variant`
+for critical evidence and mastery; other adaptations remain visible but cannot
+inflate critical counters. Metrics distinguish authored facts, observed
+artifact structure, report-only self-rubric, and unassessed semantic reasoning.
+The contract is fail-closed for incomplete critical artifacts, wrong lineage,
+future-prompt leakage, digest reuse, and reveal-before-Feynman.
 
 ## Accessibility and responsive gates
 
@@ -77,8 +157,8 @@ evidence, not a CEFR assessment.
 - [ ] The system test checks 390×844, 768×1024, and 1440×1000 without horizontal
   overflow; normal vertical page growth remains scrollable.
 - [ ] A screen-reader pass verifies stage announcements, error feedback, and
-  the reattempt affordance. Speech capture is optional host capability, not a
-  scored CEFR feature.
+  the reattempt affordance. The product is typed-only; any external speaking
+  assessment is outside this application and is not a scored CEFR feature.
 
 ## Content import, search, and health gates
 
@@ -199,12 +279,12 @@ published service for no additional feature evidence. Railway retains the
 previous successful deployment for an operator-led rollback, and no migration
 or seed step deletes attempts or schedules.
 
-## Local gate evidence (2026-08-23)
+## Historical deployed-release local gate evidence (2026-08-23)
 
 The content and local application gates are green:
 
 ```text
-ruby lib/english_arcade/validate.rb                 8/8 packs, 96 items, 24 cards
+Historical pre-expansion validator evidence: 8/8 packs, 96 items, 24 cards
 english_arcade:validate / qa / health               valid; pack_minima_ready=true; status=ok
 corpus import (first and second run)                 1080 records, 334 links, persisted_documents=0 on both runs
 focused content/import/search/health tests           14 runs, 107 assertions, 0 failures, 0 errors
@@ -218,14 +298,65 @@ HTTP smoke (local Puma)                               /up 200; /health/content 2
 The publication and live target/session checks are complete; only the
 operator-led rollback exercise remains intentionally unverified.
 
+## Pending expansion local pre-review gate (historical pre-critical scope, 2026-08-23)
+
+This evidence belongs to the 14-pack expansion in the current worktree. It is
+not production evidence and does not authorize release before the fresh
+independent review.
+
+```text
+standalone pack validator                         14/14 packs; 176 items; 42 cards; canonical 13/164/39
+english_arcade validate / QA / health             1,160 records; 367 links; ready=true; warnings=[]
+dry import run 1 / run 2                           byte-identical; persisted_documents=0 on both
+full Rails suite                                   169 runs; 5,523 assertions; 0 failures/errors/skips
+system flow/accessibility                          8 runs; 68 assertions; 0 failures/errors/skips
+RuboCop                                             163 files; no offenses
+Brakeman 8.0.6                                      0 security warnings
+bundler-audit / importmap audit                     updated advisory DB; no vulnerabilities
+Zeitwerk / Ruby YAML syntax / Stimulus syntax       PASS
+authenticated local HTTP                           /up 200; health 200; Arcade HTML/JSON 200
+unauthenticated local HTTP                          Arcade 401 on serial verification
+learner JSON/HTML                                   30 days; 16 targets; no answer/provenance/SHA leak
+```
+
+The first cold local smoke intentionally issued several development-mode
+requests concurrently and one request raced route reloading, returning a
+transient 404. Serial repeats returned the expected `401/200/200` for
+unauthenticated HTML, authenticated HTML and authenticated JSON. Production
+eager loading and the later Railway smoke remain separate evidence gates.
+
+Brakeman initially reported one weak `Marshal.load` warning in curriculum
+copying. The implementation was replaced with recursive copying, a mutation
+regression was added, and both the focused suite and Brakeman rerun passed.
+
+## Critical-thinking expansion focused evidence (2026-08-25)
+
+The following is the current uncommitted local handoff after the transversal
+critical-thinking/runtime corrections. It is focused evidence only, not a full
+repository suite and not production evidence:
+
+```text
+content validator / pack contracts                  14/14 packs; 176 items; 42 cards; canonical 13/164/39
+controller regressions                               27 runs; 387 assertions; 0 failures/errors
+card + Rails + progress + validator                 38 runs; 193 assertions; 0 failures/errors
+critical contract suites                             33 runs; 1,494 assertions; 0 failures/errors
+Ruby syntax / scoped git diff check                 PASS
+```
+
+The focused evidence does not authorize a commit, deployment or C2 claim. A
+fresh independent Sol review is still pending. The current production runtime
+remains Railway deployment `6f07bd3e-30e3-4c76-ae78-cd7f64cd38c7`; this
+critical-thinking expansion has not been committed or deployed.
+
 ## Known limitations and current fallback
 
-Real speech scoring is not part of this gate: browser speech capture is an
-optional transcript, not pronunciation or listening assessment. The product
-cannot certify CEFR C2, and a 30-day path is a calibration and practice promise
-only. Production uses the app's existing shared Basic Auth boundary and an
-anonymous/username-derived learner key; per-account identity and privacy
-isolation are future work if the cockpit becomes multi-user.
+Real speech scoring is not part of this gate. Browser speech capture is absent;
+the product accepts typed production only and does not assess pronunciation or
+listening. The product cannot certify CEFR C2, and a 30-day path is a
+calibration and practice promise only. Production uses the app's existing
+shared Basic Auth boundary and an anonymous/username-derived learner key;
+per-account identity and privacy isolation are future work if the cockpit
+becomes multi-user.
 
 Composer seat creation failed before execution because the desktop model
 validator rejected the requested Composer reasoning combination. The assigned

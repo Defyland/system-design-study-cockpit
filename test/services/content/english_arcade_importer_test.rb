@@ -1,6 +1,7 @@
 require "test_helper"
 require "fileutils"
 require "tmpdir"
+require "yaml"
 
 class EnglishArcadeImporterTest < ActiveSupport::TestCase
   setup do
@@ -119,7 +120,8 @@ class EnglishArcadeImporterTest < ActiveSupport::TestCase
     ]
 
     importer = Content::EnglishArcadeImporter.new(corpus_root: @corpus, arcade_root: @arcade, external_records: records)
-    assert importer.validate!
+    error = assert_raises(Content::EnglishArcadeImporter::ValidationError) { importer.validate! }
+    assert_includes error.errors, "canonical pack career: missing pack"
     pack = importer.records.find { |record| record.kind == "interview_pack" }
     assert_equal "english-arcade:packs/system-design/replica-lag", pack.source_id
     assert_equal "system_design", pack.target
@@ -131,9 +133,10 @@ class EnglishArcadeImporterTest < ActiveSupport::TestCase
         link.relation == "pack_source"
     end
     readiness = importer.pack_readiness
-    assert_equal 12, readiness.fetch("minimum_items_per_target")
+    assert_equal EnglishArcade::Schema::PUBLISHABLE_ITEMS_PER_TARGET, readiness.fetch("minimum_items_per_target")
     assert_equal 1, readiness.dig("targets", "system_design", "item_count")
-    assert_includes readiness.fetch("missing_targets"), "dsa"
+    assert_includes readiness.fetch("missing_targets"), "career"
+    assert_equal EnglishArcade::Schema::TARGETS.length, readiness.fetch("missing_targets").length + readiness.fetch("target_count")
     refute_includes readiness.to_s, records.first.fetch(:answer)
 
     incomplete_record = records.first.dup
@@ -167,10 +170,110 @@ class EnglishArcadeImporterTest < ActiveSupport::TestCase
     )
 
     assert_equal "warning", payload.fetch("status")
-    assert_equal 12, payload.dig("pack_readiness", "minimum_items_per_target")
+    assert_equal EnglishArcade::Schema::PUBLISHABLE_ITEMS_PER_TARGET, payload.dig("pack_readiness", "minimum_items_per_target")
     assert_equal 1, payload.dig("pack_readiness", "item_count")
     refute_includes JSON.generate(payload), answer
     refute payload.key?("database")
+  end
+
+  test "strict readiness rejects incomplete canonical packs without exposing their prose" do
+    write_fixture_corpus
+    pack_directory, private_answer = write_invalid_canonical_pack_directory
+    invalid_pack = YAML.safe_load_file(pack_directory.join("rails.yml"), aliases: false)
+    invalid_item = invalid_pack.fetch("items").first
+    validator = EnglishArcade::PackValidator.new(invalid_pack, strict: true)
+
+    assert_equal 12, invalid_pack.fetch("items").size
+    %w[prompt context best_answer distractors feedback rephrase sources].each do |field|
+      assert invalid_item.key?(field), "fixture must preserve superficial #{field}"
+    end
+    refute_predicate validator, :valid?
+    assert validator.errors.any? { |error| error.path.end_with?(".feynman") }
+    assert validator.errors.any? { |error| error.path.end_with?(".recall") }
+
+    importer = Content::EnglishArcadeImporter.new(corpus_root: @corpus, arcade_root: @arcade)
+    readiness = importer.pack_readiness
+
+    refute readiness.fetch("ready")
+    assert_operator readiness.dig("targets", "rails", "validation_error_count"), :>, 0
+    error = assert_raises(Content::EnglishArcadeImporter::ValidationError) { importer.validate! }
+    assert_match(/canonical pack rails: strict validation failed/, error.message)
+    refute_includes error.message, private_answer
+
+    load Rails.root.join("db/seeds/english_arcade_corpus.rb")
+    importer_health = EnglishArcadeCorpus.health_payload(corpus_root: @corpus, arcade_root: @arcade)
+    refute importer_health.dig("pack_readiness", "ready")
+    assert_operator importer_health.fetch("validation_error_count"), :>, 0
+    refute_includes JSON.generate(importer_health), private_answer
+
+    report_health = ContentReadinessReport.new(arcade_pack_directory: pack_directory).as_json
+    report_readiness = report_health.fetch(:english_arcade_pack_readiness)
+    refute report_readiness.fetch("ready")
+    assert_operator report_readiness.dig("targets", "rails", "validation_error_count"), :>, 0
+    refute_includes JSON.generate(report_health), private_answer
+  end
+
+  test "external records cannot claim strict release readiness without observed pack validation" do
+    write_fixture_corpus
+    answer = "private external answer that must stay outside readiness"
+    records = Content::EnglishArcadeImporter::TARGETS.flat_map do |target|
+      12.times.map do |index|
+        {
+          source_id: "external/#{target}/#{index}", target: target,
+          prompt: "Prompt #{target} #{index}", context: "Context #{target} #{index}", answer: answer,
+          distractors: [ "one", "two" ], feedback: "Feedback #{target}", rephrase: "Rephrase #{target}"
+        }
+      end
+    end
+    importer = Content::EnglishArcadeImporter.new(corpus_root: @corpus, arcade_root: @arcade, external_records: records)
+    readiness = importer.pack_readiness
+
+    refute readiness.fetch("ready")
+    assert readiness.fetch("targets").values.none? { |summary| summary.fetch("strict_validation_observed") }
+    error = assert_raises(Content::EnglishArcadeImporter::ValidationError) { importer.validate! }
+    assert_includes error.message, "strict validation was not observed"
+    refute_includes error.message, answer
+
+    load Rails.root.join("db/seeds/english_arcade_corpus.rb")
+    health = EnglishArcadeCorpus.health_payload(corpus_root: @corpus, arcade_root: @arcade, external_records: records)
+    assert_equal "warning", health.fetch("status")
+    refute_includes JSON.generate(health), answer
+  end
+
+  test "missing or invalid experience packs fail closed without exposing evidence" do
+    write_fixture_corpus
+    pack_directory, private_answer = write_invalid_canonical_pack_directory
+    FileUtils.rm(pack_directory.join("go-experience.yml"))
+
+    importer = Content::EnglishArcadeImporter.new(corpus_root: @corpus, arcade_root: @arcade)
+    readiness = importer.pack_readiness
+    refute readiness.fetch("ready")
+    assert_includes readiness.fetch("missing_targets"), "go_experience"
+    error = assert_raises(Content::EnglishArcadeImporter::ValidationError) { importer.validate! }
+    assert_includes error.errors, "canonical pack go_experience: missing pack"
+    refute_includes error.message, private_answer
+
+    report = ContentReadinessReport.new(arcade_pack_directory: pack_directory).as_json
+    refute report.fetch(:english_arcade_pack_readiness).fetch("ready")
+    assert_includes report.fetch(:english_arcade_pack_readiness).fetch("missing_targets"), "go_experience"
+    refute_includes JSON.generate(report), private_answer
+  end
+
+  test "invalid experience provenance is not downgraded to a generic card pack" do
+    write_fixture_corpus
+    pack_directory, private_answer = write_invalid_canonical_pack_directory
+    path = pack_directory.join("elixir-experience.yml")
+    pack = YAML.safe_load_file(path, aliases: false)
+    pack.fetch("items").first.delete("provenance")
+    File.write(path, YAML.dump(pack))
+
+    importer = Content::EnglishArcadeImporter.new(corpus_root: @corpus, arcade_root: @arcade)
+    readiness = importer.pack_readiness
+    refute readiness.fetch("ready")
+    assert_operator readiness.dig("targets", "elixir_experience", "validation_error_count"), :>, 0
+    error = assert_raises(Content::EnglishArcadeImporter::ValidationError) { importer.validate! }
+    assert_match(/canonical pack elixir_experience: strict validation failed/, error.message)
+    refute_includes error.message, private_answer
   end
 
   private
@@ -206,5 +309,20 @@ class EnglishArcadeImporterTest < ActiveSupport::TestCase
           suggested_contrast:
             path: decision-contrasts/01-demo.md
     YAML
+  end
+
+  def write_invalid_canonical_pack_directory
+    destination = @arcade.join("db/seeds")
+    FileUtils.mkdir_p(destination)
+    FileUtils.cp_r(Rails.root.join("db/seeds/english_arcade"), destination)
+    pack_directory = destination.join("english_arcade")
+    path = pack_directory.join("rails.yml")
+    pack = YAML.safe_load_file(path, aliases: false)
+    private_answer = pack.fetch("items").first.fetch("best_answer")
+    pack.fetch("items").first.delete("feynman")
+    pack.fetch("items").first.delete("recall")
+    File.write(path, YAML.dump(pack))
+
+    [ pack_directory, private_answer ]
   end
 end

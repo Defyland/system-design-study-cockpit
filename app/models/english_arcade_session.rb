@@ -1,9 +1,12 @@
-class EnglishArcadeSession < ApplicationRecord
-  TARGETS = %w[
-    dsa ruby rails react golang elixir salesforce system_design mixed interview
-  ].freeze
+require_relative "../../lib/english_arcade/schema"
 
-  MODES = %w[daily timed_45].freeze
+class EnglishArcadeSession < ApplicationRecord
+  # Keep persisted values aligned with the pack schema. `mixed` and `interview`
+  # are launcher modes over the thirteen canonical packs, rather than packs of
+  # their own; Salesforce stays selectable but elective.
+  TARGETS = (EnglishArcade::Schema::TARGETS + %w[mixed interview]).freeze
+
+  MODES = %w[daily timed_30 timed_45].freeze
   STATUSES = %w[active completed expired cancelled].freeze
 
   enum :mode, MODES.index_with(&:to_s), validate: true

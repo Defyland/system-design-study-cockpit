@@ -128,7 +128,8 @@ class EnglishArcadeRailsContractTest < ActionDispatch::IntegrationTest
       expires_at: at + 600.seconds
     )
     create_mastery_attempt(session, "initial", at, 9)
-    create_mastery_attempt(session, "rephrase", at + 7.days, 8)
+    create_mastery_attempt(session, "rephrase", at + 1.day, 8)
+    create_mastery_attempt(session, "delayed_variant", at + 7.days, 8)
 
     assert card.mastered?
     assert_equal true, card.mastery_progress.fetch("mastered")
@@ -136,12 +137,15 @@ class EnglishArcadeRailsContractTest < ActionDispatch::IntegrationTest
 
   test "prompt snapshots omit the answer key and reveal-only fields" do
     builder = EnglishArcadeSessionBuilder.new(content: EnglishArcadeSessionBuilder::FixtureAdapter)
-    card = builder.call(target: "dsa", learner_key: "english-arcade-test", limit: 1).cards.first
+    card = builder.call(target: "salesforce", learner_key: "english-arcade-test", limit: 1).cards.first
     snapshot = builder.prompt_snapshot(card)
 
-    assert_equal %w[context extension_prompt key options prompt rephrase_prompt source tags target target_label].sort, snapshot.keys.sort
+    assert_equal %w[content_version context contract_version key options prompt target target_label variant_digest variant_id].sort, snapshot.keys.sort
     refute snapshot.key?("answer_text")
     refute snapshot.key?("correct_choice")
+    refute snapshot.key?("source")
+    refute snapshot.key?("sources")
+    refute snapshot.key?("provenance")
     refute snapshot.values.any? { |value| value.is_a?(String) && value.include?("answer_key") }
   end
 
@@ -211,19 +215,58 @@ class EnglishArcadeRailsContractTest < ActionDispatch::IntegrationTest
   end
 
   def create_mastery_attempt(session, variant_key, answered_at, quality_score)
+    variant = {
+      "id" => variant_key,
+      "prompt" => "How would you defend this decision under a changed constraint?",
+      "context" => "The interviewer asks for evidence, an alternative, and a failure mode.",
+      "best_answer" => "I would state the invariant, compare alternatives, and verify the failure signal.",
+      "distractors" => [ { "text" => "I would use a universal rule.", "why_wrong" => "It hides the workload and evidence boundary." } ],
+      "feedback" => { "register" => "Lead with the decision.", "hedging" => "Name the assumption.", "precision" => "Name the signal.", "grammar" => "Use a clear conditional.", "pragmatics" => "Invite the next constraint." },
+      "check" => { "feynman" => "Explain the invariant.", "black_box" => "Name the missing signal." },
+      "critical_thinking" => { "comparison" => { "applicable" => false } }
+    }
+    materialized = EnglishArcadeAttemptContract.materialize(variant, session_id: session.id.to_s, card_key: "dsa-contract-1").merge("content_version" => "1.4.0")
+    artifact = {
+      "complete" => true, "captured_before_reveal" => true,
+      "learner_classifications" => { "evidence_verified" => "The prompt establishes the invariant.", "evidence_inference" => "The signal follows from the boundary.", "evidence_assumption" => "The workload remains within the stated limit.", "evidence_gap" => "Production scale still needs measurement." },
+      "problem_frame" => "The interviewer needs a defensible decision under the stated workload.",
+      "source_quality" => "The authored prompt is primary; runtime evidence remains pending.",
+      "comparison" => { "authored_applicable" => false, "comparison_rejected_alternative" => "The alternative violates the same contract.", "comparison_hard_constraint" => "The input contract is fixed.", "comparison_decision_rule" => "Clarify the contract before comparing." },
+      "counterexample" => "An adversarial input breaks the assumed bound.", "confidence_percent" => 70, "change_my_mind" => "A measured trace would update the recommendation.",
+      "fact_contract_accuracy" => { "source" => "authored_reference", "assessment_scope" => "not_assessed", "value" => nil },
+      "semantic_quality" => { "source" => "not_assessed", "assessment_scope" => "not_assessed", "value" => nil }
+    }
     EnglishArcadeAttempt.create!(
       english_arcade_session: session,
       learner_key: "english-arcade-test",
       target: "dsa",
       card_key: "dsa-contract-1",
-      attempt_kind: variant_key == "initial" ? "initial" : "rephrase",
+      attempt_kind: { "initial" => "initial", "follow_up" => "follow_up", "delayed_variant" => "retry" }.fetch(variant_key, "rephrase"),
       variant_key: variant_key,
-      answer_choice: "a",
+      answer_choice: materialized.fetch("correct_choice"),
       correct: true,
       feedback_revealed: true,
       state: "revealed",
       quality_score: quality_score,
-      answered_at: answered_at
+      answered_at: answered_at,
+      typed_answer: "A typed answer states the decision, trade-off, evidence boundary, and verification step.",
+      feynman_text: "The invariant and the counterexample explain why the decision remains bounded.",
+      diagnostic_evidence: {
+        "assessment_scope" => "server_contract",
+        "critical_artifact" => artifact,
+        "production" => { "typed_length" => 90 },
+        "feynman_present" => true,
+        "assessment" => EnglishArcadeAttemptContract.frozen_contract(materialized, content_version: "1.4.0").merge(
+          "contract_version" => EnglishArcadeAttemptContract::CONTRACT_VERSION,
+          "variant_id" => variant_key,
+          "variant_digest" => materialized.fetch("digest"),
+          "content_version" => "1.4.0",
+          "correct" => true,
+          "selected_choice" => materialized.fetch("correct_choice"),
+          "critical_thinking" => variant.fetch("critical_thinking")
+        )
+      },
+      prompt_snapshot: EnglishArcadeAttemptContract.snapshot(materialized, content_version: "1.4.0")
     )
   end
 end

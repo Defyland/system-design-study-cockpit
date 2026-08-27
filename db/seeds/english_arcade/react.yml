@@ -1,1072 +1,2486 @@
 ---
-contract_version: "1.1.0"
+contract_version: 1.4.0
 target:
   key: react
   label: React
-  blurb: >-
-    Talk about rendering, state and effects the way a senior front-end engineer
+  blurb: Talk about rendering, state and effects the way a senior front-end engineer
     does, with the user-visible consequence named.
   focus_areas:
-    - rendering and reconciliation
-    - state ownership and lifting
-    - effects and data fetching
-    - accessibility
-    - performance and measurement
+  - rendering and reconciliation
+  - state ownership and lifting
+  - effects and data fetching
+  - accessibility
+  - performance and measurement
   simulation:
     minutes: 45
     structure:
-      - label: Component and state design warm-up
-        minutes: 8
-      - label: Effects and data fetching deep dive
-        minutes: 15
-      - label: Accessibility and semantics
-        minutes: 10
-      - label: Performance measurement and trade-offs
-        minutes: 12
+    - label: Component and state design warm-up
+      minutes: 8
+    - label: Effects and data fetching deep dive
+      minutes: 15
+    - label: Accessibility and semantics
+      minutes: 10
+    - label: Performance measurement and trade-offs
+      minutes: 12
+  critical_thinking:
+    learner_prompts:
+      evidence_ledger: For React, record whether each claim about rendering, state
+        ownership, effects, accessibility, and measurable performance is a verified
+        fact, an inference, an assumption, or an unknown before you defend it.
+      problem_frame: Frame every React answer with the actor, requirement, constraint,
+        success condition, and unanswered question that could change the decision.
+      comparison: When React offers a real choice, compare two options by benefit,
+        cost or risk, valid-when condition, and an explicit decision rule.
+      failure_probe: Ask which counterexample, edge case, or failure mode could break
+        the React recommendation, then state the smallest test or containment step.
+      certainty_review: 'Calibrate certainty in React: name the evidence, separate
+        correlation from causality, and say what new observation would make you revise
+        the answer.'
+    rubric:
+      facts_correct: Names the verified rendering, state ownership, effects, accessibility,
+        and measurable performance facts without smuggling in a result or capability
+        that the prompt does not establish.
+      assumptions_explicit: Labels the React premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Considers a credible alternative for React, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the React choice to a benefit, a cost or risk, and
+        the condition under which another choice wins.
+      follow_up_adaptation: Responds to an adversarial React follow-up by changing
+        the claim or evidence boundary rather than repeating a memorised answer.
+      certainty_calibration: Uses high, medium, or low certainty deliberately and
+        names the evidence that would update the React recommendation.
 cards:
-  - id: react-card-effect-purpose
-    front: When is useEffect the right tool?
-    back: >-
-      Only for synchronising with something outside React. Derived values belong
-      in render; event responses belong in handlers.
-    box: 1
-    source:
-      repo: original
-      path: english-arcade/react/effect-purpose
-      note: Authored for this pack; the corpus has no React effects reference.
-  - id: react-card-accessibility
-    front: How do you justify a semantic element over a div?
-    back: >-
-      By what assistive technology receives: a button gets focus, keyboard
-      activation and a role for free; a div gets none of them.
-    box: 1
-    source:
-      repo: original
-      path: english-arcade/react/accessibility-justification
-      note: Authored for this pack; no accessibility card exists in the corpus.
-  - id: react-card-measure-first
-    front: How should you open a React performance answer?
-    back: >-
-      With the measurement, not the fix. Profile, find what re-renders and why,
-      then decide whether memoisation is even relevant.
-    box: 2
-    source:
-      repo: system-design-estudos
-      path: areas/09-backend-principles/cards/scaling-performance.md
-      note: Measure-before-change discipline applied to the client.
+- id: react-card-effect-purpose
+  front: When is useEffect the right tool?
+  back: Only for synchronising with something outside React. Derived values belong
+    in render; event responses belong in handlers.
+  box: 1
+  source:
+    repo: original
+    path: english-arcade/react/effect-purpose
+    note: Authored for this pack; the corpus has no React effects reference.
+  critical_thinking:
+    cue: When is useEffect the right tool? Before answering, separate the stated fact
+      from your assumption and name one condition that could change it.
+    check: For this React card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
+- id: react-card-accessibility
+  front: How do you justify a semantic element over a div?
+  back: 'By what assistive technology receives: a button gets focus, keyboard activation
+    and a role for free; a div gets none of them.'
+  box: 1
+  source:
+    repo: original
+    path: english-arcade/react/accessibility-justification
+    note: Authored for this pack; no accessibility card exists in the corpus.
+  critical_thinking:
+    cue: How do you justify a semantic element over a div? Before answering, separate
+      the stated fact from your assumption and name one condition that could change
+      it.
+    check: For this React card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
+- id: react-card-measure-first
+  front: How should you open a React performance answer?
+  back: With the measurement, not the fix. Profile, find what re-renders and why,
+    then decide whether memoisation is even relevant.
+  box: 2
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/scaling-performance.md
+    note: Measure-before-change discipline applied to the client.
+  critical_thinking:
+    cue: How should you open a React performance answer? Before answering, separate
+      the stated fact from your assumption and name one condition that could change
+      it.
+    check: For this React card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
 items:
-  - id: react-01-state-ownership
-    version: "1.0.0"
-    target: react
-    topic: State ownership
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      Two sibling components need the same value. How do you handle that?
-    context: >-
-      A common design question early in a front-end screen. The interviewer is
-      checking whether you reach for the simplest correct answer before
-      reaching for a library.
+- id: react-01-state-ownership
+  version: 1.4.0
+  target: react
+  topic: State ownership
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: Two sibling components need the same value. How do you handle that?
+  context: A common design question early in a front-end screen. The interviewer is
+    checking whether you reach for the simplest correct answer before reaching for
+    a library.
+  follow_up:
+    prompt: Where should the value live if both siblings update it, and how would
+      you avoid turning an unrelated parent into a state container?
+    goal: Answer the assumption challenge about State ownership while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
       I would lift the state to their closest common parent and pass it down,
       since that is the smallest change that keeps one source of truth. I would
-      only reach for context or a store if the value had to cross many levels or
-      be shared far outside this subtree.
+      label the follow-up premise as an assumption, ask the smallest question that could disprove
+      it, and protect the edge case before committing to the recommendation.
     distractors:
-      - text: >-
-          I would put it in a global store so that both components can access it
-          directly, which avoids passing props through the parent and keeps the
-          components independent of each other.
-        trap: content
-        why_wrong: >-
-          Reaches for global state to solve a local problem, which trades a
-          two-line change for application-wide coupling.
-      - text: >-
-          There are several options here, you could lift the state up, or use
-          context, or a state management library, and each of them has different
-          trade-offs depending on the situation.
-        trap: precision
-        why_wrong: >-
-          Lists options without choosing, so it demonstrates awareness but no
-          judgement.
-      - text: >-
-          I would lift the state for the parent more close and pass it for
-          below, because this is the change more small that maintains one only
-          source of truth.
-        trap: grammar
-        why_wrong: >-
-          Comparative forms and adjective order are wrong throughout; English
-          uses "closest" and "smallest".
-    feedback:
-      register: >-
-        Direct and proportionate. Simple problems deserve simple answers.
-      hedging: >-
-        None needed; state the default and the escalation condition.
-      precision: >-
-        Say "closest common parent" and name what would change your mind.
-      grammar: >-
-        Use synthetic comparatives: "closest", "smallest", not "more close".
-      pragmatics: >-
-        Naming the escalation condition pre-empts the "what if it grows"
-        follow-up.
-    rephrase:
-      prompt: >-
-        Answer again for a value needed by twenty components across the app.
-      goal: Test whether the escalation rule is real or decorative.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      Comparativos curtos em ingles usam -er/-est: "closer", "smallest". Nao
-      use "more close".
-    feynman:
-      concept: Lifting state to the closest common ancestor.
-      explain_to: A developer who installs a store for every shared value.
-      constraint: Explain using two people sharing one calendar.
-      self_check: >-
-        Did you name the condition that justifies global state?
-    black_box:
-      symptom: You reached for a store, or listed options without deciding.
-      expected: Lift to the closest common parent; escalate only on distance.
-      actual: Global state by default, or an unresolved menu of options.
-      root_cause: >-
-        Defaulting to the most powerful tool instead of the smallest sufficient
-        one.
-      repair: >-
-        Answer with the default first, then the condition that overrides it.
-    recall:
-      active_recall_cue: >-
-        What justifies moving shared state out of a common parent?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: interview/story-bank/02-react-react-native-story-bank.md
-        note: React story bank covering component and state discussions.
-      - repo: original
-        path: english-arcade/react/state-ownership
-        note: Original interview phrasing authored for this pack.
-  - id: react-02-effect-misuse
-    version: "1.0.0"
-    target: react
-    topic: Effects
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Why would you avoid computing this filtered list inside useEffect?
-    context: >-
-      The candidate's code stores a filtered array in state and recomputes it in
-      an effect when the source changes. The interviewer wants the reasoning
-      about renders, not just the alternative.
+    - text: I would repeat my original State ownership answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about State ownership until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Explain state ownership with source of truth, update path, and the smallest
+      component boundary.
+    goal: Compress the State ownership answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: I would lift the state to their closest common parent and pass it down,
+    since that is the smallest change that keeps one source of truth. I would only
+    reach for context or a store if the value had to cross many levels or be shared
+    far outside this subtree.
+  distractors:
+  - text: I would put it in a global store so that both components can access it directly,
+      which avoids passing props through the parent and keeps the components independent
+      of each other.
+    trap: content
+    why_wrong: Reaches for global state to solve a local problem, which trades a two-line
+      change for application-wide coupling.
+  - text: There are several options here, you could lift the state up, or use context,
+      or a state management library, and each of them has different trade-offs depending
+      on the situation.
+    trap: precision
+    why_wrong: Lists options without choosing, so it demonstrates awareness but no
+      judgement.
+  - text: I would lift the state for the parent more close and pass it for below,
+      because this is the change more small that maintains one only source of truth.
+    trap: grammar
+    why_wrong: Comparative forms and adjective order are wrong throughout; English
+      uses "closest" and "smallest".
+  feedback:
+    register: Direct and proportionate. Simple problems deserve simple answers.
+    hedging: None needed; state the default and the escalation condition.
+    precision: Say "closest common parent" and name what would change your mind.
+    grammar: 'Use synthetic comparatives: "closest", "smallest", not "more close".'
+    pragmatics: Naming the escalation condition pre-empts the "what if it grows" follow-up.
+  rephrase:
+    prompt: Answer again for a value needed by twenty components across the app.
+    goal: Test whether the escalation rule is real or decorative.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: 'Comparativos curtos em ingles usam -er/-est: "closer", "smallest". Nao
+    use "more close".'
+  feynman:
+    concept: Lifting state to the closest common ancestor.
+    explain_to: A developer who installs a store for every shared value.
+    constraint: Explain using two people sharing one calendar.
+    self_check: Did you name the condition that justifies global state?
+    reasoning_check: Can you identify the hidden premise behind State ownership, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You reached for a store, or listed options without deciding.
+    expected: Lift to the closest common parent; escalate only on distance.
+    actual: Global state by default, or an unresolved menu of options.
+    root_cause: Defaulting to the most powerful tool instead of the smallest sufficient
+      one.
+    repair: Answer with the default first, then the condition that overrides it.
+    reasoning_error: If your State ownership answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What justifies moving shared state out of a common parent?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind State ownership without presenting
+      an assumption as a fact?
+    black_box_probe: When the State ownership answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-01-state-ownership-delayed-1
+      prompt: 'State ownership: the later State ownership review says a trace of State
+        ownership isolates a different State ownership bottleneck than the one you
+        named. Under the State ownership workload for State ownership no longer fits
+        the original resource bound, which part of State ownership survives and which
+        State ownership claim changes?'
+      changed_constraint: the State ownership workload for State ownership no longer
+        fits the original resource bound
+      new_evidence: a trace of State ownership isolates a different State ownership
+        bottleneck than the one you named
+      best_answer: I would keep the facts that remain supported about State ownership,
+        treat a trace of State ownership isolates a different State ownership bottleneck
+        than the one you named as new evidence rather than a result, and state the
+        updated decision rule under the State ownership workload for State ownership
+        no longer fits the original resource bound. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original State ownership answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire State ownership explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: interview/story-bank/02-react-react-native-story-bank.md
+    note: React story bank covering component and state discussions.
+  - repo: original
+    path: english-arcade/react/state-ownership
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'State ownership: inspect State ownership evidence next; which edge case
+      for State ownership would alter the trade-off?'
+    goal: Move from the short State ownership answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame State ownership before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests State ownership within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend State ownership,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the State ownership constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for State ownership: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about State ownership would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard State ownership constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for State ownership; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: counterexample
+      prompt: 'State ownership: what minimum input for State ownership would break
+        the State ownership recommendation, and how would you revise the State ownership
+        claim?'
+    evidence_check:
+      basis: Check the State ownership claim against system-design-estudos/interview/story-bank/02-react-react-native-story-bank.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about State ownership, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the State ownership question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Two sibling components need the same value.", update
+        State ownership when State ownership evidence—a State ownership trace or State
+        ownership test—contradicts the State ownership constraint in case "Two sibling
+        components need the same value."; ask a stakeholder about State ownership
+        before revising.
+    rubric:
+      facts_correct: Names the verified State ownership facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the State ownership premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible State ownership options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the State ownership choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about State ownership
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the State ownership recommendation.
+- id: react-02-effect-misuse
+  version: 1.4.0
+  target: react
+  topic: Effects
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Why would you avoid computing this filtered list inside useEffect?
+  context: The candidate's code stores a filtered array in state and recomputes it
+    in an effect when the source changes. The interviewer wants the reasoning about
+    renders, not just the alternative.
+  follow_up:
+    prompt: What would make an effect legitimate here, and where should the filtering
+      computation run so render remains deterministic?
+    goal: Answer the evidence challenge about Effects while keeping the evidence boundary
+      explicit.
+    challenge_kind: evidence
     best_answer: >-
-      Because it is derived data, not synchronisation. Doing it in an effect
-      means an extra render every time the source changes, and it creates a
-      window where the list and its source disagree. I would compute it during
-      render instead.
+      Because it is derived data, not synchronisation. I would treat the follow-up observation as
+      evidence, not as proof of impact; I would inspect the smallest relevant trace or
+      test and state what remains uncertain before changing the decision.
     distractors:
-      - text: >-
-          Because useEffect runs after the render, so it would be slightly
-          slower than doing the calculation directly, and performance matters in
-          a list that could become large.
-        trap: precision
-        why_wrong: >-
-          Frames it as micro-performance and misses the correctness problem,
-          which is the inconsistent intermediate state.
-      - text: >-
-          I would keep it in the effect but add the source array to the
-          dependency list, so that it recomputes correctly whenever the source
-          changes and stays in sync properly.
-        trap: content
-        why_wrong: >-
-          Fixes the trigger but keeps the redundant state and the extra render
-          that caused the problem.
-      - text: >-
-          Because this is data derived, not synchronisation, so making it in an
-          effect provokes one render more each time that the source is changing.
-        trap: grammar
-        why_wrong: >-
-          Adjective order, "making it in an effect" and "one render more" are
-          all calques that obscure a correct point.
-    feedback:
-      register: >-
-        Explanatory rather than corrective; you are teaching the distinction.
-      hedging: >-
-        None; derived versus synchronised is a clean dichotomy.
-      precision: >-
-        The inconsistent window is the strongest argument, stronger than the
-        extra render.
-      grammar: >-
-        "Derived data", "doing it in an effect", "one extra render".
-      pragmatics: >-
-        Offering the alternative in the same breath keeps it constructive.
-    rephrase:
-      prompt: >-
-        Explain the same point to someone who insists the effect version works
-        fine.
-      goal: Practise persuasion when the bug is not yet visible.
-    language_focus: [precision, grammar, register]
-    feynman:
-      concept: Derived state versus external synchronisation.
-      explain_to: A developer who uses effects for every update.
-      constraint: Explain using a total printed on a receipt.
-      self_check: >-
-        Did you name the moment when the two values disagree?
-    black_box:
-      symptom: You argued performance, or fixed only the dependency array.
-      expected: Derived data belongs in render; effects are for external sync.
-      actual: A micro-optimisation claim, or a patched dependency list.
-      root_cause: >-
-        Effects understood as a lifecycle hook rather than as a synchronisation
-        boundary.
-      repair: >-
-        Ask "is anything outside React involved?" before writing an effect.
-    recall:
-      active_recall_cue: >-
-        What is the only job an effect should be doing?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/effect-misuse
-        note: Authored for this pack; corpus has no React effects reference.
-  - id: react-03-key-prop
-    version: "1.0.0"
-    target: react
-    topic: Reconciliation
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      What actually goes wrong when you use the array index as a key?
-    context: >-
-      Almost every candidate knows the rule. The interviewer is filtering for
-      the ones who can describe the observable bug rather than reciting the
-      warning.
+    - text: I would cite my experience with Effects as enough proof and move on without
+        naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Effects before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Contrast render-time derivation with an effect in two sentences, including
+      the stale-state failure you avoid.
+    goal: Compress the Effects answer into its decision, premise, trade-off, and verification
+      step.
+  best_answer: Because it is derived data, not synchronisation. Doing it in an effect
+    means an extra render every time the source changes, and it creates a window where
+    the list and its source disagree. I would compute it during render instead.
+  distractors:
+  - text: Because useEffect runs after the render, so it would be slightly slower
+      than doing the calculation directly, and performance matters in a list that
+      could become large.
+    trap: precision
+    why_wrong: Frames it as micro-performance and misses the correctness problem,
+      which is the inconsistent intermediate state.
+  - text: I would keep it in the effect but add the source array to the dependency
+      list, so that it recomputes correctly whenever the source changes and stays
+      in sync properly.
+    trap: content
+    why_wrong: Fixes the trigger but keeps the redundant state and the extra render
+      that caused the problem.
+  - text: Because this is data derived, not synchronisation, so making it in an effect
+      provokes one render more each time that the source is changing.
+    trap: grammar
+    why_wrong: Adjective order, "making it in an effect" and "one render more" are
+      all calques that obscure a correct point.
+  feedback:
+    register: Explanatory rather than corrective; you are teaching the distinction.
+    hedging: None; derived versus synchronised is a clean dichotomy.
+    precision: The inconsistent window is the strongest argument, stronger than the
+      extra render.
+    grammar: '"Derived data", "doing it in an effect", "one extra render".'
+    pragmatics: Offering the alternative in the same breath keeps it constructive.
+  rephrase:
+    prompt: Explain the same point to someone who insists the effect version works
+      fine.
+    goal: Practise persuasion when the bug is not yet visible.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  feynman:
+    concept: Derived state versus external synchronisation.
+    explain_to: A developer who uses effects for every update.
+    constraint: Explain using a total printed on a receipt.
+    self_check: Did you name the moment when the two values disagree?
+    reasoning_check: Can you identify the hidden premise behind Effects, give a counterexample,
+      and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You argued performance, or fixed only the dependency array.
+    expected: Derived data belongs in render; effects are for external sync.
+    actual: A micro-optimisation claim, or a patched dependency list.
+    root_cause: Effects understood as a lifecycle hook rather than as a synchronisation
+      boundary.
+    repair: Ask "is anything outside React involved?" before writing an effect.
+    reasoning_error: If your Effects answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What is the only job an effect should be doing?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Effects without presenting
+      an assumption as a fact?
+    black_box_probe: When the Effects answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-02-effect-misuse-delayed-2
+      prompt: 'Review note for Effects: a code inspection of Effects confirms the
+        Effects mechanism but not its impact. Given a stakeholder asks for a stronger
+        Effects guarantee than the first Effects answer promised, what would you now
+        defend, retract, and verify about Effects?'
+      changed_constraint: a stakeholder asks for a stronger Effects guarantee than
+        the first Effects answer promised
+      new_evidence: a code inspection of Effects confirms the Effects mechanism but
+        not its impact
+      best_answer: I would keep the facts that remain supported about Effects, treat
+        a code inspection of Effects confirms the Effects mechanism but not its impact
+        as new evidence rather than a result, and state the updated decision rule
+        under a stakeholder asks for a stronger Effects guarantee than the first Effects
+        answer promised. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Effects answer because changing
+          it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Effects explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/effect-misuse
+    note: Authored for this pack; corpus has no React effects reference.
+  extension:
+    prompt: 'Deep dive on Effects: compare Effects options with one measurement; which
+      failure around Effects would make Effects switch?'
+    goal: Move from the short Effects answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Effects before proposing a solution: state the actor, required
+      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Effects within a React context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Effects,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Effects constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Effects: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Effects
+        benefit: It keeps the Effects reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Effects workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Effects contract and its invariant are
+          the facts that matter most.
+      - option: a wider state or memoisation layer for Effects
+        benefit: It can make the Effects boundary more explicit when the first option's
+          hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Effects evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Effects option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant React constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Effects: what Effects limit should you probe before trusting the answer,
+        and how would Effects behave there?'
+    evidence_check:
+      basis: Check the Effects claim against original/english-arcade/react/effect-misuse
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Effects, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Effects question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Why would you avoid computing this filtered", update
+        Effects when Effects evidence—a Effects trace or Effects test—contradicts
+        the Effects constraint in case "Why would you avoid computing this filtered";
+        ask a stakeholder about Effects before revising.
+    rubric:
+      facts_correct: Names the verified Effects facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Effects premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Effects options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Effects choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Effects by changing
+        the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Effects recommendation.
+- id: react-03-key-prop
+  version: 1.4.0
+  target: react
+  topic: Reconciliation
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: What actually goes wrong when you use the array index as a key?
+  context: Almost every candidate knows the rule. The interviewer is filtering for
+    the ones who can describe the observable bug rather than reciting the warning.
+  follow_up:
+    prompt: Which user-visible bug can an index key cause after insertion or reordering,
+      and how would a stable identity fix it?
+    goal: Answer the alternative challenge about Reconciliation while keeping the
+      evidence boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      React matches elements by key, so if the list reorders, the index still
-      points at position rather than identity. The visible symptom is component
-      state attaching to the wrong row, like a checked checkbox following the
-      position instead of the item.
+      React matches elements by key, so if the list reorders, the index still points
+      at position rather than identity. I would compare that choice with the credible alternative
+      against the requirement in the follow-up, cost, and failure risk, then switch only if
+      evidence makes the alternative safer.
     distractors:
-      - text: >-
-          It causes performance problems because React cannot efficiently
-          determine which items have changed, so it ends up re-rendering more of
-          the list than it actually needs to.
-        trap: content
-        why_wrong: >-
-          Performance is secondary and often negligible; the real failure is
-          misplaced state, which is a correctness bug.
-      - text: >-
-          It is considered bad practice and React will show a warning in the
-          console about it, so you should always use a stable unique identifier
-          from your data instead of the index.
-        trap: precision
-        why_wrong: >-
-          Cites the rule and the warning without explaining any mechanism, which
-          is exactly what this question filters for.
-      - text: >-
-          React is matching the elements for the key, so if the list reorders
-          the index continues pointing for the position instead of the identity
-          of the item.
-        trap: grammar
-        why_wrong: >-
-          "Matching for", "pointing for" and the progressive aspect all break a
-          statement of general behaviour.
-    feedback:
-      register: >-
-        Concrete. Name the symptom a user would report.
-      hedging: >-
-        None needed; the reconciliation behaviour is deterministic.
-      precision: >-
-        State attaching to the wrong row is the detail that proves
-        understanding.
-      grammar: >-
-        "Matches by key", "points at position"; simple present for behaviour.
-      pragmatics: >-
-        A user-visible example is more persuasive than the rule itself.
-    rephrase:
-      prompt: >-
-        Describe the bug as a QA ticket, without mentioning React internals.
-      goal: Translate a framework concept into observable behaviour.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Keys as identity during reconciliation.
-      explain_to: A tester who reported a checkbox behaving strangely.
-      constraint: Explain using numbered seats versus named tickets.
-      self_check: >-
-        Did you describe something a user could see?
-    black_box:
-      symptom: You cited performance or the console warning.
-      expected: State attaches to position, so it follows the wrong item.
-      actual: A re-render claim, or an appeal to best practice.
-      root_cause: >-
-        The rule memorised from lint output rather than from a reproduction.
-      repair: >-
-        Reproduce it once with a checkbox list; the memory becomes permanent.
-    recall:
-      active_recall_cue: >-
-        What visible symptom does an index key produce on reorder?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/key-prop
-        note: Authored for this pack; corpus has no reconciliation reference.
-  - id: react-04-data-fetching
-    version: "1.0.0"
-    target: react
-    topic: Data fetching
-    difficulty: 3
-    interview_stage: architecture_review
-    prompt: >-
-      How do you handle a request that resolves after the user has navigated
-      away?
-    context: >-
-      A race-condition question. The interviewer wants to know whether you think
-      about out-of-order responses, which is where most hand-rolled fetching
-      breaks.
+    - text: I would defend the first Reconciliation option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Reconciliation design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Describe reconciliation as identity matching, the index-key failure, and
+      the stable key rule.
+    goal: Compress the Reconciliation answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: React matches elements by key, so if the list reorders, the index still
+    points at position rather than identity. The visible symptom is component state
+    attaching to the wrong row, like a checked checkbox following the position instead
+    of the item.
+  distractors:
+  - text: It causes performance problems because React cannot efficiently determine
+      which items have changed, so it ends up re-rendering more of the list than it
+      actually needs to.
+    trap: content
+    why_wrong: Performance is secondary and often negligible; the real failure is
+      misplaced state, which is a correctness bug.
+  - text: It is considered bad practice and React will show a warning in the console
+      about it, so you should always use a stable unique identifier from your data
+      instead of the index.
+    trap: precision
+    why_wrong: Cites the rule and the warning without explaining any mechanism, which
+      is exactly what this question filters for.
+  - text: React is matching the elements for the key, so if the list reorders the
+      index continues pointing for the position instead of the identity of the item.
+    trap: grammar
+    why_wrong: '"Matching for", "pointing for" and the progressive aspect all break
+      a statement of general behaviour.'
+  feedback:
+    register: Concrete. Name the symptom a user would report.
+    hedging: None needed; the reconciliation behaviour is deterministic.
+    precision: State attaching to the wrong row is the detail that proves understanding.
+    grammar: '"Matches by key", "points at position"; simple present for behaviour.'
+    pragmatics: A user-visible example is more persuasive than the rule itself.
+  rephrase:
+    prompt: Describe the bug as a QA ticket, without mentioning React internals.
+    goal: Translate a framework concept into observable behaviour.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Keys as identity during reconciliation.
+    explain_to: A tester who reported a checkbox behaving strangely.
+    constraint: Explain using numbered seats versus named tickets.
+    self_check: Did you describe something a user could see?
+    reasoning_check: Can you identify the hidden premise behind Reconciliation, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You cited performance or the console warning.
+    expected: State attaches to position, so it follows the wrong item.
+    actual: A re-render claim, or an appeal to best practice.
+    root_cause: The rule memorised from lint output rather than from a reproduction.
+    repair: Reproduce it once with a checkbox list; the memory becomes permanent.
+    reasoning_error: If your Reconciliation answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What visible symptom does an index key produce on reorder?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Reconciliation without presenting
+      an assumption as a fact?
+    black_box_probe: When the Reconciliation answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-03-key-prop-delayed-3
+      prompt: New evidence about Reconciliation says a measured Reconciliation comparison
+        shows the alternative has a different Reconciliation cost profile; with the
+        Reconciliation dependency is slower for Reconciliation and the failure is
+        ambiguous rather than explicit, how do you update the Reconciliation decision
+        rule?
+      changed_constraint: the Reconciliation dependency is slower for Reconciliation
+        and the failure is ambiguous rather than explicit
+      new_evidence: a measured Reconciliation comparison shows the alternative has
+        a different Reconciliation cost profile
+      best_answer: I would keep the facts that remain supported about Reconciliation,
+        treat a measured Reconciliation comparison shows the alternative has a different
+        Reconciliation cost profile as new evidence rather than a result, and state
+        the updated decision rule under the Reconciliation dependency is slower for
+        Reconciliation and the failure is ambiguous rather than explicit. I would
+        then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Reconciliation answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Reconciliation explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/key-prop
+    note: Authored for this pack; corpus has no reconciliation reference.
+  extension:
+    prompt: 'Defend Reconciliation after a counterexample: which Reconciliation assumption
+      changes, and what evidence keeps the revised Reconciliation choice honest?'
+    goal: Move from the short Reconciliation answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Reconciliation before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Reconciliation within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Reconciliation,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Reconciliation constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Reconciliation: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Reconciliation
+        benefit: It keeps the Reconciliation reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Reconciliation workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Reconciliation contract and its invariant
+          are the facts that matter most.
+      - option: a wider state or memoisation layer for Reconciliation
+        benefit: It can make the Reconciliation boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Reconciliation evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Reconciliation option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant React
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Reconciliation: if a caller retries Reconciliation at the worst moment,
+        what failure mode appears first, and how would you protect Reconciliation?'
+    evidence_check:
+      basis: Check the Reconciliation claim against original/english-arcade/react/key-prop
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Reconciliation, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Reconciliation
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "What actually goes wrong when you use", update Reconciliation
+        when Reconciliation evidence—a Reconciliation trace or Reconciliation test—contradicts
+        the Reconciliation constraint in case "What actually goes wrong when you use";
+        ask a stakeholder about Reconciliation before revising.
+    rubric:
+      facts_correct: Names the verified Reconciliation facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Reconciliation premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Reconciliation options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Reconciliation choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Reconciliation
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Reconciliation recommendation.
+- id: react-04-data-fetching
+  version: 1.4.0
+  target: react
+  topic: Data fetching
+  difficulty: 3
+  interview_stage: architecture_review
+  prompt: How do you handle a request that resolves after the user has navigated away?
+  context: A race-condition question. The interviewer wants to know whether you think
+    about out-of-order responses, which is where most hand-rolled fetching breaks.
+  follow_up:
+    prompt: How would you cancel or ignore a stale response, and what state transition
+      should happen when the component unmounts?
+    goal: Answer the failure challenge about Data fetching while keeping the evidence
+      boundary explicit.
+    challenge_kind: failure
     best_answer: >-
       I would make the effect cancel its own work on cleanup, either with an
       abort signal or an ignore flag, so a late response cannot write into a
-      component that has moved on. Otherwise two overlapping requests can land
-      out of order and the older one wins.
+      component that has moved on. If the failure in the follow-up appears, I would
+      name the user or system consequence, contain it with a bounded mitigation, and verify
+      recovery with a focused test or metric.
     distractors:
-      - text: >-
-          I would check whether the component is still mounted before calling
-          setState, which avoids the warning about updating state on an
-          unmounted component.
-        trap: content
-        why_wrong: >-
-          Targets a console warning rather than the ordering bug, and the
-          mounted check does not fix stale data on a still-mounted component.
-      - text: >-
-          I would use a data fetching library, since they handle all of this
-          automatically including caching, deduplication and cancellation, so
-          there is no need to solve it manually.
-        trap: pragmatics
-        why_wrong: >-
-          A defensible production choice, but it dodges the mechanism the
-          interviewer is probing.
-      - text: >-
-          I would make the effect cancel the own work in the cleanup, with a
-          signal of abort, then a response late cannot write in a component that
-          already changed.
-        trap: grammar
-        why_wrong: >-
-          "The own work", "signal of abort" and "response late" all invert
-          English possessive and adjective order.
-    feedback:
-      register: >-
-        Technical and specific; this is a mechanism question.
-      hedging: >-
-        None; cancellation on cleanup is the standard answer.
-      precision: >-
-        Out-of-order arrival is the real risk, not the unmount warning.
-      grammar: >-
-        "Its own work", "an abort signal", "a late response".
-      pragmatics: >-
-        You may mention a library, but only after showing the mechanism.
-    rephrase:
-      prompt: >-
-        Explain the same race to a backend engineer using request timing.
-      goal: Practise cross-discipline explanation.
-    language_focus: [precision, grammar, pragmatics]
-    pt_help: >-
-      Ingles poe o adjetivo antes: "a late response", "an abort signal". Nao
-      traduza a ordem do portugues.
-    feynman:
-      concept: Out-of-order responses and effect cleanup.
-      explain_to: A developer who only checks whether the component is mounted.
-      constraint: Explain using two letters posted on different days.
-      self_check: >-
-        Did you explain why the older response can win?
-    black_box:
-      symptom: You solved the unmount warning, or deferred to a library.
-      expected: Cleanup cancels work so late responses cannot write.
-      actual: A mounted check, or an immediate library recommendation.
-      root_cause: >-
-        Async bugs modelled as lifecycle errors rather than as ordering
-        problems.
-      repair: >-
-        For every fetch, ask what happens if the previous one returns second.
-    recall:
-      active_recall_cue: >-
-        Why is an is-mounted check insufficient for overlapping requests?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/data-fetching-race
-        note: Authored for this pack; corpus has no client data-fetching card.
-  - id: react-05-accessibility
-    version: "1.0.0"
-    target: react
-    topic: Accessibility
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      Why does it matter whether this clickable element is a div or a button?
-    context: >-
-      The candidate has built a clickable card with an onClick on a div. The
-      interviewer wants to know whether accessibility is part of how you think
-      or an afterthought.
+    - text: I would describe the Data fetching failure as impossible because the happy
+        path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to Data fetching immediately and assume the system
+        would become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: Give the data-fetching answer as ownership, stale-response protection,
+      and loading or error state.
+    goal: Compress the Data fetching answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: I would make the effect cancel its own work on cleanup, either with
+    an abort signal or an ignore flag, so a late response cannot write into a component
+    that has moved on. Otherwise two overlapping requests can land out of order and
+    the older one wins.
+  distractors:
+  - text: I would check whether the component is still mounted before calling setState,
+      which avoids the warning about updating state on an unmounted component.
+    trap: content
+    why_wrong: Targets a console warning rather than the ordering bug, and the mounted
+      check does not fix stale data on a still-mounted component.
+  - text: I would use a data fetching library, since they handle all of this automatically
+      including caching, deduplication and cancellation, so there is no need to solve
+      it manually.
+    trap: pragmatics
+    why_wrong: A defensible production choice, but it dodges the mechanism the interviewer
+      is probing.
+  - text: I would make the effect cancel the own work in the cleanup, with a signal
+      of abort, then a response late cannot write in a component that already changed.
+    trap: grammar
+    why_wrong: '"The own work", "signal of abort" and "response late" all invert English
+      possessive and adjective order.'
+  feedback:
+    register: Technical and specific; this is a mechanism question.
+    hedging: None; cancellation on cleanup is the standard answer.
+    precision: Out-of-order arrival is the real risk, not the unmount warning.
+    grammar: '"Its own work", "an abort signal", "a late response".'
+    pragmatics: You may mention a library, but only after showing the mechanism.
+  rephrase:
+    prompt: Explain the same race to a backend engineer using request timing.
+    goal: Practise cross-discipline explanation.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  pt_help: 'Ingles poe o adjetivo antes: "a late response", "an abort signal". Nao
+    traduza a ordem do portugues.'
+  feynman:
+    concept: Out-of-order responses and effect cleanup.
+    explain_to: A developer who only checks whether the component is mounted.
+    constraint: Explain using two letters posted on different days.
+    self_check: Did you explain why the older response can win?
+    reasoning_check: Can you identify the hidden premise behind Data fetching, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You solved the unmount warning, or deferred to a library.
+    expected: Cleanup cancels work so late responses cannot write.
+    actual: A mounted check, or an immediate library recommendation.
+    root_cause: Async bugs modelled as lifecycle errors rather than as ordering problems.
+    repair: For every fetch, ask what happens if the previous one returns second.
+    reasoning_error: If your Data fetching answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Why is an is-mounted check insufficient for overlapping requests?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Data fetching without presenting
+      an assumption as a fact?
+    black_box_probe: When the Data fetching answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-04-data-fetching-delayed-4
+      prompt: 'Data fetching gets a new constraint: new Data fetching evidence contradicts
+        the Data fetching assumption that made the first option attractive. After
+        a Data fetching test exposes a boundary case that the Data fetching examples
+        did not cover, which Data fetching assumption is no longer safe?'
+      changed_constraint: new Data fetching evidence contradicts the Data fetching
+        assumption that made the first option attractive
+      new_evidence: a Data fetching test exposes a boundary case that the Data fetching
+        examples did not cover
+      best_answer: I would keep the facts that remain supported about Data fetching,
+        treat a Data fetching test exposes a boundary case that the Data fetching
+        examples did not cover as new evidence rather than a result, and state the
+        updated decision rule under new Data fetching evidence contradicts the Data
+        fetching assumption that made the first option attractive. I would then name
+        one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Data fetching answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Data fetching explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/data-fetching-race
+    note: Authored for this pack; corpus has no client data-fetching card.
+  extension:
+    prompt: 'Five more minutes on Data fetching: which boundary, alternative, and
+      update trigger would you explain for Data fetching?'
+    goal: Move from the short Data fetching answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Data fetching before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Data fetching within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Data fetching,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Data fetching constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Data fetching: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Data fetching
+        benefit: It keeps the Data fetching reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Data fetching workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Data fetching contract and its invariant
+          are the facts that matter most.
+      - option: a wider state or memoisation layer for Data fetching
+        benefit: It can make the Data fetching boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Data fetching evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Data fetching option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant React
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Data fetching: where would a tiny Data fetching counterexample expose
+        a false assumption, and what would you change about Data fetching?'
+    evidence_check:
+      basis: Check the Data fetching claim against original/english-arcade/react/data-fetching-race
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Data fetching, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Data fetching question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "How do you handle a request that", update Data fetching
+        when Data fetching evidence—a Data fetching trace or Data fetching test—contradicts
+        the Data fetching constraint in case "How do you handle a request that"; ask
+        a stakeholder about Data fetching before revising.
+    rubric:
+      facts_correct: Names the verified Data fetching facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Data fetching premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Data fetching options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Data fetching choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about Data fetching
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Data fetching recommendation.
+- id: react-05-accessibility
+  version: 1.4.0
+  target: react
+  topic: Accessibility
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: Why does it matter whether this clickable element is a div or a button?
+  context: The candidate has built a clickable card with an onClick on a div. The
+    interviewer wants to know whether accessibility is part of how you think or an
+    afterthought.
+  follow_up:
+    prompt: Which keyboard and screen-reader behavior would disappear with a div,
+      and what semantic control would you use instead?
+    goal: Answer the new_evidence challenge about Accessibility while keeping the
+      evidence boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
-      A button gets keyboard activation, focus order and the right role for
-      free, whereas a div gets none of them. To make the div equivalent I would
-      have to add a role, a tabindex and key handlers, and at that point I have
-      reimplemented a button badly.
+      A button gets keyboard activation, focus order and the right role for free, whereas
+      a div gets none of them. I would keep the claims that remain supported,
+      identify exactly which premise the new observation changes, and run a focused check before
+      revising the decision.
     distractors:
-      - text: >-
-          It is better for accessibility to use a button, since screen readers
-          understand semantic elements better and it is generally recommended to
-          use the correct HTML element for the job.
-        trap: precision
-        why_wrong: >-
-          States the conclusion without naming a single behaviour that is lost,
-          so it reads as received wisdom.
-      - text: >-
-          It does not really matter as long as you add an onClick handler,
-          because the click behaviour is identical and you can always add an
-          aria-label if a screen reader needs one.
-        trap: content
-        why_wrong: >-
-          Factually wrong: a div is not focusable and does not respond to Enter
-          or Space, so keyboard users cannot activate it at all.
-      - text: >-
-          A button receives the activation for keyboard, the order of focus and
-          the correct role for free, but a div does not receive nothing of this
-          automatically.
-        trap: grammar
-        why_wrong: >-
-          "Order of focus" inverts the compound noun and "does not receive
-          nothing" is a double negative.
-    feedback:
-      register: >-
-        Matter-of-fact rather than moralising; list the mechanics.
-      hedging: >-
-        None; these are concrete platform behaviours.
-      precision: >-
-        Name the three things you get free: focus, keyboard activation, role.
-      grammar: >-
-        "Keyboard activation", "focus order", and one negative per clause.
-      pragmatics: >-
-        The reimplementation point wins the argument without lecturing.
-    rephrase:
-      prompt: >-
-        Make the same case to a designer who prefers the div for styling
-        reasons.
-      goal: Practise advocacy across disciplines.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      Dupla negativa nao existe em ingles padrao: "does not get any of this",
-      nunca "does not get nothing".
-    feynman:
-      concept: Semantic elements and free platform behaviour.
-      explain_to: A designer who cares about visual consistency.
-      constraint: Do not use the word "accessibility" at all.
-      self_check: >-
-        Did you name what a keyboard-only user cannot do?
-    black_box:
-      symptom: You appealed to best practice, or claimed it does not matter.
-      expected: Focus, keyboard activation and role, lost with a div.
-      actual: Received wisdom, or a false equivalence with aria-label.
-      root_cause: >-
-        Accessibility learned as a checklist rather than as platform behaviour.
-      repair: >-
-        Try activating your own component with the keyboard only, once.
-    recall:
-      active_recall_cue: >-
-        Which three behaviours does a native button provide for free?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/accessibility-semantics
-        note: Authored for this pack; corpus has no accessibility reference.
-  - id: react-06-memoisation
-    version: "1.0.0"
-    target: react
-    topic: Performance
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Would wrapping this component in memo help?
-    context: >-
-      The component re-renders often, but its props include an inline object
-      created by the parent. The interviewer wants to see whether you understand
-      why memo would silently do nothing here.
+    - text: I would keep the Accessibility recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Accessibility claim as soon as one new observation
+        appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Rephrase the accessibility decision as semantic element, interaction behavior,
+      and an automated or manual check.
+    goal: Compress the Accessibility answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: A button gets keyboard activation, focus order and the right role for
+    free, whereas a div gets none of them. To make the div equivalent I would have
+    to add a role, a tabindex and key handlers, and at that point I have reimplemented
+    a button badly.
+  distractors:
+  - text: It is better for accessibility to use a button, since screen readers understand
+      semantic elements better and it is generally recommended to use the correct
+      HTML element for the job.
+    trap: precision
+    why_wrong: States the conclusion without naming a single behaviour that is lost,
+      so it reads as received wisdom.
+  - text: It does not really matter as long as you add an onClick handler, because
+      the click behaviour is identical and you can always add an aria-label if a screen
+      reader needs one.
+    trap: content
+    why_wrong: 'Factually wrong: a div is not focusable and does not respond to Enter
+      or Space, so keyboard users cannot activate it at all.'
+  - text: A button receives the activation for keyboard, the order of focus and the
+      correct role for free, but a div does not receive nothing of this automatically.
+    trap: grammar
+    why_wrong: '"Order of focus" inverts the compound noun and "does not receive nothing"
+      is a double negative.'
+  feedback:
+    register: Matter-of-fact rather than moralising; list the mechanics.
+    hedging: None; these are concrete platform behaviours.
+    precision: 'Name the three things you get free: focus, keyboard activation, role.'
+    grammar: '"Keyboard activation", "focus order", and one negative per clause.'
+    pragmatics: The reimplementation point wins the argument without lecturing.
+  rephrase:
+    prompt: Make the same case to a designer who prefers the div for styling reasons.
+    goal: Practise advocacy across disciplines.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: 'Dupla negativa nao existe em ingles padrao: "does not get any of this",
+    nunca "does not get nothing".'
+  feynman:
+    concept: Semantic elements and free platform behaviour.
+    explain_to: A designer who cares about visual consistency.
+    constraint: Do not use the word "accessibility" at all.
+    self_check: Did you name what a keyboard-only user cannot do?
+    reasoning_check: Can you identify the hidden premise behind Accessibility, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You appealed to best practice, or claimed it does not matter.
+    expected: Focus, keyboard activation and role, lost with a div.
+    actual: Received wisdom, or a false equivalence with aria-label.
+    root_cause: Accessibility learned as a checklist rather than as platform behaviour.
+    repair: Try activating your own component with the keyboard only, once.
+    reasoning_error: If your Accessibility answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Which three behaviours does a native button provide for free?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Accessibility without presenting
+      an assumption as a fact?
+    black_box_probe: When the Accessibility answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-05-accessibility-delayed-5
+      prompt: 'Revisit Accessibility after a stakeholder clarifies a Accessibility
+        requirement that changes the Accessibility success condition and two Accessibility
+        callers from the case "Why does it matter whether this clickable" or Accessibility
+        tenants now compete for the same Accessibility boundary: what remains factual
+        about Accessibility, what becomes provisional, and why?'
+      changed_constraint: two Accessibility callers from the case "Why does it matter
+        whether this clickable" or Accessibility tenants now compete for the same
+        Accessibility boundary
+      new_evidence: a stakeholder clarifies a Accessibility requirement that changes
+        the Accessibility success condition
+      best_answer: I would keep the facts that remain supported about Accessibility,
+        treat a stakeholder clarifies a Accessibility requirement that changes the
+        Accessibility success condition as new evidence rather than a result, and
+        state the updated decision rule under two Accessibility callers from the case
+        "Why does it matter whether this clickable" or Accessibility tenants now compete
+        for the same Accessibility boundary. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Accessibility answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Accessibility explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/accessibility-semantics
+    note: Authored for this pack; corpus has no accessibility reference.
+  extension:
+    prompt: 'Revisit Accessibility beyond the happy path: what is factual about Accessibility,
+      what is provisional, and which Accessibility test could change it?'
+    goal: Move from the short Accessibility answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Accessibility before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Accessibility within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Accessibility,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Accessibility constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Accessibility: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Accessibility
+        benefit: It keeps the Accessibility reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Accessibility workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Accessibility contract and its invariant
+          are the facts that matter most.
+      - option: a wider state or memoisation layer for Accessibility
+        benefit: It can make the Accessibility boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Accessibility evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Accessibility option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant React
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Accessibility: which Accessibility boundary deserves the first test,
+        and what observation about Accessibility would overturn the premise?'
+    evidence_check:
+      basis: Check the Accessibility claim against original/english-arcade/react/accessibility-semantics
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Accessibility, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Accessibility question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Why does it matter whether this clickable", update
+        Accessibility when Accessibility evidence—a Accessibility trace or Accessibility
+        test—contradicts the Accessibility constraint in case "Why does it matter
+        whether this clickable"; ask a stakeholder about Accessibility before revising.
+    rubric:
+      facts_correct: Names the verified Accessibility facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Accessibility premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Accessibility options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Accessibility choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Accessibility
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Accessibility recommendation.
+- id: react-06-memoisation
+  version: 1.4.0
+  target: react
+  topic: Performance
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Would wrapping this component in memo help?
+  context: The component re-renders often, but its props include an inline object
+    created by the parent. The interviewer wants to see whether you understand why
+    memo would silently do nothing here.
+  follow_up:
+    prompt: What evidence would show this component is expensive enough for memoisation,
+      and which prop identity would still defeat it?
+    goal: Answer the assumption challenge about Performance while keeping the evidence
+      boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      Not as written: the parent creates a new object every render, so the
-      shallow comparison always fails. I would stabilise that prop or pass
-      primitives, and profile before adding memo at all.
+      Not as written: the parent creates a new object every render, so the shallow
+      comparison always fails. I would label the follow-up premise as an assumption, ask the
+      smallest question that could disprove it, and protect the edge case before committing to
+      the recommendation.
     distractors:
-      - text: >-
-          Yes, memo prevents unnecessary re-renders when the props have not
-          changed, so it would stop this component from re-rendering every time
-          the parent updates.
-        trap: content
-        why_wrong: >-
-          Misses that the props do change by reference every render, so memo
-          adds cost and changes nothing.
-      - text: >-
-          It might help, it is hard to say without seeing more of the code and
-          understanding how often the component actually re-renders in practice
-          and what it is doing.
-        trap: hedging
-        why_wrong: >-
-          The decisive detail, the inline object, is visible in the prompt, so
-          the hedge signals you did not spot it.
-      - text: >-
-          Not like it is written, because the parent is creating a new object in
-          each render, then the comparison shallow is failing always and the
-          memo does not serve for nothing.
-        trap: grammar
-        why_wrong: >-
-          Adjective order, adverb placement and "does not serve for nothing" are
-          all transfer errors.
-    feedback:
-      register: >-
-        Analytical. Point at the specific line that decides the answer.
-      hedging: >-
-        Do not hedge when the deciding evidence is in front of you.
-      precision: >-
-        Reference equality is the mechanism; name it explicitly.
-      grammar: >-
-        "The shallow comparison always fails", "as written".
-      pragmatics: >-
-        Adding the profile-first caveat shows discipline without deflecting.
-    rephrase:
-      prompt: >-
-        Give the same answer assuming the prop were already stable.
-      goal: Force the reasoning to adapt rather than repeat.
-    language_focus: [precision, hedging, grammar]
-    feynman:
-      concept: Reference equality in shallow prop comparison.
-      explain_to: A developer who memoises everything by default.
-      constraint: Explain using two identical letters in different envelopes.
-      self_check: >-
-        Did you identify what makes the comparison fail?
-    black_box:
-      symptom: You said yes, or hedged despite visible evidence.
-      expected: New object each render defeats shallow comparison.
-      actual: A generic memo endorsement, or an unnecessary hedge.
-      root_cause: >-
-        Memoisation treated as a switch rather than as a comparison with
-        preconditions.
-      repair: >-
-        Before memoising, check every prop for a fresh reference.
-    recall:
-      active_recall_cue: >-
-        What kind of prop silently defeats memo?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/scaling-performance.md
-        note: Measure-first performance discipline applied to the client.
-      - repo: original
-        path: english-arcade/react/memoisation
-        note: Original interview phrasing authored for this pack.
-  - id: react-07-controlled-inputs
-    version: "1.0.0"
-    target: react
-    topic: Forms
-    difficulty: 1
-    interview_stage: technical_screen
-    prompt: >-
-      Would you make this input controlled or uncontrolled?
-    context: >-
-      A single search field inside a large form. The interviewer wants a
-      decision with a reason, since both answers can be correct depending on
-      what the component needs.
+    - text: I would repeat my original Performance answer with more confidence because
+        the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Performance until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: State the performance decision with a measured cost, a stable-prop condition,
+      and the alternative if it is premature.
+    goal: Compress the Performance answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: 'Not as written: the parent creates a new object every render, so the
+    shallow comparison always fails. I would stabilise that prop or pass primitives,
+    and profile before adding memo at all.'
+  distractors:
+  - text: Yes, memo prevents unnecessary re-renders when the props have not changed,
+      so it would stop this component from re-rendering every time the parent updates.
+    trap: content
+    why_wrong: Misses that the props do change by reference every render, so memo
+      adds cost and changes nothing.
+  - text: It might help, it is hard to say without seeing more of the code and understanding
+      how often the component actually re-renders in practice and what it is doing.
+    trap: hedging
+    why_wrong: The decisive detail, the inline object, is visible in the prompt, so
+      the hedge signals you did not spot it.
+  - text: Not like it is written, because the parent is creating a new object in each
+      render, then the comparison shallow is failing always and the memo does not
+      serve for nothing.
+    trap: grammar
+    why_wrong: Adjective order, adverb placement and "does not serve for nothing"
+      are all transfer errors.
+  feedback:
+    register: Analytical. Point at the specific line that decides the answer.
+    hedging: Do not hedge when the deciding evidence is in front of you.
+    precision: Reference equality is the mechanism; name it explicitly.
+    grammar: '"The shallow comparison always fails", "as written".'
+    pragmatics: Adding the profile-first caveat shows discipline without deflecting.
+  rephrase:
+    prompt: Give the same answer assuming the prop were already stable.
+    goal: Force the reasoning to adapt rather than repeat.
+  language_focus:
+  - precision
+  - hedging
+  - grammar
+  feynman:
+    concept: Reference equality in shallow prop comparison.
+    explain_to: A developer who memoises everything by default.
+    constraint: Explain using two identical letters in different envelopes.
+    self_check: Did you identify what makes the comparison fail?
+    reasoning_check: Can you identify the hidden premise behind Performance, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You said yes, or hedged despite visible evidence.
+    expected: New object each render defeats shallow comparison.
+    actual: A generic memo endorsement, or an unnecessary hedge.
+    root_cause: Memoisation treated as a switch rather than as a comparison with preconditions.
+    repair: Before memoising, check every prop for a fresh reference.
+    reasoning_error: If your Performance answer failed, classify the mistake as a
+      fact, assumption, comparison, failure, or certainty error before proposing the
+      smallest repair.
+  recall:
+    active_recall_cue: What kind of prop silently defeats memo?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Performance without presenting
+      an assumption as a fact?
+    black_box_probe: When the Performance answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-06-memoisation-delayed-6
+      prompt: The Performance review adds a trace of Performance isolates a different
+        Performance bottleneck than the one you named while the Performance workload
+        for Performance no longer fits the original resource bound; which conclusion
+        about Performance would you narrow before proposing a repair?
+      changed_constraint: the Performance workload for Performance no longer fits
+        the original resource bound
+      new_evidence: a trace of Performance isolates a different Performance bottleneck
+        than the one you named
+      best_answer: I would keep the facts that remain supported about Performance,
+        treat a trace of Performance isolates a different Performance bottleneck than
+        the one you named as new evidence rather than a result, and state the updated
+        decision rule under the Performance workload for Performance no longer fits
+        the original resource bound. I would then name one focused check before treating
+        the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Performance answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Performance explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/scaling-performance.md
+    note: Measure-first performance discipline applied to the client.
+  - repo: original
+    path: english-arcade/react/memoisation
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Use a deep dive on Performance to name the competing Performance cost,
+      the first failure signal, and the observation that would update Performance.
+    goal: Move from the short Performance answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Performance before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Performance within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Performance,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Performance constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Performance: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Performance would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Performance constraint is the required guarantee stated
+        by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Performance; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Performance: when the first Performance recovery path fails, which
+        consequence reaches the user, and what bounded mitigation follows for Performance?'
+    evidence_check:
+      basis: Check the Performance claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Performance, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Performance question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Would wrapping this component in memo help?", update
+        Performance when Performance evidence—a Performance trace or Performance test—contradicts
+        the Performance constraint in case "Would wrapping this component in memo
+        help?"; ask a stakeholder about Performance before revising.
+    rubric:
+      facts_correct: Names the verified Performance facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Performance premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Performance options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Performance choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Performance
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Performance recommendation.
+- id: react-07-controlled-inputs
+  version: 1.4.0
+  target: react
+  topic: Forms
+  difficulty: 1
+  interview_stage: technical_screen
+  prompt: Would you make this input controlled or uncontrolled?
+  context: A single search field inside a large form. The interviewer wants a decision
+    with a reason, since both answers can be correct depending on what the component
+    needs.
+  follow_up:
+    prompt: Which validation or focus behavior makes controlled state worth the extra
+      renders here, and when would you keep the DOM as the source?
+    goal: Answer the evidence challenge about Forms while keeping the evidence boundary
+      explicit.
+    challenge_kind: evidence
     best_answer: >-
-      Controlled, because I need to react to each keystroke for the suggestions.
-      If I only needed the value on submit I would leave it uncontrolled and
-      read it from the form, which avoids re-rendering the whole form on every
-      character.
+      Controlled, because I need to react to each keystroke for the suggestions. I would
+      treat the follow-up observation as evidence, not as proof of impact; I would inspect
+      the smallest relevant trace or test and state what remains uncertain before changing the
+      decision.
     distractors:
-      - text: >-
-          Controlled, because that is the standard React approach and it keeps
-          the component state as the single source of truth for the value of the
-          input at all times.
-        trap: precision
-        why_wrong: >-
-          Correct choice, wrong reasoning. Convention is not a requirement, and
-          the answer never mentions what the component needs.
-      - text: >-
-          Uncontrolled, because controlled inputs cause a re-render on every
-          keystroke which is bad for performance, especially in a form with many
-          fields like this one.
-        trap: content
-        why_wrong: >-
-          Optimises away the behaviour the feature requires; suggestions cannot
-          work without per-keystroke value.
-      - text: >-
-          Controlled, because I need to react in each keystroke for the
-          suggestions, but if I needed the value only in the submit I would let
-          it uncontrolled and read of the form.
-        trap: grammar
-        why_wrong: >-
-          "React in", "in the submit", "let it uncontrolled" and "read of" are
-          four preposition errors.
-    feedback:
-      register: >-
-        Decisive with a requirement-based reason.
-      hedging: >-
-        None; the requirement decides it.
-      precision: >-
-        Tie the choice to the feature, not to convention.
-      grammar: >-
-        "React to each keystroke", "on submit", "leave it uncontrolled".
-      pragmatics: >-
-        Giving the counterfactual shows you know both patterns.
-    rephrase:
-      prompt: >-
-        Answer again for a field that only matters when the form is submitted.
-      goal: Practise applying the rule in the opposite direction.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Controlled versus uncontrolled inputs by requirement.
-      explain_to: A developer who always picks controlled.
-      constraint: Explain using a form filled in pencil versus read aloud.
-      self_check: >-
-        Did the feature requirement decide your answer?
-    black_box:
-      symptom: You justified by convention or by performance alone.
-      expected: Per-keystroke need decides controlled; submit-only decides
-        uncontrolled.
-      actual: >-
-        An appeal to convention, or a performance-driven wrong choice.
-      root_cause: >-
-        Pattern choice driven by habit rather than by what the component must
-        do.
-      repair: >-
-        Ask what the component needs to know, and when.
-    recall:
-      active_recall_cue: >-
-        What requirement forces a controlled input?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: interview/story-bank/02-react-react-native-story-bank.md
-        note: React story bank covering component-level decisions.
-      - repo: original
-        path: english-arcade/react/controlled-inputs
-        note: Original interview phrasing authored for this pack.
-  - id: react-08-error-boundaries
-    version: "1.0.0"
-    target: react
-    topic: Error handling
-    difficulty: 2
-    interview_stage: architecture_review
-    prompt: >-
-      Where would you put error boundaries in this application?
-    context: >-
-      A dashboard composed of independent widgets. The interviewer wants a
-      placement strategy tied to what the user should still be able to do when
-      one part fails.
+    - text: I would cite my experience with Forms as enough proof and move on without
+        naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Forms before making even a
+        provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Compare controlled and uncontrolled inputs by source of truth, validation
+      timing, and integration cost.
+    goal: Compress the Forms answer into its decision, premise, trade-off, and verification
+      step.
+  best_answer: Controlled, because I need to react to each keystroke for the suggestions.
+    If I only needed the value on submit I would leave it uncontrolled and read it
+    from the form, which avoids re-rendering the whole form on every character.
+  distractors:
+  - text: Controlled, because that is the standard React approach and it keeps the
+      component state as the single source of truth for the value of the input at
+      all times.
+    trap: precision
+    why_wrong: Correct choice, wrong reasoning. Convention is not a requirement, and
+      the answer never mentions what the component needs.
+  - text: Uncontrolled, because controlled inputs cause a re-render on every keystroke
+      which is bad for performance, especially in a form with many fields like this
+      one.
+    trap: content
+    why_wrong: Optimises away the behaviour the feature requires; suggestions cannot
+      work without per-keystroke value.
+  - text: Controlled, because I need to react in each keystroke for the suggestions,
+      but if I needed the value only in the submit I would let it uncontrolled and
+      read of the form.
+    trap: grammar
+    why_wrong: '"React in", "in the submit", "let it uncontrolled" and "read of" are
+      four preposition errors.'
+  feedback:
+    register: Decisive with a requirement-based reason.
+    hedging: None; the requirement decides it.
+    precision: Tie the choice to the feature, not to convention.
+    grammar: '"React to each keystroke", "on submit", "leave it uncontrolled".'
+    pragmatics: Giving the counterfactual shows you know both patterns.
+  rephrase:
+    prompt: Answer again for a field that only matters when the form is submitted.
+    goal: Practise applying the rule in the opposite direction.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Controlled versus uncontrolled inputs by requirement.
+    explain_to: A developer who always picks controlled.
+    constraint: Explain using a form filled in pencil versus read aloud.
+    self_check: Did the feature requirement decide your answer?
+    reasoning_check: Can you identify the hidden premise behind Forms, give a counterexample,
+      and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You justified by convention or by performance alone.
+    expected: Per-keystroke need decides controlled; submit-only decides uncontrolled.
+    actual: An appeal to convention, or a performance-driven wrong choice.
+    root_cause: Pattern choice driven by habit rather than by what the component must
+      do.
+    repair: Ask what the component needs to know, and when.
+    reasoning_error: If your Forms answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What requirement forces a controlled input?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Forms without presenting
+      an assumption as a fact?
+    black_box_probe: When the Forms answer failed, did you locate the reasoning error
+      before changing the implementation?
+    delayed_variant:
+      id: react-07-controlled-inputs-delayed-7
+      prompt: For Forms, new evidence is a code inspection of Forms confirms the Forms
+        mechanism but not its impact and the constraint is a stakeholder asks for
+        a stronger Forms guarantee than the first Forms answer promised. What alternative
+        now deserves consideration for Forms?
+      changed_constraint: a stakeholder asks for a stronger Forms guarantee than the
+        first Forms answer promised
+      new_evidence: a code inspection of Forms confirms the Forms mechanism but not
+        its impact
+      best_answer: I would keep the facts that remain supported about Forms, treat
+        a code inspection of Forms confirms the Forms mechanism but not its impact
+        as new evidence rather than a result, and state the updated decision rule
+        under a stakeholder asks for a stronger Forms guarantee than the first Forms
+        answer promised. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Forms answer because changing
+          it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Forms explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: interview/story-bank/02-react-react-native-story-bank.md
+    note: React story bank covering component-level decisions.
+  - repo: original
+    path: english-arcade/react/controlled-inputs
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Walk through Forms under a changed requirement: which Forms claim survives,
+      which option wins, and why would Forms need new evidence?'
+    goal: Move from the short Forms answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Forms before proposing a solution: state the actor, required
+      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Forms within a React context; treat that named
+        boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Forms, but
+        that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Forms constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Forms: the scale, failure tolerance, ownership boundary,
+        and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Forms
+        benefit: It keeps the Forms reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Forms workload or requirement changes
+          beyond the prompt.
+        valid_when: Use it when the stated Forms contract and its invariant are the
+          facts that matter most.
+      - option: a wider state or memoisation layer for Forms
+        benefit: It can make the Forms boundary more explicit when the first option's
+          hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Forms evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Forms option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant React constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Forms: what stakeholder reply about Forms would invalidate the recommendation,
+        and which Forms premise would you revisit?'
+    evidence_check:
+      basis: Check the Forms claim against system-design-estudos/interview/story-bank/02-react-react-native-story-bank.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Forms, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Forms question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Would you make this input controlled or", update Forms
+        when Forms evidence—a Forms trace or Forms test—contradicts the Forms constraint
+        in case "Would you make this input controlled or"; ask a stakeholder about
+        Forms before revising.
+    rubric:
+      facts_correct: Names the verified Forms facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Forms premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Forms options, or explains the
+        hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Forms choice to a benefit, a cost or risk, and
+        the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Forms by changing
+        the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Forms recommendation.
+- id: react-08-error-boundaries
+  version: 1.4.0
+  target: react
+  topic: Error handling
+  difficulty: 2
+  interview_stage: architecture_review
+  prompt: Where would you put error boundaries in this application?
+  context: A dashboard composed of independent widgets. The interviewer wants a placement
+    strategy tied to what the user should still be able to do when one part fails.
+  follow_up:
+    prompt: Which failures should this boundary contain, and how would you keep a
+      broken child from hiding a recoverable route state?
+    goal: Answer the alternative challenge about Error handling while keeping the
+      evidence boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
       Around each widget rather than at the root, so one failing chart does not
-      blank the whole dashboard. I would keep a root boundary as a last resort,
-      but the useful granularity is wherever a failure should stay local to that
-      region.
+      blank the whole dashboard. I would compare that choice with the credible alternative against
+      the requirement in the follow-up, cost, and failure risk, then switch only if evidence
+      makes the alternative safer.
     distractors:
-      - text: >-
-          At the top level of the application, so that any error anywhere is
-          caught in one place and the user sees a consistent error screen rather
-          than a broken page.
-        trap: content
-        why_wrong: >-
-          Maximises blast radius: one widget failure takes down every other
-          widget the user could still have used.
-      - text: >-
-          I would add them wherever errors are likely to happen, particularly
-          around components that do data fetching or handle external input from
-          third parties.
-        trap: precision
-        why_wrong: >-
-          "Where errors are likely" is unknowable in advance; placement should
-          follow containment, not prediction.
-      - text: >-
-          Around each widget instead of in the root, then one graphic that fails
-          does not turn blank all the dashboard for the user that is using it.
-        trap: grammar
-        why_wrong: >-
-          "In the root", "turn blank all the dashboard" and the trailing
-          relative clause are all non-idiomatic.
-    feedback:
-      register: >-
-        Design-level and user-focused.
-      hedging: >-
-        None; containment is a clear principle.
-      precision: >-
-        Blast radius is the criterion; say it in user terms.
-      grammar: >-
-        "At the root", "blank the whole dashboard", "stay local".
-      pragmatics: >-
-        Keeping a root boundary as a fallback shows completeness.
-    rephrase:
-      prompt: >-
-        Explain your placement rule in terms of what the user can still do.
-      goal: Convert an architectural rule into user outcomes.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Error boundary granularity and blast radius.
-      explain_to: A product owner deciding what degraded mode looks like.
-      constraint: Explain using circuit breakers in a house.
-      self_check: >-
-        Can you say what still works when one widget fails?
-    black_box:
-      symptom: You placed one boundary at the root, or guessed at risk.
-      expected: Per-region boundaries sized by containment, root as fallback.
-      actual: A single global handler, or prediction-based placement.
-      root_cause: >-
-        Error handling framed as catching rather than as limiting damage.
-      repair: >-
-        Ask what should survive the failure before deciding where to catch it.
-    recall:
-      active_recall_cue: >-
-        What decides the granularity of an error boundary?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        note: Fault tolerance and blast radius principles.
-      - repo: original
-        path: english-arcade/react/error-boundaries
-        note: Original interview phrasing authored for this pack.
-  - id: react-09-list-virtualisation
-    version: "1.0.0"
-    target: react
-    topic: Rendering large lists
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      The table slows down at ten thousand rows. What would you do?
-    context: >-
-      A performance question with an obvious answer and a less obvious cost. The
-      interviewer wants both the technique and what it breaks.
+    - text: I would defend the first Error handling option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Error handling design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Explain error-boundary placement as failure scope, fallback behavior,
+      and a test that exercises the boundary.
+    goal: Compress the Error handling answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Around each widget rather than at the root, so one failing chart does
+    not blank the whole dashboard. I would keep a root boundary as a last resort,
+    but the useful granularity is wherever a failure should stay local to that region.
+  distractors:
+  - text: At the top level of the application, so that any error anywhere is caught
+      in one place and the user sees a consistent error screen rather than a broken
+      page.
+    trap: content
+    why_wrong: 'Maximises blast radius: one widget failure takes down every other
+      widget the user could still have used.'
+  - text: I would add them wherever errors are likely to happen, particularly around
+      components that do data fetching or handle external input from third parties.
+    trap: precision
+    why_wrong: '"Where errors are likely" is unknowable in advance; placement should
+      follow containment, not prediction.'
+  - text: Around each widget instead of in the root, then one graphic that fails does
+      not turn blank all the dashboard for the user that is using it.
+    trap: grammar
+    why_wrong: '"In the root", "turn blank all the dashboard" and the trailing relative
+      clause are all non-idiomatic.'
+  feedback:
+    register: Design-level and user-focused.
+    hedging: None; containment is a clear principle.
+    precision: Blast radius is the criterion; say it in user terms.
+    grammar: '"At the root", "blank the whole dashboard", "stay local".'
+    pragmatics: Keeping a root boundary as a fallback shows completeness.
+  rephrase:
+    prompt: Explain your placement rule in terms of what the user can still do.
+    goal: Convert an architectural rule into user outcomes.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Error boundary granularity and blast radius.
+    explain_to: A product owner deciding what degraded mode looks like.
+    constraint: Explain using circuit breakers in a house.
+    self_check: Can you say what still works when one widget fails?
+    reasoning_check: Can you identify the hidden premise behind Error handling, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You placed one boundary at the root, or guessed at risk.
+    expected: Per-region boundaries sized by containment, root as fallback.
+    actual: A single global handler, or prediction-based placement.
+    root_cause: Error handling framed as catching rather than as limiting damage.
+    repair: Ask what should survive the failure before deciding where to catch it.
+    reasoning_error: If your Error handling answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What decides the granularity of an error boundary?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Error handling without presenting
+      an assumption as a fact?
+    black_box_probe: When the Error handling answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-08-error-boundaries-delayed-8
+      prompt: A second pass on Error handling finds a measured Error handling comparison
+        shows the alternative has a different Error handling cost profile; with the
+        Error handling dependency is slower for Error handling and the failure is
+        ambiguous rather than explicit, which Error handling test would you run before
+        keeping the original rule?
+      changed_constraint: the Error handling dependency is slower for Error handling
+        and the failure is ambiguous rather than explicit
+      new_evidence: a measured Error handling comparison shows the alternative has
+        a different Error handling cost profile
+      best_answer: I would keep the facts that remain supported about Error handling,
+        treat a measured Error handling comparison shows the alternative has a different
+        Error handling cost profile as new evidence rather than a result, and state
+        the updated decision rule under the Error handling dependency is slower for
+        Error handling and the failure is ambiguous rather than explicit. I would
+        then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Error handling answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Error handling explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Fault tolerance and blast radius principles.
+  - repo: original
+    path: english-arcade/react/error-boundaries
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Connect Error handling, connect the Error handling implementation choice
+      to its failure mode, measurement, and condition for choosing the alternative.
+    goal: Move from the short Error handling answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Error handling before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Error handling within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Error handling,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Error handling constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Error handling: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Error handling
+        benefit: It keeps the Error handling reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Error handling workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Error handling contract and its invariant
+          are the facts that matter most.
+      - option: a wider state or memoisation layer for Error handling
+        benefit: It can make the Error handling boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Error handling evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Error handling option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant React
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Error handling: where does the Error handling premise need a boundary
+        check, and which result would make you reframe Error handling?'
+    evidence_check:
+      basis: Check the Error handling claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Error handling, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Error handling
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Where would you put error boundaries in", update Error
+        handling when Error handling evidence—a Error handling trace or Error handling
+        test—contradicts the Error handling constraint in case "Where would you put
+        error boundaries in"; ask a stakeholder about Error handling before revising.
+    rubric:
+      facts_correct: Names the verified Error handling facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Error handling premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Error handling options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Error handling choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Error handling
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Error handling recommendation.
+- id: react-09-list-virtualisation
+  version: 1.4.0
+  target: react
+  topic: Rendering large lists
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: The table slows down at ten thousand rows. What would you do?
+  context: A performance question with an obvious answer and a less obvious cost.
+    The interviewer wants both the technique and what it breaks.
+  follow_up:
+    prompt: What would you measure before virtualising, and how would keyboard focus
+      behave when rows enter and leave the viewport?
+    goal: Answer the failure challenge about Rendering large lists while keeping the
+      evidence boundary explicit.
+    challenge_kind: failure
     best_answer: >-
-      I would virtualise so only the visible rows are in the DOM. The cost is
-      that browser find, text selection across the whole table and print all
-      stop working normally, so I would confirm with the product side that none
-      of those matter before committing to it.
+      I would virtualise so only the visible rows are in the DOM. If the
+      failure in the follow-up appears, I would name the user or system consequence, contain
+      it with a bounded mitigation, and verify recovery with a focused test or metric.
     distractors:
-      - text: >-
-          I would virtualise the list so that only the rows currently visible in
-          the viewport are rendered, which keeps the DOM small and the scrolling
-          smooth even with very large datasets.
-        trap: precision
-        why_wrong: >-
-          Correct technique with no mention of what it costs, which is the half
-          the question was actually probing.
-      - text: >-
-          I would add pagination instead, since ten thousand rows is not
-          something a user can meaningfully scan anyway and smaller pages are
-          easier to render quickly.
-        trap: pragmatics
-        why_wrong: >-
-          A legitimate product suggestion, but it changes the requirement rather
-          than answering the engineering question.
-      - text: >-
-          I would virtualise for only the rows visible stay in the DOM, but the
-          cost is that the search of the browser and the selection of text stop
-          of working normally.
-        trap: grammar
-        why_wrong: >-
-          "For only... stay", "the search of the browser" and "stop of working"
-          are three structural errors.
-    feedback:
-      register: >-
-        Balanced. Naming the cost is what makes the recommendation credible.
-      hedging: >-
-        None on the technique; verify the constraints with the product side.
-      precision: >-
-        Browser find and print are the costs candidates almost never mention.
-      grammar: >-
-        "Only the visible rows", "browser find", "stop working".
-      pragmatics: >-
-        Checking product tolerance before committing is the senior move.
-    rephrase:
-      prompt: >-
-        Answer again for a table users are required to print.
-      goal: Test whether the trade-off is understood or recited.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Virtualisation and what leaves the DOM with it.
-      explain_to: A user who relies on browser find in the table.
-      constraint: Explain using a window onto a long scroll of paper.
-      self_check: >-
-        Did you name a capability the user loses?
-    black_box:
-      symptom: You gave the technique without its cost.
-      expected: Virtualise, plus loss of find, selection and print.
-      actual: A clean recommendation with no trade-off, or a scope change.
-      root_cause: >-
-        Techniques learned as solutions rather than as exchanges.
-      repair: >-
-        For every optimisation, name what stops working.
-    recall:
-      active_recall_cue: >-
-        What browser capabilities does virtualisation break?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/list-virtualisation
-        note: Authored for this pack; corpus has no client rendering card.
-  - id: react-10-code-review-tone
-    version: "1.0.0"
-    target: react
-    topic: Code review
-    difficulty: 2
-    interview_stage: behavioural_probe
-    prompt: >-
-      Describe how you would raise a design concern on a colleague's pull
-      request.
-    context: >-
-      A collaboration probe. The interviewer wants to hear whether your written
-      English can carry a disagreement without creating friction, since most
-      review happens asynchronously.
+    - text: I would describe the Rendering large lists failure as impossible because
+        the happy path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to Rendering large lists immediately and assume the
+        system would become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: Summarize large-list performance as measurement, rendering strategy, and
+      preserved interaction semantics.
+    goal: Compress the Rendering large lists answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: I would virtualise so only the visible rows are in the DOM. The cost
+    is that browser find, text selection across the whole table and print all stop
+    working normally, so I would confirm with the product side that none of those
+    matter before committing to it.
+  distractors:
+  - text: I would virtualise the list so that only the rows currently visible in the
+      viewport are rendered, which keeps the DOM small and the scrolling smooth even
+      with very large datasets.
+    trap: precision
+    why_wrong: Correct technique with no mention of what it costs, which is the half
+      the question was actually probing.
+  - text: I would add pagination instead, since ten thousand rows is not something
+      a user can meaningfully scan anyway and smaller pages are easier to render quickly.
+    trap: pragmatics
+    why_wrong: A legitimate product suggestion, but it changes the requirement rather
+      than answering the engineering question.
+  - text: I would virtualise for only the rows visible stay in the DOM, but the cost
+      is that the search of the browser and the selection of text stop of working
+      normally.
+    trap: grammar
+    why_wrong: '"For only... stay", "the search of the browser" and "stop of working"
+      are three structural errors.'
+  feedback:
+    register: Balanced. Naming the cost is what makes the recommendation credible.
+    hedging: None on the technique; verify the constraints with the product side.
+    precision: Browser find and print are the costs candidates almost never mention.
+    grammar: '"Only the visible rows", "browser find", "stop working".'
+    pragmatics: Checking product tolerance before committing is the senior move.
+  rephrase:
+    prompt: Answer again for a table users are required to print.
+    goal: Test whether the trade-off is understood or recited.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Virtualisation and what leaves the DOM with it.
+    explain_to: A user who relies on browser find in the table.
+    constraint: Explain using a window onto a long scroll of paper.
+    self_check: Did you name a capability the user loses?
+    reasoning_check: Can you identify the hidden premise behind Rendering large lists,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You gave the technique without its cost.
+    expected: Virtualise, plus loss of find, selection and print.
+    actual: A clean recommendation with no trade-off, or a scope change.
+    root_cause: Techniques learned as solutions rather than as exchanges.
+    repair: For every optimisation, name what stops working.
+    reasoning_error: If your Rendering large lists answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What browser capabilities does virtualisation break?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Rendering large lists without
+      presenting an assumption as a fact?
+    black_box_probe: When the Rendering large lists answer failed, did you locate
+      the reasoning error before changing the implementation?
+    delayed_variant:
+      id: react-09-list-virtualisation-delayed-9
+      prompt: 'Rendering large lists: the later Rendering large lists review says
+        a Rendering large lists test exposes a boundary case that the Rendering large
+        lists examples did not cover. Under new Rendering large lists evidence contradicts
+        the Rendering large lists assumption that made the first option attractive,
+        which part of Rendering large lists survives and which Rendering large lists
+        claim changes?'
+      changed_constraint: new Rendering large lists evidence contradicts the Rendering
+        large lists assumption that made the first option attractive
+      new_evidence: a Rendering large lists test exposes a boundary case that the
+        Rendering large lists examples did not cover
+      best_answer: I would keep the facts that remain supported about Rendering large
+        lists, treat a Rendering large lists test exposes a boundary case that the
+        Rendering large lists examples did not cover as new evidence rather than a
+        result, and state the updated decision rule under new Rendering large lists
+        evidence contradicts the Rendering large lists assumption that made the first
+        option attractive. I would then name one focused check before treating the
+        revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Rendering large lists answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Rendering large lists explanation with a
+          new design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/list-virtualisation
+    note: Authored for this pack; corpus has no client rendering card.
+  extension:
+    prompt: 'Rendering large lists: inspect Rendering large lists evidence next; which
+      edge case for Rendering large lists would alter the trade-off?'
+    goal: Move from the short Rendering large lists answer to a deep, evidence-led
+      defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Rendering large lists before proposing a solution: state
+      the actor, required outcome, constraint, and unknown that could invalidate the
+      first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Rendering large lists within a React context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Rendering
+        large lists, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the Rendering large lists constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Rendering large lists: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Rendering large lists
+        benefit: It keeps the Rendering large lists reasoning close to the stated
+          React constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Rendering large lists workload or
+          requirement changes beyond the prompt.
+        valid_when: Use it when the stated Rendering large lists contract and its
+          invariant are the facts that matter most.
+      - option: a wider state or memoisation layer for Rendering large lists
+        benefit: It can make the Rendering large lists boundary more explicit when
+          the first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Rendering large lists evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Rendering large lists option when its stated
+        contract holds; choose the alternative only when evidence shows that the relevant
+        React constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Rendering large lists: if the Rendering large lists decision fails
+        under plausible load or a difficult turn, what consequence appears first,
+        and how would you contain Rendering large lists?'
+    evidence_check:
+      basis: Check the Rendering large lists claim against original/english-arcade/react/list-virtualisation
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Rendering large lists,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Rendering large lists
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "The table slows down at ten thousand", update Rendering
+        large lists when Rendering large lists evidence—a Rendering large lists trace
+        or Rendering large lists test—contradicts the Rendering large lists constraint
+        in case "The table slows down at ten thousand"; ask a stakeholder about Rendering
+        large lists before revising.
+    rubric:
+      facts_correct: Names the verified Rendering large lists facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Rendering large lists premise that is still
+        assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Rendering large lists options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Rendering large lists choice to a benefit, a
+        cost or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about Rendering large
+        lists by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Rendering large lists recommendation.
+- id: react-10-code-review-tone
+  version: 1.4.0
+  target: react
+  topic: Component architecture and behaviour-focused testing
+  difficulty: 2
+  interview_stage: behavioural_probe
+  prompt: Describe how you would raise a design concern on a colleague's pull request
+    when one component owns state, fetching, and rendering.
+  context: A collaboration probe. The interviewer wants to hear whether your written
+    English can carry a disagreement without friction while checking that the component
+    boundary is testable through user-observable behaviour.
+  follow_up:
+    prompt: How would you separate the architectural concern from personal style,
+      and what behavior-focused test would support the review comment?
+    goal: Answer the new_evidence challenge about Component architecture and behaviour-focused
+      testing while keeping the evidence boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
-      I would ask about the constraint before proposing anything: what happens
-      if the parent re-renders here? If they have a reason I have not seen, the
-      question surfaces it; if not, they usually reach the fix themselves.
+      I would ask about the boundary before prescribing a refactor: what user behaviour belongs
+      here, and what can be passed in or extracted? I would keep the claims
+      that remain supported, identify exactly which premise the new observation changes, and run a
+      focused check before revising the decision.
     distractors:
-      - text: >-
-          I would point out clearly what is wrong with the approach and suggest
-          the correct alternative, since being direct saves everyone time and
-          avoids ambiguity in the review.
-        trap: register
-        why_wrong: >-
-          Directness without a question presumes you have the full context,
-          which is often false in review.
-      - text: >-
-          I would probably not say anything if it is a minor thing, since it is
-          not worth creating friction over small details and the code works well
-          enough as it is.
-        trap: pragmatics
-        why_wrong: >-
-          Avoidance is the opposite failure and lets known problems ship
-          silently.
-      - text: >-
-          I would ask about the constraint before to propose something, like
-          what happens if the parent makes re-render here, instead of saying
-          that this is wrong.
-        trap: grammar
-        why_wrong: >-
-          "Before to propose" and "makes re-render" are infinitive and light-verb
-          errors common in Portuguese speakers.
-    feedback:
-      register: >-
-        Curious rather than corrective; questions travel better in writing.
-      hedging: >-
-        A question is the hedge. Nothing else is needed.
-      precision: >-
-        Give the actual sentence you would write, not a description of it.
-      grammar: >-
-        "Before proposing", "if the parent re-renders".
-      pragmatics: >-
-        Explaining why the question works shows deliberate collaboration.
-    rephrase:
-      prompt: >-
-        Write the same comment for a colleague who has already pushed back once.
-      goal: Practise escalating without hardening the disagreement.
-    language_focus: [register, grammar, pragmatics]
-    pt_help: >-
-      Depois de "before" use gerundio: "before proposing". "Before to" nao
-      existe.
-    feynman:
-      concept: Question-first review as context discovery.
-      explain_to: An engineer whose reviews generate arguments.
-      constraint: Explain without using the word "polite".
-      self_check: >-
-        Would your comment still work if they were right?
-    black_box:
-      symptom: You asserted, or stayed silent.
-      expected: A question about the constraint, with the exact wording.
-      actual: A blunt correction, or conflict avoidance.
-      root_cause: >-
-        Written disagreement in a second language feels binary: harsh or
-        silent.
-      repair: >-
-        Convert every review objection into a question about a constraint.
-    recall:
-      active_recall_cue: >-
-        What does a question achieve that an assertion does not?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/testing-code-quality.md
-        note: Code quality collaboration practices.
-      - repo: original
-        path: english-arcade/react/code-review-tone
-        note: Original interview phrasing authored for this pack.
-  - id: react-11-hydration
-    version: "1.0.0"
-    target: react
-    topic: Server rendering
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      What causes a hydration mismatch, in your experience?
-    context: >-
-      A server-rendering question. The interviewer wants a concrete cause you
-      have actually hit, since the generic answer is easy to recite and tells
-      them nothing.
+    - text: I would keep the Component architecture and behaviour-focused testing
+        recommendation unchanged because changing position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Component architecture and behaviour-focused
+        testing claim as soon as one new observation appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: 'Give the review comment in three parts: observed coupling, user or test
+      impact, and an incremental suggestion.'
+    goal: Compress the Component architecture and behaviour-focused testing answer
+      into its decision, premise, trade-off, and verification step.
+  best_answer: 'I would ask about the boundary before prescribing a refactor: what
+    user behaviour belongs here, and what can be passed in or extracted? I would suggest
+    a focused test for visible loading, success, and failure states, because that
+    protects the contract while internal composition can change.'
+  distractors:
+  - text: I would point out clearly what is wrong with the approach and suggest the
+      correct alternative, since being direct saves everyone time and avoids ambiguity
+      in the review. I would describe the state, fetching, and rendering code as too
+      large, then recommend splitting it before adding any tests for the new structure.
+    trap: register
+    why_wrong: Directness without a question presumes you have the full context, which
+      is often false in review.
+  - text: I would probably not say anything if it is a minor thing, since it is not
+      worth creating friction over small details and the code works well enough as
+      it is.
+    trap: pragmatics
+    why_wrong: Avoidance is the opposite failure and lets known problems ship silently.
+  - text: I would ask about the constraint before to propose something, like what
+      happens if the parent makes re-render here, instead of saying that this is wrong.
+    trap: grammar
+    why_wrong: '"Before to propose" and "makes re-render" are infinitive and light-verb
+      errors common in Portuguese speakers.'
+  feedback:
+    register: Keep the review collaborative while discussing a component boundary
+      in observable terms.
+    hedging: Ask “could this boundary own…” before prescribing extraction.
+    precision: Name loading, success, and failure behaviour instead of the hook or
+      internal state shape.
+    grammar: Use “what belongs here?” and “what can be passed in or extracted?”
+    pragmatics: A behaviour-focused test lets the colleague change composition without
+      losing the contract.
+  rephrase:
+    prompt: Write a comment that asks about the boundary and proposes a loading/success/failure
+      test after a colleague has pushed back.
+    goal: Escalate with a user contract rather than an implementation preference.
+  language_focus:
+  - register
+  - grammar
+  - pragmatics
+  pt_help: 'Depois de "before" use gerundio: "before proposing". "Before to" nao existe.'
+  feynman:
+    concept: Using a review question to discover a component boundary and protect
+      behaviour with tests.
+    explain_to: An engineer splitting a stateful fetch component.
+    constraint: Include one visible state and avoid naming a preferred hook.
+    self_check: Would the test still pass after internal composition changes?
+    reasoning_check: Can you identify the hidden premise behind Component architecture
+      and behaviour-focused testing, give a counterexample, and explain how the evidence
+      changes your conclusion?
+  black_box:
+    symptom: A review demands a refactor without saying what users must still observe.
+    expected: A question identifies the boundary and a test covers loading, success,
+      and failure.
+    actual: The comment debates component size or stays silent to avoid friction.
+    root_cause: Architecture is discussed as taste instead of a behaviour contract.
+    repair: Ask what behaviour belongs here, then propose the smallest visible-state
+      test.
+    reasoning_error: If your Component architecture and behaviour-focused testing
+      answer failed, classify the mistake as a fact, assumption, comparison, failure,
+      or certainty error before proposing the smallest repair.
+  recall:
+    active_recall_cue: Which user-visible states should a boundary review protect
+      while internals remain free to change?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Component architecture and
+      behaviour-focused testing without presenting an assumption as a fact?
+    black_box_probe: When the Component architecture and behaviour-focused testing
+      answer failed, did you locate the reasoning error before changing the implementation?
+    delayed_variant:
+      id: react-10-code-review-tone-delayed-10
+      prompt: 'Review note for Component architecture and behaviour-focused testing:
+        a stakeholder clarifies a Component architecture and behaviour-focused testing
+        requirement that changes the Component architecture and behaviour-focused
+        testing success condition. Given two Component architecture and behaviour-focused
+        testing callers from the case "Describe how you would raise a design" or Component
+        architecture and behaviour-focused testing tenants now compete for the same
+        Component architecture and behaviour-focused testing boundary, what would
+        you now defend, retract, and verify about Component architecture and behaviour-focused
+        testing?'
+      changed_constraint: two Component architecture and behaviour-focused testing
+        callers from the case "Describe how you would raise a design" or Component
+        architecture and behaviour-focused testing tenants now compete for the same
+        Component architecture and behaviour-focused testing boundary
+      new_evidence: a stakeholder clarifies a Component architecture and behaviour-focused
+        testing requirement that changes the Component architecture and behaviour-focused
+        testing success condition
+      best_answer: I would keep the facts that remain supported about Component architecture
+        and behaviour-focused testing, treat a stakeholder clarifies a Component architecture
+        and behaviour-focused testing requirement that changes the Component architecture
+        and behaviour-focused testing success condition as new evidence rather than
+        a result, and state the updated decision rule under two Component architecture
+        and behaviour-focused testing callers from the case "Describe how you would
+        raise a design" or Component architecture and behaviour-focused testing tenants
+        now compete for the same Component architecture and behaviour-focused testing
+        boundary. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Component architecture and
+          behaviour-focused testing answer because changing it after review would
+          be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Component architecture and behaviour-focused
+          testing explanation with a new design without identifying what the evidence
+          actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/testing-code-quality.md
+    note: Code quality collaboration practices.
+  - repo: original
+    path: english-arcade/react/code-review-tone
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Deep dive on Component architecture and behaviour-focused testing: compare
+      Component architecture and behaviour-focused testing options with one measurement;
+      which failure around Component architecture and behaviour-focused testing would
+      make Component architecture and behaviour-focused testing switch?'
+    goal: Move from the short Component architecture and behaviour-focused testing
+      answer to a deep, evidence-led defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Component architecture and behaviour-focused testing before
+      proposing a solution: state the actor, required outcome, constraint, and unknown
+      that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Component architecture and behaviour-focused
+        testing within a React context; treat that named boundary as the verified
+        starting fact.
+      inference: The reasonable inference is that the answer must defend Component
+        architecture and behaviour-focused testing, but that does not prove one implementation
+        wins under every workload or audience.
+      assumption: An unstated assumption is that the Component architecture and behaviour-focused
+        testing constraint is the dominant one; label it and ask whether the interviewer
+        confirms it.
+      unknown: 'Still unknown for Component architecture and behaviour-focused testing:
+        the scale, failure tolerance, ownership boundary, and evidence threshold that
+        would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Component architecture and
+          behaviour-focused testing
+        benefit: It keeps the Component architecture and behaviour-focused testing
+          reasoning close to the stated React constraint and makes the evidence boundary
+          visible.
+        cost_or_risk: It can be too narrow if the Component architecture and behaviour-focused
+          testing workload or requirement changes beyond the prompt.
+        valid_when: Use it when the stated Component architecture and behaviour-focused
+          testing contract and its invariant are the facts that matter most.
+      - option: a wider state or memoisation layer for Component architecture and
+          behaviour-focused testing
+        benefit: It can make the Component architecture and behaviour-focused testing
+          boundary more explicit when the first option's hidden assumption is not
+          guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Component architecture and behaviour-focused testing evidence
+          has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Component architecture and behaviour-focused
+        testing option when its stated contract holds; choose the alternative only
+        when evidence shows that the relevant React constraint makes the first assumption
+        unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Component architecture and behaviour-focused testing: which adversarial
+        Component architecture and behaviour-focused testing example could disprove
+        the recommendation, and what evidence about Component architecture and behaviour-focused
+        testing would you request?'
+    evidence_check:
+      basis: Check the Component architecture and behaviour-focused testing claim
+        against system-design-estudos/areas/09-backend-principles/cards/testing-code-quality.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Component architecture
+        and behaviour-focused testing, but it cannot prove an unmeasured production
+        outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Component architecture
+        and behaviour-focused testing question but does not reveal every workload,
+        stakeholder priority, or outcome.
+      update_trigger: For case "Describe how you would raise a design", update Component
+        architecture and behaviour-focused testing when Component architecture and
+        behaviour-focused testing evidence—a Component architecture and behaviour-focused
+        testing trace or Component architecture and behaviour-focused testing test—contradicts
+        the Component architecture and behaviour-focused testing constraint in case
+        "Describe how you would raise a design"; ask a stakeholder about Component
+        architecture and behaviour-focused testing before revising.
+    rubric:
+      facts_correct: Names the verified Component architecture and behaviour-focused
+        testing facts without smuggling in a result, scale, or capability that the
+        prompt does not establish.
+      assumptions_explicit: Labels the Component architecture and behaviour-focused
+        testing premise that is still assumed and asks the smallest clarifying question
+        that matters.
+      alternatives_considered: Compares two credible Component architecture and behaviour-focused
+        testing options, or explains the hard constraint that makes comparison a false
+        equivalence.
+      tradeoff_quality: Connects the Component architecture and behaviour-focused
+        testing choice to a benefit, a cost or risk, and the condition under which
+        another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Component
+        architecture and behaviour-focused testing by changing the claim or evidence
+        boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Component architecture and behaviour-focused testing
+        recommendation.
+- id: react-11-hydration
+  version: 1.4.0
+  target: react
+  topic: Server rendering
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: What causes a hydration mismatch, in your experience?
+  context: A server-rendering question. The interviewer wants a concrete cause you
+    have actually hit, since the generic answer is easy to recite and tells them nothing.
+  follow_up:
+    prompt: Which value differs between server and client, and how would you make
+      the initial render deterministic without hiding a real data bug?
+    goal: Answer the assumption challenge about Server rendering while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      Usually something that differs between server and client at render time.
-      The one I hit most is dates formatted in local time, because the server
-      and the browser are in different timezones, so the markup differs and
-      React discards it.
+      Usually something that differs between server and client at render time. I would label
+      the follow-up premise as an assumption, ask the smallest question that could disprove it,
+      and protect the edge case before committing to the recommendation.
     distractors:
-      - text: >-
-          It happens when the HTML rendered on the server does not match what
-          React renders on the client, so React has to discard the server markup
-          and re-render everything.
-        trap: precision
-        why_wrong: >-
-          Defines the term rather than naming a cause, which is what the
-          question asked for.
-      - text: >-
-          It is usually caused by using browser APIs like window or localStorage
-          during the initial render, since those are not available on the server
-          and cause errors.
-        trap: content
-        why_wrong: >-
-          Those typically throw rather than mismatch; conflating the two shows
-          the answer is theoretical.
-      - text: >-
-          Normally is something that differs between the server and the client
-          in the moment of render, like the dates formatted in local time
-          because the timezones are differents.
-        trap: grammar
-        why_wrong: >-
-          Missing subject, "in the moment of" and the pluralised adjective
-          "differents" are all transfer errors.
-    feedback:
-      register: >-
-        Experiential. "The one I hit most" is worth more than a definition.
-      hedging: >-
-        "Usually" is appropriate for a class of causes.
-      precision: >-
-        The timezone example is specific enough to be verified.
-      grammar: >-
-        Always include the subject: "it is usually"; adjectives never pluralise.
-      pragmatics: >-
-        Answering "in your experience" with an actual experience matters.
-    rephrase:
-      prompt: >-
-        Give a second cause you have seen, in one sentence.
-      goal: Prove the first answer was not the only one you had.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      Adjetivos em ingles nao tem plural: "different", nunca "differents".
-    feynman:
-      concept: Server and client render divergence.
-      explain_to: A developer new to server rendering.
-      constraint: Explain using two people drawing from the same description.
-      self_check: >-
-        Did you name a cause you could reproduce?
-    black_box:
-      symptom: You defined the term or named an error that is not a mismatch.
-      expected: A concrete divergence such as locale-dependent formatting.
-      actual: A restatement of the definition, or a browser-API error.
-      root_cause: >-
-        Answering from documentation rather than from debugging experience.
-      repair: >-
-        Keep one real reproduction per concept you claim experience with.
-    recall:
-      active_recall_cue: >-
-        Which everyday formatting choice reliably causes mismatches?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: original
-        path: english-arcade/react/hydration-mismatch
-        note: Authored for this pack; corpus has no server-rendering card.
-  - id: react-12-scope-negotiation
-    version: "1.0.0"
-    target: react
-    topic: Estimation
-    difficulty: 2
-    interview_stage: behavioural_probe
-    prompt: >-
-      How long would this component take you to build?
-    context: >-
-      A deceptively simple question. The interviewer is assessing whether you
-      can estimate in English without either padding vaguely or committing to a
-      number you cannot defend.
+    - text: I would repeat my original Server rendering answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Server rendering until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Describe hydration debugging as mismatch evidence, deterministic input,
+      and the boundary for client-only work.
+    goal: Compress the Server rendering answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Usually something that differs between server and client at render
+    time. The one I hit most is dates formatted in local time, because the server
+    and the browser are in different timezones, so the markup differs and React discards
+    it.
+  distractors:
+  - text: It happens when the HTML rendered on the server does not match what React
+      renders on the client, so React has to discard the server markup and re-render
+      everything.
+    trap: precision
+    why_wrong: Defines the term rather than naming a cause, which is what the question
+      asked for.
+  - text: It is usually caused by using browser APIs like window or localStorage during
+      the initial render, since those are not available on the server and cause errors.
+    trap: content
+    why_wrong: Those typically throw rather than mismatch; conflating the two shows
+      the answer is theoretical.
+  - text: Normally is something that differs between the server and the client in
+      the moment of render, like the dates formatted in local time because the timezones
+      are differents.
+    trap: grammar
+    why_wrong: Missing subject, "in the moment of" and the pluralised adjective "differents"
+      are all transfer errors.
+  feedback:
+    register: Experiential. "The one I hit most" is worth more than a definition.
+    hedging: '"Usually" is appropriate for a class of causes.'
+    precision: The timezone example is specific enough to be verified.
+    grammar: 'Always include the subject: "it is usually"; adjectives never pluralise.'
+    pragmatics: Answering "in your experience" with an actual experience matters.
+  rephrase:
+    prompt: Give a second cause you have seen, in one sentence.
+    goal: Prove the first answer was not the only one you had.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: 'Adjetivos em ingles nao tem plural: "different", nunca "differents".'
+  feynman:
+    concept: Server and client render divergence.
+    explain_to: A developer new to server rendering.
+    constraint: Explain using two people drawing from the same description.
+    self_check: Did you name a cause you could reproduce?
+    reasoning_check: Can you identify the hidden premise behind Server rendering,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You defined the term or named an error that is not a mismatch.
+    expected: A concrete divergence such as locale-dependent formatting.
+    actual: A restatement of the definition, or a browser-API error.
+    root_cause: Answering from documentation rather than from debugging experience.
+    repair: Keep one real reproduction per concept you claim experience with.
+    reasoning_error: If your Server rendering answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Which everyday formatting choice reliably causes mismatches?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Server rendering without
+      presenting an assumption as a fact?
+    black_box_probe: When the Server rendering answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-11-hydration-delayed-11
+      prompt: New evidence about Server rendering says a trace of Server rendering
+        isolates a different Server rendering bottleneck than the one you named; with
+        the Server rendering workload for Server rendering no longer fits the original
+        resource bound, how do you update the Server rendering decision rule?
+      changed_constraint: the Server rendering workload for Server rendering no longer
+        fits the original resource bound
+      new_evidence: a trace of Server rendering isolates a different Server rendering
+        bottleneck than the one you named
+      best_answer: I would keep the facts that remain supported about Server rendering,
+        treat a trace of Server rendering isolates a different Server rendering bottleneck
+        than the one you named as new evidence rather than a result, and state the
+        updated decision rule under the Server rendering workload for Server rendering
+        no longer fits the original resource bound. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Server rendering answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Server rendering explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: original
+    path: english-arcade/react/hydration-mismatch
+    note: Authored for this pack; corpus has no server-rendering card.
+  extension:
+    prompt: 'Defend Server rendering after a counterexample: which Server rendering
+      assumption changes, and what evidence keeps the revised Server rendering choice
+      honest?'
+    goal: Move from the short Server rendering answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Server rendering before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Server rendering within a React context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Server rendering,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Server rendering constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Server rendering: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Server rendering
+        would be a false equivalence because the prompt does not establish that both
+        choices satisfy the same contract.
+      hard_constraint: The hard Server rendering constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Server rendering; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Server rendering: which empty or extreme Server rendering case would
+        expose the hidden assumption, and what would you measure about Server rendering?'
+    evidence_check:
+      basis: Check the Server rendering claim against original/english-arcade/react/hydration-mismatch
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Server rendering, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Server rendering
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "What causes a hydration mismatch, in your", update
+        Server rendering when Server rendering evidence—a Server rendering trace or
+        Server rendering test—contradicts the Server rendering constraint in case
+        "What causes a hydration mismatch, in your"; ask a stakeholder about Server
+        rendering before revising.
+    rubric:
+      facts_correct: Names the verified Server rendering facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Server rendering premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Server rendering options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Server rendering choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Server rendering
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Server rendering recommendation.
+- id: react-12-scope-negotiation
+  version: 1.4.0
+  target: react
+  topic: Estimation
+  difficulty: 2
+  interview_stage: behavioural_probe
+  prompt: How long would this component take you to build?
+  context: A deceptively simple question. The interviewer is assessing whether you
+    can estimate in English without either padding vaguely or committing to a number
+    you cannot defend.
+  follow_up:
+    prompt: What assumptions make that estimate reliable, and what smaller milestone
+      could you offer if the requirements remain uncertain?
+    goal: Answer the evidence challenge about Estimation while keeping the evidence
+      boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      A day for the happy path, and probably another for the states that are not
-      in the design yet, empty, loading and error. If those are already
-      specified, it is closer to a day and a half. Which of those do you already
-      have?
+      A day for the happy path, and probably another for the states that are
+      not in the design yet, empty, loading and error. I would treat the follow-up
+      observation as evidence, not as proof of impact; I would inspect the smallest relevant
+      trace or test and state what remains uncertain before changing the decision.
     distractors:
-      - text: >-
-          It is quite hard to say without knowing more about the requirements,
-          since it really depends on a lot of factors like the design and the
-          data and the edge cases involved.
-        trap: hedging
-        why_wrong: >-
-          Refuses to estimate at all, which reads as inability rather than as
-          rigour.
-      - text: >-
-          About two days. That should be enough time to build it properly and
-          handle everything that might come up during the implementation of the
-          component.
-        trap: precision
-        why_wrong: >-
-          A number with no breakdown cannot be negotiated, defended or revised
-          when scope changes.
-      - text: >-
-          One day for the happy path and probably more one for the states that
-          are not yet in the design, like empty, loading and of error.
-        trap: grammar
-        why_wrong: >-
-          "More one" inverts "another one" and "of error" adds a Portuguese
-          preposition.
-    feedback:
-      register: >-
-        Confident and collaborative; end by returning a question.
-      hedging: >-
-        Hedge the unknown scope, not the estimate itself.
-      precision: >-
-        Break the number into parts so it can be negotiated.
-      grammar: >-
-        "Another day", "empty, loading and error states".
-      pragmatics: >-
-        Closing with a question converts an estimate into a scoping
-        conversation.
-    rephrase:
-      prompt: >-
-        Give the same estimate to someone who wants a single number.
-      goal: Hold the breakdown while satisfying the request.
-    language_focus: [hedging, grammar, pragmatics]
-    feynman:
-      concept: Estimation as decomposition plus assumptions.
-      explain_to: A manager who wants one number for a roadmap.
-      constraint: Explain using a builder quoting for a room.
-      self_check: >-
-        Could someone negotiate scope from your answer?
-    black_box:
-      symptom: You refused to estimate, or gave a bare number.
-      expected: A split estimate with the unknown named, ending in a question.
-      actual: >-
-        A bare "it depends", or an undefended figure.
-      root_cause: >-
-        Treating estimates as commitments rather than as conditional models.
-      repair: >-
-        Always estimate in two parts: known work and unspecified states.
-    recall:
-      active_recall_cue: >-
-        What makes an estimate negotiable rather than binding?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
-        note: Estimation and headroom reasoning.
-      - repo: original
-        path: english-arcade/react/scope-negotiation
-        note: Original interview phrasing authored for this pack.
+    - text: I would cite my experience with Estimation as enough proof and move on
+        without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Estimation before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Compress the estimate into scope, assumptions, risks, and a next checkpoint
+      rather than one unsupported number.
+    goal: Compress the Estimation answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: A day for the happy path, and probably another for the states that
+    are not in the design yet, empty, loading and error. If those are already specified,
+    it is closer to a day and a half. Which of those do you already have?
+  distractors:
+  - text: It is quite hard to say without knowing more about the requirements, since
+      it really depends on a lot of factors like the design and the data and the edge
+      cases involved.
+    trap: hedging
+    why_wrong: Refuses to estimate at all, which reads as inability rather than as
+      rigour.
+  - text: About two days. That should be enough time to build it properly and handle
+      everything that might come up during the implementation of the component.
+    trap: precision
+    why_wrong: A number with no breakdown cannot be negotiated, defended or revised
+      when scope changes.
+  - text: One day for the happy path and probably more one for the states that are
+      not yet in the design, like empty, loading and of error.
+    trap: grammar
+    why_wrong: '"More one" inverts "another one" and "of error" adds a Portuguese
+      preposition.'
+  feedback:
+    register: Confident and collaborative; end by returning a question.
+    hedging: Hedge the unknown scope, not the estimate itself.
+    precision: Break the number into parts so it can be negotiated.
+    grammar: '"Another day", "empty, loading and error states".'
+    pragmatics: Closing with a question converts an estimate into a scoping conversation.
+  rephrase:
+    prompt: Give the same estimate to someone who wants a single number.
+    goal: Hold the breakdown while satisfying the request.
+  language_focus:
+  - hedging
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Estimation as decomposition plus assumptions.
+    explain_to: A manager who wants one number for a roadmap.
+    constraint: Explain using a builder quoting for a room.
+    self_check: Could someone negotiate scope from your answer?
+    reasoning_check: Can you identify the hidden premise behind Estimation, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You refused to estimate, or gave a bare number.
+    expected: A split estimate with the unknown named, ending in a question.
+    actual: A bare "it depends", or an undefended figure.
+    root_cause: Treating estimates as commitments rather than as conditional models.
+    repair: 'Always estimate in two parts: known work and unspecified states.'
+    reasoning_error: If your Estimation answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What makes an estimate negotiable rather than binding?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Estimation without presenting
+      an assumption as a fact?
+    black_box_probe: When the Estimation answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: react-12-scope-negotiation-delayed-12
+      prompt: 'Estimation gets a new constraint: a stakeholder asks for a stronger
+        Estimation guarantee than the first Estimation answer promised. After a code
+        inspection of Estimation confirms the Estimation mechanism but not its impact,
+        which Estimation assumption is no longer safe?'
+      changed_constraint: a stakeholder asks for a stronger Estimation guarantee than
+        the first Estimation answer promised
+      new_evidence: a code inspection of Estimation confirms the Estimation mechanism
+        but not its impact
+      best_answer: I would keep the facts that remain supported about Estimation,
+        treat a code inspection of Estimation confirms the Estimation mechanism but
+        not its impact as new evidence rather than a result, and state the updated
+        decision rule under a stakeholder asks for a stronger Estimation guarantee
+        than the first Estimation answer promised. I would then name one focused check
+        before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Estimation answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Estimation explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
+    note: Estimation and headroom reasoning.
+  - repo: original
+    path: english-arcade/react/scope-negotiation
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Five more minutes on Estimation: which boundary, alternative, and update
+      trigger would you explain for Estimation?'
+    goal: Move from the short Estimation answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Estimation before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Estimation within a React context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Estimation,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Estimation constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Estimation: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: the smallest React ownership boundary for Estimation
+        benefit: It keeps the Estimation reasoning close to the stated React constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Estimation workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Estimation contract and its invariant are
+          the facts that matter most.
+      - option: a wider state or memoisation layer for Estimation
+        benefit: It can make the Estimation boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Estimation evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Estimation option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant React constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Estimation: when the Estimation constraint tightens during rollout,
+        what breaks first in Estimation, and how do you observe it?'
+    evidence_check:
+      basis: Check the Estimation claim against system-design-estudos/areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This React exercise can test reasoning about Estimation, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Estimation question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "How long would this component take you", update Estimation
+        when Estimation evidence—a Estimation trace or Estimation test—contradicts
+        the Estimation constraint in case "How long would this component take you";
+        ask a stakeholder about Estimation before revising.
+    rubric:
+      facts_correct: Names the verified Estimation facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Estimation premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Estimation options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Estimation choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Estimation by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Estimation recommendation.

@@ -2,6 +2,8 @@ require "digest"
 require "json"
 require "pathname"
 require "yaml"
+require_relative "../../../lib/english_arcade/pack_validator"
+require_relative "../../../lib/english_arcade/schema"
 
 module Content
   # Builds the small, stable integration index used by the English Arcade.
@@ -14,9 +16,13 @@ module Content
     ARCADE_SOURCE_ID_PREFIX = "english-arcade"
     CURRICULUM_PATH = "curriculum.yml"
     LEGACY_SEED_PATH = "src/data/seed.ts"
-    TARGETS = %w[dsa ruby rails react golang elixir salesforce system_design].freeze
+    # The schema owns the pack list. Mixed and interview are session modes and
+    # intentionally do not appear as importable pack targets.
+    TARGETS = EnglishArcade::Schema::TARGETS.freeze
+    CANONICAL_TARGETS = EnglishArcade::Schema::CANONICAL_TARGETS.freeze
+    ELECTIVE_TARGETS = EnglishArcade::Schema::ELECTIVE_TARGETS.freeze
     CORPUS_KINDS = %w[chapter lab capstone review_card decision_contrast curriculum].freeze
-    PACK_MIN_ITEMS_PER_TARGET = 12
+    PACK_MIN_ITEMS_PER_TARGET = EnglishArcade::Schema::PUBLISHABLE_ITEMS_PER_TARGET
     PACK_REQUIRED_FIELDS = %w[prompt context answer distractors feedback rephrase].freeze
     LINK_KEYS = %w[foundations notes playbooks bridge_labs simulations].freeze
     PACK_DIRECTORY = "db/seeds/english_arcade"
@@ -68,7 +74,7 @@ module Content
       end
     end
 
-    Result = Struct.new(:records, :links, :warnings, :persisted_count, keyword_init: true) do
+    Result = Struct.new(:records, :links, :warnings, :persisted_count, :pack_validation_error_counts, keyword_init: true) do
       def to_h
         {
           "records" => records.map(&:to_h),
@@ -82,28 +88,45 @@ module Content
       def pack_readiness
         return @pack_readiness if defined?(@pack_readiness)
 
-        packs = records.select { |record| record.kind == "interview_pack" }
+        validation_error_counts = pack_validation_error_counts || {}
+        packs = records.select { |record| record.kind == "interview_pack" && TARGETS.include?(record.target) }
         by_target = packs.group_by(&:target)
         targets = by_target.transform_values do |items|
           field_counts = PACK_REQUIRED_FIELDS.to_h do |field|
             [ field, items.count { |record| record.metadata.is_a?(Hash) && record.metadata[field].present? } ]
           end
+          card_count = items.map { |record| record.metadata["pack_card_count"].to_i }.max.to_i
           {
             "item_count" => items.size,
+            "card_count" => card_count,
             "required_field_counts" => field_counts,
-            "missing_fields" => PACK_REQUIRED_FIELDS.select { |field| field_counts[field] < items.size }
+            "missing_fields" => PACK_REQUIRED_FIELDS.select { |field| field_counts[field] < items.size },
+            "strict_validation_observed" => validation_error_counts.key?(items.first.target),
+            "validation_error_count" => validation_error_counts.fetch(items.first.target, 0)
           }
         end
         missing_targets = TARGETS - by_target.keys
+        target_ready = targets.values.all? do |summary|
+          summary.fetch("item_count") >= PACK_MIN_ITEMS_PER_TARGET &&
+            summary.fetch("card_count").between?(EnglishArcade::Schema::MINIMUM_CARDS_PER_TARGET, EnglishArcade::Schema::MAXIMUM_CARDS_PER_TARGET) &&
+            summary.fetch("missing_fields").empty? &&
+            summary.fetch("strict_validation_observed") &&
+            summary.fetch("validation_error_count").zero?
+        end
         @pack_readiness = {
           "minimum_items_per_target" => PACK_MIN_ITEMS_PER_TARGET,
           "required_fields" => PACK_REQUIRED_FIELDS,
           "target_count" => by_target.size,
           "item_count" => packs.size,
+          "card_count" => targets.values.sum { |summary| summary.fetch("card_count") },
+          "canonical_target_count" => by_target.keys.count { |target| CANONICAL_TARGETS.include?(target) },
+          "canonical_item_count" => packs.count { |record| CANONICAL_TARGETS.include?(record.target) },
+          "canonical_card_count" => targets.sum { |target, summary| CANONICAL_TARGETS.include?(target) ? summary.fetch("card_count") : 0 },
           "targets" => targets,
           "missing_targets" => missing_targets,
-          "ready" => missing_targets.empty? && targets.values.all? { |summary| summary.fetch("item_count") >= PACK_MIN_ITEMS_PER_TARGET && summary.fetch("missing_fields").empty? },
-          "legacy_item_count" => records.count { |record| record.kind == "legacy_arcade_item" }
+          "ready" => missing_targets.empty? && target_ready,
+          "legacy_item_count" => records.count { |record| record.kind == "legacy_arcade_item" },
+          "elective_targets" => ELECTIVE_TARGETS
         }
       end
     end
@@ -169,11 +192,11 @@ module Content
     end
 
     def validation_errors(records = result.records)
-      records.each_with_object([]) do |record, errors|
-        errors << "#{record.source_id}: missing source_path" if record.source_path.to_s.empty?
-        errors << "#{record.source_id}: missing stable source_id" if record.source_id.to_s.empty?
-        if record.target.present? && !TARGETS.include?(record.target) && record.target != "legacy"
-          errors << "#{record.source_id}: unsupported target #{record.target.inspect}"
+      errors = records.each_with_object([]) do |record, collected|
+        collected << "#{record.source_id}: missing source_path" if record.source_path.to_s.empty?
+        collected << "#{record.source_id}: missing stable source_id" if record.source_id.to_s.empty?
+        if record.target.present? && !TARGETS.include?(record.target) && !ELECTIVE_TARGETS.include?(record.target) && record.target != "legacy"
+          collected << "#{record.source_id}: unsupported target #{record.target.inspect}"
         end
 
         next unless record.kind == "interview_pack"
@@ -181,9 +204,33 @@ module Content
         required = %w[prompt context answer distractors feedback rephrase]
         required.each do |field|
           value = record.metadata[field] || record.metadata[field.to_sym]
-          errors << "#{record.source_id}: missing #{field}" if value.blank?
+          collected << "#{record.source_id}: missing #{field}" if value.blank?
         end
       end
+      result.pack_validation_error_counts.each do |target, count|
+        next if count.zero?
+
+        errors << "canonical pack #{target}: strict validation failed (#{count} errors)"
+      end
+      readiness = result.pack_readiness
+      # Import validation is also used by focused corpus/link tests that feed
+      # one pack at a time. Experience evidence is different: silently
+      # substituting a generic card would turn an absent project into a claim,
+      # so those targets fail closed even in a partial import.
+      readiness.fetch("missing_targets").select { |target| EnglishArcade::Schema::PROVENANCE_REQUIRED_TARGETS.include?(target) }.each do |target|
+        errors << "canonical pack #{target}: missing pack"
+      end
+      readiness.fetch("targets").each do |target, summary|
+        next unless summary.fetch("item_count") >= PACK_MIN_ITEMS_PER_TARGET && summary.fetch("missing_fields").empty?
+
+        errors << "canonical pack #{target}: strict validation was not observed" unless summary.fetch("strict_validation_observed")
+        if summary.fetch("card_count").zero?
+          errors << "canonical pack #{target}: card count was not observed"
+        elsif !summary.fetch("card_count").between?(EnglishArcade::Schema::MINIMUM_CARDS_PER_TARGET, EnglishArcade::Schema::MAXIMUM_CARDS_PER_TARGET)
+          errors << "canonical pack #{target}: invalid card count"
+        end
+      end
+      errors
     end
 
     def self.source_id_for(path)
@@ -200,6 +247,7 @@ module Content
       @records = {}
       @links = []
       @warnings = []
+      @pack_validation_error_counts = {}
 
       add_curriculum_record
       add_curriculum_chapters
@@ -211,7 +259,13 @@ module Content
       add_external_records
       attach_links_to_metadata
 
-      Result.new(records: @records.values.sort_by { |record| [ record.kind, record.source_id ] }, links: unique_links, warnings: @warnings, persisted_count: 0)
+      Result.new(
+        records: @records.values.sort_by { |record| [ record.kind, record.source_id ] },
+        links: unique_links,
+        warnings: @warnings,
+        persisted_count: 0,
+        pack_validation_error_counts: @pack_validation_error_counts
+      )
     end
 
     def add_curriculum_record
@@ -430,6 +484,8 @@ module Content
           target = target_pack.dig("target", "key") || target_pack["key"]
           next [] if target.blank?
 
+          record_strict_pack_validation(target, target_pack)
+
           Array(target_pack["items"]).filter_map do |item|
             next unless item.is_a?(Hash) && item["id"].present?
 
@@ -441,6 +497,8 @@ module Content
               "source_checksum" => checksum,
               "title" => item["topic"].presence || item.fetch("id").tr("-", " ").titleize,
               "metadata" => item.merge(
+                "answer" => item["best_answer"],
+                "pack_card_count" => Array(target_pack["cards"]).size,
                 "pack_target_label" => target_pack.dig("target", "label"),
                 "corpus_links" => target_pack["corpus_links"] || pack["corpus_links"],
                 "content_origin" => "english-arcade-pack"
@@ -452,6 +510,17 @@ module Content
     rescue Psych::Exception, Errno::ENOENT => error
       @warnings << "could not read English Arcade packs: #{error.message}"
       []
+    end
+
+    # Canonical pack files are authored against PackValidator's full contract.
+    # External records remain schema-light by design, so integrations can still
+    # provide their stable anchors without impersonating a complete pack.
+    def record_strict_pack_validation(target, pack)
+      return unless TARGETS.include?(target)
+
+      validator = EnglishArcade::PackValidator.new(pack, strict: true)
+      validator.valid?
+      @pack_validation_error_counts[target] = validator.errors.size
     end
 
     def normalize_external_record(raw)

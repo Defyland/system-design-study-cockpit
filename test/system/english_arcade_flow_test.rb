@@ -35,13 +35,20 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "form[data-english-arcade-target='form']"
     assert_no_selector ".arcade-answer"
 
-    # The canonical pack rotates choices, so the first visible option is a
-    # deterministic wrong answer without reading a server-side answer key.
-    all("label.arcade-choice").first.click
+    # Select an authored distractor by its learner-visible text. Choice order
+    # is opaque and may rotate, so position is not a valid test contract.
+    assert_selector "label.arcade-choice", text: /Obviously it is a sliding window/i
+    find("label.arcade-choice", text: /Obviously it is a sliding window/i).click
+    fill_in "Typed answer", with: "I would state the invariant, explain the trade-off, and verify the boundary with a counterexample before writing implementation details."
+    fill_critical_ledger
+    select "English directly", from: "english_arcade_attempt_english_directness"
+    %w[clarity precision naturalness pragmatic_appropriateness technical_correctness].each do |axis|
+      select "3", from: "english_arcade_attempt_self_#{axis}"
+    end
     click_button "Commit answer"
 
     assert_selector "#feynman-title", text: /Feynman pass before the reveal/i
-    fill_in "Say or write the reasoning", with: "The invariant explains why the retained window remains valid."
+    fill_in "Write the reasoning", with: "The invariant explains why the retained window remains valid, and I would trace a duplicate boundary before deciding the loop is correct."
     click_button "Reveal feedback"
 
     assert_text "Black Box: the miss is evidence"
@@ -61,7 +68,10 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     click_button "Save post-mortem"
 
     assert_text "box 1"
-    click_link "Retry this question"
+    # Retry is the delayed_variant contract; age the persisted parent in this
+    # system fixture instead of weakening the server-side seven-day boundary.
+    EnglishArcadeAttempt.order(:id).last.update!(answered_at: 8.days.ago)
+    click_button "Retry this question"
     assert_selector ".arcade-kicker", text: /retry/i
     assert_text "DSA & algorithms"
   end
@@ -78,5 +88,34 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "input[name='english_arcade_session[target]'][value='golang']:checked", visible: :all
     assert_text "Golang"
     assert_selector "input[name='english_arcade_session[target]'][value='golang']"
+  end
+
+  private
+
+  def fill_critical_ledger
+    {
+      "#english-arcade-problem-frame" => "The interviewer needs a bounded decision for the stated input and workload.",
+      "#english-arcade-evidence-verified" => "The authored prompt establishes the input boundary.",
+      "#english-arcade-evidence-inference" => "The invariant follows from that boundary.",
+      "#english-arcade-evidence-assumption" => "The workload remains within the stated operational limit.",
+      "#english-arcade-evidence-gap" => "Production scale still needs measurement.",
+      "#english-arcade-source-quality" => "The authored prompt is primary; runtime evidence is still pending.",
+      "#english-arcade-counterexample" => "An adversarial duplicate can invalidate the assumed bound.",
+      "#english-arcade-change-my-mind" => "A measured trace that breaks the bound would change my recommendation."
+    }.each { |selector, value| find(selector).set(value) }
+    find("#english-arcade-confidence-percent").set("70")
+    find("summary", text: /Real trade-off branch/).click
+    {
+      "#english-arcade-comparison-option-a" => "Keep the simple implementation.",
+      "#english-arcade-comparison-option-b" => "Use indexed state.",
+      "#english-arcade-comparison-tradeoff" => "Memory buys fewer scans.",
+      "#english-arcade-comparison-switch-condition" => "Switch when measured load crosses the bound."
+    }.each { |selector, value| find(selector).set(value) }
+    find("summary", text: /False-equivalence branch/).click
+    {
+      "#english-arcade-comparison-rejected-alternative" => "The alternative violates the same input contract.",
+      "#english-arcade-comparison-hard-constraint" => "The input contract is fixed.",
+      "#english-arcade-comparison-decision-rule" => "Clarify the contract before comparing."
+    }.each { |selector, value| find(selector).set(value) }
   end
 end

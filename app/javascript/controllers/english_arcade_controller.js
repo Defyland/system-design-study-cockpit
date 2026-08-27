@@ -5,8 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // client-side answer key.
 export default class extends Controller {
   static targets = [
-    "choice", "form", "submit", "responseMs", "typed", "spoken", "voiceButton",
-    "voiceStatus", "countdown", "feedback"
+    "choice", "form", "submit", "responseMs", "typed", "countdown", "feedback"
   ]
 
   static values = {
@@ -20,15 +19,12 @@ export default class extends Controller {
     this.startedAt = performance.now()
     this.handleKeydown = this.handleKeydown.bind(this)
     window.addEventListener("keydown", this.handleKeydown)
-    this.bindVoice()
     this.startCountdown()
-    this.playFeedbackTone()
   }
 
   disconnect() {
     window.removeEventListener("keydown", this.handleKeydown)
     if (this.timer) window.clearInterval(this.timer)
-    if (this.recognition) this.recognition.stop()
   }
 
   handleKeydown(event) {
@@ -81,52 +77,10 @@ export default class extends Controller {
       this.responseMsTarget.value = Math.max(1, Math.round(performance.now() - this.startedAt))
     }
     this.disableSubmits()
-    this.playTone(520, 0.06)
   }
 
   submitFeynman() {
     this.disableSubmits()
-    this.playTone(600, 0.06)
-  }
-
-  toggleVoice() {
-    if (!this.recognition) return
-
-    if (this.listening) {
-      this.recognition.stop()
-      return
-    }
-
-    this.listening = true
-    this.voiceStatusTarget.textContent = "Listening…"
-    this.voiceButtonTarget.setAttribute("aria-pressed", "true")
-    this.recognition.start()
-  }
-
-  bindVoice() {
-    if (!this.hasVoiceButtonTarget || !this.hasSpokenTarget) return
-
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!Recognition) return
-
-    this.recognition = new Recognition()
-    this.recognition.lang = "en-US"
-    this.recognition.interimResults = false
-    this.recognition.maxAlternatives = 1
-    this.voiceButtonTarget.hidden = false
-    this.recognition.addEventListener("result", (event) => {
-      const transcript = Array.from(event.results).map((result) => result[0].transcript).join(" ").trim()
-      this.spokenTarget.value = transcript
-      this.voiceStatusTarget.textContent = transcript ? "Voice captured." : "No speech captured."
-    })
-    this.recognition.addEventListener("end", () => {
-      this.listening = false
-      this.voiceButtonTarget.setAttribute("aria-pressed", "false")
-    })
-    this.recognition.addEventListener("error", () => {
-      this.listening = false
-      this.voiceStatusTarget.textContent = "Voice capture unavailable; typed capture is still available."
-    })
   }
 
   startCountdown() {
@@ -183,31 +137,4 @@ export default class extends Controller {
     }
   }
 
-  playFeedbackTone() {
-    if (!this.hasFeedbackTarget) return
-    this.playTone(this.feedbackTarget.classList.contains("wrong") ? 180 : 720, 0.08)
-  }
-
-  playTone(frequency, duration) {
-    // Mirrors the source Arcade's lightweight interaction cue without shipping
-    // its standalone bundle or an audio asset. Browsers may require a gesture.
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
-    if (!AudioContextClass) return
-
-    try {
-      const context = new AudioContextClass()
-      const oscillator = context.createOscillator()
-      const gain = context.createGain()
-      oscillator.frequency.value = frequency
-      oscillator.type = "sine"
-      gain.gain.setValueAtTime(0.035, context.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration)
-      oscillator.connect(gain).connect(context.destination)
-      oscillator.start()
-      oscillator.stop(context.currentTime + duration)
-      oscillator.addEventListener("ended", () => context.close())
-    } catch (_) {
-      // Audio is progressive enhancement; never block an answer.
-    }
-  }
 }

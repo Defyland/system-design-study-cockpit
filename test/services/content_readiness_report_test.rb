@@ -24,6 +24,13 @@ class ContentReadinessReportTest < ActiveSupport::TestCase
     assert_equal :ok, report.http_status
     assert_equal "succeeded", report.as_json.fetch(:latest_sync_status)
     assert_equal sync_run.finished_at, report.as_json.fetch(:last_successful_sync_at)
+    readiness = report.as_json.fetch(:english_arcade_pack_readiness)
+    assert readiness.fetch("ready")
+    assert_equal EnglishArcade::Schema::TARGETS.length, readiness.fetch("target_count")
+    assert_equal 176, readiness.fetch("item_count")
+    assert_equal 42, readiness.fetch("card_count")
+    assert_equal 13, readiness.fetch("canonical_target_count")
+    assert_equal 164, readiness.fetch("canonical_item_count")
   end
 
   test "is warning in production when content exists but sync has not yet been observed" do
@@ -63,7 +70,27 @@ class ContentReadinessReportTest < ActiveSupport::TestCase
     assert_predicate report, :available?
     assert_predicate report, :warning?
     assert_equal "failed", report.as_json.fetch(:latest_sync_status)
-    assert_equal "RuntimeError: boom", report.as_json.fetch(:latest_sync_error)
+    assert_equal "sync_failed", report.as_json.fetch(:latest_sync_error)
+  end
+
+  test "redacts sync locations and error prose from readiness JSON" do
+    create_bootstrapped_content!
+    ContentSyncRun.create!(
+      source_mode: "filesystem",
+      source_location: "/Users/private/system-design-estudos",
+      status: "failed",
+      started_at: 2.minutes.ago,
+      finished_at: 1.minute.ago,
+      error_message: "private answer, /Users/private/secrets.yml, sha deadbeef"
+    )
+
+    payload = ContentReadinessReport.new.as_json
+
+    assert_equal "configured", payload.fetch(:latest_sync_location)
+    assert_equal "sync_failed", payload.fetch(:latest_sync_error)
+    refute_includes JSON.generate(payload), "/Users/private/system-design-estudos"
+    refute_includes JSON.generate(payload), "private answer"
+    refute_includes JSON.generate(payload), "deadbeef"
   end
 
   test "is degraded when the featured side track is missing" do

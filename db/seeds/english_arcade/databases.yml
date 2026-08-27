@@ -1,0 +1,2548 @@
+---
+contract_version: 1.4.0
+target:
+  key: databases
+  label: Databases
+  blurb: Interview practice for data integrity, query behaviour, and operational recovery.
+  focus_areas:
+  - modeling and constraints
+  - query plans and indexes
+  - transactions and locks
+  - replication and recovery
+  simulation:
+    minutes: 45
+    structure:
+    - label: scope
+      minutes: 5
+    - label: workload
+      minutes: 10
+    - label: decision
+      minutes: 15
+    - label: failure
+      minutes: 10
+    - label: compression
+      minutes: 5
+  critical_thinking:
+    learner_prompts:
+      evidence_ledger: For database design, record whether each claim about schema
+        constraints, query plans, isolation, replication, and migration safety is
+        a verified fact, an inference, an assumption, or an unknown before you defend
+        it.
+      problem_frame: Frame every database design answer with the actor, requirement,
+        constraint, success condition, and unanswered question that could change the
+        decision.
+      comparison: When database design offers a real choice, compare two options by
+        benefit, cost or risk, valid-when condition, and an explicit decision rule.
+      failure_probe: Ask which counterexample, edge case, or failure mode could break
+        the database design recommendation, then state the smallest test or containment
+        step.
+      certainty_review: 'Calibrate certainty in database design: name the evidence,
+        separate correlation from causality, and say what new observation would make
+        you revise the answer.'
+    rubric:
+      facts_correct: Names the verified schema constraints, query plans, isolation,
+        replication, and migration safety facts without smuggling in a result or capability
+        that the prompt does not establish.
+      assumptions_explicit: Labels the database design premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Considers a credible alternative for database design,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the database design choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to an adversarial database design follow-up by
+        changing the claim or evidence boundary rather than repeating a memorised
+        answer.
+      certainty_calibration: Uses high, medium, or low certainty deliberately and
+        names the evidence that would update the database design recommendation.
+cards:
+- id: databases-card-invariant
+  front: What starts a credible database answer?
+  back: State the invariant and access path before naming an index, store, or topology.
+  box: 1
+  source:
+    repo: system-design-estudos
+    path: areas/12-engineering-practice/cards/data-contracts-and-schema-evolution.md
+    note: Data-contract discipline.
+  critical_thinking:
+    cue: What starts a credible database answer? Before answering, separate the stated
+      fact from your assumption and name one condition that could change it.
+    check: For this database design card, can you compare two options, name one failure
+      mode, and state what evidence would update the recommendation?
+- id: databases-card-plan
+  front: What makes an EXPLAIN answer useful?
+  back: Compare estimated and actual rows, isolate one costly node, and test one bounded
+    hypothesis.
+  box: 1
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: PostgreSQL operational reasoning.
+  critical_thinking:
+    cue: What makes an EXPLAIN answer useful? Before answering, separate the stated
+      fact from your assumption and name one condition that could change it.
+    check: For this database design card, can you compare two options, name one failure
+      mode, and state what evidence would update the recommendation?
+- id: databases-card-recovery
+  front: What proves recovery?
+  back: A measured restore drill against stated RPO and RTO, not merely a successful
+    backup upload.
+  box: 2
+  source:
+    repo: system-design-estudos
+    path: areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
+    note: Operational evidence.
+  critical_thinking:
+    cue: What proves recovery? Before answering, separate the stated fact from your
+      assumption and name one condition that could change it.
+    check: For this database design card, can you compare two options, name one failure
+      mode, and state what evidence would update the recommendation?
+items:
+- id: databases-01-modeling-constraints
+  version: 1.4.0
+  target: databases
+  topic: modeling constraints
+  difficulty: 1
+  interview_stage: deep_dive
+  prompt: A customer can redeem a promotion only once. Where would you enforce that
+    rule?
+  context: Checkout is being retried by browsers and a background worker. The interviewer
+    is testing whether you distinguish a friendly validation message from the final
+    integrity boundary.
+  best_answer: I would put a unique constraint on the redemption identity in the database,
+    because concurrent application checks can both pass. The service can pre-check
+    to give a useful message, but it must handle the constraint violation idempotently
+    and measure rejected duplicates.
+  distractors:
+  - text: I would check for an existing redemption before creating the charge, then
+      return it if one is present. Authentication identifies the customer, so the
+      application-level check should prevent the duplicate.
+    trap: content
+    why_wrong: It ignores the modeling constraints constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would mark the promotion as used on the customer record after payment
+      succeeds. That keeps the model small and avoids a separate redemption record
+      for every promotion.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Say ‘I would enforce this in the database’ before describing service
+      behaviour.
+    hedging: Qualify only the user-facing pre-check; the integrity boundary is not
+      optional.
+    precision: Name the unique redemption identity instead of vaguely saying ‘prevent
+      duplicates.’
+    grammar: Use ‘because’ to link the concurrent race to its consequence.
+    pragmatics: Acknowledge the friendly validation path before returning to the authoritative
+      rule.
+  rephrase:
+    prompt: Rephrase this modeling constraints decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: How would you define the unique redemption key if a promotion can be redeemed
+      once per household rather than once per account?
+    goal: Answer the new_evidence challenge about modeling constraints while keeping
+      the evidence boundary explicit.
+    challenge_kind: new_evidence
+    best_answer: >-
+      I would put a unique constraint on the redemption identity in the database, because
+      concurrent application checks can both pass. I would keep the claims that remain supported,
+      identify exactly which premise the new observation changes, and run a focused check before
+      revising the decision.
+    distractors:
+    - text: I would keep the modeling constraints recommendation unchanged because
+        changing position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier modeling constraints claim as soon as one
+        new observation appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: In two sentences, preserve the unique constraint, idempotent violation
+      path, and duplicate-rejection metric.
+    goal: Compress the modeling constraints answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why a database constraint settles a race that a preliminary application
+      check cannot.
+    explain_to: a new engineer implementing redemption retries
+    constraint: Use two simultaneous checkouts and distinguish a courtesy message
+      from the final gate.
+    self_check: Could they explain why one failed insert is a normal idempotent outcome?
+    reasoning_check: Can you identify the hidden premise behind modeling constraints,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: Two retrying checkout paths occasionally issue a promotion twice.
+    expected: Exactly one persisted redemption for each promotion and customer identity.
+    actual: Both requests pass the read-before-write check before either writes.
+    root_cause: The invariant exists only in application code, outside the concurrent
+      write boundary.
+    repair: Add the unique key, map its violation to the existing redemption, and
+      count collisions.
+    reasoning_error: If your modeling constraints answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For modeling constraints, what must remain true, what is the
+      trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind modeling constraints without
+      presenting an assumption as a fact?
+    black_box_probe: When the modeling constraints answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-01-modeling-constraints-delayed-1
+      prompt: 'Modeling constraints: the later modeling constraints review says a
+        measured modeling constraints comparison shows the alternative has a different
+        modeling constraints cost profile. Under the modeling constraints workload
+        for modeling constraints no longer fits the original resource bound, which
+        part of modeling constraints survives and which modeling constraints claim
+        changes?'
+      changed_constraint: the modeling constraints workload for modeling constraints
+        no longer fits the original resource bound
+      new_evidence: a measured modeling constraints comparison shows the alternative
+        has a different modeling constraints cost profile
+      best_answer: I would keep the facts that remain supported about modeling constraints,
+        treat a measured modeling constraints comparison shows the alternative has
+        a different modeling constraints cost profile as new evidence rather than
+        a result, and state the updated decision rule under the modeling constraints
+        workload for modeling constraints no longer fits the original resource bound.
+        I would then name one focused check before treating the revised answer as
+        settled.
+      distractors:
+      - text: I would preserve every part of the original modeling constraints answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire modeling constraints explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/12-engineering-practice/cards/data-contracts-and-schema-evolution.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/modeling-constraints
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Modeling constraints: inspect modeling constraints evidence next; which
+      edge case for modeling constraints would alter the trade-off?'
+    goal: Move from the short modeling constraints answer to a deep, evidence-led
+      defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame modeling constraints before proposing a solution: state
+      the actor, required outcome, constraint, and unknown that could invalidate the
+      first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests modeling constraints within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend modeling
+        constraints, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the modeling constraints constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for modeling constraints: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about modeling constraints
+        would be a false equivalence because the prompt does not establish that both
+        choices satisfy the same contract.
+      hard_constraint: The hard modeling constraints constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for modeling constraints; first
+        clarify the constraint or collect the evidence that would make two options
+        genuinely comparable.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Modeling constraints: what minimum input for modeling constraints would
+        break the modeling constraints recommendation, and how would you revise the
+        modeling constraints claim?'
+    evidence_check:
+      basis: Check the modeling constraints claim against system-design-estudos/areas/12-engineering-practice/cards/data-contracts-and-schema-evolution.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about modeling
+        constraints, but it cannot prove an unmeasured production outcome, personal
+        ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the modeling constraints
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "A customer can redeem a promotion only", update modeling
+        constraints when modeling constraints evidence—a modeling constraints trace
+        or modeling constraints test—contradicts the modeling constraints constraint
+        in case "A customer can redeem a promotion only"; ask a stakeholder about
+        modeling constraints before revising.
+    rubric:
+      facts_correct: Names the verified modeling constraints facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the modeling constraints premise that is still
+        assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible modeling constraints options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the modeling constraints choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about modeling
+        constraints by changing the claim or evidence boundary rather than repeating
+        the base answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the modeling constraints recommendation.
+- id: databases-02-indexes-workload
+  version: 1.4.0
+  target: databases
+  topic: indexes workload
+  difficulty: 2
+  interview_stage: deep_dive
+  prompt: An orders screen filters by account and status, then sorts by newest first.
+    How would you choose the index?
+  context: The table has tens of millions of rows and writes are steady. You may ask
+    one question before recommending a change.
+  best_answer: I would confirm the actual predicates, ordering, and selectivity, then
+    test a composite index aligned with account, status, and created-at. I would compare
+    the plan and write overhead before keeping it, because a broad index can make
+    the screen faster while slowing ingestion.
+  distractors:
+  - text: I would add separate indexes on account_id, status, and created_at. The
+      planner can combine them, and each will also help a future screen using just
+      one filter, so the write overhead should remain manageable.
+    trap: precision
+    why_wrong: It ignores the indexes workload constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would index created_at descending because users care about newest orders.
+      Once sorting is cheap, the account and status filters should be cheap enough
+      too.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Present an evidence-led index recommendation, not a promise that an
+      index will help.
+    hedging: Use ‘if the common predicate is…’ before committing to column order.
+    precision: Separate equality filters, ordering, selectivity, and write cost.
+    grammar: Keep the proposed column sequence in one clear noun phrase.
+    pragmatics: Spend the permitted question on the most selective real workload detail.
+  rephrase:
+    prompt: Rephrase this indexes workload decision for an engineering manager who
+      needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: If one large account has millions of open orders, how would you validate
+      that the proposed column order still works?
+    goal: Answer the assumption challenge about indexes workload while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
+    best_answer: >-
+      I would confirm the actual predicates, ordering, and selectivity, then test a composite index
+      aligned with account, status, and created-at. I would label the follow-up premise as an
+      assumption, ask the smallest question that could disprove it, and protect the edge case
+      before committing to the recommendation.
+    distractors:
+    - text: I would repeat my original indexes workload answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about indexes workload until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Preserve the predicate-and-sort shape, composite-index hypothesis, plan
+      comparison, and ingestion trade-off in two sentences.
+    goal: Compress the indexes workload answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: How a composite index follows an orders screen’s access path.
+    explain_to: a colleague reviewing a migration
+    constraint: Contrast the read benefit with the extra work on each insert or update.
+    self_check: Can they say what plan evidence would make them remove the index?
+    reasoning_check: Can you identify the hidden premise behind indexes workload,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: The inbox query scans and sorts a large account’s orders at peak time.
+    expected: A plan that narrows by the real filters and emits rows in the requested
+      order.
+    actual: Three independent indexes leave a costly bitmap merge and final sort.
+    root_cause: The index design followed column names instead of the combined query
+      shape.
+    repair: Capture production predicates, test the composite candidate, and compare
+      read latency with write amplification.
+    reasoning_error: If your indexes workload answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For indexes workload, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind indexes workload without
+      presenting an assumption as a fact?
+    black_box_probe: When the indexes workload answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: databases-02-indexes-workload-delayed-2
+      prompt: 'Review note for indexes workload: a indexes workload test exposes a
+        boundary case that the indexes workload examples did not cover. Given a stakeholder
+        asks for a stronger indexes workload guarantee than the first indexes workload
+        answer promised, what would you now defend, retract, and verify about indexes
+        workload?'
+      changed_constraint: a stakeholder asks for a stronger indexes workload guarantee
+        than the first indexes workload answer promised
+      new_evidence: a indexes workload test exposes a boundary case that the indexes
+        workload examples did not cover
+      best_answer: I would keep the facts that remain supported about indexes workload,
+        treat a indexes workload test exposes a boundary case that the indexes workload
+        examples did not cover as new evidence rather than a result, and state the
+        updated decision rule under a stakeholder asks for a stronger indexes workload
+        guarantee than the first indexes workload answer promised. I would then name
+        one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original indexes workload answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire indexes workload explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/indexes-workload
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Deep dive on indexes workload: compare indexes workload options with
+      one measurement; which failure around indexes workload would make indexes workload
+      switch?'
+    goal: Move from the short indexes workload answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame indexes workload before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests indexes workload within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend indexes workload,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the indexes workload constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for indexes workload: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for indexes workload
+        benefit: It keeps the indexes workload reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the indexes workload workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated indexes workload contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for indexes
+          workload
+        benefit: It can make the indexes workload boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the indexes workload evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first indexes workload option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Indexes workload: what indexes workload limit should you probe before
+        trusting the answer, and how would indexes workload behave there?'
+    evidence_check:
+      basis: Check the indexes workload claim against system-design-estudos/areas/09-backend-principles/cards/postgres-databases.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about indexes workload,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the indexes workload
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "An orders screen filters by account and", update indexes
+        workload when indexes workload evidence—a indexes workload trace or indexes
+        workload test—contradicts the indexes workload constraint in case "An orders
+        screen filters by account and"; ask a stakeholder about indexes workload before
+        revising.
+    rubric:
+      facts_correct: Names the verified indexes workload facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the indexes workload premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible indexes workload options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the indexes workload choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about indexes workload
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the indexes workload recommendation.
+- id: databases-03-explain-query-plans
+  version: 1.4.0
+  target: databases
+  topic: explain query plans
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Walk me through how you would investigate a query that became slow after
+    a launch.
+  context: The dashboard shows p95 latency rising only for one tenant. The interviewer
+    wants a hypothesis-led investigation, not a list of SQL keywords.
+  best_answer: I would compare estimated and actual rows at each expensive node, then
+    check whether tenant skew or stale statistics explain the mismatch. I would test
+    one change on a representative plan and watch buffers and p95 before changing
+    production.
+  distractors:
+  - text: I would read the total estimated cost, find the largest table, and add an
+      index there. A high cost is direct evidence that the planner found the slowest
+      part.
+    trap: content
+    why_wrong: It ignores the explain query plans constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would remove every sequential scan. On a large tenant table, a scan means
+      the database is ignoring an index that should be used.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Narrate the investigation as observation, hypothesis, then bounded experiment.
+    hedging: Say ‘may indicate’ for a row-estimate mismatch until tenant distribution
+      is checked.
+    precision: Refer to estimated versus actual rows and buffers, not merely a ‘bad
+      plan.’
+    grammar: Use parallel verbs—compare, check, test—to make the procedure easy to
+      follow.
+    pragmatics: Explain why the one affected tenant is diagnostically useful.
+  rephrase:
+    prompt: Rephrase this explain query plans decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: The estimates are accurate, but execution is reading cold pages. What
+      hypothesis would you test before changing the SQL?
+    goal: Answer the evidence challenge about explain query plans while keeping the
+      evidence boundary explicit.
+    challenge_kind: evidence
+    best_answer: >-
+      I would compare estimated and actual rows at each expensive node, then check whether
+      tenant skew or stale statistics explain the mismatch. I would treat the follow-up observation
+      as evidence, not as proof of impact; I would inspect the smallest relevant trace
+      or test and state what remains uncertain before changing the decision.
+    distractors:
+    - text: I would cite my experience with explain query plans as enough proof and
+        move on without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about explain query plans before
+        making even a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Preserve the estimate-versus-actual comparison, tenant-skew hypothesis,
+      one experiment, and the buffer/p95 evidence.
+    goal: Compress the explain query plans answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why row-count errors can send a query planner toward the wrong join or
+      scan.
+    explain_to: an on-call engineer seeing a tenant-specific slowdown
+    constraint: Use one expensive node and explain what its estimated and actual rows
+      reveal.
+    self_check: Can they separate a measurement from a proposed fix?
+    reasoning_check: Can you identify the hidden premise behind explain query plans,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: One tenant’s dashboard p95 rose after launch while other tenants remain
+      normal.
+    expected: A reproducible diagnosis tied to a row estimate, I/O pattern, or tenant
+      skew.
+    actual: The team adds an index after reading only the plan’s total cost.
+    root_cause: A planner estimate was treated as a ranking of bugs, not compared
+      with execution evidence.
+    repair: Run the representative plan with actuals, isolate the mismatch, and validate
+      one reversible change.
+    reasoning_error: If your explain query plans answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For explain query plans, what must remain true, what is the
+      trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind explain query plans without
+      presenting an assumption as a fact?
+    black_box_probe: When the explain query plans answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-03-explain-query-plans-delayed-3
+      prompt: New evidence about explain query plans says a stakeholder clarifies
+        a explain query plans requirement that changes the explain query plans success
+        condition; with the explain query plans dependency is slower for explain query
+        plans and the failure is ambiguous rather than explicit, how do you update
+        the explain query plans decision rule?
+      changed_constraint: the explain query plans dependency is slower for explain
+        query plans and the failure is ambiguous rather than explicit
+      new_evidence: a stakeholder clarifies a explain query plans requirement that
+        changes the explain query plans success condition
+      best_answer: I would keep the facts that remain supported about explain query
+        plans, treat a stakeholder clarifies a explain query plans requirement that
+        changes the explain query plans success condition as new evidence rather than
+        a result, and state the updated decision rule under the explain query plans
+        dependency is slower for explain query plans and the failure is ambiguous
+        rather than explicit. I would then name one focused check before treating
+        the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original explain query plans answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire explain query plans explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/explain-query-plans
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Defend explain query plans after a counterexample: which explain query
+      plans assumption changes, and what evidence keeps the revised explain query
+      plans choice honest?'
+    goal: Move from the short explain query plans answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame explain query plans before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests explain query plans within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend explain query
+        plans, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the explain query plans constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for explain query plans: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for explain query
+          plans
+        benefit: It keeps the explain query plans reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the explain query plans workload or
+          requirement changes beyond the prompt.
+        valid_when: Use it when the stated explain query plans contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for explain
+          query plans
+        benefit: It can make the explain query plans boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the explain query plans evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first explain query plans option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Explain query plans: if a caller retries explain query plans at the
+        worst moment, what failure mode appears first, and how would you protect explain
+        query plans?'
+    evidence_check:
+      basis: Check the explain query plans claim against system-design-estudos/areas/09-backend-principles/cards/postgres-databases.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about explain query
+        plans, but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the explain query plans
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Walk me through how you would investigate", update
+        explain query plans when explain query plans evidence—a explain query plans
+        trace or explain query plans test—contradicts the explain query plans constraint
+        in case "Walk me through how you would investigate"; ask a stakeholder about
+        explain query plans before revising.
+    rubric:
+      facts_correct: Names the verified explain query plans facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the explain query plans premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible explain query plans options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the explain query plans choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about explain query
+        plans by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the explain query plans recommendation.
+- id: databases-04-isolation-retries
+  version: 1.4.0
+  target: databases
+  topic: isolation retries
+  difficulty: 1
+  interview_stage: deep_dive
+  prompt: Two users can reserve the last seat at nearly the same time. What transaction
+    policy would you describe?
+  context: The product needs one confirmed reservation, but it can tolerate a short
+    retry. Explain the anomaly you are preventing.
+  best_answer: I would make the availability update conditional or protect it with
+    an appropriate transaction boundary, then retry serialization or contention failures
+    with an idempotency key. The choice depends on whether overselling or waiting
+    is the worse customer outcome.
+  distractors:
+  - text: I would read the seat count and create both reservations if each request
+      saw one available seat, then reconcile the extra booking later. The customer
+      should not wait for a conflict.
+    trap: precision
+    why_wrong: It ignores the isolation retries constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would use serializable transactions for every booking and retry every
+      error forever. The database can decide the winner without an idempotency design.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: State the reservation guarantee before naming the transaction technique.
+    hedging: Tie the choice to whether overselling or brief waiting harms customers
+      more.
+    precision: Name the lost-update or double-booking anomaly explicitly.
+    grammar: Use conditional clauses to separate the guarantee from the retry policy.
+    pragmatics: Explain what the customer sees when a bounded retry cannot succeed.
+  rephrase:
+    prompt: Rephrase this isolation retries decision for an engineering manager who
+      needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: If the venue permits a short hold before payment, would you use a conditional
+      update, a lock, or a serializable retry, and why?
+    goal: Answer the alternative challenge about isolation retries while keeping the
+      evidence boundary explicit.
+    challenge_kind: alternative
+    best_answer: >-
+      I would make the availability update conditional or protect it with an appropriate transaction
+      boundary, then retry serialization or contention failures with an idempotency key. I would compare
+      that choice with the credible alternative against the requirement in the follow-up, cost, and
+      failure risk, then switch only if evidence makes the alternative safer.
+    distractors:
+    - text: I would defend the first isolation retries option because offering an
+        alternative might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable isolation retries design without saying
+        which requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Preserve the one-seat guarantee, contention retry, idempotency key, and
+      oversell-versus-waiting trade-off in two sentences.
+    goal: Compress the isolation retries answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: How two people can both see the last seat unless one write boundary chooses
+      a winner.
+    explain_to: a teammate building the booking endpoint
+    constraint: Describe the conflicting reservations and the safe retry path.
+    self_check: Can they name the anomaly before proposing isolation?
+    reasoning_check: Can you identify the hidden premise behind isolation retries,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: Two confirmations are issued for the last available seat.
+    expected: One confirmation, with a short retry or clear sold-out outcome for the
+      loser.
+    actual: Both requests make their decision from the same stale availability read.
+    root_cause: The availability invariant was not enforced at the competing write.
+    repair: Use a conditional update or suitable transaction, make retries idempotent,
+      and observe contention.
+    reasoning_error: If your isolation retries answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For isolation retries, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind isolation retries without
+      presenting an assumption as a fact?
+    black_box_probe: When the isolation retries answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-04-isolation-retries-delayed-4
+      prompt: 'Isolation retries gets a new constraint: new isolation retries evidence
+        contradicts the isolation retries assumption that made the first option attractive.
+        After a trace of isolation retries isolates a different isolation retries
+        bottleneck than the one you named, which isolation retries assumption is no
+        longer safe?'
+      changed_constraint: new isolation retries evidence contradicts the isolation
+        retries assumption that made the first option attractive
+      new_evidence: a trace of isolation retries isolates a different isolation retries
+        bottleneck than the one you named
+      best_answer: I would keep the facts that remain supported about isolation retries,
+        treat a trace of isolation retries isolates a different isolation retries
+        bottleneck than the one you named as new evidence rather than a result, and
+        state the updated decision rule under new isolation retries evidence contradicts
+        the isolation retries assumption that made the first option attractive. I
+        would then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original isolation retries answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire isolation retries explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/06-foundations-distribuidas/topics/consistency-models.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/isolation-retries
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Five more minutes on isolation retries: which boundary, alternative,
+      and update trigger would you explain for isolation retries?'
+    goal: Move from the short isolation retries answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame isolation retries before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests isolation retries within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend isolation
+        retries, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the isolation retries constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for isolation retries: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for isolation retries
+        benefit: It keeps the isolation retries reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the isolation retries workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated isolation retries contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for isolation
+          retries
+        benefit: It can make the isolation retries boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the isolation retries evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first isolation retries option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Isolation retries: where would a tiny isolation retries counterexample
+        expose a false assumption, and what would you change about isolation retries?'
+    evidence_check:
+      basis: Check the isolation retries claim against system-design-estudos/areas/06-foundations-distribuidas/topics/consistency-models.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about isolation
+        retries, but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the isolation retries
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Two users can reserve the last seat", update isolation
+        retries when isolation retries evidence—a isolation retries trace or isolation
+        retries test—contradicts the isolation retries constraint in case "Two users
+        can reserve the last seat"; ask a stakeholder about isolation retries before
+        revising.
+    rubric:
+      facts_correct: Names the verified isolation retries facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the isolation retries premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible isolation retries options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the isolation retries choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about isolation
+        retries by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the isolation retries recommendation.
+- id: databases-05-locks-deadlocks
+  version: 1.4.0
+  target: databases
+  topic: locks deadlocks
+  difficulty: 2
+  interview_stage: deep_dive
+  prompt: A payment job occasionally deadlocks while updating an order and an inventory
+    row. How would you respond?
+  context: It is rare but customer-visible. The interviewer wants both prevention
+    and safe recovery.
+  best_answer: I would inspect the lock graph, make the two code paths acquire resources
+    in the same order, and keep the transaction narrow. I would still treat a deadlock
+    as retryable with bounded backoff, then alert on a change in rate.
+  distractors:
+  - text: I would remove the transaction from the payment job because deadlocks show
+      that transactions are unsafe. Each update can commit on its own.
+    trap: content
+    why_wrong: It ignores the locks deadlocks constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would retry the job immediately in a tight loop until it succeeds. Because
+      deadlocks are random, changing lock order would add complexity without much
+      benefit.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Treat a deadlock as an operational event with a prevention and recovery
+      story.
+    hedging: Use ‘typically retryable’ rather than implying every transaction failure
+      is safe to replay.
+    precision: Mention lock order, transaction scope, bounded backoff, and rate separately.
+    grammar: 'Prefer active verbs: inspect, align, narrow, retry, alert.'
+    pragmatics: Make clear why customer visibility changes the alerting threshold.
+  rephrase:
+    prompt: Rephrase this locks deadlocks decision for an engineering manager who
+      needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: The lock graph shows a third resource added by one path. How would you
+      choose and enforce a single acquisition order?
+    goal: Answer the failure challenge about locks deadlocks while keeping the evidence
+      boundary explicit.
+    challenge_kind: failure
+    best_answer: >-
+      I would inspect the lock graph, make the two code paths acquire resources in
+      the same order, and keep the transaction narrow. If the failure in the follow-up
+      appears, I would name the user or system consequence, contain it with a bounded
+      mitigation, and verify recovery with a focused test or metric.
+    distractors:
+    - text: I would describe the locks deadlocks failure as impossible because the
+        happy path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to locks deadlocks immediately and assume the system
+        would become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: Preserve lock-graph inspection, shared order, narrow transaction, bounded
+      retry, and deadlock-rate alert in two sentences.
+    goal: Compress the locks deadlocks answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why two valid transactions can stop each other when they acquire resources
+      in opposite order.
+    explain_to: the engineer who owns the payment worker
+    constraint: Use the order and inventory rows as the two resources.
+    self_check: Can they explain why retry complements, but does not replace, prevention?
+    reasoning_check: Can you identify the hidden premise behind locks deadlocks, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: A customer-visible payment job aborts when two workers update order and
+      inventory in opposite order.
+    expected: Short transactions take shared resources consistently and recover one
+      aborted attempt safely.
+    actual: A tight retry loop amplifies contention and the deadlock rate rises.
+    root_cause: The two code paths have no common lock-order contract.
+    repair: Align acquisition order, reduce transaction work, add bounded backoff,
+      and alert on rate changes.
+    reasoning_error: If your locks deadlocks answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For locks deadlocks, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind locks deadlocks without presenting
+      an assumption as a fact?
+    black_box_probe: When the locks deadlocks answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: databases-05-locks-deadlocks-delayed-5
+      prompt: 'Revisit locks deadlocks after a code inspection of locks deadlocks
+        confirms the locks deadlocks mechanism but not its impact and two locks deadlocks
+        callers from the case "A payment job occasionally deadlocks while updating"
+        or locks deadlocks tenants now compete for the same locks deadlocks boundary:
+        what remains factual about locks deadlocks, what becomes provisional, and
+        why?'
+      changed_constraint: two locks deadlocks callers from the case "A payment job
+        occasionally deadlocks while updating" or locks deadlocks tenants now compete
+        for the same locks deadlocks boundary
+      new_evidence: a code inspection of locks deadlocks confirms the locks deadlocks
+        mechanism but not its impact
+      best_answer: I would keep the facts that remain supported about locks deadlocks,
+        treat a code inspection of locks deadlocks confirms the locks deadlocks mechanism
+        but not its impact as new evidence rather than a result, and state the updated
+        decision rule under two locks deadlocks callers from the case "A payment job
+        occasionally deadlocks while updating" or locks deadlocks tenants now compete
+        for the same locks deadlocks boundary. I would then name one focused check
+        before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original locks deadlocks answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire locks deadlocks explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/06-foundations-distribuidas/topics/deadlocks.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/locks-deadlocks
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Revisit locks deadlocks beyond the happy path: what is factual about
+      locks deadlocks, what is provisional, and which locks deadlocks test could change
+      it?'
+    goal: Move from the short locks deadlocks answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame locks deadlocks before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests locks deadlocks within a database design context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend locks deadlocks,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the locks deadlocks constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for locks deadlocks: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for locks deadlocks
+        benefit: It keeps the locks deadlocks reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the locks deadlocks workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated locks deadlocks contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for locks deadlocks
+        benefit: It can make the locks deadlocks boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the locks deadlocks evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first locks deadlocks option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Locks deadlocks: which locks deadlocks boundary deserves the first
+        test, and what observation about locks deadlocks would overturn the premise?'
+    evidence_check:
+      basis: Check the locks deadlocks claim against system-design-estudos/areas/06-foundations-distribuidas/topics/deadlocks.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about locks deadlocks,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the locks deadlocks question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "A payment job occasionally deadlocks while updating",
+        update locks deadlocks when locks deadlocks evidence—a locks deadlocks trace
+        or locks deadlocks test—contradicts the locks deadlocks constraint in case
+        "A payment job occasionally deadlocks while updating"; ask a stakeholder about
+        locks deadlocks before revising.
+    rubric:
+      facts_correct: Names the verified locks deadlocks facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the locks deadlocks premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible locks deadlocks options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the locks deadlocks choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about locks deadlocks
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the locks deadlocks recommendation.
+- id: databases-06-replication-lag
+  version: 1.4.0
+  target: databases
+  topic: replication lag
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Product wants reads from replicas after a profile update. What caveat would
+    you raise?
+  context: A user expects to see their saved address immediately, while most profile
+    views may tolerate seconds of staleness.
+  best_answer: I would route read-your-write paths to the primary or use a version-aware
+    consistency token, while ordinary reads can use replicas. I would publish replica
+    lag and fail over only when the freshness contract is no longer met.
+  distractors:
+  - text: I would send every profile read to replicas because replication makes them
+      identical to the primary for normal user traffic.
+    trap: precision
+    why_wrong: It ignores the replication lag constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would synchronously wait for every replica after each profile write, then
+      keep the normal replica routing. One universal consistency rule is easier to
+      reason about.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Describe freshness as a user contract, not an internal replica preference.
+    hedging: Limit the stronger route to read-your-write paths rather than all profile
+      traffic.
+    precision: Name the lag signal and the route that carries the consistency token.
+    grammar: Use ‘while’ to contrast immediate reads with staleness-tolerant reads.
+    pragmatics: Connect the routing choice to the user who has just saved an address.
+  rephrase:
+    prompt: Rephrase this replication lag decision for an engineering manager who
+      needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: How would you keep a newly saved address visible after a failover when
+      the chosen replica is behind the former primary?
+    goal: Answer the new_evidence challenge about replication lag while keeping the
+      evidence boundary explicit.
+    challenge_kind: new_evidence
+    best_answer: >-
+      I would route read-your-write paths to the primary or use a version-aware consistency token,
+      while ordinary reads can use replicas. I would keep the claims that remain supported,
+      identify exactly which premise the new observation changes, and run a focused check before
+      revising the decision.
+    distractors:
+    - text: I would keep the replication lag recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier replication lag claim as soon as one new
+        observation appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Preserve read-your-write routing, ordinary replica reads, the freshness
+      contract, and the replica-lag signal in two sentences.
+    goal: Compress the replication lag answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why a successful write can be absent from a replica for a short interval.
+    explain_to: a product engineer implementing the profile save flow
+    constraint: Contrast the immediate confirmation view with an ordinary later profile
+      view.
+    self_check: Can they say which path needs stronger freshness and why?
+    reasoning_check: Can you identify the hidden premise behind replication lag, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: After saving an address, a customer refreshes and sees the previous value.
+    expected: The confirmation path reads a version that includes the customer’s write.
+    actual: The load balancer sends the refresh to a lagging replica.
+    root_cause: Replica routing ignores the read-your-write freshness requirement.
+    repair: Route that path to primary or a valid replica token, publish lag, and
+      enforce the freshness threshold.
+    reasoning_error: If your replication lag answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For replication lag, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind replication lag without presenting
+      an assumption as a fact?
+    black_box_probe: When the replication lag answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: databases-06-replication-lag-delayed-6
+      prompt: The replication lag review adds a measured replication lag comparison
+        shows the alternative has a different replication lag cost profile while the
+        replication lag workload for replication lag no longer fits the original resource
+        bound; which conclusion about replication lag would you narrow before proposing
+        a repair?
+      changed_constraint: the replication lag workload for replication lag no longer
+        fits the original resource bound
+      new_evidence: a measured replication lag comparison shows the alternative has
+        a different replication lag cost profile
+      best_answer: I would keep the facts that remain supported about replication
+        lag, treat a measured replication lag comparison shows the alternative has
+        a different replication lag cost profile as new evidence rather than a result,
+        and state the updated decision rule under the replication lag workload for
+        replication lag no longer fits the original resource bound. I would then name
+        one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original replication lag answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire replication lag explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: decision-contrasts/01-read-replica-vs-cache-aside.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/replication-lag
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: Use a deep dive on replication lag to name the competing replication lag
+      cost, the first failure signal, and the observation that would update replication
+      lag.
+    goal: Move from the short replication lag answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame replication lag before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests replication lag within a database design context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend replication
+        lag, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the replication lag constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for replication lag: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about replication lag would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard replication lag constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for replication lag; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Replication lag: when the first replication lag recovery path fails,
+        which consequence reaches the user, and what bounded mitigation follows for
+        replication lag?'
+    evidence_check:
+      basis: Check the replication lag claim against system-design-estudos/decision-contrasts/01-read-replica-vs-cache-aside.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about replication
+        lag, but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the replication lag
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Product wants reads from replicas after a", update
+        replication lag when replication lag evidence—a replication lag trace or replication
+        lag test—contradicts the replication lag constraint in case "Product wants
+        reads from replicas after a"; ask a stakeholder about replication lag before
+        revising.
+    rubric:
+      facts_correct: Names the verified replication lag facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the replication lag premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible replication lag options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the replication lag choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about replication
+        lag by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the replication lag recommendation.
+- id: databases-07-partitioning-pruning
+  version: 1.4.0
+  target: databases
+  topic: partitioning pruning
+  difficulty: 1
+  interview_stage: deep_dive
+  prompt: An events table is growing by billions of rows each year. When would partitioning
+    be justified?
+  context: Most investigations filter by event date, but one export scans a customer
+    across several years.
+  best_answer: I would partition by a boundary present in the dominant access path,
+    such as time, and verify pruning with real plans. I would also price retention,
+    rebalancing, and the cross-partition export before treating partitioning as a
+    free performance fix.
+  distractors:
+  - text: I would partition by a random hash immediately because more tables always
+      mean faster queries, regardless of the filter in the investigation query. The
+      database will distribute the work evenly across the new tables.
+    trap: content
+    why_wrong: It ignores the partitioning pruning constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would create a partition for every customer so customer exports are isolated.
+      The date filter can be handled inside each partition.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Present partitioning as an operational trade-off, not a universal scaling
+      badge.
+    hedging: Use ‘if date remains the dominant predicate’ before selecting a time
+      boundary.
+    precision: Distinguish pruning, retention, rebalancing, and cross-partition export
+      cost.
+    grammar: Keep the justification in a cause-and-effect sentence.
+    pragmatics: Mention the awkward long-lived customer export without dismissing
+      it.
+  rephrase:
+    prompt: Rephrase this partitioning pruning decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: The yearly customer export becomes a daily product feature. What evidence
+      would make you revise the partition key or add another access path?
+    goal: Answer the assumption challenge about partitioning pruning while keeping
+      the evidence boundary explicit.
+    challenge_kind: assumption
+    best_answer: >-
+      I would partition by a boundary present in the dominant access path, such as
+      time, and verify pruning with real plans. I would label the follow-up premise as
+      an assumption, ask the smallest question that could disprove it, and protect the edge
+      case before committing to the recommendation.
+    distractors:
+    - text: I would repeat my original partitioning pruning answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about partitioning pruning until every
+        surrounding requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Preserve the dominant date predicate, plan-based pruning check, retention/rebalancing
+      cost, and long-range export caveat in two sentences.
+    goal: Compress the partitioning pruning answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: How partition pruning avoids opening irrelevant time ranges for a date-bounded
+      event query.
+    explain_to: an engineer planning retention for the event table
+    constraint: Include one recent investigation and one multi-year customer export.
+    self_check: Can they explain which request defeats the chosen boundary?
+    reasoning_check: Can you identify the hidden premise behind partitioning pruning,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: Annual event growth makes recent date-filtered investigations increasingly
+      slow.
+    expected: Recent queries prune to a small time range while retention remains manageable.
+    actual: A random-hash layout forces date investigations to touch every partition.
+    root_cause: The partition key was selected for table count, not the dominant predicate.
+    repair: Test time pruning with real plans, model export costs, and operationalise
+      retention and rebalancing.
+    reasoning_error: If your partitioning pruning answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For partitioning pruning, what must remain true, what is the
+      trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind partitioning pruning without
+      presenting an assumption as a fact?
+    black_box_probe: When the partitioning pruning answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-07-partitioning-pruning-delayed-7
+      prompt: For partitioning pruning, new evidence is a partitioning pruning test
+        exposes a boundary case that the partitioning pruning examples did not cover
+        and the constraint is a stakeholder asks for a stronger partitioning pruning
+        guarantee than the first partitioning pruning answer promised. What alternative
+        now deserves consideration for partitioning pruning?
+      changed_constraint: a stakeholder asks for a stronger partitioning pruning guarantee
+        than the first partitioning pruning answer promised
+      new_evidence: a partitioning pruning test exposes a boundary case that the partitioning
+        pruning examples did not cover
+      best_answer: I would keep the facts that remain supported about partitioning
+        pruning, treat a partitioning pruning test exposes a boundary case that the
+        partitioning pruning examples did not cover as new evidence rather than a
+        result, and state the updated decision rule under a stakeholder asks for a
+        stronger partitioning pruning guarantee than the first partitioning pruning
+        answer promised. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original partitioning pruning answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire partitioning pruning explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/partitioning-pruning
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Walk through partitioning pruning under a changed requirement: which
+      partitioning pruning claim survives, which option wins, and why would partitioning
+      pruning need new evidence?'
+    goal: Move from the short partitioning pruning answer to a deep, evidence-led
+      defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame partitioning pruning before proposing a solution: state
+      the actor, required outcome, constraint, and unknown that could invalidate the
+      first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests partitioning pruning within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend partitioning
+        pruning, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the partitioning pruning constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for partitioning pruning: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for partitioning
+          pruning
+        benefit: It keeps the partitioning pruning reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the partitioning pruning workload or
+          requirement changes beyond the prompt.
+        valid_when: Use it when the stated partitioning pruning contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for partitioning
+          pruning
+        benefit: It can make the partitioning pruning boundary more explicit when
+          the first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the partitioning pruning evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first partitioning pruning option when its stated
+        contract holds; choose the alternative only when evidence shows that the relevant
+        database design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Partitioning pruning: what stakeholder reply about partitioning pruning
+        would invalidate the recommendation, and which partitioning pruning premise
+        would you revisit?'
+    evidence_check:
+      basis: Check the partitioning pruning claim against system-design-estudos/areas/09-backend-principles/cards/postgres-databases.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about partitioning
+        pruning, but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the partitioning pruning
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "An events table is growing by billions", update partitioning
+        pruning when partitioning pruning evidence—a partitioning pruning trace or
+        partitioning pruning test—contradicts the partitioning pruning constraint
+        in case "An events table is growing by billions"; ask a stakeholder about
+        partitioning pruning before revising.
+    rubric:
+      facts_correct: Names the verified partitioning pruning facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the partitioning pruning premise that is still
+        assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible partitioning pruning options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the partitioning pruning choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about partitioning
+        pruning by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the partitioning pruning recommendation.
+- id: databases-08-zero-downtime-migrations
+  version: 1.4.0
+  target: databases
+  topic: zero downtime migrations
+  difficulty: 2
+  interview_stage: deep_dive
+  prompt: How would you add a non-null column to a busy table without an outage?
+  context: The deployment must stay compatible with two application versions during
+    a rolling release.
+  best_answer: I would expand first with a nullable or default-safe shape, deploy
+    readers and writers that tolerate both forms, then backfill in observable batches.
+    Only after verification would I enforce the final constraint and remove compatibility
+    code.
+  distractors:
+  - text: I would add the non-null column with its default in one migration and wait
+      for the lock to finish. The rolling deploy can resume once the schema is complete.
+    trap: precision
+    why_wrong: It ignores the zero downtime migrations constraint and would make the
+      proposed change unsafe or untestable.
+  - text: I would stop writes, alter the table, and restart the application after
+      the schema change. A short maintenance window is safer than carrying compatibility
+      code.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Walk through compatibility as a deployment sequence, not a single DDL
+      command.
+    hedging: Use ‘only after verification’ for the final constraint, not for the expand
+      step.
+    precision: Name nullable shape, tolerant versions, batched backfill, and contract
+      separately.
+    grammar: Use temporal markers—first, then, only after—to prevent ambiguity.
+    pragmatics: Show that both old and new application versions remain valid during
+      rollout.
+  rephrase:
+    prompt: Rephrase this zero downtime migrations decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: During the backfill, an old worker writes rows without the new value.
+      Which compatibility step prevents the final constraint from failing?
+    goal: Answer the evidence challenge about zero downtime migrations while keeping
+      the evidence boundary explicit.
+    challenge_kind: evidence
+    best_answer: >-
+      I would expand first with a nullable or default-safe shape, deploy readers and writers
+      that tolerate both forms, then backfill in observable batches. I would treat the follow-up
+      observation as evidence, not as proof of impact; I would inspect the smallest relevant
+      trace or test and state what remains uncertain before changing the decision.
+    distractors:
+    - text: I would cite my experience with zero downtime migrations as enough proof
+        and move on without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about zero downtime migrations before
+        making even a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Preserve expand compatibility, dual-version readers/writers, observable
+      batches, final constraint, and compatibility cleanup in two sentences.
+    goal: Compress the zero downtime migrations answer into its decision, premise,
+      trade-off, and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why a schema change must coexist with old and new application versions
+      during a rolling deploy.
+    explain_to: an engineer preparing a busy-table migration
+    constraint: Explain expand, tolerant writes, observable backfill, and final contract
+      in order.
+    self_check: Can they identify the point at which a non-null rule becomes safe?
+    reasoning_check: Can you identify the hidden premise behind zero downtime migrations,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: A busy-table migration blocks writes while some old workers are still
+      running.
+    expected: Both deployed versions can read and write valid rows throughout the
+      change.
+    actual: A one-step non-null alteration holds a disruptive lock and old code cannot
+      supply the value.
+    root_cause: Schema enforcement was introduced before compatibility and data backfill
+      existed.
+    repair: Expand safely, release tolerant code, backfill in monitored batches, then
+      contract after verification.
+    reasoning_error: If your zero downtime migrations answer failed, classify the
+      mistake as a fact, assumption, comparison, failure, or certainty error before
+      proposing the smallest repair.
+  recall:
+    active_recall_cue: For zero downtime migrations, what must remain true, what is
+      the trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind zero downtime migrations
+      without presenting an assumption as a fact?
+    black_box_probe: When the zero downtime migrations answer failed, did you locate
+      the reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-08-zero-downtime-migrations-delayed-8
+      prompt: A second pass on zero downtime migrations finds a stakeholder clarifies
+        a zero downtime migrations requirement that changes the zero downtime migrations
+        success condition; with the zero downtime migrations dependency is slower
+        for zero downtime migrations and the failure is ambiguous rather than explicit,
+        which zero downtime migrations test would you run before keeping the original
+        rule?
+      changed_constraint: the zero downtime migrations dependency is slower for zero
+        downtime migrations and the failure is ambiguous rather than explicit
+      new_evidence: a stakeholder clarifies a zero downtime migrations requirement
+        that changes the zero downtime migrations success condition
+      best_answer: I would keep the facts that remain supported about zero downtime
+        migrations, treat a stakeholder clarifies a zero downtime migrations requirement
+        that changes the zero downtime migrations success condition as new evidence
+        rather than a result, and state the updated decision rule under the zero downtime
+        migrations dependency is slower for zero downtime migrations and the failure
+        is ambiguous rather than explicit. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original zero downtime migrations
+          answer because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire zero downtime migrations explanation with
+          a new design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/11-operational-playbooks/playbooks/database-migration-and-backfill.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/zero-downtime-migrations
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: Connect zero downtime migrations, connect the zero downtime migrations
+      implementation choice to its failure mode, measurement, and condition for choosing
+      the alternative.
+    goal: Move from the short zero downtime migrations answer to a deep, evidence-led
+      defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame zero downtime migrations before proposing a solution: state
+      the actor, required outcome, constraint, and unknown that could invalidate the
+      first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests zero downtime migrations within a database
+        design context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend zero downtime
+        migrations, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the zero downtime migrations constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for zero downtime migrations: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for zero downtime
+          migrations
+        benefit: It keeps the zero downtime migrations reasoning close to the stated
+          database design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the zero downtime migrations workload
+          or requirement changes beyond the prompt.
+        valid_when: Use it when the stated zero downtime migrations contract and its
+          invariant are the facts that matter most.
+      - option: application-side coordination or a different datastore for zero downtime
+          migrations
+        benefit: It can make the zero downtime migrations boundary more explicit when
+          the first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the zero downtime migrations evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first zero downtime migrations option when its stated
+        contract holds; choose the alternative only when evidence shows that the relevant
+        database design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Zero downtime migrations: where does the zero downtime migrations premise
+        need a boundary check, and which result would make you reframe zero downtime
+        migrations?'
+    evidence_check:
+      basis: Check the zero downtime migrations claim against system-design-estudos/areas/11-operational-playbooks/playbooks/database-migration-and-backfill.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about zero downtime
+        migrations, but it cannot prove an unmeasured production outcome, personal
+        ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the zero downtime migrations
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "How would you add a non-null column", update zero
+        downtime migrations when zero downtime migrations evidence—a zero downtime
+        migrations trace or zero downtime migrations test—contradicts the zero downtime
+        migrations constraint in case "How would you add a non-null column"; ask a
+        stakeholder about zero downtime migrations before revising.
+    rubric:
+      facts_correct: Names the verified zero downtime migrations facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the zero downtime migrations premise that is still
+        assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible zero downtime migrations options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the zero downtime migrations choice to a benefit,
+        a cost or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about zero downtime
+        migrations by changing the claim or evidence boundary rather than repeating
+        the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the zero downtime migrations recommendation.
+- id: databases-09-pagination
+  version: 1.4.0
+  target: databases
+  topic: pagination
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: A support inbox must paginate newest tickets while new tickets keep arriving.
+    What would you use?
+  context: Users need stable navigation more than an exact total count.
+  best_answer: I would use keyset pagination with a deterministic created-at plus
+    ID cursor, and document that newly inserted tickets can appear on a later refresh
+    rather than shifting prior pages. I would test cursor boundaries and expose the
+    ordering contract.
+  distractors:
+  - text: I would use OFFSET because page numbers are familiar and the table already
+      has an index. New tickets can simply move older rows to the next page.
+    trap: content
+    why_wrong: It ignores the pagination constraint and would make the proposed change
+      unsafe or untestable.
+  - text: I would return every ticket to the browser and let it paginate in memory.
+      Support users need exact page counts, so moving the work to the client is worth
+      it.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Name the navigation contract before comparing cursor styles.
+    hedging: Qualify the lack of an exact total as a product choice, not a hidden
+      limitation.
+    precision: Specify the created-at plus ID ordering and cursor-boundary tests.
+    grammar: Use ‘rather than’ to contrast stable pages with newly inserted rows.
+    pragmatics: Tell the support user what a refresh may show.
+  rephrase:
+    prompt: Rephrase this pagination decision for an engineering manager who needs
+      risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: A ticket’s priority changes after the first page is loaded. What ordering
+      rule would you expose so the cursor remains understandable?
+    goal: Answer the alternative challenge about pagination while keeping the evidence
+      boundary explicit.
+    challenge_kind: alternative
+    best_answer: >-
+      I would use keyset pagination with a deterministic created-at plus ID cursor, and document
+      that newly inserted tickets can appear on a later refresh rather than shifting prior
+      pages. I would compare that choice with the credible alternative against the requirement in
+      the follow-up, cost, and failure risk, then switch only if evidence makes the alternative
+      safer.
+    distractors:
+    - text: I would defend the first pagination option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable pagination design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Preserve the deterministic keyset cursor, stable navigation goal, refresh
+      behaviour for new tickets, and boundary tests in two sentences.
+    goal: Compress the pagination answer into its decision, premise, trade-off, and
+      verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: How a cursor based on created time and ID keeps a moving inbox navigable.
+    explain_to: a support-tool engineer
+    constraint: Explain why new tickets do not reshuffle pages already seen.
+    self_check: Can they state what a refresh, rather than a next-page click, may
+      reveal?
+    reasoning_check: Can you identify the hidden premise behind pagination, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: A support agent sees tickets duplicated or skipped while new tickets
+      arrive.
+    expected: Paging resumes from a deterministic last seen created-at and ID pair.
+    actual: OFFSET shifts after inserts and changes the meaning of page two.
+    root_cause: The interface exposes page numbers without a stable ordering boundary.
+    repair: Adopt a keyset cursor, test equal-timestamp edges, and document refresh
+      semantics.
+    reasoning_error: If your pagination answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: For pagination, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind pagination without presenting
+      an assumption as a fact?
+    black_box_probe: When the pagination answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: databases-09-pagination-delayed-9
+      prompt: 'Pagination: the later pagination review says a trace of pagination
+        isolates a different pagination bottleneck than the one you named. Under new
+        pagination evidence contradicts the pagination assumption that made the first
+        option attractive, which part of pagination survives and which pagination
+        claim changes?'
+      changed_constraint: new pagination evidence contradicts the pagination assumption
+        that made the first option attractive
+      new_evidence: a trace of pagination isolates a different pagination bottleneck
+        than the one you named
+      best_answer: I would keep the facts that remain supported about pagination,
+        treat a trace of pagination isolates a different pagination bottleneck than
+        the one you named as new evidence rather than a result, and state the updated
+        decision rule under new pagination evidence contradicts the pagination assumption
+        that made the first option attractive. I would then name one focused check
+        before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original pagination answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire pagination explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/pagination
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Pagination: inspect pagination evidence next; which edge case for pagination
+      would alter the trade-off?'
+    goal: Move from the short pagination answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame pagination before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests pagination within a database design context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend pagination,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the pagination constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for pagination: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for pagination
+        benefit: It keeps the pagination reasoning close to the stated database design
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the pagination workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated pagination contract and its invariant are
+          the facts that matter most.
+      - option: application-side coordination or a different datastore for pagination
+        benefit: It can make the pagination boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the pagination evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first pagination option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Pagination: if the pagination decision fails under plausible load or
+        a difficult turn, what consequence appears first, and how would you contain
+        pagination?'
+    evidence_check:
+      basis: Check the pagination claim against system-design-estudos/areas/09-backend-principles/cards/postgres-databases.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about pagination,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the pagination question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "A support inbox must paginate newest tickets", update
+        pagination when pagination evidence—a pagination trace or pagination test—contradicts
+        the pagination constraint in case "A support inbox must paginate newest tickets";
+        ask a stakeholder about pagination before revising.
+    rubric:
+      facts_correct: Names the verified pagination facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the pagination premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible pagination options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the pagination choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about pagination
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the pagination recommendation.
+- id: databases-10-sharding-boundaries
+  version: 1.4.0
+  target: databases
+  topic: sharding boundaries
+  difficulty: 1
+  interview_stage: deep_dive
+  prompt: Traffic is growing and a team proposes sharding by user ID. What would you
+    challenge?
+  context: The system includes organization reports and a few global administrative
+    searches.
+  best_answer: I would ask whether ownership, growth, and failure isolation actually
+    follow user ID, then make cross-shard queries explicit rather than accidental.
+    I would start with the least invasive scaling boundary and set a metric that triggers
+    a shard split.
+  distractors:
+  - text: I would shard immediately because user IDs are evenly distributed. Organization
+      reports and global searches can be solved after the traffic is divided, perhaps
+      by querying each shard in parallel from the reporting service.
+    trap: precision
+    why_wrong: It ignores the sharding boundaries constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would copy every table to every shard so global searches stay simple.
+      The storage cost is acceptable compared with cross-shard query complexity.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Challenge sharding with an ownership question before proposing a topology.
+    hedging: Use ‘if ownership follows user ID’ rather than accepting even distribution
+      as enough.
+    precision: Name cross-shard reports, global search, split trigger, and failure
+      isolation.
+    grammar: Keep the evaluation criteria in a parallel list.
+    pragmatics: Avoid treating administrative paths as someone else’s future problem.
+  rephrase:
+    prompt: Rephrase this sharding boundaries decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: An organization-level report becomes the busiest endpoint. What does that
+      reveal about sharding by user ID, and what would you measure next?
+    goal: Answer the failure challenge about sharding boundaries while keeping the
+      evidence boundary explicit.
+    challenge_kind: failure
+    best_answer: >-
+      I would ask whether ownership, growth, and failure isolation actually follow user ID, then
+      make cross-shard queries explicit rather than accidental. If the failure in the follow-up appears,
+      I would name the user or system consequence, contain it with a bounded mitigation,
+      and verify recovery with a focused test or metric.
+    distractors:
+    - text: I would describe the sharding boundaries failure as impossible because
+        the happy path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to sharding boundaries immediately and assume the
+        system would become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: Preserve ownership and failure-isolation tests, explicit cross-shard work,
+      the least-invasive boundary, and split trigger in two sentences.
+    goal: Compress the sharding boundaries answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why an even hash key is insufficient when ownership and reports cross
+      that key.
+    explain_to: a team considering its first shard split
+    constraint: Use a user-owned request and an organization report as contrasting
+      paths.
+    self_check: Can they identify the metric that would justify the extra operational
+      boundary?
+    reasoning_check: Can you identify the hidden premise behind sharding boundaries,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: User traffic fits one shard key, but organization reports fan out across
+      every shard.
+    expected: The data boundary matches ownership, growth, and failure isolation with
+      explicit global paths.
+    actual: Global searches become accidental scatter-gather queries after the split.
+    root_cause: Even ID distribution was mistaken for a complete sharding strategy.
+    repair: Map cross-boundary queries, choose the smallest viable scaling step, and
+      define a split threshold.
+    reasoning_error: If your sharding boundaries answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For sharding boundaries, what must remain true, what is the
+      trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind sharding boundaries without
+      presenting an assumption as a fact?
+    black_box_probe: When the sharding boundaries answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-10-sharding-boundaries-delayed-10
+      prompt: 'Review note for sharding boundaries: a code inspection of sharding
+        boundaries confirms the sharding boundaries mechanism but not its impact.
+        Given two sharding boundaries callers from the case "Traffic is growing and
+        a team proposes" or sharding boundaries tenants now compete for the same sharding
+        boundaries boundary, what would you now defend, retract, and verify about
+        sharding boundaries?'
+      changed_constraint: two sharding boundaries callers from the case "Traffic is
+        growing and a team proposes" or sharding boundaries tenants now compete for
+        the same sharding boundaries boundary
+      new_evidence: a code inspection of sharding boundaries confirms the sharding
+        boundaries mechanism but not its impact
+      best_answer: I would keep the facts that remain supported about sharding boundaries,
+        treat a code inspection of sharding boundaries confirms the sharding boundaries
+        mechanism but not its impact as new evidence rather than a result, and state
+        the updated decision rule under two sharding boundaries callers from the case
+        "Traffic is growing and a team proposes" or sharding boundaries tenants now
+        compete for the same sharding boundaries boundary. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original sharding boundaries answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire sharding boundaries explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/06-foundations-distribuidas/topics/consistency-models.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/sharding-boundaries
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Deep dive on sharding boundaries: compare sharding boundaries options
+      with one measurement; which failure around sharding boundaries would make sharding
+      boundaries switch?'
+    goal: Move from the short sharding boundaries answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame sharding boundaries before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests sharding boundaries within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend sharding
+        boundaries, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the sharding boundaries constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for sharding boundaries: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for sharding boundaries
+        benefit: It keeps the sharding boundaries reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the sharding boundaries workload or
+          requirement changes beyond the prompt.
+        valid_when: Use it when the stated sharding boundaries contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for sharding
+          boundaries
+        benefit: It can make the sharding boundaries boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the sharding boundaries evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first sharding boundaries option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Sharding boundaries: which adversarial sharding boundaries example
+        could disprove the recommendation, and what evidence about sharding boundaries
+        would you request?'
+    evidence_check:
+      basis: Check the sharding boundaries claim against system-design-estudos/areas/06-foundations-distribuidas/topics/consistency-models.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about sharding
+        boundaries, but it cannot prove an unmeasured production outcome, personal
+        ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the sharding boundaries
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Traffic is growing and a team proposes", update sharding
+        boundaries when sharding boundaries evidence—a sharding boundaries trace or
+        sharding boundaries test—contradicts the sharding boundaries constraint in
+        case "Traffic is growing and a team proposes"; ask a stakeholder about sharding
+        boundaries before revising.
+    rubric:
+      facts_correct: Names the verified sharding boundaries facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the sharding boundaries premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible sharding boundaries options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the sharding boundaries choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about sharding boundaries
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the sharding boundaries recommendation.
+- id: databases-11-backup-recovery
+  version: 1.4.0
+  target: databases
+  topic: backup recovery
+  difficulty: 2
+  interview_stage: deep_dive
+  prompt: Backups are green every night. What evidence would convince you recovery
+    is real?
+  context: The service has an RPO of fifteen minutes and an RTO of two hours.
+  best_answer: I would schedule restoration drills into an isolated environment, measure
+    the recovered point and elapsed time, and report failures as operational debt.
+    A backup job alone does not prove credentials, tooling, or data integrity will
+    work under pressure.
+  distractors:
+  - text: I would trust the storage-provider dashboard because a successful upload
+      is equivalent to a restore. If a backup is present, recovery should work when
+      needed.
+    trap: content
+    why_wrong: It ignores the backup recovery constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would run one restore after a major incident because routine drills are
+      disruptive. The team can validate the process during real pressure.
+    trap: precision
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: 'Use the language of proof: a restore drill demonstrates recovery.'
+    hedging: Do not hedge the drill requirement; qualify only the chosen frequency.
+    precision: State recovered point, elapsed time, RPO, RTO, and isolated environment.
+    grammar: Keep RPO and RTO in distinct clauses to avoid conflating them.
+    pragmatics: Report failed drills as owned operational debt, not an infrastructure
+      inconvenience.
+  rephrase:
+    prompt: Rephrase this backup recovery decision for an engineering manager who
+      needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: A drill restores the data within two hours but only to an hour before
+      the failure. How would you report that result against the objectives?
+    goal: Answer the new_evidence challenge about backup recovery while keeping the
+      evidence boundary explicit.
+    challenge_kind: new_evidence
+    best_answer: >-
+      I would schedule restoration drills into an isolated environment, measure the recovered point and
+      elapsed time, and report failures as operational debt. I would keep the claims that
+      remain supported, identify exactly which premise the new observation changes, and run a focused
+      check before revising the decision.
+    distractors:
+    - text: I would keep the backup recovery recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier backup recovery claim as soon as one new
+        observation appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Preserve the isolated restore drill, measured recovered point and duration,
+      RPO/RTO comparison, and operational-debt follow-up in two sentences.
+    goal: Compress the backup recovery answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: Why a backup file is only an input to recovery, not proof that recovery
+      meets an objective.
+    explain_to: the incident commander responsible for continuity
+    constraint: Use the fifteen-minute data-loss limit and two-hour restoration limit.
+    self_check: Can they distinguish the recovered point from elapsed restore time?
+    reasoning_check: Can you identify the hidden premise behind backup recovery, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: Nightly backups report success, yet nobody has restored the service recently.
+    expected: A drill restores valid data to isolation within the RPO and RTO targets.
+    actual: The team knows the upload completed but not whether credentials, tooling,
+      or data integrity work.
+    root_cause: Backup delivery is being measured instead of end-to-end recovery.
+    repair: Schedule restore drills, record point and duration, and assign remediation
+      for missed objectives.
+    reasoning_error: If your backup recovery answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For backup recovery, what must remain true, what is the trade-off,
+      and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind backup recovery without presenting
+      an assumption as a fact?
+    black_box_probe: When the backup recovery answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: databases-11-backup-recovery-delayed-11
+      prompt: New evidence about backup recovery says a measured backup recovery comparison
+        shows the alternative has a different backup recovery cost profile; with the
+        backup recovery workload for backup recovery no longer fits the original resource
+        bound, how do you update the backup recovery decision rule?
+      changed_constraint: the backup recovery workload for backup recovery no longer
+        fits the original resource bound
+      new_evidence: a measured backup recovery comparison shows the alternative has
+        a different backup recovery cost profile
+      best_answer: I would keep the facts that remain supported about backup recovery,
+        treat a measured backup recovery comparison shows the alternative has a different
+        backup recovery cost profile as new evidence rather than a result, and state
+        the updated decision rule under the backup recovery workload for backup recovery
+        no longer fits the original resource bound. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original backup recovery answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire backup recovery explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/backup-recovery
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Defend backup recovery after a counterexample: which backup recovery
+      assumption changes, and what evidence keeps the revised backup recovery choice
+      honest?'
+    goal: Move from the short backup recovery answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame backup recovery before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests backup recovery within a database design context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend backup recovery,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the backup recovery constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for backup recovery: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about backup recovery would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard backup recovery constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for backup recovery; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Backup recovery: which empty or extreme backup recovery case would
+        expose the hidden assumption, and what would you measure about backup recovery?'
+    evidence_check:
+      basis: Check the backup recovery claim against system-design-estudos/areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about backup recovery,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the backup recovery
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Backups are green every night. What evidence", update
+        backup recovery when backup recovery evidence—a backup recovery trace or backup
+        recovery test—contradicts the backup recovery constraint in case "Backups
+        are green every night. What evidence"; ask a stakeholder about backup recovery
+        before revising.
+    rubric:
+      facts_correct: Names the verified backup recovery facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the backup recovery premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible backup recovery options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the backup recovery choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about backup recovery
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the backup recovery recommendation.
+- id: databases-12-datastore-tradeoffs
+  version: 1.4.0
+  target: databases
+  topic: datastore tradeoffs
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: A team wants Redis, PostgreSQL, and a search engine for a new feature. How
+    would you narrow the choice?
+  context: The feature stores durable customer preferences and serves occasional filtered
+    search.
+  best_answer: I would start with durability, query shape, consistency, and recovery
+    needs, then choose PostgreSQL unless measured search requirements justify another
+    system. I would name the migration trigger so the design stays reversible rather
+    than adopting three stores by default.
+  distractors:
+  - text: I would adopt all three now because polyglot persistence is more future-proof.
+      Each system can serve a narrow concern before the feature has real traffic,
+      and the team can build the synchronization paths while the feature is still
+      small.
+    trap: precision
+    why_wrong: It ignores the datastore tradeoffs constraint and would make the proposed
+      change unsafe or untestable.
+  - text: I would choose the fastest benchmark without checking persistence or failure
+      semantics. Search speed is visible to users, while recovery can be solved later.
+    trap: pragmatics
+    why_wrong: It substitutes an absolute rule for the workload, failure mode, and
+      verification step this scenario requires.
+  feedback:
+    register: Lead with the minimum durable system, then justify any extra store.
+    hedging: Use ‘unless measured requirements justify it’ for the search-engine addition.
+    precision: Name durability, query shape, consistency, recovery, and the migration
+      trigger.
+    grammar: Use a compact ‘because’ sentence to link requirements to the first choice.
+    pragmatics: Frame reversibility as a delivery advantage rather than indecision.
+  rephrase:
+    prompt: Rephrase this datastore tradeoffs decision for an engineering manager
+      who needs risk, cost, and next action.
+    goal: Preserve the concrete boundary and the signal that validates it.
+  follow_up:
+    prompt: What measured search behaviour would justify a dedicated search engine
+      instead of extending the first PostgreSQL design?
+    goal: Answer the assumption challenge about datastore tradeoffs while keeping
+      the evidence boundary explicit.
+    challenge_kind: assumption
+    best_answer: >-
+      I would start with durability, query shape, consistency, and recovery needs, then choose PostgreSQL
+      unless measured search requirements justify another system. I would label the follow-up premise as
+      an assumption, ask the smallest question that could disprove it, and protect the edge
+      case before committing to the recommendation.
+    distractors:
+    - text: I would repeat my original datastore tradeoffs answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about datastore tradeoffs until every
+        surrounding requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Preserve the durable-preferences baseline, query and consistency criteria,
+      measured search trigger, and reversible migration point in two sentences.
+    goal: Compress the datastore tradeoffs answer into its decision, premise, trade-off,
+      and verification step.
+  language_focus:
+  - precision
+  - hedging
+  - pragmatics
+  feynman:
+    concept: How durable preferences and occasional filtering can begin with one store
+      without foreclosing later search.
+    explain_to: a product team choosing its first persistence design
+    constraint: Contrast a required recovery property with a measured query requirement.
+    self_check: Can they name the observation that would justify a second datastore?
+    reasoning_check: Can you identify the hidden premise behind datastore tradeoffs,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: A new preferences feature proposes Redis, PostgreSQL, and search before
+      usage is known.
+    expected: Durable customer state has one clear source of truth and search complexity
+      is justified by evidence.
+    actual: Three stores create replication, recovery, and consistency work for an
+      occasional filter.
+    root_cause: Technology options were selected before durability and query requirements
+      were ranked.
+    repair: Start with PostgreSQL, instrument the filter workload, and define the
+      threshold for extracting search.
+    reasoning_error: If your datastore tradeoffs answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: For datastore tradeoffs, what must remain true, what is the
+      trade-off, and what evidence changes the decision?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind datastore tradeoffs without
+      presenting an assumption as a fact?
+    black_box_probe: When the datastore tradeoffs answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: databases-12-datastore-tradeoffs-delayed-12
+      prompt: 'Datastore tradeoffs gets a new constraint: a stakeholder asks for a
+        stronger datastore tradeoffs guarantee than the first datastore tradeoffs
+        answer promised. After a datastore tradeoffs test exposes a boundary case
+        that the datastore tradeoffs examples did not cover, which datastore tradeoffs
+        assumption is no longer safe?'
+      changed_constraint: a stakeholder asks for a stronger datastore tradeoffs guarantee
+        than the first datastore tradeoffs answer promised
+      new_evidence: a datastore tradeoffs test exposes a boundary case that the datastore
+        tradeoffs examples did not cover
+      best_answer: I would keep the facts that remain supported about datastore tradeoffs,
+        treat a datastore tradeoffs test exposes a boundary case that the datastore
+        tradeoffs examples did not cover as new evidence rather than a result, and
+        state the updated decision rule under a stakeholder asks for a stronger datastore
+        tradeoffs guarantee than the first datastore tradeoffs answer promised. I
+        would then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original datastore tradeoffs answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire datastore tradeoffs explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/postgres-databases.md
+    note: Relevant local operational or database decision source.
+  - repo: original
+    path: english-arcade/databases/datastore-tradeoffs
+    note: Original interviewer scenario and language coaching.
+  extension:
+    prompt: 'Five more minutes on datastore tradeoffs: which boundary, alternative,
+      and update trigger would you explain for datastore tradeoffs?'
+    goal: Move from the short datastore tradeoffs answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame datastore tradeoffs before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests datastore tradeoffs within a database design
+        context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend datastore
+        tradeoffs, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the datastore tradeoffs constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for datastore tradeoffs: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a constraint or plan backed by database evidence for datastore tradeoffs
+        benefit: It keeps the datastore tradeoffs reasoning close to the stated database
+          design constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the datastore tradeoffs workload or
+          requirement changes beyond the prompt.
+        valid_when: Use it when the stated datastore tradeoffs contract and its invariant
+          are the facts that matter most.
+      - option: application-side coordination or a different datastore for datastore
+          tradeoffs
+        benefit: It can make the datastore tradeoffs boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the datastore tradeoffs evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first datastore tradeoffs option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant database
+        design constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Datastore tradeoffs: when the datastore tradeoffs constraint tightens
+        during rollout, what breaks first in datastore tradeoffs, and how do you observe
+        it?'
+    evidence_check:
+      basis: Check the datastore tradeoffs claim against system-design-estudos/areas/09-backend-principles/cards/postgres-databases.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This database design exercise can test reasoning about datastore
+        tradeoffs, but it cannot prove an unmeasured production outcome, personal
+        ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the datastore tradeoffs
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "A team wants Redis, PostgreSQL, and a", update datastore
+        tradeoffs when datastore tradeoffs evidence—a datastore tradeoffs trace or
+        datastore tradeoffs test—contradicts the datastore tradeoffs constraint in
+        case "A team wants Redis, PostgreSQL, and a"; ask a stakeholder about datastore
+        tradeoffs before revising.
+    rubric:
+      facts_correct: Names the verified datastore tradeoffs facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the datastore tradeoffs premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible datastore tradeoffs options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the datastore tradeoffs choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about datastore tradeoffs
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the datastore tradeoffs recommendation.

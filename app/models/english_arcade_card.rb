@@ -1,4 +1,5 @@
 class EnglishArcadeCard < ApplicationRecord
+  require_relative "../services/english_arcade_attempt_contract"
   BOX_INTERVALS = {
     1 => 1,
     2 => 2,
@@ -18,15 +19,25 @@ class EnglishArcadeCard < ApplicationRecord
 
   def self.mastered_keys_for(learner_key)
     attempts = EnglishArcadeAttempt
-      .where(learner_key: learner_key, state: %w[feedback black_box scheduled mastered revealed])
-      .where("quality_score >= ?", 8)
+      .where(learner_key: learner_key)
       .order(:target, :card_key, :answered_at)
+      .to_a
+      .select { |attempt| EnglishArcadeAttemptContract.mastery_eligible?(attempt) }
 
     attempts.group_by { |attempt| [ attempt.target, attempt.card_key ] }.filter_map do |key, high_quality|
-      mastered = high_quality.each_cons(2).any? do |first, second|
-        first.variant_key != second.variant_key && (second.answered_at - first.answered_at) >= 7.days
-      end
-      key if mastered
+      key if spaced_variant_pair?(high_quality)
+    end
+  end
+
+  def self.spaced_variant_pair?(attempts)
+    attempts.sort_by(&:answered_at).combination(2).any? do |first, second|
+      first.variant_key.to_s.in?(EnglishArcadeAttemptContract::CRITICAL_VARIANT_IDS) &&
+        second.variant_key.to_s.in?(EnglishArcadeAttemptContract::CRITICAL_VARIANT_IDS) &&
+        first.variant_key.to_s != second.variant_key.to_s &&
+        first.diagnostic_evidence.dig("assessment", "variant_digest").to_s.present? &&
+        second.diagnostic_evidence.dig("assessment", "variant_digest").to_s.present? &&
+        first.diagnostic_evidence.dig("assessment", "variant_digest").to_s != second.diagnostic_evidence.dig("assessment", "variant_digest").to_s &&
+        (second.answered_at - first.answered_at) >= 7.days
     end
   end
 
@@ -69,22 +80,24 @@ class EnglishArcadeCard < ApplicationRecord
     EnglishArcadeAttempt.where(
       learner_key: learner_key,
       target: target,
-      card_key: card_key,
-      state: %w[feedback black_box scheduled mastered revealed]
-    ).where("quality_score >= ?", 8).order(:answered_at)
+      card_key: card_key
+    ).order(:answered_at).to_a.select { |attempt| EnglishArcadeAttemptContract.mastery_eligible?(attempt) }
   end
 
   def mastered?
-    high_quality = mastery_attempts.to_a
-    high_quality.each_cons(2).any? do |first, second|
-      first.variant_key != second.variant_key && (second.answered_at - first.answered_at) >= 7.days
-    end
+    self.class.spaced_variant_pair?(mastery_attempts)
   end
 
   def mastery_progress
     high_quality = mastery_attempts.to_a
-    spaced_pair = high_quality.each_cons(2).find do |first, second|
-      first.variant_key != second.variant_key && (second.answered_at - first.answered_at) >= 7.days
+    spaced_pair = high_quality.sort_by(&:answered_at).combination(2).find do |first, second|
+      first.variant_key.to_s.in?(EnglishArcadeAttemptContract::CRITICAL_VARIANT_IDS) &&
+        second.variant_key.to_s.in?(EnglishArcadeAttemptContract::CRITICAL_VARIANT_IDS) &&
+        first.variant_key.to_s != second.variant_key.to_s &&
+        first.diagnostic_evidence.dig("assessment", "variant_digest").to_s.present? &&
+        second.diagnostic_evidence.dig("assessment", "variant_digest").to_s.present? &&
+        first.diagnostic_evidence.dig("assessment", "variant_digest").to_s != second.diagnostic_evidence.dig("assessment", "variant_digest").to_s &&
+        (second.answered_at - first.answered_at) >= 7.days
     end
 
     {

@@ -1,1089 +1,2504 @@
 ---
-contract_version: "1.1.0"
+contract_version: 1.4.0
 target:
   key: elixir
   label: Elixir
-  blurb: >-
-    Explain processes, supervision and back-pressure the way a BEAM engineer
+  blurb: Explain processes, supervision and back-pressure the way a BEAM engineer
     does, with isolation and failure treated as design tools.
   focus_areas:
-    - processes and message passing
-    - OTP and supervision
-    - immutability and state
-    - back-pressure and flow control
-    - fault tolerance in production
+  - processes and message passing
+  - OTP and supervision
+  - immutability and state
+  - back-pressure and flow control
+  - fault tolerance in production
   simulation:
     minutes: 45
     structure:
-      - label: Processes and mental model warm-up
-        minutes: 8
-      - label: OTP and supervision deep dive
-        minutes: 15
-      - label: Back-pressure and bottlenecks
-        minutes: 12
-      - label: Failure, observability and trade-offs
-        minutes: 10
+    - label: Processes and mental model warm-up
+      minutes: 8
+    - label: OTP and supervision deep dive
+      minutes: 15
+    - label: Back-pressure and bottlenecks
+      minutes: 12
+    - label: Failure, observability and trade-offs
+      minutes: 10
+  critical_thinking:
+    learner_prompts:
+      evidence_ledger: For Elixir, record whether each claim about process isolation,
+        supervision, backpressure, immutability, and tests is a verified fact, an
+        inference, an assumption, or an unknown before you defend it.
+      problem_frame: Frame every Elixir answer with the actor, requirement, constraint,
+        success condition, and unanswered question that could change the decision.
+      comparison: When Elixir offers a real choice, compare two options by benefit,
+        cost or risk, valid-when condition, and an explicit decision rule.
+      failure_probe: Ask which counterexample, edge case, or failure mode could break
+        the Elixir recommendation, then state the smallest test or containment step.
+      certainty_review: 'Calibrate certainty in Elixir: name the evidence, separate
+        correlation from causality, and say what new observation would make you revise
+        the answer.'
+    rubric:
+      facts_correct: Names the verified process isolation, supervision, backpressure,
+        immutability, and tests facts without smuggling in a result or capability
+        that the prompt does not establish.
+      assumptions_explicit: Labels the Elixir premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Considers a credible alternative for Elixir, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Elixir choice to a benefit, a cost or risk, and
+        the condition under which another choice wins.
+      follow_up_adaptation: Responds to an adversarial Elixir follow-up by changing
+        the claim or evidence boundary rather than repeating a memorised answer.
+      certainty_calibration: Uses high, medium, or low certainty deliberately and
+        names the evidence that would update the Elixir recommendation.
 cards:
-  - id: elixir-card-let-it-crash
-    front: How do you explain "let it crash" without sounding reckless?
-    back: >-
-      Crash on the unexpected, supervise the recovery. It replaces defensive
-      code with a known-good restart from a known state.
-    box: 1
-    source:
-      repo: system-design-estudos
-      path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-      note: Fault tolerance principles behind supervised restarts.
-  - id: elixir-card-genserver-bottleneck
-    front: When is a GenServer the wrong choice?
-    back: >-
-      When it becomes a single mailbox in front of concurrent work. One process
-      serialises everything behind it.
-    box: 2
-    source:
-      repo: system-design-estudos
-      path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
-      note: Elixir at realtime scale, including per-process boundaries.
-  - id: elixir-card-backpressure
-    front: What is the honest answer about queues and load?
-    back: >-
-      A queue without back-pressure moves the failure rather than removing it;
-      demand must flow from the consumer.
-    box: 2
-    source:
-      repo: system-design-estudos
-      path: areas/11-operational-playbooks/playbooks/queue-lag-dlq-and-replay.md
-      note: Queue lag, dead letters and replay behaviour.
-items:
-  - id: elixir-01-process-model
-    version: "1.0.0"
-    target: elixir
-    topic: Processes
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      How would you describe an Elixir process to someone who only knows
-      threads?
-    context: >-
-      An opening question that calibrates your mental model. The interviewer
-      wants the isolation property, because everything else in OTP follows from
+- id: elixir-card-let-it-crash
+  front: How do you explain "let it crash" without sounding reckless?
+  back: Crash on the unexpected, supervise the recovery. It replaces defensive code
+    with a known-good restart from a known state.
+  box: 1
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Fault tolerance principles behind supervised restarts.
+  critical_thinking:
+    cue: How do you explain "let it crash" without sounding reckless? Before answering,
+      separate the stated fact from your assumption and name one condition that could
+      change it.
+    check: For this Elixir card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
+- id: elixir-card-genserver-bottleneck
+  front: When is a GenServer the wrong choice?
+  back: When it becomes a single mailbox in front of concurrent work. One process
+    serialises everything behind it.
+  box: 2
+  source:
+    repo: system-design-estudos
+    path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
+    note: Elixir at realtime scale, including per-process boundaries.
+  critical_thinking:
+    cue: When is a GenServer the wrong choice? Before answering, separate the stated
+      fact from your assumption and name one condition that could change it.
+    check: For this Elixir card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
+- id: elixir-card-backpressure
+  front: What is the honest answer about queues and load?
+  back: A queue without back-pressure moves the failure rather than removing it; demand
+    must flow from the consumer.
+  box: 2
+  source:
+    repo: system-design-estudos
+    path: areas/11-operational-playbooks/playbooks/queue-lag-dlq-and-replay.md
+    note: Queue lag, dead letters and replay behaviour.
+  critical_thinking:
+    cue: What is the honest answer about queues and load? Before answering, separate
+      the stated fact from your assumption and name one condition that could change
       it.
+    check: For this Elixir card, can you compare two options, name one failure mode,
+      and state what evidence would update the recommendation?
+items:
+- id: elixir-01-process-model
+  version: 1.4.0
+  target: elixir
+  topic: Processes
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: How would you describe an Elixir process to someone who only knows threads?
+  context: An opening question that calibrates your mental model. The interviewer
+    wants the isolation property, because everything else in OTP follows from it.
+  follow_up:
+    prompt: What mailbox or supervision behavior would you point to when explaining
+      why this process is not a shared-memory thread?
+    goal: Answer the evidence challenge about Processes while keeping the evidence
+      boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      They are much lighter than OS threads and, more importantly, they share
-      nothing. Each has its own heap and communicates only by copying messages,
-      so one crashing cannot corrupt another's state. That isolation is what
-      makes supervised restarts safe.
+      They are much lighter than OS threads and, more importantly, they share nothing. I
+      would treat the follow-up observation as evidence, not as proof of impact; I would
+      inspect the smallest relevant trace or test and state what remains uncertain before changing
+      the decision.
     distractors:
-      - text: >-
-          They are lightweight threads managed by the runtime rather than the
-          operating system, so you can run millions of them concurrently without
-          the usual overhead of native threads.
-        trap: precision
-        why_wrong: >-
-          Gets the weight right and the isolation wrong, which is the property
-          that actually matters for OTP.
-      - text: >-
-          They are similar to threads but with green threading and better
-          scheduling, so the runtime can preempt them fairly and avoid one
-          process blocking the others for too long.
-        trap: content
-        why_wrong: >-
-          Describes scheduling accurately but never mentions shared-nothing,
-          leaving the impression that memory is shared.
-      - text: >-
-          They are more light than the threads of the operating system and
-          principally they do not share nothing, each one has its own heap and
-          communicates only copying messages.
-        trap: grammar
-        why_wrong: >-
-          "More light", "principally" as a false friend and the double negative
-          all mark literal translation.
-    feedback:
-      register: >-
-        Explanatory and comparative, pitched at the listener's existing model.
-      hedging: >-
-        None needed; these are architectural facts.
-      precision: >-
-        Isolation is the load-bearing property; weight is secondary.
-      grammar: >-
-        "Much lighter", "more importantly", "they share nothing".
-      pragmatics: >-
-        Linking isolation to supervised restarts previews the next question.
-    rephrase:
-      prompt: >-
-        Explain the same idea to someone worried about memory usage at scale.
-      goal: Adapt the comparison to a different concern.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      "Principalmente" e "mainly" ou "most importantly". "Principally" existe
-      mas soa errado aqui.
-    feynman:
-      concept: Shared-nothing processes with copied messages.
-      explain_to: A Java developer who thinks in shared-memory threads.
-      constraint: Explain using separate offices exchanging letters.
-      self_check: >-
-        Did you say what one process cannot do to another?
-    black_box:
-      symptom: You led with lightness and omitted isolation.
-      expected: Shared-nothing heaps, message copying, safe restarts.
-      actual: A green-threads description, or a scheduling explanation.
-      root_cause: >-
-        Processes mapped onto threads instead of onto isolated actors.
-      repair: >-
-        Always say "they share nothing" in the first two sentences.
-    recall:
-      active_recall_cue: >-
-        What property makes a supervised restart safe?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
-        note: Elixir process model at realtime scale.
-      - repo: original
-        path: english-arcade/elixir/process-model
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-02-let-it-crash
-    version: "1.0.0"
-    target: elixir
-    topic: Fault tolerance
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Does "let it crash" mean you do not handle errors?
-    context: >-
-      A deliberately provocative framing. The interviewer wants to see whether
-      you can defend the philosophy precisely rather than repeating the slogan
-      or backing away from it.
+    - text: I would cite my experience with Processes as enough proof and move on
+        without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Processes before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Explain an Elixir process using isolation, message passing, and the supervisor's
+      role in restarting it.
+    goal: Compress the Processes answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: They are much lighter than OS threads and, more importantly, they share
+    nothing. Each has its own heap and communicates only by copying messages, so one
+    crashing cannot corrupt another's state. That isolation is what makes supervised
+    restarts safe.
+  distractors:
+  - text: They are lightweight threads managed by the runtime rather than the operating
+      system, so you can run millions of them concurrently without the usual overhead
+      of native threads.
+    trap: precision
+    why_wrong: Gets the weight right and the isolation wrong, which is the property
+      that actually matters for OTP.
+  - text: They are similar to threads but with green threading and better scheduling,
+      so the runtime can preempt them fairly and avoid one process blocking the others
+      for too long.
+    trap: content
+    why_wrong: Describes scheduling accurately but never mentions shared-nothing,
+      leaving the impression that memory is shared.
+  - text: They are more light than the threads of the operating system and principally
+      they do not share nothing, each one has its own heap and communicates only copying
+      messages.
+    trap: grammar
+    why_wrong: '"More light", "principally" as a false friend and the double negative
+      all mark literal translation.'
+  feedback:
+    register: Explanatory and comparative, pitched at the listener's existing model.
+    hedging: None needed; these are architectural facts.
+    precision: Isolation is the load-bearing property; weight is secondary.
+    grammar: '"Much lighter", "more importantly", "they share nothing".'
+    pragmatics: Linking isolation to supervised restarts previews the next question.
+  rephrase:
+    prompt: Explain the same idea to someone worried about memory usage at scale.
+    goal: Adapt the comparison to a different concern.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: '"Principalmente" e "mainly" ou "most importantly". "Principally" existe
+    mas soa errado aqui.'
+  feynman:
+    concept: Shared-nothing processes with copied messages.
+    explain_to: A Java developer who thinks in shared-memory threads.
+    constraint: Explain using separate offices exchanging letters.
+    self_check: Did you say what one process cannot do to another?
+    reasoning_check: Can you identify the hidden premise behind Processes, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You led with lightness and omitted isolation.
+    expected: Shared-nothing heaps, message copying, safe restarts.
+    actual: A green-threads description, or a scheduling explanation.
+    root_cause: Processes mapped onto threads instead of onto isolated actors.
+    repair: Always say "they share nothing" in the first two sentences.
+    reasoning_error: If your Processes answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What property makes a supervised restart safe?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Processes without presenting
+      an assumption as a fact?
+    black_box_probe: When the Processes answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-01-process-model-delayed-1
+      prompt: 'Processes: the later Processes review says a Processes test exposes
+        a boundary case that the Processes examples did not cover. Under the Processes
+        workload for Processes no longer fits the original resource bound, which part
+        of Processes survives and which Processes claim changes?'
+      changed_constraint: the Processes workload for Processes no longer fits the
+        original resource bound
+      new_evidence: a Processes test exposes a boundary case that the Processes examples
+        did not cover
+      best_answer: I would keep the facts that remain supported about Processes, treat
+        a Processes test exposes a boundary case that the Processes examples did not
+        cover as new evidence rather than a result, and state the updated decision
+        rule under the Processes workload for Processes no longer fits the original
+        resource bound. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Processes answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Processes explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
+    note: Elixir process model at realtime scale.
+  - repo: original
+    path: english-arcade/elixir/process-model
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Processes: inspect Processes evidence next; which edge case for Processes
+      would alter the trade-off?'
+    goal: Move from the short Processes answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Processes before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Processes within a Elixir context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Processes,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Processes constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Processes: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Processes would be
+        a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Processes constraint is the required guarantee stated
+        by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Processes; first clarify the
+        constraint or collect the evidence that would make two options genuinely comparable.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Processes: what minimum input for Processes would break the Processes
+        recommendation, and how would you revise the Processes claim?'
+    evidence_check:
+      basis: Check the Processes claim against system-design-estudos/real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Processes, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Processes question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "How would you describe an Elixir process", update
+        Processes when Processes evidence—a Processes trace or Processes test—contradicts
+        the Processes constraint in case "How would you describe an Elixir process";
+        ask a stakeholder about Processes before revising.
+    rubric:
+      facts_correct: Names the verified Processes facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Processes premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Processes options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Processes choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Processes by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Processes recommendation.
+- id: elixir-02-let-it-crash
+  version: 1.4.0
+  target: elixir
+  topic: Fault tolerance
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Does "let it crash" mean you do not handle errors?
+  context: A deliberately provocative framing. The interviewer wants to see whether
+    you can defend the philosophy precisely rather than repeating the slogan or backing
+    away from it.
+  follow_up:
+    prompt: Which error should be returned to the caller, and which process failure
+      should the supervisor restart rather than hide?
+    goal: Answer the alternative challenge about Fault tolerance while keeping the
+      evidence boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      No: I handle expected errors explicitly and let unexpected ones kill the
-      process. A declined payment is a value I match on; unanticipated corrupt
-      state is a crash, because a known-good restart beats an unknown state.
+      No: I handle expected errors explicitly and let unexpected ones kill the process. I
+      would compare that choice with the credible alternative against the requirement in the follow-up,
+      cost, and failure risk, then switch only if evidence makes the alternative safer.
     distractors:
-      - text: >-
-          It means the supervisor handles the errors instead of the process, so
-          you do not need try and rescue blocks because the restart takes care
-          of recovery for you.
-        trap: precision
-        why_wrong: >-
-          Half true and missing the crucial split between expected and
-          unexpected failures, which is the whole doctrine.
-      - text: >-
-          Essentially yes, the philosophy is that defensive error handling adds
-          complexity, so you let processes fail and rely on supervision to bring
-          them back into a working state.
-        trap: content
-        why_wrong: >-
-          Accepts the provocation and describes a system with no explicit domain
-          error handling, which is not how OTP code is written.
-      - text: >-
-          No, it means that I treat explicitly the errors expected and let the
-          unexpected kill the process, because restart from a state known-good
-          is more safe.
-        trap: grammar
-        why_wrong: >-
-          Adverb placement, post-posed adjectives and "more safe" all break the
-          sentence despite correct content.
-    feedback:
-      register: >-
-        Firm correction of the premise, without defensiveness.
-      hedging: >-
-        None; the distinction is clear enough to assert.
-      precision: >-
-        Expected versus unexpected is the axis; name both with examples.
-      grammar: >-
-        "I handle expected errors explicitly", "a known-good state", "safer".
-      pragmatics: >-
-        Contradicting the framing is expected here and shows conviction.
-    rephrase:
-      prompt: >-
-        Give the same answer using an example from a payment flow only.
-      goal: Ground the doctrine in a single concrete domain.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      Comparativos curtos: "safer", "harder". "More safe" e sempre erro.
-    feynman:
-      concept: Expected errors as values, unexpected failures as crashes.
-      explain_to: A developer who wraps everything in try/rescue.
-      constraint: Explain using a shop with a returns policy and a fire alarm.
-      self_check: >-
-        Did you give one example of each category?
-    black_box:
-      symptom: You accepted the premise, or described only supervision.
-      expected: Expected errors handled as values; unexpected ones crash.
-      actual: A no-error-handling claim, or a supervisor-only explanation.
-      root_cause: >-
-        The slogan learned without its boundary condition.
-      repair: >-
-        Answer with the two categories before mentioning supervisors.
-    recall:
-      active_recall_cue: >-
-        Which failures should be values, and which should be crashes?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        note: Fault tolerance and failure classification.
-      - repo: original
-        path: english-arcade/elixir/let-it-crash
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-03-genserver-bottleneck
-    version: "1.0.0"
-    target: elixir
-    topic: OTP design
-    difficulty: 3
-    interview_stage: architecture_review
-    prompt: >-
-      This GenServer is showing high message queue length. What does that tell
-      you?
-    context: >-
-      A single GenServer handles all writes for a busy feature. The interviewer
-      wants you to recognise serialisation, which is the most common OTP design
-      mistake at scale.
+    - text: I would defend the first Fault tolerance option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Fault tolerance design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Clarify let-it-crash as explicit boundary handling, isolated failure,
+      and supervised recovery.
+    goal: Compress the Fault tolerance answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: 'No: I handle expected errors explicitly and let unexpected ones kill
+    the process. A declined payment is a value I match on; unanticipated corrupt state
+    is a crash, because a known-good restart beats an unknown state.'
+  distractors:
+  - text: It means the supervisor handles the errors instead of the process, so you
+      do not need try and rescue blocks because the restart takes care of recovery
+      for you.
+    trap: precision
+    why_wrong: Half true and missing the crucial split between expected and unexpected
+      failures, which is the whole doctrine.
+  - text: Essentially yes, the philosophy is that defensive error handling adds complexity,
+      so you let processes fail and rely on supervision to bring them back into a
+      working state.
+    trap: content
+    why_wrong: Accepts the provocation and describes a system with no explicit domain
+      error handling, which is not how OTP code is written.
+  - text: No, it means that I treat explicitly the errors expected and let the unexpected
+      kill the process, because restart from a state known-good is more safe.
+    trap: grammar
+    why_wrong: Adverb placement, post-posed adjectives and "more safe" all break the
+      sentence despite correct content.
+  feedback:
+    register: Firm correction of the premise, without defensiveness.
+    hedging: None; the distinction is clear enough to assert.
+    precision: Expected versus unexpected is the axis; name both with examples.
+    grammar: '"I handle expected errors explicitly", "a known-good state", "safer".'
+    pragmatics: Contradicting the framing is expected here and shows conviction.
+  rephrase:
+    prompt: Give the same answer using an example from a payment flow only.
+    goal: Ground the doctrine in a single concrete domain.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: 'Comparativos curtos: "safer", "harder". "More safe" e sempre erro.'
+  feynman:
+    concept: Expected errors as values, unexpected failures as crashes.
+    explain_to: A developer who wraps everything in try/rescue.
+    constraint: Explain using a shop with a returns policy and a fire alarm.
+    self_check: Did you give one example of each category?
+    reasoning_check: Can you identify the hidden premise behind Fault tolerance, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You accepted the premise, or described only supervision.
+    expected: Expected errors handled as values; unexpected ones crash.
+    actual: A no-error-handling claim, or a supervisor-only explanation.
+    root_cause: The slogan learned without its boundary condition.
+    repair: Answer with the two categories before mentioning supervisors.
+    reasoning_error: If your Fault tolerance answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Which failures should be values, and which should be crashes?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Fault tolerance without presenting
+      an assumption as a fact?
+    black_box_probe: When the Fault tolerance answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-02-let-it-crash-delayed-2
+      prompt: 'Review note for Fault tolerance: a stakeholder clarifies a Fault tolerance
+        requirement that changes the Fault tolerance success condition. Given a stakeholder
+        asks for a stronger Fault tolerance guarantee than the first Fault tolerance
+        answer promised, what would you now defend, retract, and verify about Fault
+        tolerance?'
+      changed_constraint: a stakeholder asks for a stronger Fault tolerance guarantee
+        than the first Fault tolerance answer promised
+      new_evidence: a stakeholder clarifies a Fault tolerance requirement that changes
+        the Fault tolerance success condition
+      best_answer: I would keep the facts that remain supported about Fault tolerance,
+        treat a stakeholder clarifies a Fault tolerance requirement that changes the
+        Fault tolerance success condition as new evidence rather than a result, and
+        state the updated decision rule under a stakeholder asks for a stronger Fault
+        tolerance guarantee than the first Fault tolerance answer promised. I would
+        then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Fault tolerance answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Fault tolerance explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Fault tolerance and failure classification.
+  - repo: original
+    path: english-arcade/elixir/let-it-crash
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Deep dive on Fault tolerance: compare Fault tolerance options with one
+      measurement; which failure around Fault tolerance would make Fault tolerance
+      switch?'
+    goal: Move from the short Fault tolerance answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Fault tolerance before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Fault tolerance within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Fault tolerance,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Fault tolerance constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Fault tolerance: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Fault tolerance
+        benefit: It keeps the Fault tolerance reasoning close to the stated Elixir
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Fault tolerance workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Fault tolerance contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Fault tolerance
+        benefit: It can make the Fault tolerance boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Fault tolerance evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Fault tolerance option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Fault tolerance: what Fault tolerance limit should you probe before
+        trusting the answer, and how would Fault tolerance behave there?'
+    evidence_check:
+      basis: Check the Fault tolerance claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Fault tolerance, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Fault tolerance
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Does "let it crash" mean you do", update Fault tolerance
+        when Fault tolerance evidence—a Fault tolerance trace or Fault tolerance test—contradicts
+        the Fault tolerance constraint in case "Does "let it crash" mean you do";
+        ask a stakeholder about Fault tolerance before revising.
+    rubric:
+      facts_correct: Names the verified Fault tolerance facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Fault tolerance premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Fault tolerance options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Fault tolerance choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Fault tolerance
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Fault tolerance recommendation.
+- id: elixir-03-genserver-bottleneck
+  version: 1.4.0
+  target: elixir
+  topic: OTP design
+  difficulty: 3
+  interview_stage: architecture_review
+  prompt: This GenServer is showing high message queue length. What does that tell
+    you?
+  context: A single GenServer handles all writes for a busy feature. The interviewer
+    wants you to recognise serialisation, which is the most common OTP design mistake
+    at scale.
+  follow_up:
+    prompt: What work is this GenServer serialising, and where would you move or shard
+      state if the mailbox remains high?
+    goal: Answer the failure challenge about OTP design while keeping the evidence
+      boundary explicit.
+    challenge_kind: failure
     best_answer: >-
-      That it has become a bottleneck, because every call behind it is
-      serialised through one mailbox. I would ask whether the state really has
-      to be global, and if it can be partitioned per user or per room, I would
-      run a process per partition instead.
+      That it has become a bottleneck, because every call behind it is serialised through
+      one mailbox. If the failure in the follow-up appears, I would name the user
+      or system consequence, contain it with a bounded mitigation, and verify recovery with a
+      focused test or metric.
     distractors:
-      - text: >-
-          That the process is doing too much work per message, so I would
-          optimise the handle_call implementation to make each message faster to
-          process and drain the queue.
-        trap: content
-        why_wrong: >-
-          Treats a structural bottleneck as a micro-optimisation problem;
-          faster serial work is still serial.
-      - text: >-
-          That there is more load than the process can handle, so I would need
-          to scale it somehow, perhaps by adding more resources or by finding
-          another approach to the problem.
-        trap: precision
-        why_wrong: >-
-          Restates the symptom and offers no mechanism; "scale it somehow" is
-          not a design.
-      - text: >-
-          That it turned a bottleneck, because all the calls behind it are
-          serialised for one only mailbox, then I would ask if the state needs
-          really to be global.
-        trap: grammar
-        why_wrong: >-
-          "Turned a bottleneck", "for one only mailbox" and misplaced "really"
-          all break the sentence.
-    feedback:
-      register: >-
-        Architectural. Diagnose the shape, not the code.
-      hedging: >-
-        None on the diagnosis; hedge only whether partitioning is possible.
-      precision: >-
-        "Serialised through one mailbox" is the exact mechanism.
-      grammar: >-
-        "It has become", "a single mailbox", "whether the state really has to
-        be".
-      pragmatics: >-
-        Asking whether the state must be global invites the domain discussion
-        that leads to the real fix.
-    rephrase:
-      prompt: >-
-        Answer again for state that genuinely cannot be partitioned.
-      goal: Test whether you have a second strategy.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Single-process serialisation and partitioned state.
-      explain_to: A developer who added a GenServer for every module.
-      constraint: Explain using one till in a large supermarket.
-      self_check: >-
-        Did you propose a partition key from the domain?
-    black_box:
-      symptom: You optimised the handler or described the symptom again.
-      expected: Serialisation through one mailbox; partition the state.
-      actual: A per-message optimisation, or vague scaling.
-      root_cause: >-
-        GenServers used as modules rather than as concurrency boundaries.
-      repair: >-
-        For every GenServer, ask what it serialises and whether that is
-        intended.
-    recall:
-      active_recall_cue: >-
-        What does a growing mailbox indicate structurally?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
-        note: Per-partition process design at scale.
-      - repo: original
-        path: english-arcade/elixir/genserver-bottleneck
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-04-supervision-strategy
-    version: "1.0.0"
-    target: elixir
-    topic: Supervision
-    difficulty: 2
-    interview_stage: architecture_review
-    prompt: >-
-      Which supervision strategy would you choose for these workers?
-    context: >-
-      Several independent workers process unrelated queues under one supervisor.
-      The interviewer wants the strategy tied to the coupling between children,
-      not recited from documentation.
+    - text: I would describe the OTP design failure as impossible because the happy
+        path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to OTP design immediately and assume the system would
+        become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: Diagnose the bottleneck with mailbox signal, serial work, and one safe
+      scaling move.
+    goal: Compress the OTP design answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: That it has become a bottleneck, because every call behind it is serialised
+    through one mailbox. I would ask whether the state really has to be global, and
+    if it can be partitioned per user or per room, I would run a process per partition
+    instead.
+  distractors:
+  - text: That the process is doing too much work per message, so I would optimise
+      the handle_call implementation to make each message faster to process and drain
+      the queue.
+    trap: content
+    why_wrong: Treats a structural bottleneck as a micro-optimisation problem; faster
+      serial work is still serial.
+  - text: That there is more load than the process can handle, so I would need to
+      scale it somehow, perhaps by adding more resources or by finding another approach
+      to the problem.
+    trap: precision
+    why_wrong: Restates the symptom and offers no mechanism; "scale it somehow" is
+      not a design.
+  - text: That it turned a bottleneck, because all the calls behind it are serialised
+      for one only mailbox, then I would ask if the state needs really to be global.
+    trap: grammar
+    why_wrong: '"Turned a bottleneck", "for one only mailbox" and misplaced "really"
+      all break the sentence.'
+  feedback:
+    register: Architectural. Diagnose the shape, not the code.
+    hedging: None on the diagnosis; hedge only whether partitioning is possible.
+    precision: '"Serialised through one mailbox" is the exact mechanism.'
+    grammar: '"It has become", "a single mailbox", "whether the state really has to
+      be".'
+    pragmatics: Asking whether the state must be global invites the domain discussion
+      that leads to the real fix.
+  rephrase:
+    prompt: Answer again for state that genuinely cannot be partitioned.
+    goal: Test whether you have a second strategy.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Single-process serialisation and partitioned state.
+    explain_to: A developer who added a GenServer for every module.
+    constraint: Explain using one till in a large supermarket.
+    self_check: Did you propose a partition key from the domain?
+    reasoning_check: Can you identify the hidden premise behind OTP design, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You optimised the handler or described the symptom again.
+    expected: Serialisation through one mailbox; partition the state.
+    actual: A per-message optimisation, or vague scaling.
+    root_cause: GenServers used as modules rather than as concurrency boundaries.
+    repair: For every GenServer, ask what it serialises and whether that is intended.
+    reasoning_error: If your OTP design answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What does a growing mailbox indicate structurally?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind OTP design without presenting
+      an assumption as a fact?
+    black_box_probe: When the OTP design answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-03-genserver-bottleneck-delayed-3
+      prompt: New evidence about OTP design says a trace of OTP design isolates a
+        different OTP design bottleneck than the one you named; with the OTP design
+        dependency is slower for OTP design and the failure is ambiguous rather than
+        explicit, how do you update the OTP design decision rule?
+      changed_constraint: the OTP design dependency is slower for OTP design and the
+        failure is ambiguous rather than explicit
+      new_evidence: a trace of OTP design isolates a different OTP design bottleneck
+        than the one you named
+      best_answer: I would keep the facts that remain supported about OTP design,
+        treat a trace of OTP design isolates a different OTP design bottleneck than
+        the one you named as new evidence rather than a result, and state the updated
+        decision rule under the OTP design dependency is slower for OTP design and
+        the failure is ambiguous rather than explicit. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original OTP design answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire OTP design explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
+    note: Per-partition process design at scale.
+  - repo: original
+    path: english-arcade/elixir/genserver-bottleneck
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Defend OTP design after a counterexample: which OTP design assumption
+      changes, and what evidence keeps the revised OTP design choice honest?'
+    goal: Move from the short OTP design answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame OTP design before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests OTP design within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend OTP design,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the OTP design constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for OTP design: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for OTP design
+        benefit: It keeps the OTP design reasoning close to the stated Elixir constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the OTP design workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated OTP design contract and its invariant are
+          the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for OTP design
+        benefit: It can make the OTP design boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the OTP design evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first OTP design option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant Elixir constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Otp design: if a caller retries OTP design at the worst moment, what
+        failure mode appears first, and how would you protect OTP design?'
+    evidence_check:
+      basis: Check the OTP design claim against system-design-estudos/real-world-cases/01-platforms-and-apps/discord-elixir-realtime-scale/README.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about OTP design, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the OTP design question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "This GenServer is showing high message queue", update
+        OTP design when OTP design evidence—a OTP design trace or OTP design test—contradicts
+        the OTP design constraint in case "This GenServer is showing high message
+        queue"; ask a stakeholder about OTP design before revising.
+    rubric:
+      facts_correct: Names the verified OTP design facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the OTP design premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible OTP design options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the OTP design choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about OTP design by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the OTP design recommendation.
+- id: elixir-04-supervision-strategy
+  version: 1.4.0
+  target: elixir
+  topic: Supervision
+  difficulty: 2
+  interview_stage: architecture_review
+  prompt: Which supervision strategy would you choose for these workers?
+  context: Several independent workers process unrelated queues under one supervisor.
+    The interviewer wants the strategy tied to the coupling between children, not
+    recited from documentation.
+  follow_up:
+    prompt: Should a child restart independently, bring siblings down, or stop the
+      whole tree after this failure, and why?
+    goal: Answer the new_evidence challenge about Supervision while keeping the evidence
+      boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
-      One_for_one, because the workers are independent and restarting one should
-      not disturb the others. I would reach for one_for_all only if they shared
-      state that goes inconsistent when a single child dies.
+      One_for_one, because the workers are independent and restarting one should not disturb the others.
+      I would keep the claims that remain supported, identify exactly which premise the new
+      observation changes, and run a focused check before revising the decision.
     distractors:
-      - text: >-
-          I would use one_for_one, since it is the default strategy and it works
-          well for most cases where you have workers running under a supervisor
-          in an application.
-        trap: precision
-        why_wrong: >-
-          Right answer, no reasoning. The interviewer cannot tell whether you
-          would notice a case that needs a different strategy.
-      - text: >-
-          I would use rest_for_one so that if an earlier worker fails the later
-          ones are restarted too, which keeps the whole pipeline consistent
-          after any failure occurs.
-        trap: content
-        why_wrong: >-
-          Applies a dependency-ordered strategy to independent workers, which
-          restarts healthy processes for no reason.
-      - text: >-
-          One_for_one, because the workers are independents and restart one
-          should not disturb the others that are working normally in that
-          moment.
-        trap: grammar
-        why_wrong: >-
-          Pluralised adjective, missing gerund and "in that moment" are all
-          transfer errors.
-    feedback:
-      register: >-
-        Decisive with the condition for changing your mind.
-      hedging: >-
-        None; supervision strategies map cleanly onto coupling.
-      precision: >-
-        Shared inconsistent state is the criterion for one_for_all.
-      grammar: >-
-        Adjectives do not pluralise: "independent"; use "restarting one".
-      pragmatics: >-
-        Naming the alternative and its trigger shows the choice was reasoned.
-    rephrase:
-      prompt: >-
-        Choose a strategy for a pipeline where each stage feeds the next.
-      goal: Apply the coupling criterion to an ordered case.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Supervision strategy as a function of child coupling.
-      explain_to: A developer choosing strategies from documentation defaults.
-      constraint: Explain using independent shops versus a production line.
-      self_check: >-
-        Did you name what would make you change strategy?
-    black_box:
-      symptom: You cited the default, or picked an ordered strategy.
-      expected: one_for_one for independence; one_for_all for shared state.
-      actual: >-
-        An appeal to the default, or rest_for_one applied to independent
-        workers.
-      root_cause: >-
-        Strategies memorised as names rather than as coupling decisions.
-      repair: >-
-        Ask what the children share before choosing a strategy.
-    recall:
-      active_recall_cue: >-
-        What property of the children decides the supervision strategy?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        note: Supervision and recovery design.
-      - repo: original
-        path: english-arcade/elixir/supervision-strategy
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-05-back-pressure
-    version: "1.0.0"
-    target: elixir
-    topic: Back-pressure
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Producers are outpacing consumers. How do you stop the system falling
-      over?
-    context: >-
-      An ingestion pipeline is accumulating messages faster than it can process
-      them. The interviewer wants demand-driven flow control rather than a
-      bigger buffer.
+    - text: I would keep the Supervision recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Supervision claim as soon as one new observation
+        appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Choose a supervision strategy by failure relationship, restart scope,
+      and the state that must be rebuilt.
+    goal: Compress the Supervision answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: One_for_one, because the workers are independent and restarting one
+    should not disturb the others. I would reach for one_for_all only if they shared
+    state that goes inconsistent when a single child dies.
+  distractors:
+  - text: I would use one_for_one, since it is the default strategy and it works well
+      for most cases where you have workers running under a supervisor in an application.
+    trap: precision
+    why_wrong: Right answer, no reasoning. The interviewer cannot tell whether you
+      would notice a case that needs a different strategy.
+  - text: I would use rest_for_one so that if an earlier worker fails the later ones
+      are restarted too, which keeps the whole pipeline consistent after any failure
+      occurs.
+    trap: content
+    why_wrong: Applies a dependency-ordered strategy to independent workers, which
+      restarts healthy processes for no reason.
+  - text: One_for_one, because the workers are independents and restart one should
+      not disturb the others that are working normally in that moment.
+    trap: grammar
+    why_wrong: Pluralised adjective, missing gerund and "in that moment" are all transfer
+      errors.
+  feedback:
+    register: Decisive with the condition for changing your mind.
+    hedging: None; supervision strategies map cleanly onto coupling.
+    precision: Shared inconsistent state is the criterion for one_for_all.
+    grammar: 'Adjectives do not pluralise: "independent"; use "restarting one".'
+    pragmatics: Naming the alternative and its trigger shows the choice was reasoned.
+  rephrase:
+    prompt: Choose a strategy for a pipeline where each stage feeds the next.
+    goal: Apply the coupling criterion to an ordered case.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Supervision strategy as a function of child coupling.
+    explain_to: A developer choosing strategies from documentation defaults.
+    constraint: Explain using independent shops versus a production line.
+    self_check: Did you name what would make you change strategy?
+    reasoning_check: Can you identify the hidden premise behind Supervision, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You cited the default, or picked an ordered strategy.
+    expected: one_for_one for independence; one_for_all for shared state.
+    actual: An appeal to the default, or rest_for_one applied to independent workers.
+    root_cause: Strategies memorised as names rather than as coupling decisions.
+    repair: Ask what the children share before choosing a strategy.
+    reasoning_error: If your Supervision answer failed, classify the mistake as a
+      fact, assumption, comparison, failure, or certainty error before proposing the
+      smallest repair.
+  recall:
+    active_recall_cue: What property of the children decides the supervision strategy?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Supervision without presenting
+      an assumption as a fact?
+    black_box_probe: When the Supervision answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-04-supervision-strategy-delayed-4
+      prompt: 'Supervision gets a new constraint: new Supervision evidence contradicts
+        the Supervision assumption that made the first option attractive. After a
+        code inspection of Supervision confirms the Supervision mechanism but not
+        its impact, which Supervision assumption is no longer safe?'
+      changed_constraint: new Supervision evidence contradicts the Supervision assumption
+        that made the first option attractive
+      new_evidence: a code inspection of Supervision confirms the Supervision mechanism
+        but not its impact
+      best_answer: I would keep the facts that remain supported about Supervision,
+        treat a code inspection of Supervision confirms the Supervision mechanism
+        but not its impact as new evidence rather than a result, and state the updated
+        decision rule under new Supervision evidence contradicts the Supervision assumption
+        that made the first option attractive. I would then name one focused check
+        before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Supervision answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Supervision explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Supervision and recovery design.
+  - repo: original
+    path: english-arcade/elixir/supervision-strategy
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Five more minutes on Supervision: which boundary, alternative, and update
+      trigger would you explain for Supervision?'
+    goal: Move from the short Supervision answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Supervision before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Supervision within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Supervision,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Supervision constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Supervision: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Supervision
+        benefit: It keeps the Supervision reasoning close to the stated Elixir constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Supervision workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Supervision contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Supervision
+        benefit: It can make the Supervision boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Supervision evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Supervision option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Supervision: where would a tiny Supervision counterexample expose a
+        false assumption, and what would you change about Supervision?'
+    evidence_check:
+      basis: Check the Supervision claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Supervision, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Supervision question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Which supervision strategy would you choose for",
+        update Supervision when Supervision evidence—a Supervision trace or Supervision
+        test—contradicts the Supervision constraint in case "Which supervision strategy
+        would you choose for"; ask a stakeholder about Supervision before revising.
+    rubric:
+      facts_correct: Names the verified Supervision facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Supervision premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Supervision options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Supervision choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Supervision
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Supervision recommendation.
+- id: elixir-05-back-pressure
+  version: 1.4.0
+  target: elixir
+  topic: Back-pressure
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Producers are outpacing consumers. How do you stop the system falling over?
+  context: An ingestion pipeline is accumulating messages faster than it can process
+    them. The interviewer wants demand-driven flow control rather than a bigger buffer.
+  follow_up:
+    prompt: Where would you bound the queue, signal overload, and preserve a useful
+      response when producers stay faster than consumers?
+    goal: Answer the assumption challenge about Back-pressure while keeping the evidence
+      boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      By making demand flow from the consumer rather than pushing from the
-      producer, which is what GenStage gives you. A buffer only delays the
-      problem, because unbounded queues turn a throughput mismatch into a memory
-      failure that is harder to diagnose.
+      By making demand flow from the consumer rather than pushing from the producer, which
+      is what GenStage gives you. I would label the follow-up premise as an assumption,
+      ask the smallest question that could disprove it, and protect the edge case before
+      committing to the recommendation.
     distractors:
-      - text: >-
-          I would add more consumer processes to increase throughput, and
-          increase the buffer size so that the system can absorb the spikes
-          without dropping any of the incoming messages.
-        trap: content
-        why_wrong: >-
-          More consumers may help transiently, but an unbounded buffer converts
-          overload into an out-of-memory crash.
-      - text: >-
-          I would implement some form of back-pressure so that the producers
-          slow down when the consumers cannot keep up with the current rate of
-          incoming messages.
-        trap: precision
-        why_wrong: >-
-          Names the concept without the mechanism; "some form of" is where the
-          answer should have started.
-      - text: >-
-          Making the demand come from the consumer instead of push from the
-          producer, because a buffer only delays the problem and after turns in
-          a failure of memory.
-        trap: grammar
-        why_wrong: >-
-          "Instead of push", "turns in" and "failure of memory" break parallel
-          structure and compound nouns.
-    feedback:
-      register: >-
-        Systems-level and specific.
-      hedging: >-
-        None; demand-driven flow is the established answer.
-      precision: >-
-        Say why buffering fails, not just that it does.
-      grammar: >-
-        "Instead of pushing", "turns into", "memory failure".
-      pragmatics: >-
-        Explaining the harder-to-diagnose failure mode justifies the design.
-    rephrase:
-      prompt: >-
-        Explain what the producer should do when demand stops arriving.
-      goal: Follow the mechanism one step further.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Demand-driven flow control versus buffering.
-      explain_to: A developer who solves queue growth with a bigger queue.
-      constraint: Explain using a checkout that stops letting people queue.
-      self_check: >-
-        Did you say what the failure becomes if you only buffer?
-    black_box:
-      symptom: You added buffer or consumers, or named back-pressure vaguely.
-      expected: Consumer-driven demand; unbounded buffers become memory
-        failures.
-      actual: Capacity increases, or the concept without the mechanism.
-      root_cause: >-
-        Overload framed as insufficient capacity instead of missing flow
-        control.
-      repair: >-
-        Ask who decides when the next message is sent.
-    recall:
-      active_recall_cue: >-
-        What does an unbounded queue convert overload into?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/11-operational-playbooks/playbooks/queue-lag-dlq-and-replay.md
-        note: Queue lag and overload handling.
-      - repo: original
-        path: english-arcade/elixir/back-pressure
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-06-immutability-cost
-    version: "1.0.0"
-    target: elixir
-    topic: Immutability
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      Does immutability make Elixir slower for large data structures?
-    context: >-
-      A performance-flavoured question that rewards nuance. The interviewer
-      wants to know whether you understand structural sharing or repeat a
-      general claim in either direction.
+    - text: I would repeat my original Back-pressure answer with more confidence because
+        the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Back-pressure until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Describe back-pressure as admission control, bounded work, and the observable
+      signal for overload.
+    goal: Compress the Back-pressure answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: By making demand flow from the consumer rather than pushing from the
+    producer, which is what GenStage gives you. A buffer only delays the problem,
+    because unbounded queues turn a throughput mismatch into a memory failure that
+    is harder to diagnose.
+  distractors:
+  - text: I would add more consumer processes to increase throughput, and increase
+      the buffer size so that the system can absorb the spikes without dropping any
+      of the incoming messages.
+    trap: content
+    why_wrong: More consumers may help transiently, but an unbounded buffer converts
+      overload into an out-of-memory crash.
+  - text: I would implement some form of back-pressure so that the producers slow
+      down when the consumers cannot keep up with the current rate of incoming messages.
+    trap: precision
+    why_wrong: Names the concept without the mechanism; "some form of" is where the
+      answer should have started.
+  - text: Making the demand come from the consumer instead of push from the producer,
+      because a buffer only delays the problem and after turns in a failure of memory.
+    trap: grammar
+    why_wrong: '"Instead of push", "turns in" and "failure of memory" break parallel
+      structure and compound nouns.'
+  feedback:
+    register: Systems-level and specific.
+    hedging: None; demand-driven flow is the established answer.
+    precision: Say why buffering fails, not just that it does.
+    grammar: '"Instead of pushing", "turns into", "memory failure".'
+    pragmatics: Explaining the harder-to-diagnose failure mode justifies the design.
+  rephrase:
+    prompt: Explain what the producer should do when demand stops arriving.
+    goal: Follow the mechanism one step further.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Demand-driven flow control versus buffering.
+    explain_to: A developer who solves queue growth with a bigger queue.
+    constraint: Explain using a checkout that stops letting people queue.
+    self_check: Did you say what the failure becomes if you only buffer?
+    reasoning_check: Can you identify the hidden premise behind Back-pressure, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You added buffer or consumers, or named back-pressure vaguely.
+    expected: Consumer-driven demand; unbounded buffers become memory failures.
+    actual: Capacity increases, or the concept without the mechanism.
+    root_cause: Overload framed as insufficient capacity instead of missing flow control.
+    repair: Ask who decides when the next message is sent.
+    reasoning_error: If your Back-pressure answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What does an unbounded queue convert overload into?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Back-pressure without presenting
+      an assumption as a fact?
+    black_box_probe: When the Back-pressure answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-05-back-pressure-delayed-5
+      prompt: 'Revisit Back-pressure after a measured Back-pressure comparison shows
+        the alternative has a different Back-pressure cost profile and two Back-pressure
+        callers from the case "Producers are outpacing consumers. How do you" or Back-pressure
+        tenants now compete for the same Back-pressure boundary: what remains factual
+        about Back-pressure, what becomes provisional, and why?'
+      changed_constraint: two Back-pressure callers from the case "Producers are outpacing
+        consumers. How do you" or Back-pressure tenants now compete for the same Back-pressure
+        boundary
+      new_evidence: a measured Back-pressure comparison shows the alternative has
+        a different Back-pressure cost profile
+      best_answer: I would keep the facts that remain supported about Back-pressure,
+        treat a measured Back-pressure comparison shows the alternative has a different
+        Back-pressure cost profile as new evidence rather than a result, and state
+        the updated decision rule under two Back-pressure callers from the case "Producers
+        are outpacing consumers. How do you" or Back-pressure tenants now compete
+        for the same Back-pressure boundary. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Back-pressure answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Back-pressure explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/11-operational-playbooks/playbooks/queue-lag-dlq-and-replay.md
+    note: Queue lag and overload handling.
+  - repo: original
+    path: english-arcade/elixir/back-pressure
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Revisit Back-pressure beyond the happy path: what is factual about Back-pressure,
+      what is provisional, and which Back-pressure test could change it?'
+    goal: Move from the short Back-pressure answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Back-pressure before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Back-pressure within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Back-pressure,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Back-pressure constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Back-pressure: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Back-pressure
+        benefit: It keeps the Back-pressure reasoning close to the stated Elixir constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Back-pressure workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Back-pressure contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Back-pressure
+        benefit: It can make the Back-pressure boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Back-pressure evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Back-pressure option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Back-pressure: which Back-pressure boundary deserves the first test,
+        and what observation about Back-pressure would overturn the premise?'
+    evidence_check:
+      basis: Check the Back-pressure claim against system-design-estudos/areas/11-operational-playbooks/playbooks/queue-lag-dlq-and-replay.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Back-pressure, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Back-pressure question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Producers are outpacing consumers. How do you", update
+        Back-pressure when Back-pressure evidence—a Back-pressure trace or Back-pressure
+        test—contradicts the Back-pressure constraint in case "Producers are outpacing
+        consumers. How do you"; ask a stakeholder about Back-pressure before revising.
+    rubric:
+      facts_correct: Names the verified Back-pressure facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Back-pressure premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Back-pressure options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Back-pressure choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Back-pressure
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Back-pressure recommendation.
+- id: elixir-06-immutability-cost
+  version: 1.4.0
+  target: elixir
+  topic: Immutability
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: Does immutability make Elixir slower for large data structures?
+  context: A performance-flavoured question that rewards nuance. The interviewer wants
+    to know whether you understand structural sharing or repeat a general claim in
+    either direction.
+  follow_up:
+    prompt: Which copy or traversal dominates this structure, and what measurement
+      would justify accepting it or changing the representation?
+    goal: Answer the evidence challenge about Immutability while keeping the evidence
+      boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      Not as much as people expect, because updates share structure rather than
-      copying wholesale. Building a large list by appending is genuinely slow,
-      but that is about the data structure rather than immutability, and
-      prepending then reversing avoids it.
+      Not as much as people expect, because updates share structure rather than copying wholesale.
+      I would treat the follow-up observation as evidence, not as proof of impact; I
+      would inspect the smallest relevant trace or test and state what remains uncertain before
+      changing the decision.
     distractors:
-      - text: >-
-          Yes, since every update creates a new copy of the data structure,
-          which means more allocation and more garbage collection pressure than
-          a mutable language would have.
-        trap: content
-        why_wrong: >-
-          Wholesale copying is exactly what structural sharing avoids, so the
-          premise is wrong.
-      - text: >-
-          No, the BEAM is heavily optimised for this and in practice it is not
-          something you need to worry about when writing normal application
-          code.
-        trap: precision
-        why_wrong: >-
-          Dismisses a real concern without naming the mechanism or the genuine
-          exception.
-      - text: >-
-          Not so much how the people expect, because the updates share the
-          structure instead of copy everything, although build a big list with
-          append is really slow.
-        trap: grammar
-        why_wrong: >-
-          "How the people expect", "instead of copy" and "build a big list" all
-          need different forms.
-    feedback:
-      register: >-
-        Nuanced. Concede the real cost while correcting the assumption.
-      hedging: >-
-        "Not as much as people expect" is well-calibrated for a nuanced claim.
-      precision: >-
-        Structural sharing and the append case are both required.
-      grammar: >-
-        "As people expect", "instead of copying", "building a large list".
-      pragmatics: >-
-        Offering the workaround turns a correction into useful advice.
-    rephrase:
-      prompt: >-
-        Explain the append problem without using the word "immutability".
-      goal: Separate the data structure issue from the paradigm.
-    language_focus: [precision, grammar, hedging]
-    feynman:
-      concept: Structural sharing and list append costs.
-      explain_to: A developer convinced functional means copying.
-      constraint: Explain using a shared library catalogue with new entries.
-      self_check: >-
-        Did you name a case where the cost is real?
-    black_box:
-      symptom: You claimed copying, or dismissed the question entirely.
-      expected: Structural sharing, plus the genuine append cost and its fix.
-      actual: A copying claim, or an unqualified reassurance.
-      root_cause: >-
-        Immutability judged from intuition about memory rather than from the
-        implementation.
-      repair: >-
-        Pair every reassurance with the one case that is genuinely slow.
-    recall:
-      active_recall_cue: >-
-        Which list operation is genuinely expensive, and what replaces it?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/scaling-performance.md
-        note: Performance reasoning about data structures.
-      - repo: original
-        path: english-arcade/elixir/immutability-cost
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-07-ets-vs-genserver
-    version: "1.0.0"
-    target: elixir
-    topic: State storage
-    difficulty: 3
-    interview_stage: architecture_review
-    prompt: >-
-      Would you keep this cache in a GenServer or in ETS?
-    context: >-
-      A read-heavy cache shared across many processes. The interviewer wants the
-      concurrency characteristics compared, since this choice decides whether
-      reads scale.
+    - text: I would cite my experience with Immutability as enough proof and move
+        on without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Immutability before making
+        even a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Compare immutable updates by sharing, allocation cost, and the measurement
+      that informs the trade-off.
+    goal: Compress the Immutability answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Not as much as people expect, because updates share structure rather
+    than copying wholesale. Building a large list by appending is genuinely slow,
+    but that is about the data structure rather than immutability, and prepending
+    then reversing avoids it.
+  distractors:
+  - text: Yes, since every update creates a new copy of the data structure, which
+      means more allocation and more garbage collection pressure than a mutable language
+      would have.
+    trap: content
+    why_wrong: Wholesale copying is exactly what structural sharing avoids, so the
+      premise is wrong.
+  - text: No, the BEAM is heavily optimised for this and in practice it is not something
+      you need to worry about when writing normal application code.
+    trap: precision
+    why_wrong: Dismisses a real concern without naming the mechanism or the genuine
+      exception.
+  - text: Not so much how the people expect, because the updates share the structure
+      instead of copy everything, although build a big list with append is really
+      slow.
+    trap: grammar
+    why_wrong: '"How the people expect", "instead of copy" and "build a big list"
+      all need different forms.'
+  feedback:
+    register: Nuanced. Concede the real cost while correcting the assumption.
+    hedging: '"Not as much as people expect" is well-calibrated for a nuanced claim.'
+    precision: Structural sharing and the append case are both required.
+    grammar: '"As people expect", "instead of copying", "building a large list".'
+    pragmatics: Offering the workaround turns a correction into useful advice.
+  rephrase:
+    prompt: Explain the append problem without using the word "immutability".
+    goal: Separate the data structure issue from the paradigm.
+  language_focus:
+  - precision
+  - grammar
+  - hedging
+  feynman:
+    concept: Structural sharing and list append costs.
+    explain_to: A developer convinced functional means copying.
+    constraint: Explain using a shared library catalogue with new entries.
+    self_check: Did you name a case where the cost is real?
+    reasoning_check: Can you identify the hidden premise behind Immutability, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You claimed copying, or dismissed the question entirely.
+    expected: Structural sharing, plus the genuine append cost and its fix.
+    actual: A copying claim, or an unqualified reassurance.
+    root_cause: Immutability judged from intuition about memory rather than from the
+      implementation.
+    repair: Pair every reassurance with the one case that is genuinely slow.
+    reasoning_error: If your Immutability answer failed, classify the mistake as a
+      fact, assumption, comparison, failure, or certainty error before proposing the
+      smallest repair.
+  recall:
+    active_recall_cue: Which list operation is genuinely expensive, and what replaces
+      it?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Immutability without presenting
+      an assumption as a fact?
+    black_box_probe: When the Immutability answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-06-immutability-cost-delayed-6
+      prompt: The Immutability review adds a Immutability test exposes a boundary
+        case that the Immutability examples did not cover while the Immutability workload
+        for Immutability no longer fits the original resource bound; which conclusion
+        about Immutability would you narrow before proposing a repair?
+      changed_constraint: the Immutability workload for Immutability no longer fits
+        the original resource bound
+      new_evidence: a Immutability test exposes a boundary case that the Immutability
+        examples did not cover
+      best_answer: I would keep the facts that remain supported about Immutability,
+        treat a Immutability test exposes a boundary case that the Immutability examples
+        did not cover as new evidence rather than a result, and state the updated
+        decision rule under the Immutability workload for Immutability no longer fits
+        the original resource bound. I would then name one focused check before treating
+        the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Immutability answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Immutability explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/scaling-performance.md
+    note: Performance reasoning about data structures.
+  - repo: original
+    path: english-arcade/elixir/immutability-cost
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Use a deep dive on Immutability to name the competing Immutability cost,
+      the first failure signal, and the observation that would update Immutability.
+    goal: Move from the short Immutability answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Immutability before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Immutability within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Immutability,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Immutability constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Immutability: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Immutability would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Immutability constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Immutability; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Immutability: when the first Immutability recovery path fails, which
+        consequence reaches the user, and what bounded mitigation follows for Immutability?'
+    evidence_check:
+      basis: Check the Immutability claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Immutability, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Immutability question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Does immutability make Elixir slower for large", update
+        Immutability when Immutability evidence—a Immutability trace or Immutability
+        test—contradicts the Immutability constraint in case "Does immutability make
+        Elixir slower for large"; ask a stakeholder about Immutability before revising.
+    rubric:
+      facts_correct: Names the verified Immutability facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Immutability premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Immutability options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Immutability choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Immutability
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Immutability recommendation.
+- id: elixir-07-ets-vs-genserver
+  version: 1.4.0
+  target: elixir
+  topic: State storage
+  difficulty: 3
+  interview_stage: architecture_review
+  prompt: Would you keep this cache in a GenServer or in ETS?
+  context: A read-heavy cache shared across many processes. The interviewer wants
+    the concurrency characteristics compared, since this choice decides whether reads
+    scale.
+  follow_up:
+    prompt: Does the cache need serialized ownership or concurrent reads, and how
+      will you handle expiry and process loss in either design?
+    goal: Answer the alternative challenge about State storage while keeping the evidence
+      boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      ETS, because reads can happen concurrently from many processes without
-      going through a single mailbox. I would still own the table from a
-      supervised process so its lifetime is managed, but the reads themselves
-      should not be serialised.
+      ETS, because reads can happen concurrently from many processes without going through a single
+      mailbox. I would compare that choice with the credible alternative against the requirement in
+      the follow-up, cost, and failure risk, then switch only if evidence makes the alternative
+      safer.
     distractors:
-      - text: >-
-          A GenServer, because it keeps the state encapsulated and gives you a
-          clear API for reading and writing, which is more idiomatic OTP design
-          than exposing a table.
-        trap: content
-        why_wrong: >-
-          Encapsulation is real, but it serialises every read through one
-          process, which defeats the purpose of a read-heavy cache.
-      - text: >-
-          ETS is probably better for performance, though a GenServer is simpler
-          to reason about, so it would depend on how much traffic the cache
-          actually receives in practice.
-        trap: hedging
-        why_wrong: >-
-          The prompt already says read-heavy and shared, so the deciding
-          information was supplied.
-      - text: >-
-          ETS, because the readings can happen concurrently from many processes
-          without pass for one only mailbox, although I would still own the
-          table of a supervised process.
-        trap: grammar
-        why_wrong: >-
-          "Readings" for reads, "without pass for" and "of a supervised process"
-          are three distinct errors.
-    feedback:
-      register: >-
-        Decisive, with the ownership caveat that shows OTP maturity.
-      hedging: >-
-        None; the workload was specified.
-      precision: >-
-        Concurrent reads versus a single mailbox is the deciding property.
-      grammar: >-
-        "Reads", "without going through", "owned by a supervised process".
-      pragmatics: >-
-        Keeping supervision in the answer pre-empts the lifetime follow-up.
-    rephrase:
-      prompt: >-
-        Answer again for a cache with frequent writes and rare reads.
-      goal: Check whether the criterion reverses correctly.
-    language_focus: [precision, grammar, hedging]
-    feynman:
-      concept: Concurrent table reads versus serialised process calls.
-      explain_to: A developer who puts all state in GenServers.
-      constraint: Explain using a noticeboard versus a receptionist.
-      self_check: >-
-        Did you keep a supervised owner for the table?
-    black_box:
-      symptom: You chose a GenServer, or hedged despite the stated workload.
-      expected: ETS for concurrent reads, still owned by a supervised process.
-      actual: An encapsulation-driven choice, or an unnecessary hedge.
-      root_cause: >-
-        Design judged by idiom rather than by the concurrency it produces.
-      repair: >-
-        Ask whether reads must be serialised before choosing a home for state.
-    recall:
-      active_recall_cue: >-
-        What does ETS allow that a GenServer cannot?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/07-componentes-de-sistemas/cards/message-queue.md
-        note: Component-level reasoning about queues and shared state.
-      - repo: original
-        path: english-arcade/elixir/ets-vs-genserver
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-08-distributed-caveat
-    version: "1.0.0"
-    target: elixir
-    topic: Distribution
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Distributed Erlang makes clustering easy. What is the catch?
-    context: >-
-      The interviewer is inviting an over-enthusiastic answer. They want to hear
-      whether you know the operational costs that come with transparent
-      distribution.
+    - text: I would defend the first State storage option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable State storage design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Contrast GenServer and ETS by ownership, access pattern, and recovery
+      after the owner or node disappears.
+    goal: Compress the State storage answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: ETS, because reads can happen concurrently from many processes without
+    going through a single mailbox. I would still own the table from a supervised
+    process so its lifetime is managed, but the reads themselves should not be serialised.
+  distractors:
+  - text: A GenServer, because it keeps the state encapsulated and gives you a clear
+      API for reading and writing, which is more idiomatic OTP design than exposing
+      a table.
+    trap: content
+    why_wrong: Encapsulation is real, but it serialises every read through one process,
+      which defeats the purpose of a read-heavy cache.
+  - text: ETS is probably better for performance, though a GenServer is simpler to
+      reason about, so it would depend on how much traffic the cache actually receives
+      in practice.
+    trap: hedging
+    why_wrong: The prompt already says read-heavy and shared, so the deciding information
+      was supplied.
+  - text: ETS, because the readings can happen concurrently from many processes without
+      pass for one only mailbox, although I would still own the table of a supervised
+      process.
+    trap: grammar
+    why_wrong: '"Readings" for reads, "without pass for" and "of a supervised process"
+      are three distinct errors.'
+  feedback:
+    register: Decisive, with the ownership caveat that shows OTP maturity.
+    hedging: None; the workload was specified.
+    precision: Concurrent reads versus a single mailbox is the deciding property.
+    grammar: '"Reads", "without going through", "owned by a supervised process".'
+    pragmatics: Keeping supervision in the answer pre-empts the lifetime follow-up.
+  rephrase:
+    prompt: Answer again for a cache with frequent writes and rare reads.
+    goal: Check whether the criterion reverses correctly.
+  language_focus:
+  - precision
+  - grammar
+  - hedging
+  feynman:
+    concept: Concurrent table reads versus serialised process calls.
+    explain_to: A developer who puts all state in GenServers.
+    constraint: Explain using a noticeboard versus a receptionist.
+    self_check: Did you keep a supervised owner for the table?
+    reasoning_check: Can you identify the hidden premise behind State storage, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You chose a GenServer, or hedged despite the stated workload.
+    expected: ETS for concurrent reads, still owned by a supervised process.
+    actual: An encapsulation-driven choice, or an unnecessary hedge.
+    root_cause: Design judged by idiom rather than by the concurrency it produces.
+    repair: Ask whether reads must be serialised before choosing a home for state.
+    reasoning_error: If your State storage answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What does ETS allow that a GenServer cannot?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind State storage without presenting
+      an assumption as a fact?
+    black_box_probe: When the State storage answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-07-ets-vs-genserver-delayed-7
+      prompt: For State storage, new evidence is a stakeholder clarifies a State storage
+        requirement that changes the State storage success condition and the constraint
+        is a stakeholder asks for a stronger State storage guarantee than the first
+        State storage answer promised. What alternative now deserves consideration
+        for State storage?
+      changed_constraint: a stakeholder asks for a stronger State storage guarantee
+        than the first State storage answer promised
+      new_evidence: a stakeholder clarifies a State storage requirement that changes
+        the State storage success condition
+      best_answer: I would keep the facts that remain supported about State storage,
+        treat a stakeholder clarifies a State storage requirement that changes the
+        State storage success condition as new evidence rather than a result, and
+        state the updated decision rule under a stakeholder asks for a stronger State
+        storage guarantee than the first State storage answer promised. I would then
+        name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original State storage answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire State storage explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/07-componentes-de-sistemas/cards/message-queue.md
+    note: Component-level reasoning about queues and shared state.
+  - repo: original
+    path: english-arcade/elixir/ets-vs-genserver
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Walk through State storage under a changed requirement: which State storage
+      claim survives, which option wins, and why would State storage need new evidence?'
+    goal: Move from the short State storage answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame State storage before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests State storage within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend State storage,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the State storage constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for State storage: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for State storage
+        benefit: It keeps the State storage reasoning close to the stated Elixir constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the State storage workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated State storage contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for State storage
+        benefit: It can make the State storage boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the State storage evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first State storage option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'State storage: what stakeholder reply about State storage would invalidate
+        the recommendation, and which State storage premise would you revisit?'
+    evidence_check:
+      basis: Check the State storage claim against system-design-estudos/areas/07-componentes-de-sistemas/cards/message-queue.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about State storage, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the State storage question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Would you keep this cache in a", update State storage
+        when State storage evidence—a State storage trace or State storage test—contradicts
+        the State storage constraint in case "Would you keep this cache in a"; ask
+        a stakeholder about State storage before revising.
+    rubric:
+      facts_correct: Names the verified State storage facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the State storage premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible State storage options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the State storage choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about State storage
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the State storage recommendation.
+- id: elixir-08-distributed-caveat
+  version: 1.4.0
+  target: elixir
+  topic: Distribution
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Distributed Erlang makes clustering easy. What is the catch?
+  context: The interviewer is inviting an over-enthusiastic answer. They want to hear
+    whether you know the operational costs that come with transparent distribution.
+  follow_up:
+    prompt: Which name-resolution, network-partition, or deployment assumption would
+      you test before trusting this cluster?
+    goal: Answer the failure challenge about Distribution while keeping the evidence
+      boundary explicit.
+    challenge_kind: failure
     best_answer: >-
-      Transparency hides the network. A remote call looks local but can be slow,
-      fail or partition, and full-mesh connectivity limits cluster size. It also
-      assumes a trusted network, so I would not expose it across security
-      boundaries without a tunnel.
+      Transparency hides the network. If the failure in the follow-up appears, I would name
+      the user or system consequence, contain it with a bounded mitigation, and verify recovery
+      with a focused test or metric.
     distractors:
-      - text: >-
-          The main catch is that you need to manage node discovery and make sure
-          the nodes can find each other reliably, especially in containerised
-          environments with dynamic addressing.
-        trap: precision
-        why_wrong: >-
-          An operational detail rather than the fundamental issue, and it is
-          solved by existing libraries.
-      - text: >-
-          There is not really a catch, it is one of the strongest features of
-          the platform and it handles the hard parts of distribution for you
-          automatically.
-        trap: content
-        why_wrong: >-
-          Distribution transparency does not remove partitions, latency or the
-          trust assumption.
-      - text: >-
-          The transparency hides the network. One call remote seems local but
-          can be slow, fail or partition, and the connectivity in full mesh
-          limits the size of the cluster.
-        trap: grammar
-        why_wrong: >-
-          Post-posed adjectives and "the size of the cluster" invert English
-          modifier order throughout.
-    feedback:
-      register: >-
-        Balanced. Enthusiasm plus known costs reads as production experience.
-      hedging: >-
-        None; each cost is well established.
-      precision: >-
-        Three named costs beat one operational anecdote.
-      grammar: >-
-        "A remote call", "full-mesh connectivity", "cluster size".
-      pragmatics: >-
-        The security note shows you think beyond the happy path.
-    rephrase:
-      prompt: >-
-        Say which of those costs you would raise first with an SRE team.
-      goal: Prioritise costs for a specific audience.
-    language_focus: [precision, grammar, register]
-    feynman:
-      concept: Distribution transparency and its hidden costs.
-      explain_to: A developer excited by transparent remote calls.
-      constraint: Explain using a phone call that sounds like the next room.
-      self_check: >-
-        Did you name a limit on cluster size?
-    black_box:
-      symptom: You named only discovery, or denied there was a catch.
-      expected: Hidden network, mesh limits, trusted-network assumption.
-      actual: An operational detail, or uncritical enthusiasm.
-      root_cause: >-
-        Features evaluated from documentation rather than from operating them.
-      repair: >-
-        For any transparency feature, ask what it is hiding.
-    recall:
-      active_recall_cue: >-
-        What three costs come with transparent distribution?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/06-foundations-distribuidas/topics/network-partitions.md
-        note: Network partition behaviour in distributed systems.
-      - repo: original
-        path: english-arcade/elixir/distributed-caveat
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-09-pattern-matching
-    version: "1.0.0"
-    target: elixir
-    topic: Pattern matching
-    difficulty: 1
-    interview_stage: technical_screen
-    prompt: >-
-      Why match on the result tuple instead of using a conditional?
-    context: >-
-      A warm-up on idiom. The interviewer wants to hear the failure mode that
-      matching prevents, rather than a statement that it is the Elixir way.
+    - text: I would describe the Distribution failure as impossible because the happy
+        path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to Distribution immediately and assume the system
+        would become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: State the distribution caveat as a failure assumption, a partition consequence,
+      and a safe operational boundary.
+    goal: Compress the Distribution answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Transparency hides the network. A remote call looks local but can be
+    slow, fail or partition, and full-mesh connectivity limits cluster size. It also
+    assumes a trusted network, so I would not expose it across security boundaries
+    without a tunnel.
+  distractors:
+  - text: The main catch is that you need to manage node discovery and make sure the
+      nodes can find each other reliably, especially in containerised environments
+      with dynamic addressing.
+    trap: precision
+    why_wrong: An operational detail rather than the fundamental issue, and it is
+      solved by existing libraries.
+  - text: There is not really a catch, it is one of the strongest features of the
+      platform and it handles the hard parts of distribution for you automatically.
+    trap: content
+    why_wrong: Distribution transparency does not remove partitions, latency or the
+      trust assumption.
+  - text: The transparency hides the network. One call remote seems local but can
+      be slow, fail or partition, and the connectivity in full mesh limits the size
+      of the cluster.
+    trap: grammar
+    why_wrong: Post-posed adjectives and "the size of the cluster" invert English
+      modifier order throughout.
+  feedback:
+    register: Balanced. Enthusiasm plus known costs reads as production experience.
+    hedging: None; each cost is well established.
+    precision: Three named costs beat one operational anecdote.
+    grammar: '"A remote call", "full-mesh connectivity", "cluster size".'
+    pragmatics: The security note shows you think beyond the happy path.
+  rephrase:
+    prompt: Say which of those costs you would raise first with an SRE team.
+    goal: Prioritise costs for a specific audience.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  feynman:
+    concept: Distribution transparency and its hidden costs.
+    explain_to: A developer excited by transparent remote calls.
+    constraint: Explain using a phone call that sounds like the next room.
+    self_check: Did you name a limit on cluster size?
+    reasoning_check: Can you identify the hidden premise behind Distribution, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You named only discovery, or denied there was a catch.
+    expected: Hidden network, mesh limits, trusted-network assumption.
+    actual: An operational detail, or uncritical enthusiasm.
+    root_cause: Features evaluated from documentation rather than from operating them.
+    repair: For any transparency feature, ask what it is hiding.
+    reasoning_error: If your Distribution answer failed, classify the mistake as a
+      fact, assumption, comparison, failure, or certainty error before proposing the
+      smallest repair.
+  recall:
+    active_recall_cue: What three costs come with transparent distribution?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Distribution without presenting
+      an assumption as a fact?
+    black_box_probe: When the Distribution answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-08-distributed-caveat-delayed-8
+      prompt: A second pass on Distribution finds a trace of Distribution isolates
+        a different Distribution bottleneck than the one you named; with the Distribution
+        dependency is slower for Distribution and the failure is ambiguous rather
+        than explicit, which Distribution test would you run before keeping the original
+        rule?
+      changed_constraint: the Distribution dependency is slower for Distribution and
+        the failure is ambiguous rather than explicit
+      new_evidence: a trace of Distribution isolates a different Distribution bottleneck
+        than the one you named
+      best_answer: I would keep the facts that remain supported about Distribution,
+        treat a trace of Distribution isolates a different Distribution bottleneck
+        than the one you named as new evidence rather than a result, and state the
+        updated decision rule under the Distribution dependency is slower for Distribution
+        and the failure is ambiguous rather than explicit. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Distribution answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Distribution explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/06-foundations-distribuidas/topics/network-partitions.md
+    note: Network partition behaviour in distributed systems.
+  - repo: original
+    path: english-arcade/elixir/distributed-caveat
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Connect Distribution, connect the Distribution implementation choice to
+      its failure mode, measurement, and condition for choosing the alternative.
+    goal: Move from the short Distribution answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Distribution before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Distribution within a Elixir context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Distribution,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Distribution constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Distribution: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Distribution
+        benefit: It keeps the Distribution reasoning close to the stated Elixir constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Distribution workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Distribution contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Distribution
+        benefit: It can make the Distribution boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Distribution evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Distribution option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Distribution: where does the Distribution premise need a boundary check,
+        and which result would make you reframe Distribution?'
+    evidence_check:
+      basis: Check the Distribution claim against system-design-estudos/areas/06-foundations-distribuidas/topics/network-partitions.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Distribution, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Distribution question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Distributed Erlang makes clustering easy. What is",
+        update Distribution when Distribution evidence—a Distribution trace or Distribution
+        test—contradicts the Distribution constraint in case "Distributed Erlang makes
+        clustering easy. What is"; ask a stakeholder about Distribution before revising.
+    rubric:
+      facts_correct: Names the verified Distribution facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Distribution premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Distribution options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Distribution choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about Distribution by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Distribution recommendation.
+- id: elixir-09-pattern-matching
+  version: 1.4.0
+  target: elixir
+  topic: Pattern matching
+  difficulty: 1
+  interview_stage: technical_screen
+  prompt: Why match on the result tuple instead of using a conditional?
+  context: A warm-up on idiom. The interviewer wants to hear the failure mode that
+    matching prevents, rather than a statement that it is the Elixir way.
+  follow_up:
+    prompt: Which tuple shapes are part of the function contract, and how does matching
+      make the unexpected case visible?
+    goal: Answer the new_evidence challenge about Pattern matching while keeping the
+      evidence boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
-      Because an unmatched shape fails immediately and loudly at the point it
-      appears, rather than flowing through as nil and breaking somewhere else.
-      Matching turns an unexpected return into a crash with the actual value in
-      the message.
+      Because an unmatched shape fails immediately and loudly at the point it appears, rather
+      than flowing through as nil and breaking somewhere else. I would keep the claims
+      that remain supported, identify exactly which premise the new observation changes, and run a
+      focused check before revising the decision.
     distractors:
-      - text: >-
-          Because pattern matching is more idiomatic in Elixir and makes the
-          code more readable and declarative than using conditionals to inspect
-          the result of the call.
-        trap: precision
-        why_wrong: >-
-          Style justification only. It never mentions what matching catches that
-          a conditional does not.
-      - text: >-
-          Because it is faster than evaluating a conditional, since the runtime
-          can optimise the match directly rather than executing a comparison at
-          runtime each time.
-        trap: content
-        why_wrong: >-
-          Invents a performance rationale; the benefit is failure locality, not
-          speed.
-      - text: >-
-          Because a shape not matched fails immediately in the point where it
-          appears, instead of follow like nil and break in another place after.
-        trap: grammar
-        why_wrong: >-
-          Post-posed participle, "in the point", "instead of follow" and "break
-          in another place" are all transfer errors.
-    feedback:
-      register: >-
-        Brief and mechanism-focused.
-      hedging: >-
-        None needed for an idiom with a clear rationale.
-      precision: >-
-        Failing at the point of appearance is the benefit; name it.
-      grammar: >-
-        "An unmatched shape", "at the point where it appears", "instead of
-        flowing".
-      pragmatics: >-
-        Mentioning the actual value in the error message is a debugging detail
-        that lands well.
-    rephrase:
-      prompt: >-
-        Describe the bug you get when you use a conditional and ignore the
-        error case.
-      goal: Make the benefit visible through its absence.
-    language_focus: [precision, grammar, register]
-    feynman:
-      concept: Failure locality through pattern matching.
-      explain_to: A developer who checks return values with if statements.
-      constraint: Explain using a parcel rejected at the door versus stored.
-      self_check: >-
-        Did you say where the failure surfaces?
-    black_box:
-      symptom: You justified by idiom or invented a speed benefit.
-      expected: Immediate loud failure at the point of the unexpected shape.
-      actual: A readability claim, or a performance rationale.
-      root_cause: >-
-        Idiom absorbed from surrounding code without its debugging payoff.
-      repair: >-
-        Explain matching by describing the nil bug it prevents.
-    recall:
-      active_recall_cue: >-
-        Where does a failure surface with matching versus with a conditional?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/validation-transformation.md
-        note: Validation and transformation boundaries.
-      - repo: original
-        path: english-arcade/elixir/pattern-matching
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-10-choosing-elixir
-    version: "1.0.0"
-    target: elixir
-    topic: Technology choice
-    difficulty: 2
-    interview_stage: behavioural_probe
-    prompt: >-
-      Tell me about a time you argued for or against using Elixir.
-    context: >-
-      A judgement probe. The interviewer wants evidence that you can separate
-      genuine fit from enthusiasm, and the strongest answers often describe
-      arguing against your preferred tool.
+    - text: I would keep the Pattern matching recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Pattern matching claim as soon as one new
+        observation appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Explain pattern matching as explicit shapes, normal flow, and a deliberate
+      fallback for failures.
+    goal: Compress the Pattern matching answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Because an unmatched shape fails immediately and loudly at the point
+    it appears, rather than flowing through as nil and breaking somewhere else. Matching
+    turns an unexpected return into a crash with the actual value in the message.
+  distractors:
+  - text: Because pattern matching is more idiomatic in Elixir and makes the code
+      more readable and declarative than using conditionals to inspect the result
+      of the call.
+    trap: precision
+    why_wrong: Style justification only. It never mentions what matching catches that
+      a conditional does not.
+  - text: Because it is faster than evaluating a conditional, since the runtime can
+      optimise the match directly rather than executing a comparison at runtime each
+      time.
+    trap: content
+    why_wrong: Invents a performance rationale; the benefit is failure locality, not
+      speed.
+  - text: Because a shape not matched fails immediately in the point where it appears,
+      instead of follow like nil and break in another place after.
+    trap: grammar
+    why_wrong: Post-posed participle, "in the point", "instead of follow" and "break
+      in another place" are all transfer errors.
+  feedback:
+    register: Brief and mechanism-focused.
+    hedging: None needed for an idiom with a clear rationale.
+    precision: Failing at the point of appearance is the benefit; name it.
+    grammar: '"An unmatched shape", "at the point where it appears", "instead of flowing".'
+    pragmatics: Mentioning the actual value in the error message is a debugging detail
+      that lands well.
+  rephrase:
+    prompt: Describe the bug you get when you use a conditional and ignore the error
+      case.
+    goal: Make the benefit visible through its absence.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  feynman:
+    concept: Failure locality through pattern matching.
+    explain_to: A developer who checks return values with if statements.
+    constraint: Explain using a parcel rejected at the door versus stored.
+    self_check: Did you say where the failure surfaces?
+    reasoning_check: Can you identify the hidden premise behind Pattern matching,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You justified by idiom or invented a speed benefit.
+    expected: Immediate loud failure at the point of the unexpected shape.
+    actual: A readability claim, or a performance rationale.
+    root_cause: Idiom absorbed from surrounding code without its debugging payoff.
+    repair: Explain matching by describing the nil bug it prevents.
+    reasoning_error: If your Pattern matching answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Where does a failure surface with matching versus with a conditional?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Pattern matching without
+      presenting an assumption as a fact?
+    black_box_probe: When the Pattern matching answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: elixir-09-pattern-matching-delayed-9
+      prompt: 'Pattern matching: the later Pattern matching review says a code inspection
+        of Pattern matching confirms the Pattern matching mechanism but not its impact.
+        Under new Pattern matching evidence contradicts the Pattern matching assumption
+        that made the first option attractive, which part of Pattern matching survives
+        and which Pattern matching claim changes?'
+      changed_constraint: new Pattern matching evidence contradicts the Pattern matching
+        assumption that made the first option attractive
+      new_evidence: a code inspection of Pattern matching confirms the Pattern matching
+        mechanism but not its impact
+      best_answer: I would keep the facts that remain supported about Pattern matching,
+        treat a code inspection of Pattern matching confirms the Pattern matching
+        mechanism but not its impact as new evidence rather than a result, and state
+        the updated decision rule under new Pattern matching evidence contradicts
+        the Pattern matching assumption that made the first option attractive. I would
+        then name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Pattern matching answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Pattern matching explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/validation-transformation.md
+    note: Validation and transformation boundaries.
+  - repo: original
+    path: english-arcade/elixir/pattern-matching
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Pattern matching: inspect Pattern matching evidence next; which edge
+      case for Pattern matching would alter the trade-off?'
+    goal: Move from the short Pattern matching answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Pattern matching before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Pattern matching within a Elixir context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Pattern matching,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Pattern matching constraint is
+        the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Pattern matching: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Pattern matching
+        benefit: It keeps the Pattern matching reasoning close to the stated Elixir
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Pattern matching workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Pattern matching contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Pattern matching
+        benefit: It can make the Pattern matching boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Pattern matching evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Pattern matching option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Pattern matching: if the Pattern matching decision fails under plausible
+        load or a difficult turn, what consequence appears first, and how would you
+        contain Pattern matching?'
+    evidence_check:
+      basis: Check the Pattern matching claim against system-design-estudos/areas/09-backend-principles/cards/validation-transformation.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Pattern matching,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Pattern matching
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Why match on the result tuple instead", update Pattern
+        matching when Pattern matching evidence—a Pattern matching trace or Pattern
+        matching test—contradicts the Pattern matching constraint in case "Why match
+        on the result tuple instead"; ask a stakeholder about Pattern matching before
+        revising.
+    rubric:
+      facts_correct: Names the verified Pattern matching facts without smuggling in
+        a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Pattern matching premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Pattern matching options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Pattern matching choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Pattern matching
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Pattern matching recommendation.
+- id: elixir-10-choosing-elixir
+  version: 1.4.0
+  target: elixir
+  topic: Technology choice
+  difficulty: 2
+  interview_stage: behavioural_probe
+  prompt: Tell me about a time you argued for or against using Elixir.
+  context: A judgement probe. The interviewer wants evidence that you can separate
+    genuine fit from enthusiasm, and the strongest answers often describe arguing
+    against your preferred tool.
+  follow_up:
+    prompt: What runtime or team constraint made Elixir a good or poor fit, and which
+      evidence would you use to revisit that decision?
+    goal: Answer the assumption challenge about Technology choice while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      I argued against it once. The team wanted Elixir for a CRUD admin panel
-      with three users, where the concurrency story was irrelevant and nobody
-      else could maintain it. We used the existing stack, and I kept the case for
-      Elixir until we had a workload that actually needed the runtime.
+      I argued against it once. I would label the follow-up premise as an assumption,
+      ask the smallest question that could disprove it, and protect the edge case before
+      committing to the recommendation.
     distractors:
-      - text: >-
-          I argued for it on a project that needed to handle a lot of concurrent
-          connections, and it worked out very well because the runtime is
-          designed exactly for that kind of workload.
-        trap: precision
-        why_wrong: >-
-          Generic and unfalsifiable. No numbers, no alternative considered, no
-          cost acknowledged.
-      - text: >-
-          I would argue for Elixir whenever the system has realtime
-          requirements, since the BEAM handles that much better than most
-          alternatives and the fault tolerance is excellent.
-        trap: grammar
-        why_wrong: >-
-          Answers a past-experience question in the conditional, which does not
-          satisfy a behavioural probe.
-      - text: >-
-          I argued for it because it is a better language than what we were
-          using, and eventually the team came around once they saw how much
-          cleaner the code was.
-        trap: register
-        why_wrong: >-
-          Frames a technology decision as a superiority contest, which reads as
-          difficult to work with.
-    feedback:
-      register: >-
-        Measured. Arguing against your favourite tool is the strongest possible
-        signal.
-      hedging: >-
-        None; this is a past decision with an outcome.
-      precision: >-
-        Name the workload and why the runtime was irrelevant to it.
-      grammar: >-
-        Past simple throughout: "I argued", "we used", "I kept".
-      pragmatics: >-
-        Keeping the case alive for later shows judgement without abandoning
-        conviction.
-    rephrase:
-      prompt: >-
-        Tell the same story emphasising what you would have lost by choosing
-        Elixir.
-      goal: Practise arguing the cost side explicitly.
-    language_focus: [grammar, register, precision]
-    pt_help: >-
-      "Tell me about a time" pede passado. Condicional soa como opiniao, nao
-      como experiencia.
-    feynman:
-      concept: Fit-based technology choice over preference.
-      explain_to: An engineer who wants to use a new language at work.
-      constraint: Explain without claiming any language is better.
-      self_check: >-
-        Did your story include a cost you accepted?
-    black_box:
-      symptom: You answered hypothetically or argued language superiority.
-      expected: A past decision with workload, cost and outcome named.
-      actual: Conditional advocacy, or a better-language framing.
-      root_cause: >-
-        Technology stories told as preferences rather than as trade-offs.
-      repair: >-
-        Prepare one story where you argued against your preferred tool.
-    recall:
-      active_recall_cue: >-
-        What makes a technology-choice story credible to an interviewer?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/12-engineering-practice/cards/architecture-decision-records.md
-        note: Decision records and trade-off documentation.
-      - repo: original
-        path: english-arcade/elixir/choosing-elixir
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-11-liveview-tradeoff
-    version: "1.0.0"
-    target: elixir
-    topic: LiveView trade-offs
-    difficulty: 2
-    interview_stage: architecture_review
-    prompt: >-
-      What would make you avoid LiveView for a feature?
-    context: >-
-      An architecture conversation. The interviewer wants to know whether you
-      can name the constraints of a tool you like, particularly the stateful
-      connection cost.
+    - text: I would repeat my original Technology choice answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Technology choice until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Tell the technology-choice story as constraint, observed consequence,
+      and the condition that would change your recommendation.
+    goal: Compress the Technology choice answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: I argued against it once. The team wanted Elixir for a CRUD admin panel
+    with three users, where the concurrency story was irrelevant and nobody else could
+    maintain it. We used the existing stack, and I kept the case for Elixir until
+    we had a workload that actually needed the runtime.
+  distractors:
+  - text: I argued for it on a project that needed to handle a lot of concurrent connections,
+      and it worked out very well because the runtime is designed exactly for that
+      kind of workload.
+    trap: precision
+    why_wrong: Generic and unfalsifiable. No numbers, no alternative considered, no
+      cost acknowledged.
+  - text: I would argue for Elixir whenever the system has realtime requirements,
+      since the BEAM handles that much better than most alternatives and the fault
+      tolerance is excellent.
+    trap: grammar
+    why_wrong: Answers a past-experience question in the conditional, which does not
+      satisfy a behavioural probe.
+  - text: I argued for it because it is a better language than what we were using,
+      and eventually the team came around once they saw how much cleaner the code
+      was.
+    trap: register
+    why_wrong: Frames a technology decision as a superiority contest, which reads
+      as difficult to work with.
+  feedback:
+    register: Measured. Arguing against your favourite tool is the strongest possible
+      signal.
+    hedging: None; this is a past decision with an outcome.
+    precision: Name the workload and why the runtime was irrelevant to it.
+    grammar: 'Past simple throughout: "I argued", "we used", "I kept".'
+    pragmatics: Keeping the case alive for later shows judgement without abandoning
+      conviction.
+  rephrase:
+    prompt: Tell the same story emphasising what you would have lost by choosing Elixir.
+    goal: Practise arguing the cost side explicitly.
+  language_focus:
+  - grammar
+  - register
+  - precision
+  pt_help: '"Tell me about a time" pede passado. Condicional soa como opiniao, nao
+    como experiencia.'
+  feynman:
+    concept: Fit-based technology choice over preference.
+    explain_to: An engineer who wants to use a new language at work.
+    constraint: Explain without claiming any language is better.
+    self_check: Did your story include a cost you accepted?
+    reasoning_check: Can you identify the hidden premise behind Technology choice,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You answered hypothetically or argued language superiority.
+    expected: A past decision with workload, cost and outcome named.
+    actual: Conditional advocacy, or a better-language framing.
+    root_cause: Technology stories told as preferences rather than as trade-offs.
+    repair: Prepare one story where you argued against your preferred tool.
+    reasoning_error: If your Technology choice answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What makes a technology-choice story credible to an interviewer?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Technology choice without
+      presenting an assumption as a fact?
+    black_box_probe: When the Technology choice answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: elixir-10-choosing-elixir-delayed-10
+      prompt: 'Review note for Technology choice: a measured Technology choice comparison
+        shows the alternative has a different Technology choice cost profile. Given
+        two Technology choice callers from the case "Tell me about a time you argued"
+        or Technology choice tenants now compete for the same Technology choice boundary,
+        what would you now defend, retract, and verify about Technology choice?'
+      changed_constraint: two Technology choice callers from the case "Tell me about
+        a time you argued" or Technology choice tenants now compete for the same Technology
+        choice boundary
+      new_evidence: a measured Technology choice comparison shows the alternative
+        has a different Technology choice cost profile
+      best_answer: I would keep the facts that remain supported about Technology choice,
+        treat a measured Technology choice comparison shows the alternative has a
+        different Technology choice cost profile as new evidence rather than a result,
+        and state the updated decision rule under two Technology choice callers from
+        the case "Tell me about a time you argued" or Technology choice tenants now
+        compete for the same Technology choice boundary. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Technology choice answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Technology choice explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/12-engineering-practice/cards/architecture-decision-records.md
+    note: Decision records and trade-off documentation.
+  - repo: original
+    path: english-arcade/elixir/choosing-elixir
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Deep dive on Technology choice: compare Technology choice options with
+      one measurement; which failure around Technology choice would make Technology
+      choice switch?'
+    goal: Move from the short Technology choice answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Technology choice before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Technology choice within a Elixir context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Technology
+        choice, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the Technology choice constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Technology choice: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Technology choice
+        benefit: It keeps the Technology choice reasoning close to the stated Elixir
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Technology choice workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Technology choice contract and its invariant
+          are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Technology
+          choice
+        benefit: It can make the Technology choice boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Technology choice evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Technology choice option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Elixir
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Technology choice: which adversarial Technology choice example could
+        disprove the recommendation, and what evidence about Technology choice would
+        you request?'
+    evidence_check:
+      basis: Check the Technology choice claim against system-design-estudos/areas/12-engineering-practice/cards/architecture-decision-records.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Technology choice,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Technology choice
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Tell me about a time you argued", update Technology
+        choice when Technology choice evidence—a Technology choice trace or Technology
+        choice test—contradicts the Technology choice constraint in case "Tell me
+        about a time you argued"; ask a stakeholder about Technology choice before
+        revising.
+    rubric:
+      facts_correct: Names the verified Technology choice facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Technology choice premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Technology choice options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Technology choice choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Technology
+        choice by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Technology choice recommendation.
+- id: elixir-11-liveview-tradeoff
+  version: 1.4.0
+  target: elixir
+  topic: LiveView trade-offs
+  difficulty: 2
+  interview_stage: architecture_review
+  prompt: What would make you avoid LiveView for a feature?
+  context: An architecture conversation. The interviewer wants to know whether you
+    can name the constraints of a tool you like, particularly the stateful connection
+    cost.
+  follow_up:
+    prompt: Which client or rendering requirement would make a separate frontend safer
+      than a LiveView process, and what latency trade-off follows?
+    goal: Answer the evidence challenge about LiveView trade-offs while keeping the
+      evidence boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      Offline or flaky-network use, mainly. Every client holds a stateful
-      connection and a process on the server, so a poor connection degrades the
-      experience directly and idle sessions still cost memory. For a mostly
-      static page it is also more machinery than the problem needs.
+      Offline or flaky-network use, mainly. I would treat the follow-up observation as evidence, not
+      as proof of impact; I would inspect the smallest relevant trace or test and
+      state what remains uncertain before changing the decision.
     distractors:
-      - text: >-
-          If the team is not familiar with Elixir, since the learning curve
-          could slow down delivery and it would be harder to find people to
-          maintain it later on.
-        trap: precision
-        why_wrong: >-
-          A staffing consideration rather than a technical constraint, and it
-          would apply to any Elixir feature equally.
-      - text: >-
-          I would not avoid it, LiveView handles almost every case well and
-          reduces the need for a separate frontend stack, which simplifies the
-          whole architecture significantly.
-        trap: content
-        why_wrong: >-
-          Ignores the stateful-connection requirement, which genuinely rules out
-          some use cases.
-      - text: >-
-          Use offline or with network flaky, mainly. Each client maintains one
-          connection with state and one process in the server, then a bad
-          connection degrades direct the experience.
-        trap: grammar
-        why_wrong: >-
-          Missing subject, post-posed adjectives and "degrades direct" break the
-          sentence throughout.
-    feedback:
-      register: >-
-        Balanced criticism of a tool you presumably like.
-      hedging: >-
-        "Mainly" appropriately signals these are the primary cases.
-      precision: >-
-        Per-client server process is the cost most candidates omit.
-      grammar: >-
-        "A flaky network", "on the server", "degrades the experience directly".
-      pragmatics: >-
-        Adding the over-engineering case shows proportion, not just limits.
-    rephrase:
-      prompt: >-
-        Describe a feature in the same product where LiveView is clearly right.
-      goal: Balance the critique with a positive case.
-    language_focus: [precision, grammar, hedging]
-    feynman:
-      concept: Stateful connections and per-client server cost.
-      explain_to: A developer choosing LiveView for everything.
-      constraint: Explain using a phone line held open per customer.
-      self_check: >-
-        Did you name what an idle session still costs?
-    black_box:
-      symptom: You named staffing, or claimed there are no limits.
-      expected: Offline and flaky networks, plus per-client process cost.
-      actual: A team-skills answer, or uncritical endorsement.
-      root_cause: >-
-        Tool limits unexamined because the tool has worked so far.
-      repair: >-
-        For any framework you like, name the workload it should not serve.
-    recall:
-      active_recall_cue: >-
-        What does each LiveView client cost on the server while idle?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/realtime-backend-systems.md
-        note: Realtime backend design considerations.
-      - repo: original
-        path: english-arcade/elixir/liveview-tradeoff
-        note: Original interview phrasing authored for this pack.
-  - id: elixir-12-onboarding-others
-    version: "1.0.0"
-    target: elixir
-    topic: Mentoring
-    difficulty: 2
-    interview_stage: behavioural_probe
-    prompt: >-
-      How do you help an object-oriented developer become productive in Elixir?
-    context: >-
-      A mentoring probe. The interviewer wants a specific first obstacle and a
-      concrete intervention, since generic answers about patience tell them
-      nothing.
+    - text: I would cite my experience with LiveView trade-offs as enough proof and
+        move on without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about LiveView trade-offs before
+        making even a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Compare LiveView with a client-rendered approach by interaction model,
+      operational cost, and an explicit trade-off.
+    goal: Compress the LiveView trade-offs answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Offline or flaky-network use, mainly. Every client holds a stateful
+    connection and a process on the server, so a poor connection degrades the experience
+    directly and idle sessions still cost memory. For a mostly static page it is also
+    more machinery than the problem needs.
+  distractors:
+  - text: If the team is not familiar with Elixir, since the learning curve could
+      slow down delivery and it would be harder to find people to maintain it later
+      on.
+    trap: precision
+    why_wrong: A staffing consideration rather than a technical constraint, and it
+      would apply to any Elixir feature equally.
+  - text: I would not avoid it, LiveView handles almost every case well and reduces
+      the need for a separate frontend stack, which simplifies the whole architecture
+      significantly.
+    trap: content
+    why_wrong: Ignores the stateful-connection requirement, which genuinely rules
+      out some use cases.
+  - text: Use offline or with network flaky, mainly. Each client maintains one connection
+      with state and one process in the server, then a bad connection degrades direct
+      the experience.
+    trap: grammar
+    why_wrong: Missing subject, post-posed adjectives and "degrades direct" break
+      the sentence throughout.
+  feedback:
+    register: Balanced criticism of a tool you presumably like.
+    hedging: '"Mainly" appropriately signals these are the primary cases.'
+    precision: Per-client server process is the cost most candidates omit.
+    grammar: '"A flaky network", "on the server", "degrades the experience directly".'
+    pragmatics: Adding the over-engineering case shows proportion, not just limits.
+  rephrase:
+    prompt: Describe a feature in the same product where LiveView is clearly right.
+    goal: Balance the critique with a positive case.
+  language_focus:
+  - precision
+  - grammar
+  - hedging
+  feynman:
+    concept: Stateful connections and per-client server cost.
+    explain_to: A developer choosing LiveView for everything.
+    constraint: Explain using a phone line held open per customer.
+    self_check: Did you name what an idle session still costs?
+    reasoning_check: Can you identify the hidden premise behind LiveView trade-offs,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You named staffing, or claimed there are no limits.
+    expected: Offline and flaky networks, plus per-client process cost.
+    actual: A team-skills answer, or uncritical endorsement.
+    root_cause: Tool limits unexamined because the tool has worked so far.
+    repair: For any framework you like, name the workload it should not serve.
+    reasoning_error: If your LiveView trade-offs answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What does each LiveView client cost on the server while idle?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind LiveView trade-offs without
+      presenting an assumption as a fact?
+    black_box_probe: When the LiveView trade-offs answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: elixir-11-liveview-tradeoff-delayed-11
+      prompt: New evidence about LiveView trade-offs says a LiveView trade-offs test
+        exposes a boundary case that the LiveView trade-offs examples did not cover;
+        with the LiveView trade-offs workload for LiveView trade-offs no longer fits
+        the original resource bound, how do you update the LiveView trade-offs decision
+        rule?
+      changed_constraint: the LiveView trade-offs workload for LiveView trade-offs
+        no longer fits the original resource bound
+      new_evidence: a LiveView trade-offs test exposes a boundary case that the LiveView
+        trade-offs examples did not cover
+      best_answer: I would keep the facts that remain supported about LiveView trade-offs,
+        treat a LiveView trade-offs test exposes a boundary case that the LiveView
+        trade-offs examples did not cover as new evidence rather than a result, and
+        state the updated decision rule under the LiveView trade-offs workload for
+        LiveView trade-offs no longer fits the original resource bound. I would then
+        name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original LiveView trade-offs answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire LiveView trade-offs explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/realtime-backend-systems.md
+    note: Realtime backend design considerations.
+  - repo: original
+    path: english-arcade/elixir/liveview-tradeoff
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Defend LiveView trade-offs after a counterexample: which LiveView trade-offs
+      assumption changes, and what evidence keeps the revised LiveView trade-offs
+      choice honest?'
+    goal: Move from the short LiveView trade-offs answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame LiveView trade-offs before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests LiveView trade-offs within a Elixir context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend LiveView
+        trade-offs, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the LiveView trade-offs constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for LiveView trade-offs: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about LiveView trade-offs
+        would be a false equivalence because the prompt does not establish that both
+        choices satisfy the same contract.
+      hard_constraint: The hard LiveView trade-offs constraint is the required guarantee
+        stated by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for LiveView trade-offs; first
+        clarify the constraint or collect the evidence that would make two options
+        genuinely comparable.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Liveview trade-offs: which empty or extreme LiveView trade-offs case
+        would expose the hidden assumption, and what would you measure about LiveView
+        trade-offs?'
+    evidence_check:
+      basis: Check the LiveView trade-offs claim against system-design-estudos/areas/09-backend-principles/cards/realtime-backend-systems.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about LiveView trade-offs,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the LiveView trade-offs
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "What would make you avoid LiveView for", update LiveView
+        trade-offs when LiveView trade-offs evidence—a LiveView trade-offs trace or
+        LiveView trade-offs test—contradicts the LiveView trade-offs constraint in
+        case "What would make you avoid LiveView for"; ask a stakeholder about LiveView
+        trade-offs before revising.
+    rubric:
+      facts_correct: Names the verified LiveView trade-offs facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the LiveView trade-offs premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible LiveView trade-offs options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the LiveView trade-offs choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about LiveView trade-offs
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the LiveView trade-offs recommendation.
+- id: elixir-12-onboarding-others
+  version: 1.4.0
+  target: elixir
+  topic: Mentoring and public-boundary testing
+  difficulty: 2
+  interview_stage: behavioural_probe
+  prompt: How do you help an object-oriented developer become productive in Elixir
+    while teaching them to test a supervised process?
+  context: A mentoring probe. The interviewer wants a specific first obstacle and
+    a concrete intervention, including how the learner can test behaviour at a public
+    boundary instead of inspecting mutable state.
+  follow_up:
+    prompt: How would you teach the process boundary without hiding supervision, and
+      which public behavior would your first test lock down?
+    goal: Answer the alternative challenge about Mentoring and public-boundary testing
+      while keeping the evidence boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      I focus on the one habit that blocks everything else, which is looking for
-      a place to keep mutable state. I pair on a small feature and have them
-      write the transformation as a pipeline, because once the data flow clicks
-      the rest of the syntax stops feeling strange.
+      I start with the habit of looking for mutable state, then pair on a
+      small supervised process with a public function. I would compare that choice with the
+      credible alternative against the requirement in the follow-up, cost, and failure risk, then switch
+      only if evidence makes the alternative safer.
     distractors:
-      - text: >-
-          I would be patient and give them time to learn, share good resources
-          like books and documentation, and answer their questions as they come
-          up during the first few weeks.
-        trap: precision
-        why_wrong: >-
-          Describes a general attitude rather than a diagnosis of what actually
-          blocks OO developers.
-      - text: >-
-          I would start by explaining the theory behind functional programming
-          and immutability so they understand the foundations before they start
-          writing any production code.
-        trap: content
-        why_wrong: >-
-          Front-loads theory, which is the slowest path; the obstacle is a habit,
-          not a knowledge gap.
-      - text: >-
-          I focus in the habit that blocks all the rest, that is to search a
-          place for keep the state mutable, and after I make pair in a small
-          feature with them.
-        trap: grammar
-        why_wrong: >-
-          "Focus in", "for keep", "state mutable" and "make pair in" are four
-          separate transfer errors.
-    feedback:
-      register: >-
-        Practical and specific; mentoring answers live on concrete detail.
-      hedging: >-
-        None needed; you are describing what you actually do.
-      precision: >-
-        Naming the exact habit is what makes this answer credible.
-      grammar: >-
-        "Focus on", "in order to keep", "mutable state", "pair on a feature".
-      pragmatics: >-
-        Explaining why the pipeline exercise works shows deliberate teaching.
-    rephrase:
-      prompt: >-
-        Describe the first code review comment you would leave for them.
-      goal: Turn a mentoring philosophy into an observable action.
-    language_focus: [precision, grammar, pragmatics]
-    pt_help: >-
-      "Focar em" e "focus on". E adjetivo vem antes: "mutable state".
-    feynman:
-      concept: Unlearning mutable state as the first functional obstacle.
-      explain_to: A team lead planning an onboarding week.
-      constraint: Do not mention any book or course.
-      self_check: >-
-        Did you name one habit and one exercise?
-    black_box:
-      symptom: You offered patience and resources, or led with theory.
-      expected: The mutable-state habit, plus a pipeline pairing exercise.
-      actual: A generic attitude, or a theory-first plan.
-      root_cause: >-
-        Mentoring described as disposition rather than as targeted
-        intervention.
-      repair: >-
-        Answer mentoring questions with one obstacle and one exercise.
-    recall:
-      active_recall_cue: >-
-        What habit most blocks an OO developer learning Elixir?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/10-engineering-case-studies/cards/platform-engineering-developer-experience.md
-        note: Developer experience and onboarding practice.
-      - repo: original
-        path: english-arcade/elixir/onboarding-others
-        note: Original interview phrasing authored for this pack.
+    - text: I would defend the first Mentoring and public-boundary testing option
+        because offering an alternative might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Mentoring and public-boundary testing design
+        without saying which requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Outline the onboarding lesson as mental model, supervised example, and
+      one behavior-focused test.
+    goal: Compress the Mentoring and public-boundary testing answer into its decision,
+      premise, trade-off, and verification step.
+  best_answer: I start with the habit of looking for mutable state, then pair on a
+    small supervised process with a public function. We write an ExUnit test that
+    calls that boundary, asserts the returned behaviour, and lets the supervisor own
+    process setup; once data flow and observable behaviour click, the syntax stops
+    feeling strange.
+  distractors:
+  - text: I would be patient and give them time to learn, share good resources like
+      books and documentation, and answer their questions as they come up during the
+      first few weeks. Once they are comfortable, I would ask them to inspect the
+      GenServer state directly in a test, because that is the clearest way to see
+      whether the process changed correctly.
+    trap: precision
+    why_wrong: Describes a general attitude rather than a diagnosis of what actually
+      blocks OO developers.
+  - text: I would start by explaining the theory behind functional programming and
+      immutability so they understand the foundations before they start writing any
+      production code.
+    trap: content
+    why_wrong: Front-loads theory, which is the slowest path; the obstacle is a habit,
+      not a knowledge gap.
+  - text: I focus in the habit that blocks all the rest, that is to search a place
+      for keep the state mutable, and after I make pair in a small feature with them.
+    trap: grammar
+    why_wrong: '"Focus in", "for keep", "state mutable" and "make pair in" are four
+      separate transfer errors.'
+  feedback:
+    register: Teach through a supervised process and its public boundary, not abstract
+      theory.
+    hedging: Use “I would pair” for the exercise while stating ExUnit’s boundary directly.
+    precision: Name mutable state, the public function, ExUnit, returned behaviour,
+      and supervisor setup.
+    grammar: Use “test through the public function” and “let the supervisor own setup”.
+    pragmatics: Make the learner verify observable behaviour rather than inspect process
+      state.
+  rephrase:
+    prompt: Describe the first ExUnit test you would pair on for a supervised process.
+    goal: Turn mentoring into a public-boundary exercise with observable assertions.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  pt_help: '"Focar em" e "focus on". E adjetivo vem antes: "mutable state".'
+  feynman:
+    concept: Teaching a supervised Elixir process through ExUnit at its public boundary.
+    explain_to: An OO developer who wants to inspect GenServer state.
+    constraint: Include a public function, returned behaviour, and supervisor-owned
+      setup.
+    self_check: Could the test survive an internal state representation change?
+    reasoning_check: Can you identify the hidden premise behind Mentoring and public-boundary
+      testing, give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You inspected GenServer state or offered theory before a public-boundary
+      exercise.
+    expected: An ExUnit test calls a public function, asserts observable behaviour,
+      and lets the supervisor own process setup.
+    actual: The test reached into process state, or mentoring stayed at generic resources
+      and theory.
+    root_cause: The OO mental model was not replaced with a concrete public API and
+      observable-behaviour loop.
+    repair: 'Pair on one supervised process: start it under the supervisor, call its
+      public function in ExUnit, and assert the returned behaviour.'
+    reasoning_error: If your Mentoring and public-boundary testing answer failed,
+      classify the mistake as a fact, assumption, comparison, failure, or certainty
+      error before proposing the smallest repair.
+  recall:
+    active_recall_cue: How do ExUnit, a public function, and supervisor-owned setup
+      keep a process test behaviour-focused?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Mentoring and public-boundary
+      testing without presenting an assumption as a fact?
+    black_box_probe: When the Mentoring and public-boundary testing answer failed,
+      did you locate the reasoning error before changing the implementation?
+    delayed_variant:
+      id: elixir-12-onboarding-others-delayed-12
+      prompt: 'Mentoring and public-boundary testing gets a new constraint: a stakeholder
+        asks for a stronger Mentoring and public-boundary testing guarantee than the
+        first Mentoring and public-boundary testing answer promised. After a stakeholder
+        clarifies a Mentoring and public-boundary testing requirement that changes
+        the Mentoring and public-boundary testing success condition, which Mentoring
+        and public-boundary testing assumption is no longer safe?'
+      changed_constraint: a stakeholder asks for a stronger Mentoring and public-boundary
+        testing guarantee than the first Mentoring and public-boundary testing answer
+        promised
+      new_evidence: a stakeholder clarifies a Mentoring and public-boundary testing
+        requirement that changes the Mentoring and public-boundary testing success
+        condition
+      best_answer: I would keep the facts that remain supported about Mentoring and
+        public-boundary testing, treat a stakeholder clarifies a Mentoring and public-boundary
+        testing requirement that changes the Mentoring and public-boundary testing
+        success condition as new evidence rather than a result, and state the updated
+        decision rule under a stakeholder asks for a stronger Mentoring and public-boundary
+        testing guarantee than the first Mentoring and public-boundary testing answer
+        promised. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Mentoring and public-boundary
+          testing answer because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Mentoring and public-boundary testing explanation
+          with a new design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/10-engineering-case-studies/cards/platform-engineering-developer-experience.md
+    note: Developer experience and onboarding practice.
+  - repo: original
+    path: english-arcade/elixir/onboarding-others
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Five more minutes on Mentoring and public-boundary testing: which boundary,
+      alternative, and update trigger would you explain for Mentoring and public-boundary
+      testing?'
+    goal: Move from the short Mentoring and public-boundary testing answer to a deep,
+      evidence-led defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Mentoring and public-boundary testing before proposing a
+      solution: state the actor, required outcome, constraint, and unknown that could
+      invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Mentoring and public-boundary testing within
+        a Elixir context; treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Mentoring
+        and public-boundary testing, but that does not prove one implementation wins
+        under every workload or audience.
+      assumption: An unstated assumption is that the Mentoring and public-boundary
+        testing constraint is the dominant one; label it and ask whether the interviewer
+        confirms it.
+      unknown: 'Still unknown for Mentoring and public-boundary testing: the scale,
+        failure tolerance, ownership boundary, and evidence threshold that would change
+        the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: an OTP process or supervision boundary for Mentoring and public-boundary
+          testing
+        benefit: It keeps the Mentoring and public-boundary testing reasoning close
+          to the stated Elixir constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Mentoring and public-boundary testing
+          workload or requirement changes beyond the prompt.
+        valid_when: Use it when the stated Mentoring and public-boundary testing contract
+          and its invariant are the facts that matter most.
+      - option: shared coordination or a larger recovery mechanism for Mentoring and
+          public-boundary testing
+        benefit: It can make the Mentoring and public-boundary testing boundary more
+          explicit when the first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Mentoring and public-boundary testing evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Mentoring and public-boundary testing option
+        when its stated contract holds; choose the alternative only when evidence
+        shows that the relevant Elixir constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Mentoring and public-boundary testing: when the Mentoring and public-boundary
+        testing constraint tightens during rollout, what breaks first in Mentoring
+        and public-boundary testing, and how do you observe it?'
+    evidence_check:
+      basis: Check the Mentoring and public-boundary testing claim against system-design-estudos/areas/10-engineering-case-studies/cards/platform-engineering-developer-experience.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Elixir exercise can test reasoning about Mentoring and public-boundary
+        testing, but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Mentoring and public-boundary
+        testing question but does not reveal every workload, stakeholder priority,
+        or outcome.
+      update_trigger: For case "How do you help an object-oriented developer", update
+        Mentoring and public-boundary testing when Mentoring and public-boundary testing
+        evidence—a Mentoring and public-boundary testing trace or Mentoring and public-boundary
+        testing test—contradicts the Mentoring and public-boundary testing constraint
+        in case "How do you help an object-oriented developer"; ask a stakeholder
+        about Mentoring and public-boundary testing before revising.
+    rubric:
+      facts_correct: Names the verified Mentoring and public-boundary testing facts
+        without smuggling in a result, scale, or capability that the prompt does not
+        establish.
+      assumptions_explicit: Labels the Mentoring and public-boundary testing premise
+        that is still assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Mentoring and public-boundary
+        testing options, or explains the hard constraint that makes comparison a false
+        equivalence.
+      tradeoff_quality: Connects the Mentoring and public-boundary testing choice
+        to a benefit, a cost or risk, and the condition under which another choice
+        wins.
+      follow_up_adaptation: Responds to the alternative challenge about Mentoring
+        and public-boundary testing by changing the claim or evidence boundary rather
+        than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Mentoring and public-boundary testing recommendation.

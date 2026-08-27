@@ -40,7 +40,6 @@
   .arcade-capture { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; }
   .arcade-capture label { display: grid; gap: 5px; }
   .arcade-text { border: 1px solid var(--arcade-line); border-radius: 7px; font: inherit; padding: 9px; width: 100%; }
-  .arcade-voice { align-self: end; white-space: nowrap; }
   .arcade-actions { align-items: center; display: flex; flex-wrap: wrap; }
   .arcade-feedback { background: #f6faf7; border: 1px solid #a8cbbd; border-radius: 10px; display: grid; gap: 8px; padding: 14px; }
   .arcade-feedback.wrong { background: #fff5f0; border-color: #e0aaa1; }
@@ -58,14 +57,15 @@
   .arcade-progress li small { color: var(--arcade-muted); display: block; margin-top: 3px; }
   .arcade-evidence { display: grid; gap: 5px; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); margin-top: 8px; }
   .arcade-evidence span { background: #fffdf7; border: 1px solid var(--arcade-line); border-radius: 6px; padding: 6px 8px; }
-  @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 24px 14px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-grid { grid-template-columns: 1fr; } .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } .arcade-voice { justify-self: start; } }
+  @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 24px 14px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-grid { grid-template-columns: 1fr; } .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } }
 </style>
 
 <section class="english-arcade" data-controller="english-arcade" data-english-arcade-duration-seconds-value="<%= @arcade_session&.duration_seconds || 0 %>" data-english-arcade-remaining-seconds-value="<%= @arcade_session&.remaining_seconds || 0 %>" data-english-arcade-active-value="<%= @arcade_session&.active? && !@arcade_session.expired? %>" data-english-arcade-finish-url-value="<%= @arcade_session ? finish_english_arcade_path(session_id: @arcade_session.id) : "" %>">
   <header class="arcade-hero">
     <span class="arcade-kicker">English C2 · closed-book interview practice</span>
     <h1>English C2 Arcade</h1>
-    <p class="arcade-muted">Choose one target, answer before feedback appears, then turn each miss into a Black Box post-mortem and a scheduled reattempt. This is a measurable path, not a promise of C2 in 30 days.</p>
+    <p class="arcade-muted">Choose one target, type an answer before feedback appears, then turn each miss into a Black Box post-mortem and a scheduled reattempt. This is C2-calibrated typed interview practice, not a C2 certificate or a promise in 30 days.</p>
+    <p class="arcade-muted">This typed practice does not record, transcribe, or score audio. Use the documented external-platform handoff for assessment outside this product.</p>
   </header>
 
   <section class="arcade-panel" aria-labelledby="arcade-launcher-title">
@@ -105,26 +105,51 @@
         <%= button_tag(@arcade_session ? "Start another session" : "Start closed-book session", type: "submit", class: "arcade-button") %>
         <span class="arcade-muted" aria-live="polite"><%= @schedule_summary[:due] %> cards due · <%= @schedule_summary[:mastered] %> in box 5</span>
       </div>
-      <p class="arcade-muted">30-day diagnostic: <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> Black Box reviews.</p>
+      <p class="arcade-muted">Program day <%= @progress_30_days[:program_day] %> · <%= @progress_30_days[:practice_days] %> practice days · <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> completed Black Box post-mortems (<%= @progress_30_days[:black_box_required] %> required).</p>
       <div class="arcade-actions">
         <%= link_to "Export 30-day progress JSON", english_arcade_path(format: :json, session_id: @arcade_session&.id), class: "arcade-button ghost", aria: { label: "Export the 30-day progress and practice plan as JSON" } %>
       </div>
+    <% end %>
       <details class="arcade-progress">
         <summary>Open the 30-day practice plan</summary>
-        <p class="arcade-muted">Daily goals accumulate review and interleaving. Weak-area repair is evidence work, not a CEFR score.</p>
+        <p class="arcade-muted">Every day has a target selector, timed evidence, due SRS review, reattempt, follow-up, and compression. Gates pass only on typed evidence; they do not certify CEFR level.</p>
         <ol>
           <% @thirty_day_plan.each do |day| %>
             <li>
-              <strong>Day <%= day.fetch("day") %>:</strong> <%= day.fetch("goal") %>
-              <small><strong>Review:</strong> <%= day.fetch("review") %> <strong>Interleave:</strong> <%= day.fetch("interleaving") %> <strong>Weak area:</strong> <%= day.fetch("weak_area_remediation") %></small>
+              <strong>Day <%= day.fetch("day") %>:</strong> <%= day.fetch("outcome") %>
+              <small><strong><%= day.fetch("timebox_minutes") %> minutes</strong> · targets: <%= day.dig("assignment", "targets").join(", ") %> · <%= day.dig("assignment", "selector") %></small>
+              <div class="arcade-actions">
+                <% day.dig("assignment", "item_ids").each do |item_id| %>
+                  <%= button_to "Launch #{item_id}", english_arcade_sessions_path, params: { english_arcade_session: { target: EnglishArcadeCurriculum.target_for(item_id), mode: "daily", card_key: item_id } }, class: "arcade-button ghost" %>
+                <% end %>
+              </div>
+              <% if day.fetch("spaced_reattempts").any? %>
+                <small><strong>Scheduled reattempts:</strong> <%= day.fetch("spaced_reattempts").map { |entry| "#{entry.fetch("item_id")} (day #{entry.fetch("original_day")}, #{entry.fetch("attempt_kind")})" }.join(" · ") %></small>
+                <div class="arcade-actions">
+                  <% day.fetch("spaced_reattempts").each do |entry| %>
+                    <%= button_to "Launch #{entry.fetch("attempt_kind")} #{entry.fetch("item_id")}", english_arcade_sessions_path, params: { english_arcade_session: { target: EnglishArcadeCurriculum.target_for(entry.fetch("item_id")), mode: "daily", card_key: entry.fetch("item_id"), exercise: entry.fetch("attempt_kind") } }, class: "arcade-button ghost" %>
+                  <% end %>
+                </div>
+              <% end %>
               <% if day.fetch("mocks").any? %>
-                <small><strong>Full mocks:</strong> <%= day.fetch("mocks").map { |mock| mock.fetch("label") }.join(" · ") %></small>
+                <small><strong>Timed mocks:</strong> <%= day.fetch("mocks").map { |mock| "#{mock.fetch("target")} #{mock.fetch("duration_minutes")}m — #{mock.fetch("breakdown").map { |label, minutes| "#{label} #{minutes}m" }.join(", ")}" }.join(" · ") %></small>
+                <% day.fetch("mocks").each do |mock| %><small><strong><%= mock.fetch("target") %> constraints:</strong> <%= mock.fetch("constraints", []).join(" · ").presence || "none" %></small><% end %>
+                <div class="arcade-actions">
+                <% day.fetch("mocks").each do |mock| %>
+                    <%= button_to "Launch #{mock.fetch("id")}", english_arcade_sessions_path, params: { english_arcade_session: { mock_id: mock.fetch("id"), target: mock.fetch("target"), mode: mock.fetch("mode"), card_key: mock.fetch("required_card_keys").first, exercise: "initial" } }, class: "arcade-button ghost" %>
+                  <% end %>
+                </div>
+              <% end %>
+              <% if day["gate"] %>
+                <% current_gate = @progress_30_days.fetch(:gates, []).find { |gate| gate.fetch("day") == day.fetch("day") } %>
+                <small><strong>Gate thresholds:</strong> <%= day.dig("gate", "thresholds").map { |key, value| "#{key}=#{value}" }.join(" · ") %></small>
+                <small><strong>Pass:</strong> <%= day.dig("gate", "accept") %> <strong>Fail:</strong> <%= day.dig("gate", "fail") %> <strong>Recovery:</strong> <%= day.dig("gate", "recovery", "assignment") %>, Black Box, retest in <%= day.dig("gate", "recovery", "retest_after_days") %> days.</small>
+                <% if current_gate %><small><strong>Current:</strong> <%= current_gate.fetch("status") %> — <%= current_gate.fetch("reasons").join("; ").presence || "threshold met" %></small><% end %>
               <% end %>
             </li>
           <% end %>
         </ol>
       </details>
-    <% end %>
   </section>
 
   <% if @arcade_session %>
@@ -142,19 +167,92 @@
           </div>
         </div>
 
+        <% if @mock_phase_payload %>
+          <section class="arcade-feedback" aria-labelledby="mock-phase-title">
+            <% if @mock_phase %>
+              <span class="arcade-kicker">Mock phase <%= @mock_phase_payload.fetch("phase_index") + 1 %> of <%= @mock_phase_payload.fetch("phase_count") %></span>
+              <h2 id="mock-phase-title"><%= @mock_phase.fetch("label") %></h2>
+              <p class="arcade-context"><%= @mock_phase.fetch("brief") %></p>
+              <p class="arcade-muted"><strong>Interviewer timebox:</strong> <%= @mock_phase.fetch("minutes") %> minutes · <strong>Required artifact:</strong> <%= @mock_phase.fetch("artifact_prompt") %></p>
+              <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true do |form| %>
+                <%= form.hidden_field :phase, value: "mock_phase" %>
+                <%= form.hidden_field :phase_id, value: @mock_phase.fetch("id") %>
+                <%= form.label :phase_artifact, "Typed phase artifact" %>
+                <%= form.text_area :phase_artifact, rows: 5, class: "arcade-text", required: true, minlength: @mock_phase.fetch("minimum_chars"), placeholder: "Write the artifact the interviewer requested…" %>
+                <%= form.submit "Complete phase", class: "arcade-button" %>
+              <% end %>
+            <% else %>
+              <span class="arcade-kicker">All mock phases complete</span>
+              <p id="mock-phase-title" class="arcade-context">All curriculum-owned phases are complete. Finish the mock after the required card has been revealed and the timed floor has elapsed.</p>
+            <% end %>
+          </section>
+        <% end %>
+
         <% if @feedback_attempt && @feedback %>
           <section class="arcade-feedback <%= @feedback_attempt.correct? ? "correct" : "wrong" %>" data-english-arcade-target="feedback" aria-live="assertive" tabindex="-1">
             <strong><%= @feedback_attempt.correct? ? "Good call — now make it precise." : "Black Box: the miss is evidence, not a verdict." %></strong>
-            <p><%= @feedback.fetch("register") %></p>
-            <p><%= @feedback.fetch("precision") %></p>
+            <% EnglishArcadeController::FEEDBACK_AXES.each do |axis| %>
+              <p><strong><%= axis.humanize %>:</strong> <%= @feedback.fetch(axis) %></p>
+            <% end %>
             <div class="arcade-answer"><strong>Answer after attempt:</strong> <%= @feedback.fetch("answer") %></div>
+            <% revealed_sources = Array(@feedback["sources"].presence || @feedback_card&.sources) %>
+            <% if revealed_sources.any? %>
+              <details class="arcade-progress">
+                <summary>Evidence sources (revealed)</summary>
+                <ul>
+                  <% revealed_sources.each do |source| %>
+                    <li>
+                      <% if source.is_a?(Hash) %>
+                        <strong><%= source["repo"] %> / <%= source["path"] %></strong>
+                        <% if source["note"].present? %><span class="arcade-muted"> — <%= source["note"] %></span><% end %>
+                      <% else %>
+                        <strong><%= source %></strong>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </details>
+            <% end %>
+            <% revealed_provenance = @feedback["provenance"].is_a?(Hash) ? @feedback["provenance"] : (@feedback_card&.provenance || {}) %>
+            <% if revealed_provenance.any? %>
+              <details class="arcade-progress">
+                <summary>Provenance and interview-safe boundary (revealed)</summary>
+                <% if revealed_provenance["project"].present? %><p><strong>Project:</strong> <%= revealed_provenance["project"] %></p><% end %>
+                <% if revealed_provenance["repository"].present? %><p><strong>Repository:</strong> <%= revealed_provenance["repository"] %></p><% end %>
+                <% if revealed_provenance["safe_interview_version"].present? %><p><strong>Safe interview version:</strong> <%= revealed_provenance["safe_interview_version"] %></p><% end %>
+                <% confidentiality = revealed_provenance["confidentiality"] %>
+                <% if confidentiality.is_a?(Hash) %>
+                  <p><strong>Confidentiality:</strong> <%= confidentiality["level"] %><% if confidentiality["note"].present? %> — <%= confidentiality["note"] %><% end %></p>
+                <% end %>
+                <% if Array(revealed_provenance["verified_claims"]).any? %>
+                  <p><strong>Verified claims:</strong></p>
+                  <ul><% Array(revealed_provenance["verified_claims"]).each do |claim| %><li><%= claim %></li><% end %></ul>
+                <% end %>
+                <% if Array(revealed_provenance["confirmation_required"]).any? %>
+                  <p><strong>Confirm before claiming:</strong></p>
+                  <ul><% Array(revealed_provenance["confirmation_required"]).each do |gap| %><li><%= gap %></li><% end %></ul>
+                <% end %>
+                <% if Array(revealed_provenance["files"]).any? %>
+                  <p><strong>Inspectable evidence:</strong></p>
+                  <ul>
+                    <% Array(revealed_provenance["files"]).each do |file| %>
+                      <% next unless file.is_a?(Hash) %>
+                      <li><%= file["path"] %> @ <%= file["commit"] %> — <%= file["claim"] %></li>
+                    <% end %>
+                  </ul>
+                <% end %>
+              </details>
+            <% end %>
+            <% if @feedback_card&.recall&.fetch("active_recall_cue", nil).present? %>
+              <p class="arcade-muted"><strong>Recall cue:</strong> <%= @feedback_card.recall.fetch("active_recall_cue") %></p>
+            <% end %>
             <% if @feedback["selected"].present? %><p class="arcade-muted">You chose: <%= @feedback.fetch("selected") %></p><% end %>
             <% if @feedback_attempt.correct? || @feedback_attempt.black_box_complete? %>
               <div class="arcade-followups">
               <% if @feedback_card %>
-                <%= link_to "Retry this question", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "retry", attempt_id: @feedback_attempt.id), class: "arcade-button secondary" %>
-                <%= link_to "Rephrase for a stakeholder", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "rephrase", attempt_id: @feedback_attempt.id), class: "arcade-button ghost" %>
-                <%= link_to "Add an extension", english_arcade_path(session_id: @arcade_session.id, card_key: @feedback_card.key, exercise: "extension", attempt_id: @feedback_attempt.id), class: "arcade-button ghost" %>
+                <% { "Retry this question" => ["retry", "secondary"], "Rephrase for a stakeholder" => ["rephrase", "ghost"], "Add an extension" => ["extension", "ghost"], "Answer interviewer follow-up" => ["follow_up", "ghost"], "Compress the answer" => ["compression", "ghost"] }.each do |label, (exercise, style)| %>
+                  <%= button_to label, english_arcade_sessions_path, params: { english_arcade_session: { target: @arcade_session.target, mode: @arcade_session.mode, card_key: @feedback_card.key, exercise: exercise } }, class: "arcade-button #{style}" %>
+                <% end %>
                 <%= link_to "Continue to next card", english_arcade_path(session_id: @arcade_session.id), class: "arcade-button ghost" %>
               <% end %>
               </div>
@@ -162,6 +260,11 @@
               <p class="arcade-muted">Complete the five Black Box fields before scheduling or continuing.</p>
             <% end %>
             <% unless @feedback_attempt.correct? %>
+              <% if @feedback_card&.black_box&.any? %>
+                <details class="arcade-progress"><summary>Item-specific Black Box guidance</summary>
+                  <p><strong>Symptom:</strong> <%= @feedback_card.black_box["symptom"] %></p><p><strong>Expected:</strong> <%= @feedback_card.black_box["expected"] %></p><p><strong>Repair:</strong> <%= @feedback_card.black_box["repair"] %></p><% if @feedback_card.black_box["reasoning_error"].present? %><p><strong>Reasoning error:</strong> <%= @feedback_card.black_box["reasoning_error"] %></p><% end %>
+                </details>
+              <% end %>
               <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true do |form| %>
                 <%= form.hidden_field :attempt_id, value: @feedback_attempt.id %>
                 <%= form.hidden_field :phase, value: "postmortem" %>
@@ -195,12 +298,24 @@
             <span class="arcade-kicker">Commit recorded · feedback still locked</span>
             <h2 id="feynman-title">Feynman pass before the reveal</h2>
             <p class="arcade-context">Explain why you chose that option in your own words. This is the closed-book reasoning trace; the answer and diagnostic stay server-side until you commit this pass.</p>
+            <% if @feynman_dto.present? %>
+              <% case @feynman_dto["variant_id"].to_s %>
+              <% when "follow_up" %>
+                <% if @feynman_dto["instruction"].present? %><p class="arcade-context"><strong>Follow-up Feynman cue:</strong> <%= @feynman_dto["instruction"] %></p><% end %>
+              <% when "delayed_variant" %>
+                <p class="arcade-context"><strong>Delayed-variant Feynman cue:</strong><% if @feynman_dto["changed_constraint"].present? %> Changed constraint: <%= @feynman_dto["changed_constraint"] %><% end %><% if @feynman_dto["new_evidence"].present? %> New evidence: <%= @feynman_dto["new_evidence"] %><% end %></p>
+              <% when "initial" %>
+                <p class="arcade-context"><strong>Feynman cue:</strong> Explain <%= @feynman_dto["concept"] %> to <%= @feynman_dto["explain_to"] %>. <%= @feynman_dto["constraint"] %> Self-check: <%= @feynman_dto["self_check"] %><% if @feynman_dto["reasoning_check"].present? %> Reasoning check: <%= @feynman_dto["reasoning_check"] %><% end %></p>
+              <% else %>
+                <% if @feynman_dto["instruction"].present? %><p class="arcade-context"><strong>Feynman cue:</strong> <%= @feynman_dto["instruction"] %></p><% end %>
+              <% end %>
+            <% end %>
             <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submitFeynman" } do |form| %>
               <%= form.hidden_field :attempt_id, value: @pending_attempt.id %>
               <%= form.hidden_field :phase, value: "feynman" %>
               <%= form.hidden_field :card_key, value: @pending_attempt.card_key %>
-              <%= form.label :feynman_text, "Say or write the reasoning" %>
-              <%= form.text_area :feynman_text, rows: 5, class: "arcade-text", placeholder: "I chose this because… The trade-off I would verify is…", autofocus: true, required: true %>
+              <%= form.label :feynman_text, "Write the reasoning" %>
+              <%= form.text_area :feynman_text, rows: 5, class: "arcade-text", placeholder: "I chose this because… The trade-off I would verify is…", autofocus: true, required: true, minlength: 40 %>
               <div class="arcade-actions">
                 <%= form.submit "Reveal feedback", class: "arcade-button" %>
                 <span class="arcade-muted">The reveal grades the committed choice, not the prose.</span>
@@ -211,13 +326,13 @@
           <div>
             <span class="arcade-kicker"><%= @exercise == "initial" ? "Closed-book question" : @exercise.humanize %></span>
             <h2><%= @current_card.prompt %></h2>
-            <p class="arcade-context"><%= @current_card.context %><% if @exercise == "rephrase" %> <strong><%= @current_card.rephrase_prompt %></strong><% elsif @exercise == "extension" %> <strong><%= @current_card.extension_prompt %></strong><% end %></p>
+            <p class="arcade-context"><%= @current_card.context %><% if @exercise == "rephrase" %> <strong><%= @current_card.rephrase_prompt %></strong><% elsif @exercise == "extension" %> <strong><%= @current_card.extension_prompt %></strong><% elsif @exercise == "compression" %> <strong><%= @current_card.compression_prompt %></strong><% end %></p>
           </div>
 
           <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submit", english_arcade_target: "form" } do |form| %>
             <%= form.hidden_field :card_key, value: @current_card.key %>
-            <%= form.hidden_field :attempt_kind, value: @exercise, data: { english_arcade_target: "attemptKind" } %>
-            <%= form.hidden_field :parent_attempt_id, value: @feedback_attempt&.id %>
+            <%= form.hidden_field :exercise, value: (@pending_attempt&.attempt_kind || @exercise) %>
+            <%= form.hidden_field :parent_attempt_id, value: @pending_attempt&.parent_attempt_id %>
             <%= form.hidden_field :response_ms, value: nil, data: { english_arcade_target: "responseMs" } %>
             <fieldset class="arcade-choice-list">
               <legend class="arcade-muted">Choose the strongest answer before revealing feedback.</legend>
@@ -232,15 +347,74 @@
 
             <div class="arcade-capture">
               <label>
-                <span><strong>Typed thought (optional)</strong> <small class="arcade-muted">captured with the commit</small></span>
-                <%= form.text_area :typed_answer, rows: 3, class: "arcade-text", placeholder: "Capture your reasoning after committing to a choice…", data: { english_arcade_target: "typed" } %>
+                <span><strong>Typed answer</strong> <small class="arcade-muted">required; at least 40 characters before feedback</small></span>
+                <%= form.text_area :typed_answer, rows: 4, class: "arcade-text", required: true, minlength: 40, placeholder: "State your decision, caveat, evidence, and next step…", data: { english_arcade_target: "typed" } %>
               </label>
-              <div>
-                <%= form.hidden_field :spoken_text, data: { english_arcade_target: "spoken" } %>
-                <button type="button" class="arcade-button secondary arcade-voice" data-english-arcade-target="voiceButton" data-action="english-arcade#toggleVoice" hidden>Capture voice</button>
-                <small class="arcade-muted" data-english-arcade-target="voiceStatus" aria-live="polite"></small>
-              </div>
             </div>
+            <fieldset class="arcade-critical" aria-labelledby="critical-thinking-title">
+              <legend id="critical-thinking-title"><strong><%= @exercise == "follow_up" ? "Follow-up critical-thinking ledger" : "Critical-thinking ledger" %></strong> <small class="arcade-muted">captured before feedback; label evidence, do not fact-check yourself</small></legend>
+              <label for="english-arcade-evidence-verified">Verified fact(s)
+                <%= form.text_area :evidence_verified, id: "english-arcade-evidence-verified", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What does the prompt, code, or source actually establish?" %>
+              </label>
+              <label for="english-arcade-problem-frame">Problem frame
+                <%= form.text_area :problem_frame, id: "english-arcade-problem-frame", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "Who is affected, what must succeed, which constraint matters, and what remains unknown?" %>
+              </label>
+              <label for="english-arcade-evidence-inference">Inference(s)
+                <%= form.text_area :evidence_inference, id: "english-arcade-evidence-inference", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What are you inferring, and why?" %>
+              </label>
+              <label for="english-arcade-evidence-assumption">Assumption(s)
+                <%= form.text_area :evidence_assumption, id: "english-arcade-evidence-assumption", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "Which premise still needs confirmation?" %>
+              </label>
+              <label for="english-arcade-evidence-gap">Unknown or evidence gap
+                <%= form.text_area :evidence_gap, id: "english-arcade-evidence-gap", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What do you not know yet?" %>
+              </label>
+              <label for="english-arcade-source-quality">Evidence/source quality
+                <%= form.text_area :source_quality, id: "english-arcade-source-quality", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What is the source, how strong is it, and what limitation remains?" %>
+              </label>
+              <details class="arcade-progress">
+                <summary>Real trade-off branch (use only when A and B satisfy the same contract)</summary>
+                <label for="english-arcade-comparison-option-a">Option A
+                  <%= form.text_area :comparison_option_a, id: "english-arcade-comparison-option-a", rows: 2, class: "arcade-text" %>
+                </label>
+                <label for="english-arcade-comparison-option-b">Option B
+                  <%= form.text_area :comparison_option_b, id: "english-arcade-comparison-option-b", rows: 2, class: "arcade-text" %>
+                </label>
+                <label for="english-arcade-comparison-tradeoff">Trade-off
+                  <%= form.text_area :comparison_tradeoff, id: "english-arcade-comparison-tradeoff", rows: 2, class: "arcade-text" %>
+                </label>
+                <label for="english-arcade-comparison-switch-condition">Decision/switch condition
+                  <%= form.text_area :comparison_switch_condition, id: "english-arcade-comparison-switch-condition", rows: 2, class: "arcade-text" %>
+                </label>
+              </details>
+              <details class="arcade-progress">
+                <summary>False-equivalence branch (when a comparison would hide a hard constraint)</summary>
+                <label for="english-arcade-comparison-rejected-alternative">Rejected alternative
+                  <%= form.text_area :comparison_rejected_alternative, id: "english-arcade-comparison-rejected-alternative", rows: 2, class: "arcade-text" %>
+                </label>
+                <label for="english-arcade-comparison-hard-constraint">Hard constraint
+                  <%= form.text_area :comparison_hard_constraint, id: "english-arcade-comparison-hard-constraint", rows: 2, class: "arcade-text" %>
+                </label>
+                <label for="english-arcade-comparison-decision-rule">Clarification/decision rule
+                  <%= form.text_area :comparison_decision_rule, id: "english-arcade-comparison-decision-rule", rows: 2, class: "arcade-text" %>
+                </label>
+              </details>
+              <label for="english-arcade-counterexample">Counterexample or failure mode
+                <%= form.text_area :counterexample, id: "english-arcade-counterexample", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What could break the recommendation?" %>
+              </label>
+              <label for="english-arcade-change-my-mind">What would change my mind?
+                <%= form.text_area :change_my_mind, id: "english-arcade-change-my-mind", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present? %>
+              </label>
+              <label for="english-arcade-confidence-percent">Confidence before reveal (0–100)
+                <%= form.number_field :confidence_percent, id: "english-arcade-confidence-percent", min: 0, max: 100, required: @current_card.critical_thinking.present?, inputmode: "numeric" %>
+              </label>
+            </fieldset>
+            <fieldset class="arcade-choice-list">
+              <legend class="arcade-muted">Self-assessed evidence (optional, 0–4; report-only and does not grade spoken English)</legend>
+              <label>Answer without translation <%= form.select :english_directness, [["English directly", "english_direct"], ["Mixed language", "mixed"], ["Translated first", "translated"]], { prompt: "Choose one" } %></label>
+              <% { clarity: "Clarity", precision: "Precision", naturalness: "Naturalness", pragmatic_appropriateness: "Pragmatic appropriateness", technical_correctness: "Technical correctness" }.each do |axis, label| %>
+                <label><%= label %> <%= form.select "self_#{axis}", (0..4).map { |value| [value, value] }, { prompt: "Choose 0–4" } %></label>
+              <% end %>
+            </fieldset>
 
             <div class="arcade-actions">
               <%= form.submit "Commit answer", class: "arcade-button", data: { english_arcade_target: "submit" } %>
@@ -264,16 +438,20 @@
           <span class="arcade-pill"><%= @schedule_summary[:mastered] %> box 5</span>
         </div>
         <h3>30-day diagnostic</h3>
-        <p class="arcade-muted"><%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> Black Box reviews across <%= @progress_30_days[:targets] %> targets.</p>
+        <p class="arcade-muted">Program day <%= @progress_30_days[:program_day] %> · <%= @progress_30_days[:practice_days] %> practice days · <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> completed Black Box post-mortems across <%= @progress_30_days[:targets] %> targets.</p>
         <details class="arcade-progress">
           <summary>Evidence axes (practice only)</summary>
           <div class="arcade-evidence">
             <span>Typed captures: <strong><%= @progress_30_days.fetch(:capture_evidence).fetch("typed_count") %></strong></span>
-            <span>Spoken captures: <strong><%= @progress_30_days.fetch(:capture_evidence).fetch("spoken_count") %></strong></span>
+            <span>Meaningful typed answers: <strong><%= @progress_30_days.fetch(:capture_evidence).fetch("meaningful_typed_count") %></strong></span>
             <span>Response-time samples: <strong><%= @progress_30_days.fetch(:response_time_evidence).fetch("count") %></strong></span>
             <span>Average response: <strong><%= @progress_30_days.fetch(:response_time_evidence).fetch("average_ms") || "—" %> ms</strong></span>
           </div>
           <p class="arcade-muted"><strong>Feedback evidence:</strong> <%= @progress_30_days.fetch(:feedback_evidence).map { |axis, evidence| "#{axis} #{evidence.fetch("observations")}" }.join(" · ") %></p>
+          <p class="arcade-muted"><strong>Direct thinking (self-reported):</strong> <%= @progress_30_days.dig(:direct_thinking, "direct") %>/<%= @progress_30_days.dig(:direct_thinking, "eligible") %> · <%= @progress_30_days.dig(:direct_thinking, "rate") || "—" %>.</p>
+          <p class="arcade-muted"><strong>Self-rubric (self-assessed):</strong> <%= @progress_30_days.fetch(:self_rubric).map { |axis, evidence| "#{axis} #{evidence.fetch("average") || "—"}/4 (#{evidence.fetch("count")})" }.join(" · ") %></p>
+          <p class="arcade-muted"><strong>Baseline:</strong> <%= @progress_30_days.dig(:baseline, "status") %>. Technical knowledge and general C2-calibrated performance remain separate evidence sets.</p>
+          <p class="arcade-muted"><strong>Delayed retention events:</strong> <%= @progress_30_days.dig(:delayed_retention, "successful_events") %>/<%= @progress_30_days.dig(:delayed_retention, "eligible_events") %> successful retests at least 7 days later · distinct cards: <%= @progress_30_days.dig(:delayed_retention, "successful_cards") %>/<%= @progress_30_days.dig(:delayed_retention, "eligible_cards") %> · follow-up adaptations: <%= @progress_30_days.dig(:follow_up_adaptation, "follow_up_completed") %>/<%= @progress_30_days.dig(:follow_up_adaptation, "eligible") %> · all adaptation kinds: <%= @progress_30_days.dig(:follow_up_adaptation, "adaptation_completed") %>/<%= @progress_30_days.dig(:follow_up_adaptation, "eligible") %>.</p>
           <p class="arcade-muted"><strong>Target accuracy:</strong> <%= @progress_30_days.fetch(:target_accuracy).map { |target, evidence| "#{target.humanize} #{evidence.fetch("accuracy") || "—"}" }.join(" · ") %></p>
           <p class="arcade-muted"><strong>Language skills:</strong> <%= @progress_30_days.fetch(:skill_evidence).map { |skill, evidence| "#{skill.humanize}: #{evidence.fetch("status")}" }.join(" · ") %></p>
           <p class="arcade-muted"><%= @progress_30_days.fetch(:score_note) %></p>
@@ -287,7 +465,8 @@
             <% @history.each do |attempt| %>
               <article>
                 <strong><%= attempt.target.humanize %> · <%= attempt.attempt_kind.humanize %></strong>
-                <p class="arcade-muted"><%= attempt.correct? ? "Correct" : "Needs another pass" %> · box <%= attempt.box_before %> → <%= attempt.box_after %> · <%= attempt.answered_at.to_fs(:short) %></p>
+                <% history_status = attempt.feedback_revealed? ? (attempt.correct? ? "Correct" : "Needs another pass") : "Feedback locked" %>
+                <p class="arcade-muted"><%= history_status %> · box <%= attempt.box_before %> → <%= attempt.box_after %> · <%= attempt.answered_at.to_fs(:short) %></p>
               </article>
             <% end %>
           <% else %>

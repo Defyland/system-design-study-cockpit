@@ -1,1080 +1,2441 @@
 ---
-contract_version: "1.1.0"
+contract_version: 1.4.0
 target:
   key: golang
   label: Golang
-  blurb: >-
-    Explain interfaces, goroutines and context the way a Go engineer does:
-    plainly, with ownership and cancellation made explicit.
+  blurb: 'Explain interfaces, goroutines and context the way a Go engineer does: plainly,
+    with ownership and cancellation made explicit.'
   focus_areas:
-    - interfaces and composition
-    - goroutines and channels
-    - context and cancellation
-    - errors and wrapping
-    - profiling and service boundaries
+  - interfaces and composition
+  - goroutines and channels
+  - context and cancellation
+  - errors and wrapping
+  - profiling and service boundaries
   simulation:
     minutes: 45
     structure:
-      - label: Interfaces and API shape warm-up
-        minutes: 8
-      - label: Concurrency and ownership deep dive
-        minutes: 15
-      - label: Errors, context and failure paths
-        minutes: 12
-      - label: Profiling and service boundaries
-        minutes: 10
+    - label: Interfaces and API shape warm-up
+      minutes: 8
+    - label: Concurrency and ownership deep dive
+      minutes: 15
+    - label: Errors, context and failure paths
+      minutes: 12
+    - label: Profiling and service boundaries
+      minutes: 10
+  critical_thinking:
+    learner_prompts:
+      evidence_ledger: For Go, record whether each claim about interfaces, goroutines,
+        context cancellation, errors, and service boundaries is a verified fact, an
+        inference, an assumption, or an unknown before you defend it.
+      problem_frame: Frame every Go answer with the actor, requirement, constraint,
+        success condition, and unanswered question that could change the decision.
+      comparison: When Go offers a real choice, compare two options by benefit, cost
+        or risk, valid-when condition, and an explicit decision rule.
+      failure_probe: Ask which counterexample, edge case, or failure mode could break
+        the Go recommendation, then state the smallest test or containment step.
+      certainty_review: 'Calibrate certainty in Go: name the evidence, separate correlation
+        from causality, and say what new observation would make you revise the answer.'
+    rubric:
+      facts_correct: Names the verified interfaces, goroutines, context cancellation,
+        errors, and service boundaries facts without smuggling in a result or capability
+        that the prompt does not establish.
+      assumptions_explicit: Labels the Go premise that is still assumed and asks the
+        smallest clarifying question that matters.
+      alternatives_considered: Considers a credible alternative for Go, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Go choice to a benefit, a cost or risk, and the
+        condition under which another choice wins.
+      follow_up_adaptation: Responds to an adversarial Go follow-up by changing the
+        claim or evidence boundary rather than repeating a memorised answer.
+      certainty_calibration: Uses high, medium, or low certainty deliberately and
+        names the evidence that would update the Go recommendation.
 cards:
-  - id: golang-card-interface-consumer
-    front: Where do Go interfaces belong?
-    back: >-
-      In the consumer package, kept small. The producer returns a concrete type;
-      the caller declares only the method it needs.
-    box: 1
-    source:
-      repo: system-design-estudos
-      path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
-      note: Boundary and dependency-direction principles.
-  - id: golang-card-goroutine-ownership
-    front: What must you say when you start a goroutine?
-    back: >-
-      Who stops it and how. An unowned goroutine is a leak waiting for
-      production traffic.
-    box: 2
-    source:
-      repo: system-design-estudos
-      path: areas/09-backend-principles/cards/graceful-shutdown.md
-      note: Lifecycle and shutdown discipline.
-  - id: golang-card-error-wrapping
-    front: How do you talk about error wrapping precisely?
-    back: >-
-      Wrap with context at each boundary, compare with errors.Is or errors.As,
-      and never match on message strings.
-    box: 1
-    source:
-      repo: system-design-estudos
-      path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-      note: Error handling and fault tolerance practices.
+- id: golang-card-interface-consumer
+  front: Where do Go interfaces belong?
+  back: In the consumer package, kept small. The producer returns a concrete type;
+    the caller declares only the method it needs.
+  box: 1
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+    note: Boundary and dependency-direction principles.
+  critical_thinking:
+    cue: Where do Go interfaces belong? Before answering, separate the stated fact
+      from your assumption and name one condition that could change it.
+    check: For this Go card, can you compare two options, name one failure mode, and
+      state what evidence would update the recommendation?
+- id: golang-card-goroutine-ownership
+  front: What must you say when you start a goroutine?
+  back: Who stops it and how. An unowned goroutine is a leak waiting for production
+    traffic.
+  box: 2
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/graceful-shutdown.md
+    note: Lifecycle and shutdown discipline.
+  critical_thinking:
+    cue: What must you say when you start a goroutine? Before answering, separate
+      the stated fact from your assumption and name one condition that could change
+      it.
+    check: For this Go card, can you compare two options, name one failure mode, and
+      state what evidence would update the recommendation?
+- id: golang-card-error-wrapping
+  front: How do you talk about error wrapping precisely?
+  back: Wrap with context at each boundary, compare with errors.Is or errors.As, and
+    never match on message strings.
+  box: 1
+  source:
+    repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Error handling and fault tolerance practices.
+  critical_thinking:
+    cue: How do you talk about error wrapping precisely? Before answering, separate
+      the stated fact from your assumption and name one condition that could change
+      it.
+    check: For this Go card, can you compare two options, name one failure mode, and
+      state what evidence would update the recommendation?
 items:
-  - id: golang-01-interface-placement
-    version: "1.0.0"
-    target: golang
-    topic: Interfaces
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      Where would you define the interface for this dependency?
-    context: >-
-      A service needs a storage dependency. The interviewer wants to know
-      whether you follow Go's consumer-side convention or bring habits from
-      other languages.
+- id: golang-01-interface-placement
+  version: 1.4.0
+  target: golang
+  topic: Interfaces
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: Where would you define the interface for this dependency?
+  context: A service needs a storage dependency. The interviewer wants to know whether
+    you follow Go's consumer-side convention or bring habits from other languages.
+  follow_up:
+    prompt: Which package consumes the behavior, and what smallest interface would
+      let that package test its dependency without mirroring the concrete type?
+    goal: Answer the evidence challenge about Interfaces while keeping the evidence
+      boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      In the consumer package, and as small as I can make it. The storage
-      package returns a concrete type, and my service declares the one or two
-      methods it actually uses, which keeps the dependency pointing inwards and
-      makes the test double trivial.
+      In the consumer package, and as small as I can make it. I would
+      treat the follow-up observation as evidence, not as proof of impact; I would inspect
+      the smallest relevant trace or test and state what remains uncertain before changing the
+      decision.
     distractors:
-      - text: >-
-          In the storage package alongside the implementation, so that everyone
-          who needs it can import the same interface definition and there is a
-          single canonical contract for the dependency.
-        trap: content
-        why_wrong: >-
-          That is the Java convention. In Go it forces consumers to depend on a
-          package they do not need and grows the interface over time.
-      - text: >-
-          Wherever it makes the most sense for the project structure, since
-          different teams organise this differently and consistency within the
-          codebase matters more than the specific choice.
-        trap: pragmatics
-        why_wrong: >-
-          Avoids the question. There is a well-established Go convention here
-          and the interviewer is checking whether you know it.
-      - text: >-
-          In the package of the consumer and the more small possible, because
-          then the service declares only the methods that it is using really.
-        trap: grammar
-        why_wrong: >-
-          "The package of the consumer" and "the more small possible" invert
-          English possessive and superlative forms.
-    feedback:
-      register: >-
-        Idiomatic and specific; name the convention as a convention.
-      hedging: >-
-        None needed; this is settled Go practice.
-      precision: >-
-        Say why it matters: dependency direction and trivial test doubles.
-      grammar: >-
-        "The consumer package", "as small as possible".
-      pragmatics: >-
-        Mentioning testing pre-empts the natural follow-up.
-    rephrase:
-      prompt: >-
-        Explain the same convention to a Java developer joining the team.
-      goal: Practise contrasting conventions without dismissing either.
-    language_focus: [precision, grammar, pragmatics]
-    pt_help: >-
-      Ingles usa substantivo composto: "the consumer package", nao "the package
-      of the consumer".
-    feynman:
-      concept: Consumer-side interfaces and dependency direction.
-      explain_to: A developer coming from Java or C#.
-      constraint: Explain using a job description written by the employer.
-      self_check: >-
-        Did you say which package owns the concrete type?
-    black_box:
-      symptom: You placed the interface with the implementation.
-      expected: Consumer package, minimal method set, concrete return.
-      actual: Producer-side definition, or deferral to team style.
-      root_cause: >-
-        Carrying interface habits from languages with nominal typing.
-      repair: >-
-        Ask who consumes the behaviour before deciding who declares it.
-    recall:
-      active_recall_cue: >-
-        Which package should declare an interface in Go, and why?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
-        note: Boundaries and dependency direction.
-      - repo: original
-        path: english-arcade/golang/interface-placement
-        note: Original interview phrasing authored for this pack.
-  - id: golang-02-goroutine-leak
-    version: "1.0.0"
-    target: golang
-    topic: Goroutines
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      What happens to this goroutine if nobody reads from the channel?
-    context: >-
-      The code starts a goroutine that sends a result on an unbuffered channel,
-      but the caller returns early on timeout. The interviewer is probing
-      whether you can see the leak.
+    - text: I would cite my experience with Interfaces as enough proof and move on
+        without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Interfaces before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Explain interface placement as consumer need, minimal method set, and
+      a fake that tests behavior.
+    goal: Compress the Interfaces answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: In the consumer package, and as small as I can make it. The storage
+    package returns a concrete type, and my service declares the one or two methods
+    it actually uses, which keeps the dependency pointing inwards and makes the test
+    double trivial.
+  distractors:
+  - text: In the storage package alongside the implementation, so that everyone who
+      needs it can import the same interface definition and there is a single canonical
+      contract for the dependency.
+    trap: content
+    why_wrong: That is the Java convention. In Go it forces consumers to depend on
+      a package they do not need and grows the interface over time.
+  - text: Wherever it makes the most sense for the project structure, since different
+      teams organise this differently and consistency within the codebase matters
+      more than the specific choice.
+    trap: pragmatics
+    why_wrong: Avoids the question. There is a well-established Go convention here
+      and the interviewer is checking whether you know it.
+  - text: In the package of the consumer and the more small possible, because then
+      the service declares only the methods that it is using really.
+    trap: grammar
+    why_wrong: '"The package of the consumer" and "the more small possible" invert
+      English possessive and superlative forms.'
+  feedback:
+    register: Idiomatic and specific; name the convention as a convention.
+    hedging: None needed; this is settled Go practice.
+    precision: 'Say why it matters: dependency direction and trivial test doubles.'
+    grammar: '"The consumer package", "as small as possible".'
+    pragmatics: Mentioning testing pre-empts the natural follow-up.
+  rephrase:
+    prompt: Explain the same convention to a Java developer joining the team.
+    goal: Practise contrasting conventions without dismissing either.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  pt_help: 'Ingles usa substantivo composto: "the consumer package", nao "the package
+    of the consumer".'
+  feynman:
+    concept: Consumer-side interfaces and dependency direction.
+    explain_to: A developer coming from Java or C#.
+    constraint: Explain using a job description written by the employer.
+    self_check: Did you say which package owns the concrete type?
+    reasoning_check: Can you identify the hidden premise behind Interfaces, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You placed the interface with the implementation.
+    expected: Consumer package, minimal method set, concrete return.
+    actual: Producer-side definition, or deferral to team style.
+    root_cause: Carrying interface habits from languages with nominal typing.
+    repair: Ask who consumes the behaviour before deciding who declares it.
+    reasoning_error: If your Interfaces answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: Which package should declare an interface in Go, and why?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Interfaces without presenting
+      an assumption as a fact?
+    black_box_probe: When the Interfaces answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-01-interface-placement-delayed-1
+      prompt: 'Interfaces: the later Interfaces review says a Interfaces test exposes
+        a boundary case that the Interfaces examples did not cover. Under the Interfaces
+        workload for Interfaces no longer fits the original resource bound, which
+        part of Interfaces survives and which Interfaces claim changes?'
+      changed_constraint: the Interfaces workload for Interfaces no longer fits the
+        original resource bound
+      new_evidence: a Interfaces test exposes a boundary case that the Interfaces
+        examples did not cover
+      best_answer: I would keep the facts that remain supported about Interfaces,
+        treat a Interfaces test exposes a boundary case that the Interfaces examples
+        did not cover as new evidence rather than a result, and state the updated
+        decision rule under the Interfaces workload for Interfaces no longer fits
+        the original resource bound. I would then name one focused check before treating
+        the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Interfaces answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Interfaces explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+    note: Boundaries and dependency direction.
+  - repo: original
+    path: english-arcade/golang/interface-placement
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Interfaces: inspect Interfaces evidence next; which edge case for Interfaces
+      would alter the trade-off?'
+    goal: Move from the short Interfaces answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Interfaces before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Interfaces within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Interfaces,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Interfaces constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Interfaces: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Interfaces would
+        be a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Interfaces constraint is the required guarantee stated
+        by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Interfaces; first clarify
+        the constraint or collect the evidence that would make two options genuinely
+        comparable.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Interfaces: what minimum input for Interfaces would break the Interfaces
+        recommendation, and how would you revise the Interfaces claim?'
+    evidence_check:
+      basis: Check the Interfaces claim against system-design-estudos/areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Interfaces, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Interfaces question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Where would you define the interface for", update
+        Interfaces when Interfaces evidence—a Interfaces trace or Interfaces test—contradicts
+        the Interfaces constraint in case "Where would you define the interface for";
+        ask a stakeholder about Interfaces before revising.
+    rubric:
+      facts_correct: Names the verified Interfaces facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Interfaces premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Interfaces options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Interfaces choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Interfaces by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Interfaces recommendation.
+- id: golang-02-goroutine-leak
+  version: 1.4.0
+  target: golang
+  topic: Goroutines
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: What happens to this goroutine if nobody reads from the channel?
+  context: The code starts a goroutine that sends a result on an unbuffered channel,
+    but the caller returns early on timeout. The interviewer is probing whether you
+    can see the leak.
+  follow_up:
+    prompt: What cancellation or channel-ownership rule stops this goroutine from
+      waiting forever, and how would you prove it in a test?
+    goal: Answer the alternative challenge about Goroutines while keeping the evidence
+      boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      It blocks on the send forever, so the goroutine never exits and whatever
-      it holds stays alive. I would either give the channel a buffer of one so
-      the send always completes, or select on the context so the goroutine gives
-      up when the caller does.
+      It blocks on the send forever, so the goroutine never exits and whatever it
+      holds stays alive. I would compare that choice with the credible alternative against the
+      requirement in the follow-up, cost, and failure risk, then switch only if evidence makes
+      the alternative safer.
     distractors:
-      - text: >-
-          The goroutine will be garbage collected once nothing references the
-          channel any more, so it gets cleaned up automatically without leaking
-          any memory in the process.
-        trap: content
-        why_wrong: >-
-          Blocked goroutines are never collected; that is precisely why leaks
-          accumulate under load.
-      - text: >-
-          It would probably just wait there, which is not ideal, so it would be
-          better to handle that case somehow to avoid any potential issues later
-          on in production.
-        trap: precision
-        why_wrong: >-
-          Identifies the symptom vaguely and proposes nothing concrete, so it
-          demonstrates no working knowledge.
-      - text: >-
-          It stays blocked in the send for always, then the goroutine never
-          exits and everything that it is holding continues alive in the memory
-          of the process.
-        trap: grammar
-        why_wrong: >-
-          "For always", "continues alive" and "the memory of the process" are
-          all literal translations.
-    feedback:
-      register: >-
-        Precise and unhurried; leaks are a mechanism question.
-      hedging: >-
-        None; the blocking behaviour is deterministic.
-      precision: >-
-        Give both fixes, since they suit different situations.
-      grammar: >-
-        "Blocks forever", "stays alive", "process memory".
-      pragmatics: >-
-        Connecting the leak to what it retains shows production experience.
-    rephrase:
-      prompt: >-
-        Explain how you would detect this leak in a running service.
-      goal: Move from cause to observation.
-    language_focus: [precision, grammar, hedging]
-    feynman:
-      concept: Blocked sends and goroutine lifetime.
-      explain_to: A developer who assumes the runtime cleans everything up.
-      constraint: Explain using someone holding a door for a person who left.
-      self_check: >-
-        Did you name both the buffer and the context fix?
-    black_box:
-      symptom: You assumed collection, or described the problem vaguely.
-      expected: Permanent block, retained memory, buffer or context fix.
-      actual: A garbage-collection claim, or an unspecific concern.
-      root_cause: >-
-        Goroutines modelled as tasks rather than as blocked OS-level waiters.
-      repair: >-
-        For every channel send, ask who guarantees a receive.
-    recall:
-      active_recall_cue: >-
-        Why is a blocked goroutine never garbage collected?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/concurrency-parallelism.md
-        note: Concurrency primitives and failure modes.
-      - repo: original
-        path: english-arcade/golang/goroutine-leak
-        note: Original interview phrasing authored for this pack.
-  - id: golang-03-context-propagation
-    version: "1.0.0"
-    target: golang
-    topic: Context
-    difficulty: 2
-    interview_stage: architecture_review
-    prompt: >-
-      Why pass context as the first argument everywhere?
-    context: >-
-      A design review. The interviewer wants to know whether you understand
-      context as a cancellation and deadline carrier rather than as a
-      convention you follow without thinking.
+    - text: I would defend the first Goroutines option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Goroutines design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Summarize the leak prevention as owner, shutdown signal, and evidence
+      that every goroutine can exit.
+    goal: Compress the Goroutines answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: It blocks on the send forever, so the goroutine never exits and whatever
+    it holds stays alive. I would either give the channel a buffer of one so the send
+    always completes, or select on the context so the goroutine gives up when the
+    caller does.
+  distractors:
+  - text: The goroutine will be garbage collected once nothing references the channel
+      any more, so it gets cleaned up automatically without leaking any memory in
+      the process.
+    trap: content
+    why_wrong: Blocked goroutines are never collected; that is precisely why leaks
+      accumulate under load.
+  - text: It would probably just wait there, which is not ideal, so it would be better
+      to handle that case somehow to avoid any potential issues later on in production.
+    trap: precision
+    why_wrong: Identifies the symptom vaguely and proposes nothing concrete, so it
+      demonstrates no working knowledge.
+  - text: It stays blocked in the send for always, then the goroutine never exits
+      and everything that it is holding continues alive in the memory of the process.
+    trap: grammar
+    why_wrong: '"For always", "continues alive" and "the memory of the process" are
+      all literal translations.'
+  feedback:
+    register: Precise and unhurried; leaks are a mechanism question.
+    hedging: None; the blocking behaviour is deterministic.
+    precision: Give both fixes, since they suit different situations.
+    grammar: '"Blocks forever", "stays alive", "process memory".'
+    pragmatics: Connecting the leak to what it retains shows production experience.
+  rephrase:
+    prompt: Explain how you would detect this leak in a running service.
+    goal: Move from cause to observation.
+  language_focus:
+  - precision
+  - grammar
+  - hedging
+  feynman:
+    concept: Blocked sends and goroutine lifetime.
+    explain_to: A developer who assumes the runtime cleans everything up.
+    constraint: Explain using someone holding a door for a person who left.
+    self_check: Did you name both the buffer and the context fix?
+    reasoning_check: Can you identify the hidden premise behind Goroutines, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You assumed collection, or described the problem vaguely.
+    expected: Permanent block, retained memory, buffer or context fix.
+    actual: A garbage-collection claim, or an unspecific concern.
+    root_cause: Goroutines modelled as tasks rather than as blocked OS-level waiters.
+    repair: For every channel send, ask who guarantees a receive.
+    reasoning_error: If your Goroutines answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: Why is a blocked goroutine never garbage collected?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Goroutines without presenting
+      an assumption as a fact?
+    black_box_probe: When the Goroutines answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-02-goroutine-leak-delayed-2
+      prompt: 'Review note for Goroutines: a stakeholder clarifies a Goroutines requirement
+        that changes the Goroutines success condition. Given a stakeholder asks for
+        a stronger Goroutines guarantee than the first Goroutines answer promised,
+        what would you now defend, retract, and verify about Goroutines?'
+      changed_constraint: a stakeholder asks for a stronger Goroutines guarantee than
+        the first Goroutines answer promised
+      new_evidence: a stakeholder clarifies a Goroutines requirement that changes
+        the Goroutines success condition
+      best_answer: I would keep the facts that remain supported about Goroutines,
+        treat a stakeholder clarifies a Goroutines requirement that changes the Goroutines
+        success condition as new evidence rather than a result, and state the updated
+        decision rule under a stakeholder asks for a stronger Goroutines guarantee
+        than the first Goroutines answer promised. I would then name one focused check
+        before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Goroutines answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Goroutines explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/concurrency-parallelism.md
+    note: Concurrency primitives and failure modes.
+  - repo: original
+    path: english-arcade/golang/goroutine-leak
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Deep dive on Goroutines: compare Goroutines options with one measurement;
+      which failure around Goroutines would make Goroutines switch?'
+    goal: Move from the short Goroutines answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Goroutines before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Goroutines within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Goroutines,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Goroutines constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Goroutines: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Goroutines
+        benefit: It keeps the Goroutines reasoning close to the stated Go constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Goroutines workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Goroutines contract and its invariant are
+          the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Goroutines
+        benefit: It can make the Goroutines boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Goroutines evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Goroutines option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant Go constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Goroutines: what Goroutines limit should you probe before trusting
+        the answer, and how would Goroutines behave there?'
+    evidence_check:
+      basis: Check the Goroutines claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Goroutines, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Goroutines question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "What happens to this goroutine if nobody", update
+        Goroutines when Goroutines evidence—a Goroutines trace or Goroutines test—contradicts
+        the Goroutines constraint in case "What happens to this goroutine if nobody";
+        ask a stakeholder about Goroutines before revising.
+    rubric:
+      facts_correct: Names the verified Goroutines facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Goroutines premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Goroutines options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Goroutines choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Goroutines
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Goroutines recommendation.
+- id: golang-03-context-propagation
+  version: 1.4.0
+  target: golang
+  topic: Context
+  difficulty: 2
+  interview_stage: architecture_review
+  prompt: Why pass context as the first argument everywhere?
+  context: A design review. The interviewer wants to know whether you understand context
+    as a cancellation and deadline carrier rather than as a convention you follow
+    without thinking.
+  follow_up:
+    prompt: Which deadline or cancellation should reach the downstream call, and what
+      should the function do when the context is already done?
+    goal: Answer the failure challenge about Context while keeping the evidence boundary
+      explicit.
+    challenge_kind: failure
     best_answer: >-
-      Because cancellation has to travel the whole call chain. If the client
-      hangs up, every downstream call should stop rather than finish work nobody
-      will read. It also carries the deadline, so a slow dependency cannot
-      outlive the request that started it.
+      Because cancellation has to travel the whole call chain. If the failure in the
+      follow-up appears, I would name the user or system consequence, contain it with a
+      bounded mitigation, and verify recovery with a focused test or metric.
     distractors:
-      - text: >-
-          Because it is the standard Go convention and most libraries expect it,
-          so following it keeps the code consistent with the rest of the
-          ecosystem and with what other developers expect.
-        trap: precision
-        why_wrong: >-
-          Convention is the consequence, not the reason. It says nothing about
-          cancellation or deadlines.
-      - text: >-
-          Because it lets you pass request-scoped values like the trace ID and
-          the authenticated user down through the layers without changing every
-          function signature.
-        trap: content
-        why_wrong: >-
-          Values are the least important and most abused part of context;
-          leading with them signals the wrong mental model.
-      - text: >-
-          Because the cancellation needs to travel for all the chain of calls,
-          then if the client hangs up every call downstream should to stop the
-          work.
-        trap: grammar
-        why_wrong: >-
-          "Travel for", "chain of calls" and "should to stop" are preposition,
-          compound-noun and modal errors.
-    feedback:
-      register: >-
-        Purposeful. Explain the mechanism, then the convention follows.
-      hedging: >-
-        None needed; cancellation semantics are well defined.
-      precision: >-
-        Cancellation and deadlines are the answer; values are a footnote.
-      grammar: >-
-        "The whole call chain", "should stop"; modals take a bare infinitive.
-      pragmatics: >-
-        The hang-up example makes an abstract mechanism immediately concrete.
-    rephrase:
-      prompt: >-
-        Explain what breaks in a service that ignores the context it receives.
-      goal: Test understanding through the failure case.
-    language_focus: [precision, grammar, pragmatics]
-    pt_help: >-
-      Modais em ingles nao levam "to": "should stop", nunca "should to stop".
-    feynman:
-      concept: Context as a cancellation and deadline carrier.
-      explain_to: A developer who treats context as a bag of values.
-      constraint: Explain using a restaurant order that gets cancelled.
-      self_check: >-
-        Did you lead with cancellation rather than with values?
-    black_box:
-      symptom: You justified it by convention or led with values.
-      expected: Cancellation and deadline propagation across the call chain.
-      actual: An appeal to consistency, or a focus on request-scoped values.
-      root_cause: >-
-        Context adopted as a signature requirement rather than as a control
-        mechanism.
-      repair: >-
-        Explain context by describing what happens when the client disconnects.
-    recall:
-      active_recall_cue: >-
-        What two things does context carry that matter most?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/graceful-shutdown.md
-        note: Cancellation and shutdown propagation.
-      - repo: original
-        path: english-arcade/golang/context-propagation
-        note: Original interview phrasing authored for this pack.
-  - id: golang-04-error-wrapping
-    version: "1.0.0"
-    target: golang
-    topic: Errors
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      How do you decide what to add when you wrap an error?
-    context: >-
-      The codebase has errors wrapped at every level, and the logs are now
-      repetitive. The interviewer wants a rule for what each layer should
-      contribute.
+    - text: I would describe the Context failure as impossible because the happy path
+        already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to Context immediately and assume the system would
+        become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: State context propagation as boundary, cancellation behavior, and the
+      error the caller can act on.
+    goal: Compress the Context answer into its decision, premise, trade-off, and verification
+      step.
+  best_answer: Because cancellation has to travel the whole call chain. If the client
+    hangs up, every downstream call should stop rather than finish work nobody will
+    read. It also carries the deadline, so a slow dependency cannot outlive the request
+    that started it.
+  distractors:
+  - text: Because it is the standard Go convention and most libraries expect it, so
+      following it keeps the code consistent with the rest of the ecosystem and with
+      what other developers expect.
+    trap: precision
+    why_wrong: Convention is the consequence, not the reason. It says nothing about
+      cancellation or deadlines.
+  - text: Because it lets you pass request-scoped values like the trace ID and the
+      authenticated user down through the layers without changing every function signature.
+    trap: content
+    why_wrong: Values are the least important and most abused part of context; leading
+      with them signals the wrong mental model.
+  - text: Because the cancellation needs to travel for all the chain of calls, then
+      if the client hangs up every call downstream should to stop the work.
+    trap: grammar
+    why_wrong: '"Travel for", "chain of calls" and "should to stop" are preposition,
+      compound-noun and modal errors.'
+  feedback:
+    register: Purposeful. Explain the mechanism, then the convention follows.
+    hedging: None needed; cancellation semantics are well defined.
+    precision: Cancellation and deadlines are the answer; values are a footnote.
+    grammar: '"The whole call chain", "should stop"; modals take a bare infinitive.'
+    pragmatics: The hang-up example makes an abstract mechanism immediately concrete.
+  rephrase:
+    prompt: Explain what breaks in a service that ignores the context it receives.
+    goal: Test understanding through the failure case.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  pt_help: 'Modais em ingles nao levam "to": "should stop", nunca "should to stop".'
+  feynman:
+    concept: Context as a cancellation and deadline carrier.
+    explain_to: A developer who treats context as a bag of values.
+    constraint: Explain using a restaurant order that gets cancelled.
+    self_check: Did you lead with cancellation rather than with values?
+    reasoning_check: Can you identify the hidden premise behind Context, give a counterexample,
+      and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You justified it by convention or led with values.
+    expected: Cancellation and deadline propagation across the call chain.
+    actual: An appeal to consistency, or a focus on request-scoped values.
+    root_cause: Context adopted as a signature requirement rather than as a control
+      mechanism.
+    repair: Explain context by describing what happens when the client disconnects.
+    reasoning_error: If your Context answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What two things does context carry that matter most?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Context without presenting
+      an assumption as a fact?
+    black_box_probe: When the Context answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-03-context-propagation-delayed-3
+      prompt: New evidence about Context says a trace of Context isolates a different
+        Context bottleneck than the one you named; with the Context dependency is
+        slower for Context and the failure is ambiguous rather than explicit, how
+        do you update the Context decision rule?
+      changed_constraint: the Context dependency is slower for Context and the failure
+        is ambiguous rather than explicit
+      new_evidence: a trace of Context isolates a different Context bottleneck than
+        the one you named
+      best_answer: I would keep the facts that remain supported about Context, treat
+        a trace of Context isolates a different Context bottleneck than the one you
+        named as new evidence rather than a result, and state the updated decision
+        rule under the Context dependency is slower for Context and the failure is
+        ambiguous rather than explicit. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Context answer because changing
+          it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Context explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/graceful-shutdown.md
+    note: Cancellation and shutdown propagation.
+  - repo: original
+    path: english-arcade/golang/context-propagation
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Defend Context after a counterexample: which Context assumption changes,
+      and what evidence keeps the revised Context choice honest?'
+    goal: Move from the short Context answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Context before proposing a solution: state the actor, required
+      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Context within a Go context; treat that named
+        boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Context,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Context constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Context: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Context
+        benefit: It keeps the Context reasoning close to the stated Go constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Context workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Context contract and its invariant are
+          the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Context
+        benefit: It can make the Context boundary more explicit when the first option's
+          hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Context evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Context option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant Go constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Context: if a caller retries Context at the worst moment, what failure
+        mode appears first, and how would you protect Context?'
+    evidence_check:
+      basis: Check the Context claim against system-design-estudos/areas/09-backend-principles/cards/graceful-shutdown.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Context, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Context question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Why pass context as the first argument", update Context
+        when Context evidence—a Context trace or Context test—contradicts the Context
+        constraint in case "Why pass context as the first argument"; ask a stakeholder
+        about Context before revising.
+    rubric:
+      facts_correct: Names the verified Context facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Context premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Context options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Context choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about Context by changing
+        the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Context recommendation.
+- id: golang-04-error-wrapping
+  version: 1.4.0
+  target: golang
+  topic: Errors
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: How do you decide what to add when you wrap an error?
+  context: The codebase has errors wrapped at every level, and the logs are now repetitive.
+    The interviewer wants a rule for what each layer should contribute.
+  follow_up:
+    prompt: Which caller needs to classify this failure, and what stable sentinel
+      or type would you preserve while adding operation context?
+    goal: Answer the new_evidence challenge about Errors while keeping the evidence
+      boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
       Each layer adds what only it knows, so the repository adds the query or
-      the identifier and the handler adds the operation. If a layer has nothing
-      new to say, it should return the error unchanged rather than restating the
-      one below it.
+      the identifier and the handler adds the operation. I would keep the claims that
+      remain supported, identify exactly which premise the new observation changes, and run a focused
+      check before revising the decision.
     distractors:
-      - text: >-
-          I wrap at every level with a message describing what the function was
-          doing, which builds up a complete trail of the call path in the final
-          error message.
-        trap: content
-        why_wrong: >-
-          Produces exactly the repetitive logs described in the prompt; a stack
-          trace already covers the call path.
-      - text: >-
-          I try to add useful context that will help with debugging later,
-          without making the messages too long or repeating what is already
-          there in the underlying error.
-        trap: precision
-        why_wrong: >-
-          Restates the goal without giving a rule anyone could apply
-          consistently.
-      - text: >-
-          Each layer adds what only it knows, then the repository puts the query
-          or the identifier and the handler puts the operation that was being
-          realised in that moment.
-        trap: grammar
-        why_wrong: >-
-          "Puts" for "adds", and "being realised in that moment" is a false
-          friend for "being performed".
-    feedback:
-      register: >-
-        Rule-based and concise.
-      hedging: >-
-        None; give the rule directly.
-      precision: >-
-        "What only it knows" is the operative test.
-      grammar: >-
-        "Adds the identifier", "the operation being performed"; avoid the false
-        friend "realise".
-      pragmatics: >-
-        The return-unchanged clause answers the repetition problem explicitly.
-    rephrase:
-      prompt: >-
-        Apply your rule to a failed HTTP call inside a payment handler.
-      goal: Test the rule on a concrete stack.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      "Realizar" tecnico e "perform" ou "carry out". "Realise" significa
-      "perceber".
-    feynman:
-      concept: Layered error context without duplication.
-      explain_to: A developer whose logs repeat the same message five times.
-      constraint: Explain using a parcel passed between depots.
-      self_check: >-
-        Does your rule ever say "add nothing"?
-    black_box:
-      symptom: You wrapped everywhere, or described the goal instead of a rule.
-      expected: Add only layer-specific knowledge; otherwise pass through.
-      actual: A full call-path trail, or an unactionable aspiration.
-      root_cause: >-
-        Wrapping treated as ceremony rather than as information gain.
-      repair: >-
-        Before wrapping, ask what this layer knows that the caller does not.
-    recall:
-      active_recall_cue: >-
-        When should a layer return an error unchanged?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        note: Error handling and context practices.
-      - repo: original
-        path: english-arcade/golang/error-wrapping
-        note: Original interview phrasing authored for this pack.
-  - id: golang-05-channel-vs-mutex
-    version: "1.0.0"
-    target: golang
-    topic: Concurrency design
-    difficulty: 3
-    interview_stage: deep_dive
-    prompt: >-
-      Would you use a channel or a mutex for this shared counter?
-    context: >-
-      Several goroutines increment a counter that is read occasionally. The
-      interviewer wants to see whether you can resist the idea that channels are
-      always the Go answer.
+    - text: I would keep the Errors recommendation unchanged because changing position
+        would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Errors claim as soon as one new observation
+        appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Rephrase error wrapping as context for humans, identity for callers, and
+      one matching test.
+    goal: Compress the Errors answer into its decision, premise, trade-off, and verification
+      step.
+  best_answer: Each layer adds what only it knows, so the repository adds the query
+    or the identifier and the handler adds the operation. If a layer has nothing new
+    to say, it should return the error unchanged rather than restating the one below
+    it.
+  distractors:
+  - text: I wrap at every level with a message describing what the function was doing,
+      which builds up a complete trail of the call path in the final error message.
+    trap: content
+    why_wrong: Produces exactly the repetitive logs described in the prompt; a stack
+      trace already covers the call path.
+  - text: I try to add useful context that will help with debugging later, without
+      making the messages too long or repeating what is already there in the underlying
+      error.
+    trap: precision
+    why_wrong: Restates the goal without giving a rule anyone could apply consistently.
+  - text: Each layer adds what only it knows, then the repository puts the query or
+      the identifier and the handler puts the operation that was being realised in
+      that moment.
+    trap: grammar
+    why_wrong: '"Puts" for "adds", and "being realised in that moment" is a false
+      friend for "being performed".'
+  feedback:
+    register: Rule-based and concise.
+    hedging: None; give the rule directly.
+    precision: '"What only it knows" is the operative test.'
+    grammar: '"Adds the identifier", "the operation being performed"; avoid the false
+      friend "realise".'
+    pragmatics: The return-unchanged clause answers the repetition problem explicitly.
+  rephrase:
+    prompt: Apply your rule to a failed HTTP call inside a payment handler.
+    goal: Test the rule on a concrete stack.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: '"Realizar" tecnico e "perform" ou "carry out". "Realise" significa "perceber".'
+  feynman:
+    concept: Layered error context without duplication.
+    explain_to: A developer whose logs repeat the same message five times.
+    constraint: Explain using a parcel passed between depots.
+    self_check: Does your rule ever say "add nothing"?
+    reasoning_check: Can you identify the hidden premise behind Errors, give a counterexample,
+      and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You wrapped everywhere, or described the goal instead of a rule.
+    expected: Add only layer-specific knowledge; otherwise pass through.
+    actual: A full call-path trail, or an unactionable aspiration.
+    root_cause: Wrapping treated as ceremony rather than as information gain.
+    repair: Before wrapping, ask what this layer knows that the caller does not.
+    reasoning_error: If your Errors answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: When should a layer return an error unchanged?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Errors without presenting
+      an assumption as a fact?
+    black_box_probe: When the Errors answer failed, did you locate the reasoning error
+      before changing the implementation?
+    delayed_variant:
+      id: golang-04-error-wrapping-delayed-4
+      prompt: 'Errors gets a new constraint: new Errors evidence contradicts the Errors
+        assumption that made the first option attractive. After a code inspection
+        of Errors confirms the Errors mechanism but not its impact, which Errors assumption
+        is no longer safe?'
+      changed_constraint: new Errors evidence contradicts the Errors assumption that
+        made the first option attractive
+      new_evidence: a code inspection of Errors confirms the Errors mechanism but
+        not its impact
+      best_answer: I would keep the facts that remain supported about Errors, treat
+        a code inspection of Errors confirms the Errors mechanism but not its impact
+        as new evidence rather than a result, and state the updated decision rule
+        under new Errors evidence contradicts the Errors assumption that made the
+        first option attractive. I would then name one focused check before treating
+        the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Errors answer because changing
+          it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Errors explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Error handling and context practices.
+  - repo: original
+    path: english-arcade/golang/error-wrapping
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Five more minutes on Errors: which boundary, alternative, and update
+      trigger would you explain for Errors?'
+    goal: Move from the short Errors answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Errors before proposing a solution: state the actor, required
+      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Errors within a Go context; treat that named
+        boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Errors, but
+        that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Errors constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Errors: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Errors
+        benefit: It keeps the Errors reasoning close to the stated Go constraint and
+          makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Errors workload or requirement changes
+          beyond the prompt.
+        valid_when: Use it when the stated Errors contract and its invariant are the
+          facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Errors
+        benefit: It can make the Errors boundary more explicit when the first option's
+          hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Errors evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Errors option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant Go constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Errors: where would a tiny Errors counterexample expose a false assumption,
+        and what would you change about Errors?'
+    evidence_check:
+      basis: Check the Errors claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Errors, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Errors question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "How do you decide what to add", update Errors when
+        Errors evidence—a Errors trace or Errors test—contradicts the Errors constraint
+        in case "How do you decide what to add"; ask a stakeholder about Errors before
+        revising.
+    rubric:
+      facts_correct: Names the verified Errors facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Errors premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Errors options, or explains the
+        hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Errors choice to a benefit, a cost or risk, and
+        the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Errors by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Errors recommendation.
+- id: golang-05-channel-vs-mutex
+  version: 1.4.0
+  target: golang
+  topic: Concurrency design
+  difficulty: 3
+  interview_stage: deep_dive
+  prompt: Would you use a channel or a mutex for this shared counter?
+  context: Several goroutines increment a counter that is read occasionally. The interviewer
+    wants to see whether you can resist the idea that channels are always the Go answer.
+  follow_up:
+    prompt: Who owns the counter's state, what contention do you expect, and which
+      choice keeps the invariant visible?
+    goal: Answer the assumption challenge about Concurrency design while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      A mutex, or an atomic counter. Channels transfer ownership of data between
-      goroutines, and nothing is handed over here; it is shared state with a
-      short critical section. A channel adds a serialising goroutine for nothing.
+      A mutex, or an atomic counter. I would label the follow-up premise as an
+      assumption, ask the smallest question that could disprove it, and protect the edge case
+      before committing to the recommendation.
     distractors:
-      - text: >-
-          A channel, because the Go proverb says to share memory by
-          communicating rather than communicating by sharing memory, so channels
-          are the idiomatic choice for shared state.
-        trap: content
-        why_wrong: >-
-          Misapplies the proverb. It is about ownership transfer, not about
-          banning mutexes for simple shared counters.
-      - text: >-
-          Either would work here honestly, so I would go with whichever fits the
-          existing style of the codebase better and keeps things consistent for
-          the rest of the team.
-        trap: pragmatics
-        why_wrong: >-
-          Declines the design judgement the question exists to assess.
-      - text: >-
-          A mutex, because the channels serve for transfer the property of the
-          data between goroutines and here nothing is being passed, is only
-          state shared.
-        trap: grammar
-        why_wrong: >-
-          "Serve for transfer", "property" as a false friend for ownership, and
-          the dropped subject all break the sentence.
-    feedback:
-      register: >-
-        Confident enough to contradict a proverb, which is the point of the
-        question.
-      hedging: >-
-        None; the criterion is clear.
-      precision: >-
-        Ownership transfer versus shared state is the distinction to name.
-      grammar: >-
-        "Transfer ownership", "it is only shared state"; keep the subject.
-      pragmatics: >-
-        Explaining why the channel is worse pre-empts the pushback.
-    rephrase:
-      prompt: >-
-        Describe a case in the same service where a channel would be right.
-      goal: Prove the criterion works in both directions.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      "Propriedade" no sentido de posse e "ownership". "Property" e atributo.
-    feynman:
-      concept: Channels for ownership transfer, mutexes for shared state.
-      explain_to: A developer who quotes the Go proverb reflexively.
-      constraint: Explain using passing a baton versus sharing a whiteboard.
-      self_check: >-
-        Did you say what is being handed over, or not handed over?
-    black_box:
-      symptom: You chose a channel by proverb, or refused to choose.
-      expected: Mutex or atomic; channels are for ownership transfer.
-      actual: Idiom-driven choice, or deference to codebase style.
-      root_cause: >-
-        Proverbs internalised as rules without their original scope.
-      repair: >-
-        Ask whether anything changes owner before reaching for a channel.
-    recall:
-      active_recall_cue: >-
-        What question distinguishes a channel case from a mutex case?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/concurrency-parallelism.md
-        note: Concurrency primitives and their intended use.
-      - repo: original
-        path: english-arcade/golang/channel-vs-mutex
-        note: Original interview phrasing authored for this pack.
-  - id: golang-06-profiling
-    version: "1.0.0"
-    target: golang
-    topic: Profiling
-    difficulty: 2
-    interview_stage: deep_dive
-    prompt: >-
-      The service uses more CPU than expected. Where do you start?
-    context: >-
-      A production performance question. The interviewer wants to hear a
-      specific tool and a specific reading strategy, not a general commitment to
-      measuring.
+    - text: I would repeat my original Concurrency design answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Concurrency design until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Compare channel and mutex by ownership, contention, and the synchronization
+      proof you can maintain.
+    goal: Compress the Concurrency design answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: A mutex, or an atomic counter. Channels transfer ownership of data
+    between goroutines, and nothing is handed over here; it is shared state with a
+    short critical section. A channel adds a serialising goroutine for nothing.
+  distractors:
+  - text: A channel, because the Go proverb says to share memory by communicating
+      rather than communicating by sharing memory, so channels are the idiomatic choice
+      for shared state.
+    trap: content
+    why_wrong: Misapplies the proverb. It is about ownership transfer, not about banning
+      mutexes for simple shared counters.
+  - text: Either would work here honestly, so I would go with whichever fits the existing
+      style of the codebase better and keeps things consistent for the rest of the
+      team.
+    trap: pragmatics
+    why_wrong: Declines the design judgement the question exists to assess.
+  - text: A mutex, because the channels serve for transfer the property of the data
+      between goroutines and here nothing is being passed, is only state shared.
+    trap: grammar
+    why_wrong: '"Serve for transfer", "property" as a false friend for ownership,
+      and the dropped subject all break the sentence.'
+  feedback:
+    register: Confident enough to contradict a proverb, which is the point of the
+      question.
+    hedging: None; the criterion is clear.
+    precision: Ownership transfer versus shared state is the distinction to name.
+    grammar: '"Transfer ownership", "it is only shared state"; keep the subject.'
+    pragmatics: Explaining why the channel is worse pre-empts the pushback.
+  rephrase:
+    prompt: Describe a case in the same service where a channel would be right.
+    goal: Prove the criterion works in both directions.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: '"Propriedade" no sentido de posse e "ownership". "Property" e atributo.'
+  feynman:
+    concept: Channels for ownership transfer, mutexes for shared state.
+    explain_to: A developer who quotes the Go proverb reflexively.
+    constraint: Explain using passing a baton versus sharing a whiteboard.
+    self_check: Did you say what is being handed over, or not handed over?
+    reasoning_check: Can you identify the hidden premise behind Concurrency design,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You chose a channel by proverb, or refused to choose.
+    expected: Mutex or atomic; channels are for ownership transfer.
+    actual: Idiom-driven choice, or deference to codebase style.
+    root_cause: Proverbs internalised as rules without their original scope.
+    repair: Ask whether anything changes owner before reaching for a channel.
+    reasoning_error: If your Concurrency design answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What question distinguishes a channel case from a mutex case?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Concurrency design without
+      presenting an assumption as a fact?
+    black_box_probe: When the Concurrency design answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: golang-05-channel-vs-mutex-delayed-5
+      prompt: 'Revisit Concurrency design after a measured Concurrency design comparison
+        shows the alternative has a different Concurrency design cost profile and
+        two Concurrency design callers from the case "Would you use a channel or a"
+        or Concurrency design tenants now compete for the same Concurrency design
+        boundary: what remains factual about Concurrency design, what becomes provisional,
+        and why?'
+      changed_constraint: two Concurrency design callers from the case "Would you
+        use a channel or a" or Concurrency design tenants now compete for the same
+        Concurrency design boundary
+      new_evidence: a measured Concurrency design comparison shows the alternative
+        has a different Concurrency design cost profile
+      best_answer: I would keep the facts that remain supported about Concurrency
+        design, treat a measured Concurrency design comparison shows the alternative
+        has a different Concurrency design cost profile as new evidence rather than
+        a result, and state the updated decision rule under two Concurrency design
+        callers from the case "Would you use a channel or a" or Concurrency design
+        tenants now compete for the same Concurrency design boundary. I would then
+        name one focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Concurrency design answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Concurrency design explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/concurrency-parallelism.md
+    note: Concurrency primitives and their intended use.
+  - repo: original
+    path: english-arcade/golang/channel-vs-mutex
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Revisit Concurrency design beyond the happy path: what is factual about
+      Concurrency design, what is provisional, and which Concurrency design test could
+      change it?'
+    goal: Move from the short Concurrency design answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Concurrency design before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Concurrency design within a Go context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Concurrency
+        design, but that does not prove one implementation wins under every workload
+        or audience.
+      assumption: An unstated assumption is that the Concurrency design constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Concurrency design: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Concurrency design
+        benefit: It keeps the Concurrency design reasoning close to the stated Go
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Concurrency design workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Concurrency design contract and its invariant
+          are the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Concurrency design
+        benefit: It can make the Concurrency design boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Concurrency design evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Concurrency design option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Go
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Concurrency design: which Concurrency design boundary deserves the
+        first test, and what observation about Concurrency design would overturn the
+        premise?'
+    evidence_check:
+      basis: Check the Concurrency design claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Concurrency design, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Concurrency design
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Would you use a channel or a", update Concurrency
+        design when Concurrency design evidence—a Concurrency design trace or Concurrency
+        design test—contradicts the Concurrency design constraint in case "Would you
+        use a channel or a"; ask a stakeholder about Concurrency design before revising.
+    rubric:
+      facts_correct: Names the verified Concurrency design facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Concurrency design premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Concurrency design options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Concurrency design choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Concurrency
+        design by changing the claim or evidence boundary rather than repeating the
+        base answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Concurrency design recommendation.
+- id: golang-06-profiling
+  version: 1.4.0
+  target: golang
+  topic: Profiling
+  difficulty: 2
+  interview_stage: deep_dive
+  prompt: The service uses more CPU than expected. Where do you start?
+  context: A production performance question. The interviewer wants to hear a specific
+    tool and a specific reading strategy, not a general commitment to measuring.
+  follow_up:
+    prompt: Which profile would distinguish CPU work from lock or allocation pressure,
+      and what change would you benchmark after finding the hotspot?
+    goal: Answer the evidence challenge about Profiling while keeping the evidence
+      boundary explicit.
+    challenge_kind: evidence
     best_answer: >-
-      I would take a CPU profile from the running process over a representative
-      window and read it as a flame graph, cumulative time before self time.
-      That usually points at an unexpected path, often serialisation.
+      I would take a CPU profile from the running process over a representative window
+      and read it as a flame graph, cumulative time before self time. I would
+      treat the follow-up observation as evidence, not as proof of impact; I would inspect
+      the smallest relevant trace or test and state what remains uncertain before changing the
+      decision.
     distractors:
-      - text: >-
-          I would profile the application to find out where the time is being
-          spent, and then optimise whatever turns out to be the hottest part of
-          the code that shows up.
-        trap: precision
-        why_wrong: >-
-          Correct instinct, no method. It names no tool, window or reading
-          strategy.
-      - text: >-
-          I would add timing metrics around the main operations and compare them
-          over time, then look more closely at whichever one has grown the most
-          recently in production.
-        trap: content
-        why_wrong: >-
-          Instrumentation is slower and coarser than a profile for a CPU
-          question, and it presumes you already know where to measure.
-      - text: >-
-          I would take one profile of CPU of the process in execution during a
-          window representative and read it like a flame graph, seeing first the
-          time cumulative.
-        trap: grammar
-        why_wrong: >-
-          Stacked "of" possessives and post-posed adjectives break the sentence
-          throughout.
-    feedback:
-      register: >-
-        Practical and tool-specific.
-      hedging: >-
-        Hedge the finding ("usually points at"), not the method.
-      precision: >-
-        Cumulative before self time is the detail that shows real experience.
-      grammar: >-
-        "A CPU profile", "a representative window", "cumulative time".
-      pragmatics: >-
-        Predicting the likely culprit invites a useful follow-up.
-    rephrase:
-      prompt: >-
-        Explain what you would do if the profile looked completely flat.
-      goal: Test the method when the obvious signal is absent.
-    language_focus: [precision, grammar, hedging]
-    feynman:
-      concept: Reading a CPU profile by cumulative time.
-      explain_to: A developer who optimises the first slow function they see.
-      constraint: Explain using a receipt for a long shopping trip.
-      self_check: >-
-        Did you say which number you read first, and why?
-    black_box:
-      symptom: You committed to profiling without naming how you would read it.
-      expected: CPU profile over a representative window, cumulative first.
-      actual: Generic measurement, or metric instrumentation instead.
-      root_cause: >-
-        Profiling known as a step rather than as an interpretation skill.
-      repair: >-
-        Practise describing what you look at first in a flame graph.
-    recall:
-      active_recall_cue: >-
-        Do you read cumulative or self time first, and why?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/scaling-performance.md
-        note: Performance investigation discipline.
-      - repo: original
-        path: english-arcade/golang/profiling
-        note: Original interview phrasing authored for this pack.
-  - id: golang-07-struct-embedding
-    version: "1.0.0"
-    target: golang
-    topic: Composition
-    difficulty: 2
-    interview_stage: technical_screen
-    prompt: >-
-      Is embedding here the same as inheritance?
-    context: >-
-      The candidate has embedded a struct and the interviewer is checking
-      whether the mental model is composition or inherited hierarchy, which
-      changes how the code will evolve.
+    - text: I would cite my experience with Profiling as enough proof and move on
+        without naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Profiling before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Describe profiling as hypothesis, captured evidence, focused change, and
+      before-and-after comparison.
+    goal: Compress the Profiling answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: I would take a CPU profile from the running process over a representative
+    window and read it as a flame graph, cumulative time before self time. That usually
+    points at an unexpected path, often serialisation.
+  distractors:
+  - text: I would profile the application to find out where the time is being spent,
+      and then optimise whatever turns out to be the hottest part of the code that
+      shows up.
+    trap: precision
+    why_wrong: Correct instinct, no method. It names no tool, window or reading strategy.
+  - text: I would add timing metrics around the main operations and compare them over
+      time, then look more closely at whichever one has grown the most recently in
+      production.
+    trap: content
+    why_wrong: Instrumentation is slower and coarser than a profile for a CPU question,
+      and it presumes you already know where to measure.
+  - text: I would take one profile of CPU of the process in execution during a window
+      representative and read it like a flame graph, seeing first the time cumulative.
+    trap: grammar
+    why_wrong: Stacked "of" possessives and post-posed adjectives break the sentence
+      throughout.
+  feedback:
+    register: Practical and tool-specific.
+    hedging: Hedge the finding ("usually points at"), not the method.
+    precision: Cumulative before self time is the detail that shows real experience.
+    grammar: '"A CPU profile", "a representative window", "cumulative time".'
+    pragmatics: Predicting the likely culprit invites a useful follow-up.
+  rephrase:
+    prompt: Explain what you would do if the profile looked completely flat.
+    goal: Test the method when the obvious signal is absent.
+  language_focus:
+  - precision
+  - grammar
+  - hedging
+  feynman:
+    concept: Reading a CPU profile by cumulative time.
+    explain_to: A developer who optimises the first slow function they see.
+    constraint: Explain using a receipt for a long shopping trip.
+    self_check: Did you say which number you read first, and why?
+    reasoning_check: Can you identify the hidden premise behind Profiling, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You committed to profiling without naming how you would read it.
+    expected: CPU profile over a representative window, cumulative first.
+    actual: Generic measurement, or metric instrumentation instead.
+    root_cause: Profiling known as a step rather than as an interpretation skill.
+    repair: Practise describing what you look at first in a flame graph.
+    reasoning_error: If your Profiling answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: Do you read cumulative or self time first, and why?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Profiling without presenting
+      an assumption as a fact?
+    black_box_probe: When the Profiling answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-06-profiling-delayed-6
+      prompt: The Profiling review adds a Profiling test exposes a boundary case that
+        the Profiling examples did not cover while the Profiling workload for Profiling
+        no longer fits the original resource bound; which conclusion about Profiling
+        would you narrow before proposing a repair?
+      changed_constraint: the Profiling workload for Profiling no longer fits the
+        original resource bound
+      new_evidence: a Profiling test exposes a boundary case that the Profiling examples
+        did not cover
+      best_answer: I would keep the facts that remain supported about Profiling, treat
+        a Profiling test exposes a boundary case that the Profiling examples did not
+        cover as new evidence rather than a result, and state the updated decision
+        rule under the Profiling workload for Profiling no longer fits the original
+        resource bound. I would then name one focused check before treating the revised
+        answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Profiling answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Profiling explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/scaling-performance.md
+    note: Performance investigation discipline.
+  - repo: original
+    path: english-arcade/golang/profiling
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Use a deep dive on Profiling to name the competing Profiling cost, the
+      first failure signal, and the observation that would update Profiling.
+    goal: Move from the short Profiling answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Profiling before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Profiling within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Profiling,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Profiling constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Profiling: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Profiling would be
+        a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Profiling constraint is the required guarantee stated
+        by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Profiling; first clarify the
+        constraint or collect the evidence that would make two options genuinely comparable.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Profiling: when the first Profiling recovery path fails, which consequence
+        reaches the user, and what bounded mitigation follows for Profiling?'
+    evidence_check:
+      basis: Check the Profiling claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Profiling, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Profiling question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "The service uses more CPU than expected.", update
+        Profiling when Profiling evidence—a Profiling trace or Profiling test—contradicts
+        the Profiling constraint in case "The service uses more CPU than expected.";
+        ask a stakeholder about Profiling before revising.
+    rubric:
+      facts_correct: Names the verified Profiling facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Profiling premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Profiling options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Profiling choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Profiling by
+        changing the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Profiling recommendation.
+- id: golang-07-struct-embedding
+  version: 1.4.0
+  target: golang
+  topic: Composition
+  difficulty: 2
+  interview_stage: technical_screen
+  prompt: Is embedding here the same as inheritance?
+  context: The candidate has embedded a struct and the interviewer is checking whether
+    the mental model is composition or inherited hierarchy, which changes how the
+    code will evolve.
+  follow_up:
+    prompt: Which promoted method or name collision could surprise a caller, and when
+      would an explicit field be clearer?
+    goal: Answer the alternative challenge about Composition while keeping the evidence
+      boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      No. Embedding promotes the methods, so the outer type gets them, but there
-      is no dynamic dispatch back to the outer type. If the embedded method
-      calls another method, it calls its own, not an override, which is the
-      behaviour that surprises people from an inheritance background.
+      No. I would compare that choice with the credible alternative against the requirement in
+      the follow-up, cost, and failure risk, then switch only if evidence makes the alternative
+      safer.
     distractors:
-      - text: >-
-          It is effectively the same thing in practice, since the outer type
-          gains all the methods of the embedded type and can override them by
-          defining its own version with the same name.
-        trap: content
-        why_wrong: >-
-          Shadowing is not overriding; the embedded method still calls its own
-          methods, which is the entire difference.
-      - text: >-
-          Not exactly, they are different mechanisms, but the practical effect
-          is quite similar in most everyday situations you would encounter in a
-          normal codebase.
-        trap: precision
-        why_wrong: >-
-          Hedged non-answer that never names the dispatch difference.
-      - text: >-
-          No, the embedding promotes the methods, then the type external
-          receives them, but does not exist dispatch dynamic back for the type
-          external.
-        trap: grammar
-        why_wrong: >-
-          Post-posed adjectives and the dropped expletive subject make the
-          correct point unreadable.
-    feedback:
-      register: >-
-        Clear correction without condescension.
-      hedging: >-
-        None; the semantics are unambiguous.
-      precision: >-
-        Name the absence of dynamic dispatch; that is the whole answer.
-      grammar: >-
-        "The outer type", "there is no dynamic dispatch".
-      pragmatics: >-
-        Naming who gets surprised makes the point memorable.
-    rephrase:
-      prompt: >-
-        Give an example where expecting an override would cause a real bug.
-      goal: Convert a semantic distinction into a failure case.
-    language_focus: [precision, grammar, register]
-    feynman:
-      concept: Method promotion without dynamic dispatch.
-      explain_to: A developer fluent in class inheritance.
-      constraint: Explain using a contractor who always calls their own team.
-      self_check: >-
-        Did you say which method the embedded one calls?
-    black_box:
-      symptom: You equated embedding with inheritance, or hedged.
-      expected: Promotion without dispatch back to the outer type.
-      actual: An override claim, or a vague "similar in practice".
-      root_cause: >-
-        Mapping Go onto a class-based model instead of learning composition.
-      repair: >-
-        Write the surprising case once and keep it as your reference example.
-    recall:
-      active_recall_cue: >-
-        Which method does an embedded method call, its own or the override?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
-        note: Composition and boundary design.
-      - repo: original
-        path: english-arcade/golang/struct-embedding
-        note: Original interview phrasing authored for this pack.
-  - id: golang-08-graceful-shutdown
-    version: "1.0.0"
-    target: golang
-    topic: Lifecycle
-    difficulty: 3
-    interview_stage: architecture_review
-    prompt: >-
-      What does a correct shutdown look like for this HTTP service?
-    context: >-
-      The service is deployed on a platform that sends a termination signal
-      before killing the process. The interviewer wants the ordered sequence,
-      including what must not be dropped.
+    - text: I would defend the first Composition option because offering an alternative
+        might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Composition design without saying which
+        requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: Explain embedding as method promotion and composition, then name one boundary
+      where explicit delegation wins.
+    goal: Compress the Composition answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: No. Embedding promotes the methods, so the outer type gets them, but
+    there is no dynamic dispatch back to the outer type. If the embedded method calls
+    another method, it calls its own, not an override, which is the behaviour that
+    surprises people from an inheritance background.
+  distractors:
+  - text: It is effectively the same thing in practice, since the outer type gains
+      all the methods of the embedded type and can override them by defining its own
+      version with the same name.
+    trap: content
+    why_wrong: Shadowing is not overriding; the embedded method still calls its own
+      methods, which is the entire difference.
+  - text: Not exactly, they are different mechanisms, but the practical effect is
+      quite similar in most everyday situations you would encounter in a normal codebase.
+    trap: precision
+    why_wrong: Hedged non-answer that never names the dispatch difference.
+  - text: No, the embedding promotes the methods, then the type external receives
+      them, but does not exist dispatch dynamic back for the type external.
+    trap: grammar
+    why_wrong: Post-posed adjectives and the dropped expletive subject make the correct
+      point unreadable.
+  feedback:
+    register: Clear correction without condescension.
+    hedging: None; the semantics are unambiguous.
+    precision: Name the absence of dynamic dispatch; that is the whole answer.
+    grammar: '"The outer type", "there is no dynamic dispatch".'
+    pragmatics: Naming who gets surprised makes the point memorable.
+  rephrase:
+    prompt: Give an example where expecting an override would cause a real bug.
+    goal: Convert a semantic distinction into a failure case.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  feynman:
+    concept: Method promotion without dynamic dispatch.
+    explain_to: A developer fluent in class inheritance.
+    constraint: Explain using a contractor who always calls their own team.
+    self_check: Did you say which method the embedded one calls?
+    reasoning_check: Can you identify the hidden premise behind Composition, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You equated embedding with inheritance, or hedged.
+    expected: Promotion without dispatch back to the outer type.
+    actual: An override claim, or a vague "similar in practice".
+    root_cause: Mapping Go onto a class-based model instead of learning composition.
+    repair: Write the surprising case once and keep it as your reference example.
+    reasoning_error: If your Composition answer failed, classify the mistake as a
+      fact, assumption, comparison, failure, or certainty error before proposing the
+      smallest repair.
+  recall:
+    active_recall_cue: Which method does an embedded method call, its own or the override?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Composition without presenting
+      an assumption as a fact?
+    black_box_probe: When the Composition answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-07-struct-embedding-delayed-7
+      prompt: For Composition, new evidence is a stakeholder clarifies a Composition
+        requirement that changes the Composition success condition and the constraint
+        is a stakeholder asks for a stronger Composition guarantee than the first
+        Composition answer promised. What alternative now deserves consideration for
+        Composition?
+      changed_constraint: a stakeholder asks for a stronger Composition guarantee
+        than the first Composition answer promised
+      new_evidence: a stakeholder clarifies a Composition requirement that changes
+        the Composition success condition
+      best_answer: I would keep the facts that remain supported about Composition,
+        treat a stakeholder clarifies a Composition requirement that changes the Composition
+        success condition as new evidence rather than a result, and state the updated
+        decision rule under a stakeholder asks for a stronger Composition guarantee
+        than the first Composition answer promised. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Composition answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Composition explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+    note: Composition and boundary design.
+  - repo: original
+    path: english-arcade/golang/struct-embedding
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Walk through Composition under a changed requirement: which Composition
+      claim survives, which option wins, and why would Composition need new evidence?'
+    goal: Move from the short Composition answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Composition before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Composition within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Composition,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Composition constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Composition: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Composition
+        benefit: It keeps the Composition reasoning close to the stated Go constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Composition workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Composition contract and its invariant
+          are the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Composition
+        benefit: It can make the Composition boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Composition evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Composition option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Go
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Composition: what stakeholder reply about Composition would invalidate
+        the recommendation, and which Composition premise would you revisit?'
+    evidence_check:
+      basis: Check the Composition claim against system-design-estudos/areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Composition, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Composition question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Is embedding here the same as inheritance?", update
+        Composition when Composition evidence—a Composition trace or Composition test—contradicts
+        the Composition constraint in case "Is embedding here the same as inheritance?";
+        ask a stakeholder about Composition before revising.
+    rubric:
+      facts_correct: Names the verified Composition facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Composition premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Composition options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Composition choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Composition
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Composition recommendation.
+- id: golang-08-graceful-shutdown
+  version: 1.4.0
+  target: golang
+  topic: Lifecycle
+  difficulty: 3
+  interview_stage: architecture_review
+  prompt: What does a correct shutdown look like for this HTTP service?
+  context: The service is deployed on a platform that sends a termination signal before
+    killing the process. The interviewer wants the ordered sequence, including what
+    must not be dropped.
+  follow_up:
+    prompt: Which in-flight requests get a grace period, and what closes first when
+      the deadline expires?
+    goal: Answer the failure challenge about Lifecycle while keeping the evidence
+      boundary explicit.
+    challenge_kind: failure
     best_answer: >-
-      Stop accepting new connections, let in-flight requests finish within a
-      deadline shorter than the platform's kill timeout, then close dependencies
-      in reverse order. Waiting indefinitely just turns it into a hard kill.
+      Stop accepting new connections, let in-flight requests finish within a deadline shorter than the
+      platform's kill timeout, then close dependencies in reverse order. If the failure in the
+      follow-up appears, I would name the user or system consequence, contain it with a
+      bounded mitigation, and verify recovery with a focused test or metric.
     distractors:
-      - text: >-
-          I would listen for the signal and then close the server and the
-          database connections cleanly so that nothing is left open when the
-          process finally exits.
-        trap: precision
-        why_wrong: >-
-          Misses the in-flight request window and the deadline, which is where
-          shutdown correctness actually lives.
-      - text: >-
-          I would drain the connections and wait for all the ongoing work to
-          complete before shutting down, so that no request is ever interrupted
-          in the middle.
-        trap: content
-        why_wrong: >-
-          Unbounded waiting is defeated by the platform's kill timeout, so it
-          produces the abrupt termination it was meant to avoid.
-      - text: >-
-          Stop to accept new connections, let the requests in flight finish
-          inside a deadline more short than the timeout of the platform, and
-          after close the dependencies.
-        trap: grammar
-        why_wrong: >-
-          "Stop to accept" reverses meaning, and "more short" plus "timeout of
-          the platform" break comparative and compound forms.
-    feedback:
-      register: >-
-        Operational and ordered.
-      hedging: >-
-        None; each step is deterministic.
-      precision: >-
-        The deadline relationship to the platform timeout is the key detail.
-      grammar: >-
-        "Stop accepting" for ceasing an action; "shorter than the platform
-        timeout".
-      pragmatics: >-
-        Explaining why unbounded waiting fails answers the obvious objection.
-    rephrase:
-      prompt: >-
-        Describe what a user experiences if the deadline is set too long.
-      goal: Tie an operational detail to user impact.
-    language_focus: [precision, grammar, pragmatics]
-    pt_help: >-
-      "Stop doing" e parar de fazer; "stop to do" e parar para fazer. Sentidos
-      opostos.
-    feynman:
-      concept: Bounded drain within a platform kill timeout.
-      explain_to: A developer whose deploys drop requests.
-      constraint: Explain using a shop closing its doors but serving those
-        inside.
-      self_check: >-
-        Is your deadline shorter than the platform's?
-    black_box:
-      symptom: You closed connections immediately, or waited without a bound.
-      expected: Stop accepting, bounded drain, reverse-order dependency close.
-      actual: A clean-close description, or unbounded draining.
-      root_cause: >-
-        Shutdown treated as cleanup rather than as a timed negotiation.
-      repair: >-
-        Always state the deadline and what it must be shorter than.
-    recall:
-      active_recall_cue: >-
-        What must the drain deadline be shorter than?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/graceful-shutdown.md
-        note: Graceful shutdown sequencing.
-      - repo: original
-        path: english-arcade/golang/graceful-shutdown
-        note: Original interview phrasing authored for this pack.
-  - id: golang-09-nil-interface
-    version: "1.0.0"
-    target: golang
-    topic: Nil semantics
-    difficulty: 3
-    interview_stage: live_coding
-    prompt: >-
-      This nil check is not firing. Any idea why?
-    context: >-
-      A function returns a nil pointer stored in an error interface, and the
-      caller's comparison against nil is false. It is the classic Go gotcha, and
-      the interviewer wants a clean explanation.
+    - text: I would describe the Lifecycle failure as impossible because the happy
+        path already passed its test.
+      why_wrong: Passing a happy path does not test the boundary, failure mode, or
+        recovery being challenged.
+    - text: I would add retries to Lifecycle immediately and assume the system would
+        become reliable.
+      why_wrong: Retries can amplify load or duplicate effects; the failure and containment
+        policy must be specified first.
+  compression:
+    prompt: State graceful shutdown as stop accepting work, drain with a deadline,
+      and force-close safely.
+    goal: Compress the Lifecycle answer into its decision, premise, trade-off, and
+      verification step.
+  best_answer: Stop accepting new connections, let in-flight requests finish within
+    a deadline shorter than the platform's kill timeout, then close dependencies in
+    reverse order. Waiting indefinitely just turns it into a hard kill.
+  distractors:
+  - text: I would listen for the signal and then close the server and the database
+      connections cleanly so that nothing is left open when the process finally exits.
+    trap: precision
+    why_wrong: Misses the in-flight request window and the deadline, which is where
+      shutdown correctness actually lives.
+  - text: I would drain the connections and wait for all the ongoing work to complete
+      before shutting down, so that no request is ever interrupted in the middle.
+    trap: content
+    why_wrong: Unbounded waiting is defeated by the platform's kill timeout, so it
+      produces the abrupt termination it was meant to avoid.
+  - text: Stop to accept new connections, let the requests in flight finish inside
+      a deadline more short than the timeout of the platform, and after close the
+      dependencies.
+    trap: grammar
+    why_wrong: '"Stop to accept" reverses meaning, and "more short" plus "timeout
+      of the platform" break comparative and compound forms.'
+  feedback:
+    register: Operational and ordered.
+    hedging: None; each step is deterministic.
+    precision: The deadline relationship to the platform timeout is the key detail.
+    grammar: '"Stop accepting" for ceasing an action; "shorter than the platform timeout".'
+    pragmatics: Explaining why unbounded waiting fails answers the obvious objection.
+  rephrase:
+    prompt: Describe what a user experiences if the deadline is set too long.
+    goal: Tie an operational detail to user impact.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  pt_help: '"Stop doing" e parar de fazer; "stop to do" e parar para fazer. Sentidos
+    opostos.'
+  feynman:
+    concept: Bounded drain within a platform kill timeout.
+    explain_to: A developer whose deploys drop requests.
+    constraint: Explain using a shop closing its doors but serving those inside.
+    self_check: Is your deadline shorter than the platform's?
+    reasoning_check: Can you identify the hidden premise behind Lifecycle, give a
+      counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You closed connections immediately, or waited without a bound.
+    expected: Stop accepting, bounded drain, reverse-order dependency close.
+    actual: A clean-close description, or unbounded draining.
+    root_cause: Shutdown treated as cleanup rather than as a timed negotiation.
+    repair: Always state the deadline and what it must be shorter than.
+    reasoning_error: If your Lifecycle answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: What must the drain deadline be shorter than?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Lifecycle without presenting
+      an assumption as a fact?
+    black_box_probe: When the Lifecycle answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-08-graceful-shutdown-delayed-8
+      prompt: A second pass on Lifecycle finds a trace of Lifecycle isolates a different
+        Lifecycle bottleneck than the one you named; with the Lifecycle dependency
+        is slower for Lifecycle and the failure is ambiguous rather than explicit,
+        which Lifecycle test would you run before keeping the original rule?
+      changed_constraint: the Lifecycle dependency is slower for Lifecycle and the
+        failure is ambiguous rather than explicit
+      new_evidence: a trace of Lifecycle isolates a different Lifecycle bottleneck
+        than the one you named
+      best_answer: I would keep the facts that remain supported about Lifecycle, treat
+        a trace of Lifecycle isolates a different Lifecycle bottleneck than the one
+        you named as new evidence rather than a result, and state the updated decision
+        rule under the Lifecycle dependency is slower for Lifecycle and the failure
+        is ambiguous rather than explicit. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Lifecycle answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Lifecycle explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/graceful-shutdown.md
+    note: Graceful shutdown sequencing.
+  - repo: original
+    path: english-arcade/golang/graceful-shutdown
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: Connect Lifecycle, connect the Lifecycle implementation choice to its
+      failure mode, measurement, and condition for choosing the alternative.
+    goal: Move from the short Lifecycle answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Lifecycle before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Lifecycle within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Lifecycle,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Lifecycle constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Lifecycle: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Lifecycle
+        benefit: It keeps the Lifecycle reasoning close to the stated Go constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Lifecycle workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Lifecycle contract and its invariant are
+          the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Lifecycle
+        benefit: It can make the Lifecycle boundary more explicit when the first option's
+          hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Lifecycle evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Lifecycle option when its stated contract holds;
+        choose the alternative only when evidence shows that the relevant Go constraint
+        makes the first assumption unsafe.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Lifecycle: where does the Lifecycle premise need a boundary check,
+        and which result would make you reframe Lifecycle?'
+    evidence_check:
+      basis: Check the Lifecycle claim against system-design-estudos/areas/09-backend-principles/cards/graceful-shutdown.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Lifecycle, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Lifecycle question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "What does a correct shutdown look like", update Lifecycle
+        when Lifecycle evidence—a Lifecycle trace or Lifecycle test—contradicts the
+        Lifecycle constraint in case "What does a correct shutdown look like"; ask
+        a stakeholder about Lifecycle before revising.
+    rubric:
+      facts_correct: Names the verified Lifecycle facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Lifecycle premise that is still assumed and
+        asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Lifecycle options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Lifecycle choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the failure challenge about Lifecycle by changing
+        the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Lifecycle recommendation.
+- id: golang-09-nil-interface
+  version: 1.4.0
+  target: golang
+  topic: Nil semantics
+  difficulty: 3
+  interview_stage: live_coding
+  prompt: This nil check is not firing. Any idea why?
+  context: A function returns a nil pointer stored in an error interface, and the
+    caller's comparison against nil is false. It is the classic Go gotcha, and the
+    interviewer wants a clean explanation.
+  follow_up:
+    prompt: What dynamic type is held by this interface, and which construction or
+      comparison would make a typed nil visible?
+    goal: Answer the new_evidence challenge about Nil semantics while keeping the
+      evidence boundary explicit.
+    challenge_kind: new_evidence
     best_answer: >-
-      Because the interface is not nil even though the value inside it is. An
-      interface holds a type and a value, and here the type is set, so the
-      comparison fails. The fix is to return a literal nil rather than a typed
-      nil pointer.
+      Because the interface is not nil even though the value inside it is. I
+      would keep the claims that remain supported, identify exactly which premise the new observation
+      changes, and run a focused check before revising the decision.
     distractors:
-      - text: >-
-          It looks like the variable is being shadowed somewhere, so the nil
-          check is comparing a different variable than the one that was actually
-          assigned earlier in the function.
-        trap: content
-        why_wrong: >-
-          Plausible-sounding but wrong diagnosis; it sends the debugging effort
-          in an unrelated direction.
-      - text: >-
-          Nil comparisons with interfaces can behave unexpectedly in Go, it is a
-          known subtlety of the language, so I would restructure the code to
-          avoid relying on that comparison.
-        trap: precision
-        why_wrong: >-
-          Names the area but not the mechanism, and avoiding the comparison does
-          not explain anything.
-      - text: >-
-          Because the interface is not nil even that the value inside is. One
-          interface has one type and one value, and here the type is filled,
-          then the comparison fails.
-        trap: grammar
-        why_wrong: >-
-          "Even that" for "even though" and article misuse throughout obscure a
-          correct diagnosis.
-    feedback:
-      register: >-
-        Explanatory; this is a teaching moment, not a gotcha to win.
-      hedging: >-
-        None; the semantics are exact.
-      precision: >-
-        The type-and-value pair is the mechanism; say it explicitly.
-      grammar: >-
-        "Even though", "the type is set", "a typed nil pointer".
-      pragmatics: >-
-        Giving the fix alongside the cause keeps it actionable.
-    rephrase:
-      prompt: >-
-        Explain the same rule to someone who has never hit this bug.
-      goal: Teach the mechanism before they need it.
-    language_focus: [precision, grammar, register]
-    pt_help: >-
-      "Mesmo que" e "even though" ou "even if", nunca "even that".
-    feynman:
-      concept: Interface identity as a type and value pair.
-      explain_to: A developer who thinks nil is a single value.
-      constraint: Explain using an envelope that is empty but addressed.
-      self_check: >-
-        Did you explain why the type being set matters?
-    black_box:
-      symptom: You guessed shadowing, or called it a known subtlety.
-      expected: Interface holds type and value; typed nil is not nil.
-      actual: An unrelated diagnosis, or vague acknowledgement.
-      root_cause: >-
-        Nil understood as one value rather than as a pair comparison.
-      repair: >-
-        Say "type and value" out loud whenever an interface comparison
-        surprises you.
-    recall:
-      active_recall_cue: >-
-        What two components make an interface value non-nil?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        note: Error value semantics and failure handling.
-      - repo: original
-        path: english-arcade/golang/nil-interface
-        note: Original interview phrasing authored for this pack.
-  - id: golang-10-service-boundaries
-    version: "1.0.0"
-    target: golang
-    topic: Service boundaries
-    difficulty: 3
-    interview_stage: architecture_review
-    prompt: >-
-      Would you split this into a separate service?
-    context: >-
-      A module inside a Go monolith has grown large and one team wants to
-      extract it. The interviewer is checking whether you separate organisational
-      pressure from technical need.
+    - text: I would keep the Nil semantics recommendation unchanged because changing
+        position would look inconsistent.
+      why_wrong: A defensible answer updates when relevant evidence changes an assumption
+        or trade-off.
+    - text: I would discard every earlier Nil semantics claim as soon as one new observation
+        appeared.
+      why_wrong: New evidence may narrow one claim while leaving other verified facts
+        intact.
+  compression:
+    prompt: Explain nil interfaces with dynamic type, dynamic value, and a tiny test
+      that distinguishes them.
+    goal: Compress the Nil semantics answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Because the interface is not nil even though the value inside it is.
+    An interface holds a type and a value, and here the type is set, so the comparison
+    fails. The fix is to return a literal nil rather than a typed nil pointer.
+  distractors:
+  - text: It looks like the variable is being shadowed somewhere, so the nil check
+      is comparing a different variable than the one that was actually assigned earlier
+      in the function.
+    trap: content
+    why_wrong: Plausible-sounding but wrong diagnosis; it sends the debugging effort
+      in an unrelated direction.
+  - text: Nil comparisons with interfaces can behave unexpectedly in Go, it is a known
+      subtlety of the language, so I would restructure the code to avoid relying on
+      that comparison.
+    trap: precision
+    why_wrong: Names the area but not the mechanism, and avoiding the comparison does
+      not explain anything.
+  - text: Because the interface is not nil even that the value inside is. One interface
+      has one type and one value, and here the type is filled, then the comparison
+      fails.
+    trap: grammar
+    why_wrong: '"Even that" for "even though" and article misuse throughout obscure
+      a correct diagnosis.'
+  feedback:
+    register: Explanatory; this is a teaching moment, not a gotcha to win.
+    hedging: None; the semantics are exact.
+    precision: The type-and-value pair is the mechanism; say it explicitly.
+    grammar: '"Even though", "the type is set", "a typed nil pointer".'
+    pragmatics: Giving the fix alongside the cause keeps it actionable.
+  rephrase:
+    prompt: Explain the same rule to someone who has never hit this bug.
+    goal: Teach the mechanism before they need it.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  pt_help: '"Mesmo que" e "even though" ou "even if", nunca "even that".'
+  feynman:
+    concept: Interface identity as a type and value pair.
+    explain_to: A developer who thinks nil is a single value.
+    constraint: Explain using an envelope that is empty but addressed.
+    self_check: Did you explain why the type being set matters?
+    reasoning_check: Can you identify the hidden premise behind Nil semantics, give
+      a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You guessed shadowing, or called it a known subtlety.
+    expected: Interface holds type and value; typed nil is not nil.
+    actual: An unrelated diagnosis, or vague acknowledgement.
+    root_cause: Nil understood as one value rather than as a pair comparison.
+    repair: Say "type and value" out loud whenever an interface comparison surprises
+      you.
+    reasoning_error: If your Nil semantics answer failed, classify the mistake as
+      a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: What two components make an interface value non-nil?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Nil semantics without presenting
+      an assumption as a fact?
+    black_box_probe: When the Nil semantics answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-09-nil-interface-delayed-9
+      prompt: 'Nil semantics: the later Nil semantics review says a code inspection
+        of Nil semantics confirms the Nil semantics mechanism but not its impact.
+        Under new Nil semantics evidence contradicts the Nil semantics assumption
+        that made the first option attractive, which part of Nil semantics survives
+        and which Nil semantics claim changes?'
+      changed_constraint: new Nil semantics evidence contradicts the Nil semantics
+        assumption that made the first option attractive
+      new_evidence: a code inspection of Nil semantics confirms the Nil semantics
+        mechanism but not its impact
+      best_answer: I would keep the facts that remain supported about Nil semantics,
+        treat a code inspection of Nil semantics confirms the Nil semantics mechanism
+        but not its impact as new evidence rather than a result, and state the updated
+        decision rule under new Nil semantics evidence contradicts the Nil semantics
+        assumption that made the first option attractive. I would then name one focused
+        check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Nil semantics answer because
+          changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Nil semantics explanation with a new design
+          without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+    note: Error value semantics and failure handling.
+  - repo: original
+    path: english-arcade/golang/nil-interface
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Nil semantics: inspect Nil semantics evidence next; which edge case for
+      Nil semantics would alter the trade-off?'
+    goal: Move from the short Nil semantics answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Nil semantics before proposing a solution: state the actor,
+      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Nil semantics within a Go context; treat that
+        named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Nil semantics,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Nil semantics constraint is the
+        dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Nil semantics: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Nil semantics
+        benefit: It keeps the Nil semantics reasoning close to the stated Go constraint
+          and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Nil semantics workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Nil semantics contract and its invariant
+          are the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Nil semantics
+        benefit: It can make the Nil semantics boundary more explicit when the first
+          option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Nil semantics evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Nil semantics option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Go
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Nil semantics: if the Nil semantics decision fails under plausible
+        load or a difficult turn, what consequence appears first, and how would you
+        contain Nil semantics?'
+    evidence_check:
+      basis: Check the Nil semantics claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Nil semantics, but it
+        cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: high
+      rationale: Certainty is high because the prompt bounds the Nil semantics question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "This nil check is not firing. Any", update Nil semantics
+        when Nil semantics evidence—a Nil semantics trace or Nil semantics test—contradicts
+        the Nil semantics constraint in case "This nil check is not firing. Any";
+        ask a stakeholder about Nil semantics before revising.
+    rubric:
+      facts_correct: Names the verified Nil semantics facts without smuggling in a
+        result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Nil semantics premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Nil semantics options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Nil semantics choice to a benefit, a cost or
+        risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the new_evidence challenge about Nil semantics
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses high certainty deliberately and names the evidence
+        that would update the Nil semantics recommendation.
+- id: golang-10-service-boundaries
+  version: 1.4.0
+  target: golang
+  topic: Service boundaries
+  difficulty: 3
+  interview_stage: architecture_review
+  prompt: Would you split this into a separate service?
+  context: A module inside a Go monolith has grown large and one team wants to extract
+    it. The interviewer is checking whether you separate organisational pressure from
+    technical need.
+  follow_up:
+    prompt: Which ownership or latency boundary justifies a service split, and what
+      operational cost would the split introduce?
+    goal: Answer the assumption challenge about Service boundaries while keeping the
+      evidence boundary explicit.
+    challenge_kind: assumption
     best_answer: >-
-      Not because it is large. I would split it for a different scaling profile,
-      release cadence, or a hard failure boundary. If two teams keep colliding,
-      I would fix the module boundary first and see if the pressure goes.
+      Not because it is large. I would label the follow-up premise as an assumption,
+      ask the smallest question that could disprove it, and protect the edge case before
+      committing to the recommendation.
     distractors:
-      - text: >-
-          Yes, splitting large modules into services makes them easier to
-          maintain and lets teams deploy independently without coordinating
-          releases with everyone else in the organisation.
-        trap: content
-        why_wrong: >-
-          Treats size as the criterion and takes on network failure, latency and
-          data consistency costs for an organisational problem.
-      - text: >-
-          No, monoliths are generally simpler to operate and premature
-          extraction usually causes more problems than it solves, so I would
-          keep everything together.
-        trap: precision
-        why_wrong: >-
-          The right instinct as an absolute, which is just the opposite bias
-          with no criteria attached.
-      - text: >-
-          Not for be large. I would split if it needs a profile of scaling
-          different, a cadence of release different, or a boundary of failure
-          hard.
-        trap: grammar
-        why_wrong: >-
-          "For be large" and three post-posed adjective phrases make the
-          criteria unreadable.
-    feedback:
-      register: >-
-        Senior and organisationally aware without being political.
-      hedging: >-
-        None; give criteria rather than caveats.
-      precision: >-
-        Three named criteria beat any general position.
-      grammar: >-
-        "Not because it is large", "a different scaling profile".
-      pragmatics: >-
-        Addressing the likely real driver shows you read the situation, not just
-        the question.
-    rephrase:
-      prompt: >-
-        Answer again when the real driver is an on-call boundary.
-      goal: Test the criteria against a case they should accept.
-    language_focus: [precision, grammar, register]
-    feynman:
-      concept: Extraction criteria versus organisational pressure.
-      explain_to: A team lead who wants their own deploy pipeline.
-      constraint: Explain using two shops sharing one till.
-      self_check: >-
-        Did you name a criterion that would make you say yes?
-    black_box:
-      symptom: You split on size, or refused on principle.
-      expected: Scaling profile, release cadence or failure boundary.
-      actual: A size-based yes, or a monolith-by-default no.
-      root_cause: >-
-        Architecture positions held as preferences instead of as criteria.
-      repair: >-
-        Keep three extraction criteria ready and test the case against them.
-    recall:
-      active_recall_cue: >-
-        Which three criteria justify extracting a service?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: decision-contrasts/02-pod-isolation-vs-microservices.md
-        note: Isolation versus microservice extraction contrast.
-      - repo: original
-        path: english-arcade/golang/service-boundaries
-        note: Original interview phrasing authored for this pack.
-  - id: golang-11-table-tests
-    version: "1.0.0"
-    target: golang
-    topic: Testing
-    difficulty: 1
-    interview_stage: technical_screen
-    prompt: >-
-      Why do Go developers write table-driven tests so often?
-    context: >-
-      A warm-up with a follow-up hiding inside it. The interviewer wants the
-      reason and, ideally, an awareness of when the pattern stops helping.
+    - text: I would repeat my original Service boundaries answer with more confidence
+        because the interviewer probably assumes the usual case.
+      why_wrong: It hides the premise instead of checking whether the usual case is
+        actually part of this problem.
+    - text: I would stop proposing anything about Service boundaries until every surrounding
+        requirement had been documented in full.
+      why_wrong: It treats uncertainty as a reason for paralysis and offers no bounded
+        next step.
+  compression:
+    prompt: Defend the boundary using coupling, independent scaling, and the deployment
+      or observability cost.
+    goal: Compress the Service boundaries answer into its decision, premise, trade-off,
+      and verification step.
+  best_answer: Not because it is large. I would split it for a different scaling profile,
+    release cadence, or a hard failure boundary. If two teams keep colliding, I would
+    fix the module boundary first and see if the pressure goes.
+  distractors:
+  - text: Yes, splitting large modules into services makes them easier to maintain
+      and lets teams deploy independently without coordinating releases with everyone
+      else in the organisation.
+    trap: content
+    why_wrong: Treats size as the criterion and takes on network failure, latency
+      and data consistency costs for an organisational problem.
+  - text: No, monoliths are generally simpler to operate and premature extraction
+      usually causes more problems than it solves, so I would keep everything together.
+    trap: precision
+    why_wrong: The right instinct as an absolute, which is just the opposite bias
+      with no criteria attached.
+  - text: Not for be large. I would split if it needs a profile of scaling different,
+      a cadence of release different, or a boundary of failure hard.
+    trap: grammar
+    why_wrong: '"For be large" and three post-posed adjective phrases make the criteria
+      unreadable.'
+  feedback:
+    register: Senior and organisationally aware without being political.
+    hedging: None; give criteria rather than caveats.
+    precision: Three named criteria beat any general position.
+    grammar: '"Not because it is large", "a different scaling profile".'
+    pragmatics: Addressing the likely real driver shows you read the situation, not
+      just the question.
+  rephrase:
+    prompt: Answer again when the real driver is an on-call boundary.
+    goal: Test the criteria against a case they should accept.
+  language_focus:
+  - precision
+  - grammar
+  - register
+  feynman:
+    concept: Extraction criteria versus organisational pressure.
+    explain_to: A team lead who wants their own deploy pipeline.
+    constraint: Explain using two shops sharing one till.
+    self_check: Did you name a criterion that would make you say yes?
+    reasoning_check: Can you identify the hidden premise behind Service boundaries,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You split on size, or refused on principle.
+    expected: Scaling profile, release cadence or failure boundary.
+    actual: A size-based yes, or a monolith-by-default no.
+    root_cause: Architecture positions held as preferences instead of as criteria.
+    repair: Keep three extraction criteria ready and test the case against them.
+    reasoning_error: If your Service boundaries answer failed, classify the mistake
+      as a fact, assumption, comparison, failure, or certainty error before proposing
+      the smallest repair.
+  recall:
+    active_recall_cue: Which three criteria justify extracting a service?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Service boundaries without
+      presenting an assumption as a fact?
+    black_box_probe: When the Service boundaries answer failed, did you locate the
+      reasoning error before changing the implementation?
+    delayed_variant:
+      id: golang-10-service-boundaries-delayed-10
+      prompt: 'Review note for Service boundaries: a measured Service boundaries comparison
+        shows the alternative has a different Service boundaries cost profile. Given
+        two Service boundaries callers from the case "Would you split this into a
+        separate" or Service boundaries tenants now compete for the same Service boundaries
+        boundary, what would you now defend, retract, and verify about Service boundaries?'
+      changed_constraint: two Service boundaries callers from the case "Would you
+        split this into a separate" or Service boundaries tenants now compete for
+        the same Service boundaries boundary
+      new_evidence: a measured Service boundaries comparison shows the alternative
+        has a different Service boundaries cost profile
+      best_answer: I would keep the facts that remain supported about Service boundaries,
+        treat a measured Service boundaries comparison shows the alternative has a
+        different Service boundaries cost profile as new evidence rather than a result,
+        and state the updated decision rule under two Service boundaries callers from
+        the case "Would you split this into a separate" or Service boundaries tenants
+        now compete for the same Service boundaries boundary. I would then name one
+        focused check before treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Service boundaries answer
+          because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Service boundaries explanation with a new
+          design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: decision-contrasts/02-pod-isolation-vs-microservices.md
+    note: Isolation versus microservice extraction contrast.
+  - repo: original
+    path: english-arcade/golang/service-boundaries
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Deep dive on Service boundaries: compare Service boundaries options with
+      one measurement; which failure around Service boundaries would make Service
+      boundaries switch?'
+    goal: Move from the short Service boundaries answer to a deep, evidence-led defence
+      without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Service boundaries before proposing a solution: state the
+      actor, required outcome, constraint, and unknown that could invalidate the first
+      recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Service boundaries within a Go context; treat
+        that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Service boundaries,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Service boundaries constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Service boundaries: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Service boundaries
+        benefit: It keeps the Service boundaries reasoning close to the stated Go
+          constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Service boundaries workload or requirement
+          changes beyond the prompt.
+        valid_when: Use it when the stated Service boundaries contract and its invariant
+          are the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Service boundaries
+        benefit: It can make the Service boundaries boundary more explicit when the
+          first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Service boundaries evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Service boundaries option when its stated contract
+        holds; choose the alternative only when evidence shows that the relevant Go
+        constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: counterexample
+      prompt: 'Service boundaries: which adversarial Service boundaries example could
+        disprove the recommendation, and what evidence about Service boundaries would
+        you request?'
+    evidence_check:
+      basis: Check the Service boundaries claim against system-design-estudos/decision-contrasts/02-pod-isolation-vs-microservices.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Service boundaries, but
+        it cannot prove an unmeasured production outcome, personal ownership, or universal
+        rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Service boundaries
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Would you split this into a separate", update Service
+        boundaries when Service boundaries evidence—a Service boundaries trace or
+        Service boundaries test—contradicts the Service boundaries constraint in case
+        "Would you split this into a separate"; ask a stakeholder about Service boundaries
+        before revising.
+    rubric:
+      facts_correct: Names the verified Service boundaries facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Service boundaries premise that is still assumed
+        and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Service boundaries options, or
+        explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Service boundaries choice to a benefit, a cost
+        or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the assumption challenge about Service boundaries
+        by changing the claim or evidence boundary rather than repeating the base
+        answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Service boundaries recommendation.
+- id: golang-11-table-tests
+  version: 1.4.0
+  target: golang
+  topic: Testing
+  difficulty: 1
+  interview_stage: technical_screen
+  prompt: Why do Go developers write table-driven tests so often?
+  context: A warm-up with a follow-up hiding inside it. The interviewer wants the
+    reason and, ideally, an awareness of when the pattern stops helping.
+  follow_up:
+    prompt: Which input cases belong in the table, and how would the test name make
+      a failure useful to a maintainer?
+    goal: Answer the evidence challenge about Testing while keeping the evidence boundary
+      explicit.
+    challenge_kind: evidence
     best_answer: >-
       Because the cases become data, so adding one is a line rather than a
-      function, and the failure output names which case broke. They stop helping
-      when the cases need different setup, at which point the table grows
-      conditionals and separate tests are clearer.
+      function, and the failure output names which case broke. I would treat the follow-up
+      observation as evidence, not as proof of impact; I would inspect the smallest relevant
+      trace or test and state what remains uncertain before changing the decision.
     distractors:
-      - text: >-
-          Because it reduces duplication in the test code and keeps everything
-          for a given function together in one place, which makes the tests
-          easier to read and maintain.
-        trap: precision
-        why_wrong: >-
-          True but generic, and it misses both the named-case output and the
-          limits of the pattern.
-      - text: >-
-          Because it is the idiomatic way to write tests in Go and the standard
-          library uses that style throughout, so it is what other Go developers
-          expect to see.
-        trap: content
-        why_wrong: >-
-          Appeals to authority instead of explaining what the pattern buys.
-      - text: >-
-          Because the cases turn data, then to add one is a line instead of a
-          function, and the output of failure says which case has broken.
-        trap: grammar
-        why_wrong: >-
-          "Turn data", "to add one is" and "output of failure" break idiom and
-          compound-noun order.
-    feedback:
-      register: >-
-        Brief, with a limitation volunteered.
-      hedging: >-
-        None needed; the trade-off is concrete enough to state plainly.
-      precision: >-
-        Named subtests in the failure output are the underrated half.
-      grammar: >-
-        "Become data", "adding one is a line", "failure output".
-      pragmatics: >-
-        Volunteering when the pattern breaks down raises your assessed level.
-    rephrase:
-      prompt: >-
-        Describe a test you would deliberately not write as a table.
-      goal: Prove the limitation is understood, not recited.
-    language_focus: [precision, grammar, pragmatics]
-    feynman:
-      concept: Cases as data, with named failure output.
-      explain_to: A developer who copies test functions and edits values.
-      constraint: Explain using a spreadsheet of expected results.
-      self_check: >-
-        Did you say when you would stop using the pattern?
-    black_box:
-      symptom: You gave duplication reduction or idiom as the reason.
-      expected: Cases as data, named failures, plus the setup-divergence limit.
-      actual: A generic maintainability claim, or an appeal to convention.
-      root_cause: >-
-        Patterns adopted from surrounding code without examining their payoff.
-      repair: >-
-        For each pattern you use daily, name one situation where it hurts.
-    recall:
-      active_recall_cue: >-
-        When does a table-driven test stop being the right shape?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/09-backend-principles/cards/testing-code-quality.md
-        note: Testing practices and quality signals.
-      - repo: original
-        path: english-arcade/golang/table-tests
-        note: Original interview phrasing authored for this pack.
-  - id: golang-12-explaining-to-non-go-team
-    version: "1.0.0"
-    target: golang
-    topic: Cross-team communication
-    difficulty: 2
-    interview_stage: behavioural_probe
-    prompt: >-
-      Tell me how you would justify choosing Go to a team that does not use it.
-    context: >-
-      A stakeholder conversation. The interviewer wants persuasion grounded in
-      the problem rather than advocacy, since the wrong tone here creates
-      resistance regardless of the technical merit.
+    - text: I would cite my experience with Testing as enough proof and move on without
+        naming an observation.
+      why_wrong: Experience can guide a hypothesis, but it does not replace evidence
+        tied to this context.
+    - text: I would collect every possible metric about Testing before making even
+        a provisional recommendation.
+      why_wrong: A focused decision can start with one discriminating observation
+        rather than an unbounded data request.
+  compression:
+    prompt: Describe table-driven tests as explicit cases, shared execution, and failure
+      output that explains the contract.
+    goal: Compress the Testing answer into its decision, premise, trade-off, and verification
+      step.
+  best_answer: Because the cases become data, so adding one is a line rather than
+    a function, and the failure output names which case broke. They stop helping when
+    the cases need different setup, at which point the table grows conditionals and
+    separate tests are clearer.
+  distractors:
+  - text: Because it reduces duplication in the test code and keeps everything for
+      a given function together in one place, which makes the tests easier to read
+      and maintain.
+    trap: precision
+    why_wrong: True but generic, and it misses both the named-case output and the
+      limits of the pattern.
+  - text: Because it is the idiomatic way to write tests in Go and the standard library
+      uses that style throughout, so it is what other Go developers expect to see.
+    trap: content
+    why_wrong: Appeals to authority instead of explaining what the pattern buys.
+  - text: Because the cases turn data, then to add one is a line instead of a function,
+      and the output of failure says which case has broken.
+    trap: grammar
+    why_wrong: '"Turn data", "to add one is" and "output of failure" break idiom and
+      compound-noun order.'
+  feedback:
+    register: Brief, with a limitation volunteered.
+    hedging: None needed; the trade-off is concrete enough to state plainly.
+    precision: Named subtests in the failure output are the underrated half.
+    grammar: '"Become data", "adding one is a line", "failure output".'
+    pragmatics: Volunteering when the pattern breaks down raises your assessed level.
+  rephrase:
+    prompt: Describe a test you would deliberately not write as a table.
+    goal: Prove the limitation is understood, not recited.
+  language_focus:
+  - precision
+  - grammar
+  - pragmatics
+  feynman:
+    concept: Cases as data, with named failure output.
+    explain_to: A developer who copies test functions and edits values.
+    constraint: Explain using a spreadsheet of expected results.
+    self_check: Did you say when you would stop using the pattern?
+    reasoning_check: Can you identify the hidden premise behind Testing, give a counterexample,
+      and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You gave duplication reduction or idiom as the reason.
+    expected: Cases as data, named failures, plus the setup-divergence limit.
+    actual: A generic maintainability claim, or an appeal to convention.
+    root_cause: Patterns adopted from surrounding code without examining their payoff.
+    repair: For each pattern you use daily, name one situation where it hurts.
+    reasoning_error: If your Testing answer failed, classify the mistake as a fact,
+      assumption, comparison, failure, or certainty error before proposing the smallest
+      repair.
+  recall:
+    active_recall_cue: When does a table-driven test stop being the right shape?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Testing without presenting
+      an assumption as a fact?
+    black_box_probe: When the Testing answer failed, did you locate the reasoning
+      error before changing the implementation?
+    delayed_variant:
+      id: golang-11-table-tests-delayed-11
+      prompt: New evidence about Testing says a Testing test exposes a boundary case
+        that the Testing examples did not cover; with the Testing workload for Testing
+        no longer fits the original resource bound, how do you update the Testing
+        decision rule?
+      changed_constraint: the Testing workload for Testing no longer fits the original
+        resource bound
+      new_evidence: a Testing test exposes a boundary case that the Testing examples
+        did not cover
+      best_answer: I would keep the facts that remain supported about Testing, treat
+        a Testing test exposes a boundary case that the Testing examples did not cover
+        as new evidence rather than a result, and state the updated decision rule
+        under the Testing workload for Testing no longer fits the original resource
+        bound. I would then name one focused check before treating the revised answer
+        as settled.
+      distractors:
+      - text: I would preserve every part of the original Testing answer because changing
+          it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Testing explanation with a new design without
+          identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/09-backend-principles/cards/testing-code-quality.md
+    note: Testing practices and quality signals.
+  - repo: original
+    path: english-arcade/golang/table-tests
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Defend Testing after a counterexample: which Testing assumption changes,
+      and what evidence keeps the revised Testing choice honest?'
+    goal: Move from the short Testing answer to a deep, evidence-led defence without
+      inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Testing before proposing a solution: state the actor, required
+      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Testing within a Go context; treat that named
+        boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Testing,
+        but that does not prove one implementation wins under every workload or audience.
+      assumption: An unstated assumption is that the Testing constraint is the dominant
+        one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Testing: the scale, failure tolerance, ownership
+        boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: false
+      rejected_alternative: A tool-first A-versus-B debate about Testing would be
+        a false equivalence because the prompt does not establish that both choices
+        satisfy the same contract.
+      hard_constraint: The hard Testing constraint is the required guarantee stated
+        by the interviewer; no missing measurement licenses a stronger comparison.
+      decision_rule: Do not manufacture a trade-off for Testing; first clarify the
+        constraint or collect the evidence that would make two options genuinely comparable.
+    failure_probe:
+      kind: edge_case
+      prompt: 'Testing: which empty or extreme Testing case would expose the hidden
+        assumption, and what would you measure about Testing?'
+    evidence_check:
+      basis: Check the Testing claim against system-design-estudos/areas/09-backend-principles/cards/testing-code-quality.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Testing, but it cannot
+        prove an unmeasured production outcome, personal ownership, or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Testing question
+        but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Why do Go developers write table-driven tests", update
+        Testing when Testing evidence—a Testing trace or Testing test—contradicts
+        the Testing constraint in case "Why do Go developers write table-driven tests";
+        ask a stakeholder about Testing before revising.
+    rubric:
+      facts_correct: Names the verified Testing facts without smuggling in a result,
+        scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Testing premise that is still assumed and asks
+        the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Testing options, or explains
+        the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Testing choice to a benefit, a cost or risk,
+        and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the evidence challenge about Testing by changing
+        the claim or evidence boundary rather than repeating the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Testing recommendation.
+- id: golang-12-explaining-to-non-go-team
+  version: 1.4.0
+  target: golang
+  topic: Cross-team communication
+  difficulty: 2
+  interview_stage: behavioural_probe
+  prompt: Tell me how you would justify choosing Go to a team that does not use it.
+  context: A stakeholder conversation. The interviewer wants persuasion grounded in
+    the problem rather than advocacy, since the wrong tone here creates resistance
+    regardless of the technical merit.
+  follow_up:
+    prompt: Which Go-specific evidence would you present to a skeptical team, and
+      what workload would make another language the better choice?
+    goal: Answer the alternative challenge about Cross-team communication while keeping
+      the evidence boundary explicit.
+    challenge_kind: alternative
     best_answer: >-
-      I would start from their constraint rather than from the language. If the
-      pain is memory footprint per instance and predictable latency under
-      concurrency, Go addresses both directly. If their pain is delivery speed
-      on a small team, I would probably not propose a rewrite at all.
+      I would start from their constraint rather than from the language. I would compare
+      that choice with the credible alternative against the requirement in the follow-up, cost, and
+      failure risk, then switch only if evidence makes the alternative safer.
     distractors:
-      - text: >-
-          I would explain that Go is faster, compiles to a single binary and
-          handles concurrency much better, which makes it a strong choice for
-          backend services compared to most alternatives.
-        trap: register
-        why_wrong: >-
-          Language advocacy without their constraint, which reliably produces
-          defensiveness rather than agreement.
-      - text: >-
-          I would probably not push for it, since the team already knows their
-          stack well and introducing a new language creates a learning curve
-          that might not be worth it.
-        trap: pragmatics
-        why_wrong: >-
-          Abandons the question rather than answering how you would make the
-          case when it is warranted.
-      - text: >-
-          I would begin for their constraint instead of for the language. If the
-          pain is the footprint of memory for instance and the latency under
-          concurrency, Go attends the two directly.
-        trap: grammar
-        why_wrong: >-
-          "Begin for", "footprint of memory", "for instance" and "attends" are
-          four distinct transfer errors.
-    feedback:
-      register: >-
-        Consultative, not evangelical. Their problem leads.
-      hedging: >-
-        Hedge the recommendation, never their constraint.
-      precision: >-
-        Name the two properties that map to their pain.
-      grammar: >-
-        "Start from", "memory footprint per instance", "addresses both".
-      pragmatics: >-
-        Saying when you would not propose it is what makes the proposal
-        credible.
-    rephrase:
-      prompt: >-
-        Make the same case in two sentences to a sceptical engineering manager.
-      goal: Compress persuasion without losing the constraint framing.
-    language_focus: [register, grammar, pragmatics]
-    pt_help: >-
-      "Atender" no sentido de resolver e "address" ou "meet", nao "attend".
-    feynman:
-      concept: Constraint-led technology advocacy.
-      explain_to: An engineer who leads with language features.
-      constraint: Do not name a single language feature.
-      self_check: >-
-        Did you say when you would not recommend it?
-    black_box:
-      symptom: You advocated features, or declined to make a case.
-      expected: Their constraint first, then the two properties that match it.
-      actual: Feature listing, or avoidance of the proposal.
-      root_cause: >-
-        Enthusiasm substituting for the listener's decision criteria.
-      repair: >-
-        Open every technology proposal with the constraint it addresses.
-    recall:
-      active_recall_cue: >-
-        What should the first sentence of a technology proposal contain?
-      leitner_start_box: 1
-      mastery_threshold: 8
-    sources:
-      - repo: system-design-estudos
-        path: areas/12-engineering-practice/cards/architecture-decision-records.md
-        note: Decision records and constraint-led justification.
-      - repo: original
-        path: english-arcade/golang/explaining-to-non-go-team
-        note: Original interview phrasing authored for this pack.
+    - text: I would defend the first Cross-team communication option because offering
+        an alternative might make the decision look uncertain.
+      why_wrong: A comparison makes the decision rule visible; it does not weaken
+        a well-calibrated recommendation.
+    - text: I would list every conceivable Cross-team communication design without
+        saying which requirement should decide between them.
+      why_wrong: An option list without a decision rule avoids the trade-off the follow-up
+        is testing.
+  compression:
+    prompt: 'Make the technology case in three clauses: workload fit, operational
+      trade-off, and a condition for choosing differently.'
+    goal: Compress the Cross-team communication answer into its decision, premise,
+      trade-off, and verification step.
+  best_answer: I would start from their constraint rather than from the language.
+    If the pain is memory footprint per instance and predictable latency under concurrency,
+    Go addresses both directly. If their pain is delivery speed on a small team, I
+    would probably not propose a rewrite at all.
+  distractors:
+  - text: I would explain that Go is faster, compiles to a single binary and handles
+      concurrency much better, which makes it a strong choice for backend services
+      compared to most alternatives.
+    trap: register
+    why_wrong: Language advocacy without their constraint, which reliably produces
+      defensiveness rather than agreement.
+  - text: I would probably not push for it, since the team already knows their stack
+      well and introducing a new language creates a learning curve that might not
+      be worth it.
+    trap: pragmatics
+    why_wrong: Abandons the question rather than answering how you would make the
+      case when it is warranted.
+  - text: I would begin for their constraint instead of for the language. If the pain
+      is the footprint of memory for instance and the latency under concurrency, Go
+      attends the two directly.
+    trap: grammar
+    why_wrong: '"Begin for", "footprint of memory", "for instance" and "attends" are
+      four distinct transfer errors.'
+  feedback:
+    register: Consultative, not evangelical. Their problem leads.
+    hedging: Hedge the recommendation, never their constraint.
+    precision: Name the two properties that map to their pain.
+    grammar: '"Start from", "memory footprint per instance", "addresses both".'
+    pragmatics: Saying when you would not propose it is what makes the proposal credible.
+  rephrase:
+    prompt: Make the same case in two sentences to a sceptical engineering manager.
+    goal: Compress persuasion without losing the constraint framing.
+  language_focus:
+  - register
+  - grammar
+  - pragmatics
+  pt_help: '"Atender" no sentido de resolver e "address" ou "meet", nao "attend".'
+  feynman:
+    concept: Constraint-led technology advocacy.
+    explain_to: An engineer who leads with language features.
+    constraint: Do not name a single language feature.
+    self_check: Did you say when you would not recommend it?
+    reasoning_check: Can you identify the hidden premise behind Cross-team communication,
+      give a counterexample, and explain how the evidence changes your conclusion?
+  black_box:
+    symptom: You advocated features, or declined to make a case.
+    expected: Their constraint first, then the two properties that match it.
+    actual: Feature listing, or avoidance of the proposal.
+    root_cause: Enthusiasm substituting for the listener's decision criteria.
+    repair: Open every technology proposal with the constraint it addresses.
+    reasoning_error: If your Cross-team communication answer failed, classify the
+      mistake as a fact, assumption, comparison, failure, or certainty error before
+      proposing the smallest repair.
+  recall:
+    active_recall_cue: What should the first sentence of a technology proposal contain?
+    leitner_start_box: 1
+    mastery_threshold: 8
+    feynman_prompt: Can you explain the reasoning behind Cross-team communication
+      without presenting an assumption as a fact?
+    black_box_probe: When the Cross-team communication answer failed, did you locate
+      the reasoning error before changing the implementation?
+    delayed_variant:
+      id: golang-12-explaining-to-non-go-team-delayed-12
+      prompt: 'Cross-team communication gets a new constraint: a stakeholder asks
+        for a stronger Cross-team communication guarantee than the first Cross-team
+        communication answer promised. After a stakeholder clarifies a Cross-team
+        communication requirement that changes the Cross-team communication success
+        condition, which Cross-team communication assumption is no longer safe?'
+      changed_constraint: a stakeholder asks for a stronger Cross-team communication
+        guarantee than the first Cross-team communication answer promised
+      new_evidence: a stakeholder clarifies a Cross-team communication requirement
+        that changes the Cross-team communication success condition
+      best_answer: I would keep the facts that remain supported about Cross-team communication,
+        treat a stakeholder clarifies a Cross-team communication requirement that
+        changes the Cross-team communication success condition as new evidence rather
+        than a result, and state the updated decision rule under a stakeholder asks
+        for a stronger Cross-team communication guarantee than the first Cross-team
+        communication answer promised. I would then name one focused check before
+        treating the revised answer as settled.
+      distractors:
+      - text: I would preserve every part of the original Cross-team communication
+          answer because changing it after review would be inconsistent.
+        why_wrong: It ignores the new evidence and confuses consistency with calibrated
+          reasoning.
+      - text: I would replace the entire Cross-team communication explanation with
+          a new design without identifying what the evidence actually changed.
+        why_wrong: It throws away supported claims and gives no traceable update to
+          the decision.
+  sources:
+  - repo: system-design-estudos
+    path: areas/12-engineering-practice/cards/architecture-decision-records.md
+    note: Decision records and constraint-led justification.
+  - repo: original
+    path: english-arcade/golang/explaining-to-non-go-team
+    note: Original interview phrasing authored for this pack.
+  extension:
+    prompt: 'Five more minutes on Cross-team communication: which boundary, alternative,
+      and update trigger would you explain for Cross-team communication?'
+    goal: Move from the short Cross-team communication answer to a deep, evidence-led
+      defence without inventing an outcome.
+  critical_thinking:
+    problem_frame: 'Frame Cross-team communication before proposing a solution: state
+      the actor, required outcome, constraint, and unknown that could invalidate the
+      first recommendation.'
+    claim_map:
+      fact: The prompt explicitly tests Cross-team communication within a Go context;
+        treat that named boundary as the verified starting fact.
+      inference: The reasonable inference is that the answer must defend Cross-team
+        communication, but that does not prove one implementation wins under every
+        workload or audience.
+      assumption: An unstated assumption is that the Cross-team communication constraint
+        is the dominant one; label it and ask whether the interviewer confirms it.
+      unknown: 'Still unknown for Cross-team communication: the scale, failure tolerance,
+        ownership boundary, and evidence threshold that would change the decision.'
+    comparison:
+      applicable: true
+      alternatives:
+      - option: a minimal Go interface or cancellation boundary for Cross-team communication
+        benefit: It keeps the Cross-team communication reasoning close to the stated
+          Go constraint and makes the evidence boundary visible.
+        cost_or_risk: It can be too narrow if the Cross-team communication workload
+          or requirement changes beyond the prompt.
+        valid_when: Use it when the stated Cross-team communication contract and its
+          invariant are the facts that matter most.
+      - option: a concrete type or shared coordination mechanism for Cross-team communication
+        benefit: It can make the Cross-team communication boundary more explicit when
+          the first option's hidden assumption is not guaranteed.
+        cost_or_risk: It adds implementation or communication cost and may solve a
+          problem the Cross-team communication evidence has not established.
+        valid_when: Use it when a measured constraint, requirement, or failure mode
+          makes the first option unsafe.
+      decision_rule: Choose the first Cross-team communication option when its stated
+        contract holds; choose the alternative only when evidence shows that the relevant
+        Go constraint makes the first assumption unsafe.
+    failure_probe:
+      kind: failure_mode
+      prompt: 'Cross-team communication: when the Cross-team communication constraint
+        tightens during rollout, what breaks first in Cross-team communication, and
+        how do you observe it?'
+    evidence_check:
+      basis: Check the Cross-team communication claim against system-design-estudos/areas/12-engineering-practice/cards/architecture-decision-records.md
+        and the exact interview context; record whether each part is fact, inference,
+        or hypothesis.
+      source_kind: authored_scenario
+      limitation: This Go exercise can test reasoning about Cross-team communication,
+        but it cannot prove an unmeasured production outcome, personal ownership,
+        or universal rule.
+      checked_on: '2026-08-25'
+    certainty:
+      level: medium
+      rationale: Certainty is medium because the prompt bounds the Cross-team communication
+        question but does not reveal every workload, stakeholder priority, or outcome.
+      update_trigger: For case "Tell me how you would justify choosing", update Cross-team
+        communication when Cross-team communication evidence—a Cross-team communication
+        trace or Cross-team communication test—contradicts the Cross-team communication
+        constraint in case "Tell me how you would justify choosing"; ask a stakeholder
+        about Cross-team communication before revising.
+    rubric:
+      facts_correct: Names the verified Cross-team communication facts without smuggling
+        in a result, scale, or capability that the prompt does not establish.
+      assumptions_explicit: Labels the Cross-team communication premise that is still
+        assumed and asks the smallest clarifying question that matters.
+      alternatives_considered: Compares two credible Cross-team communication options,
+        or explains the hard constraint that makes comparison a false equivalence.
+      tradeoff_quality: Connects the Cross-team communication choice to a benefit,
+        a cost or risk, and the condition under which another choice wins.
+      follow_up_adaptation: Responds to the alternative challenge about Cross-team
+        communication by changing the claim or evidence boundary rather than repeating
+        the base answer.
+      certainty_calibration: Uses medium certainty deliberately and names the evidence
+        that would update the Cross-team communication recommendation.

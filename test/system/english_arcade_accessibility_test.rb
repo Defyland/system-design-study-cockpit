@@ -25,6 +25,14 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     assert_selector "input#english-arcade-target-dsa:checked", visible: :all
     click_button "Start closed-book session"
     assert_selector "form[data-english-arcade-target='form']"
+    assert_no_selector "button", text: /voice|microphone|capture voice/i
+    assert_no_selector "input[name*='spoken_text']", visible: :all
+    fill_in "Typed answer", with: "I would state the invariant, make the trade-off explicit, and verify one counterexample before I commit to the implementation."
+    fill_critical_ledger
+    select "English directly", from: "english_arcade_attempt_english_directness"
+    %w[clarity precision naturalness pragmatic_appropriateness technical_correctness].each do |axis|
+      select "3", from: "english_arcade_attempt_self_#{axis}"
+    end
     page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }))")
     assert_operator all("input[name*='answer_choice']:checked", visible: :all).length, :==, 1
     page.execute_script(<<~JAVASCRIPT)
@@ -45,5 +53,34 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
       assert_operator scroll_width, :<=, viewport_width, "horizontal overflow at requested #{width}px (actual viewport #{viewport_width}px)"
       assert_selector "section.english-arcade[data-controller='english-arcade']"
     end
+  end
+
+  private
+
+  def fill_critical_ledger
+    {
+      "#english-arcade-problem-frame" => "The interviewer needs a bounded decision for the stated input and workload.",
+      "#english-arcade-evidence-verified" => "The authored prompt establishes the input boundary.",
+      "#english-arcade-evidence-inference" => "The invariant follows from that boundary.",
+      "#english-arcade-evidence-assumption" => "The workload remains within the stated operational limit.",
+      "#english-arcade-evidence-gap" => "Production scale still needs measurement.",
+      "#english-arcade-source-quality" => "The authored prompt is primary; runtime evidence is still pending.",
+      "#english-arcade-counterexample" => "An adversarial duplicate can invalidate the assumed bound.",
+      "#english-arcade-change-my-mind" => "A measured trace that breaks the bound would change my recommendation."
+    }.each { |selector, value| find(selector).set(value) }
+    find("#english-arcade-confidence-percent").set("70")
+    find("summary", text: /Real trade-off branch/).click
+    {
+      "#english-arcade-comparison-option-a" => "Keep the simple implementation.",
+      "#english-arcade-comparison-option-b" => "Use indexed state.",
+      "#english-arcade-comparison-tradeoff" => "Memory buys fewer scans.",
+      "#english-arcade-comparison-switch-condition" => "Switch when measured load crosses the bound."
+    }.each { |selector, value| find(selector).set(value) }
+    find("summary", text: /False-equivalence branch/).click
+    {
+      "#english-arcade-comparison-rejected-alternative" => "The alternative violates the same input contract.",
+      "#english-arcade-comparison-hard-constraint" => "The input contract is fixed.",
+      "#english-arcade-comparison-decision-rule" => "Clarify the contract before comparing."
+    }.each { |selector, value| find(selector).set(value) }
   end
 end

@@ -1,15 +1,58 @@
 # English C2 Arcade corpus integration
 
+> Historical prior-release record: references below to local or deployed pack
+> counts describe the earlier release. The pending expansion has an evidence
+> slot after root deployment verification; do not describe 14 packs / 176 items
+> as current production before that verification.
+
 The Arcade is an English-first practice layer over two existing sources:
 
 - `../english-arcade/src/data/seed.ts` (the legacy falling-card game); and
 - `../system-design-estudos` (the canonical system-design curriculum).
+
+The executable learner calendar and evidence boundary are documented in
+`docs/english-c2-arcade-30-day-program.md`; dated external sources and the
+typed-only external-platform interface are in
+`docs/english-c2-arcade-sources-and-handoff.md`.
 
 The cockpit does not replace either source. `Content::EnglishArcadeImporter`
 indexes stable IDs, relative source paths, checksums and relationships. It does
 not copy the Markdown body or execute the legacy TypeScript. A future content
 pack can be supplied as structured hashes (`external_records:`) or as a
 machine-readable `config/english_arcade_content.yml` file.
+
+## Pending expansion pack contract (2026-08-25; not deployed)
+
+There are 14 selectable packs / 176 interview items / 42 production cards.
+The 13 canonical packs total 164 items: the eight technical tracks, General
+Conversation, Career Narrative, and the Rails, Go and Elixir Experience packs.
+Salesforce is a 1.0 legacy/elective pack: it remains launchable but is
+critical-ineligible and excluded from readiness, gates and mixed/interview core
+credit. The launcher exposes 16 choices: 14 packs plus mixed and interview.
+The older eight-target fixture is retained only as legacy compatibility
+evidence. The browser accepts typed production; it has no voice capture,
+microphone, speech recognition, pronunciation or listening assessment.
+Every one of the 164 canonical items has an authored follow-up and compression
+prompt. In particular, the 84 items across DSA, Ruby, Rails, React, Go, Elixir
+and System Design now carry 168 item-specific prompts instead of runtime
+boilerplate. Strict per-pack validation and a cross-pack duplicate/n-gram
+oracle enforce that contract; an invalid canonical pack remains unavailable
+rather than falling back to fixture content.
+
+The critical-thinking contract covers all 13 canonical targets, 164 items and
+39 canonical cards. It requires evidence classification, problem framing,
+clarification, alternatives/trade-offs, counterexamples/failure modes,
+certainty calibration and revision under new evidence. The closed loop is
+attempt → Feynman → feedback → Black Box when needed → Leitner/SRS → reattempt;
+commit/reveal freezes the opaque variant and digest, and future prompts are not
+projected into an initial snapshot. Only `initial`, `follow_up` and
+`delayed_variant` can produce critical evidence or mastery; rephrase,
+compression and extension remain report-visible practice. Self-rubric is
+optional and report-only, while typed semantic reasoning is `not_assessed`.
+The plan is 30 daily 90-minute sessions with 11 phased mocks and 13 scheduled
+delayed variants on D8–D20; D7 delayed credit is zero. Mock credit requires the
+server-owned challenge, ordered sequence and defence artifacts, not elapsed
+time alone.
 
 ## Stable identity
 
@@ -84,7 +127,9 @@ does not include prompt/answer/distractor/feedback values, database names or
 other private values. The existing `/health/content` endpoint remains owned by
 the application readiness service and now includes the redacted
 `english_arcade_pack_readiness` summary. It never includes prompt, answer,
-distractor, database-name, or other private values.
+distractor, source path, commit, provenance claim, database-name, or other
+private values. Canonical readiness is exactly 13 targets / 164 items; the
+elective Salesforce pack is reported separately.
 
 ## Release QA checklist
 
@@ -128,7 +173,7 @@ integration contract is explicit: source IDs and links must be keyboard- and
 screen-reader discoverable in the rendered result, while imported metadata must
 remain bounded (IDs and paths, not full source prose).
 
-## Observed QA evidence (2026-08-23)
+## Historical pre-expansion QA evidence (2026-08-23)
 
 The scoped checks were run against the current workspace after applying all
 four additive English Arcade migrations required by the Rails test environment.
@@ -150,8 +195,8 @@ Cross-app smoke on Puma returned `/up`, `/health/content`, and
 The content health response is redacted and includes pack readiness; it does
 not expose the database name or pack answers.
 
-The canonical `test/english_arcade/canonical_pack_contract_test.rb` gate now
-reports 8/8 production targets present, 12 items and 3 cards each. The
+Historical pre-expansion evidence: the canonical `test/english_arcade/canonical_pack_contract_test.rb` gate then
+reported 8/8 production targets present, 12 items and 3 cards each. The
 fixture is not auto-imported, so this result is from the production pack files
 and cannot be masked by test content.
 
@@ -165,12 +210,12 @@ failed check, not a corpus error. The duplicate override was removed, the
 helper is now exercised through the public API, and both `validate!` and the
 redacted `english_arcade:health` payload report zero validation errors.
 
-Current corpus counts are 14 chapters, 14 labs, 4 capstones, 16 decision
+Historical sibling-corpus snapshot (not evidence for this expansion): 14 chapters, 14 labs, 4 capstones, 16 decision
 contrasts, 14 review cards, one curriculum record, 17 linked real-world cases,
 44 linked reference records, 334 unique graph links, and 860 legacy Arcade
 anchors.
 Legacy anchors are `legacy_arcade_item`, never `interview_pack`.
-The latest observed production pack directory contains all eight targets with
+Historical pre-expansion evidence: the latest observed production pack directory contained all eight targets with
 12 valid `interview_pack` records and 3 Leitner cards each. The readiness
 minimum is 12 items per target with prompt, context, answer, distractors,
 feedback and rephrase metadata; `pack_readiness.ready` is true and the adapter
@@ -183,3 +228,21 @@ by the importer fixture test and prevents prose or production records from
 crossing test boundaries. A direct probe returned
 `interview_pack_count=0, corpus_records=124, links=237, warnings=[]` for such a
 temporary root.
+
+## Pending expansion local corpus evidence (2026-08-25)
+
+The current worktree validator, QA and health tasks agree on 1,160 records,
+367 links, 14 packs / 176 items / 42 cards, and canonical readiness of 13 packs
+/ 164 items / 39 cards. Warnings and validation errors are empty. Two
+`ENGLISH_ARCADE_PERSIST=false` imports were byte-identical and each reported
+`persisted_documents=0`. This is local pre-review evidence only; the production
+deployment still serves the historical release recorded in
+`docs/english-c2-arcade-release.md`.
+
+The critical-thinking/runtime handoff adds focused evidence only: content
+validator `14/14` packs with `176/42` total items/cards and canonical
+`164/39`; controller `27/387`; card + Rails + progress + validator `38/193`;
+contract suites `33/1,494`; Ruby syntax and scoped diff check green. No full
+suite claim is made. Production remains deployment
+`6f07bd3e-30e3-4c76-ae78-cd7f64cd38c7`; the expansion is not committed or
+deployed and awaits a fresh independent review.

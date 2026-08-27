@@ -46,4 +46,23 @@ class EnglishArcadeCorpusTest < ActiveSupport::TestCase
     pack = EnglishArcadeSearch.new(query: "english-arcade:packs/dsa/dsa-01-pattern-naming", kind: "interview_pack", include_study_documents: false).results
     assert_equal [ "english-arcade:packs/dsa/dsa-01-pattern-naming" ], pack.map(&:source_id)
   end
+
+  test "canonical coverage includes databases and general while Salesforce remains elective" do
+    report = Content::EnglishArcadeImporter.new.result
+    readiness = report.pack_readiness
+    pack_records = report.records.select { |record| record.kind == "interview_pack" }
+
+    assert_includes readiness.fetch("targets").keys, "databases"
+    assert_includes readiness.fetch("targets").keys, "general"
+    assert_equal EnglishArcade::Schema::TARGETS.sort, readiness.fetch("targets").keys.sort
+    assert readiness.fetch("ready")
+    assert_equal 14, readiness.fetch("target_count")
+    assert_equal 176, readiness.fetch("item_count")
+    assert_equal 42, readiness.fetch("card_count")
+    assert_equal 13, readiness.fetch("canonical_target_count")
+    assert_equal 164, readiness.fetch("canonical_item_count")
+    assert_equal [ "salesforce" ], readiness.fetch("elective_targets")
+    assert_equal 12, pack_records.count { |record| record.target == "databases" }
+    assert_equal 12, pack_records.count { |record| record.target == "general" }
+  end
 end

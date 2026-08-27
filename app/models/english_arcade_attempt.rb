@@ -1,5 +1,7 @@
 class EnglishArcadeAttempt < ApplicationRecord
-  ATTEMPT_KINDS = %w[initial retry rephrase extension].freeze
+  require_relative "../services/english_arcade_attempt_contract"
+  require_relative "../services/english_arcade_evidence_eligibility"
+  ATTEMPT_KINDS = %w[initial retry rephrase extension follow_up compression].freeze
   STATES = %w[idle active_recall committed feynman feedback black_box scheduled reattempt mastered revealed].freeze
   BLACK_BOX_FIELDS = %w[root_cause missing_signal preventive_rule targeted_exercise retest_dates].freeze
   BLACK_BOX_MIN_LENGTH = 8
@@ -18,6 +20,51 @@ class EnglishArcadeAttempt < ApplicationRecord
   validate :feedback_must_follow_answer
 
   scope :recent_first, -> { order(answered_at: :desc) }
+
+  def critical_artifact
+    diagnostic_evidence.to_h.fetch("critical_artifact", {})
+  end
+
+  def critical_artifact_complete?
+    artifact = critical_artifact.to_h
+    assessment = diagnostic_evidence.to_h.fetch("assessment", {}).to_h
+    authored_applicable = assessment.dig("critical_thinking", "comparison", "applicable")
+    classifications = artifact.fetch("learner_classifications", {}).to_h
+    comparison = artifact.fetch("comparison", {}).to_h
+    branch_complete = if authored_applicable == true
+      comparison["authored_applicable"] == true &&
+        comparison["comparison_option_a"].to_s.strip.length >= 8 &&
+        comparison["comparison_option_b"].to_s.strip.length >= 8 &&
+        normalize_critical_text(comparison["comparison_option_a"]) != normalize_critical_text(comparison["comparison_option_b"]) &&
+        comparison["comparison_tradeoff"].to_s.strip.length >= 8 &&
+        comparison["comparison_switch_condition"].to_s.strip.length >= 8
+    elsif authored_applicable == false
+      comparison["authored_applicable"] == false &&
+        comparison["comparison_rejected_alternative"].to_s.strip.length >= 8 &&
+        comparison["comparison_hard_constraint"].to_s.strip.length >= 8 &&
+        comparison["comparison_decision_rule"].to_s.strip.length >= 8
+    else
+      false
+    end
+    artifact["complete"] == true && artifact["captured_before_reveal"] == true &&
+      %w[evidence_verified evidence_inference evidence_assumption evidence_gap].all? { |key| classifications[key].to_s.strip.length >= 8 } &&
+      branch_complete && artifact["counterexample"].to_s.strip.length >= 8 &&
+      artifact["change_my_mind"].to_s.strip.length >= 8 &&
+      artifact["confidence_percent"].is_a?(Numeric) && artifact["confidence_percent"].between?(0, 100) &&
+      artifact.dig("fact_contract_accuracy", "source").to_s == "authored_reference" &&
+      artifact.dig("fact_contract_accuracy", "assessment_scope").to_s == "not_assessed" &&
+      artifact.dig("semantic_quality", "source").to_s == "not_assessed" &&
+      artifact.dig("semantic_quality", "assessment_scope").to_s == "not_assessed"
+  end
+
+  def critical_eligible?
+    EnglishArcadeEvidenceEligibility.critical?(self)
+  end
+
+  def normalize_critical_text(value)
+    value.to_s.downcase.gsub(/[^a-z0-9]+/, " ").squeeze(" ").strip
+  end
+  private :normalize_critical_text
 
   private
 
