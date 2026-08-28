@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+root = File.expand_path("..", __dir__)
+port = Integer(ENV.fetch("ENGLISH_ARCADE_VOICE_COMPANION_PORT", "43129"), 10)
+abort("ENGLISH_ARCADE_VOICE_COMPANION_PORT must be between 1 and 65535") unless port.between?(1, 65_535)
+
+Dir.chdir(root)
+exec("bundle", "exec", "rackup", "--quiet", "--server", "puma", "config/english_arcade_voice_companion.ru", "--host", "127.0.0.1", "--port", port.to_s)

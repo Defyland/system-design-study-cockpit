@@ -1,0 +1,156 @@
+<% configuration = EnglishArcadeVoice::Configuration.new %>
+<% realtime_available = configuration.available? %>
+<% read_card = lambda do |name|
+  if card.is_a?(Hash)
+    card[name] || card[name.to_s]
+  elsif card.respond_to?(name)
+    card.public_send(name)
+  end
+end %>
+<% safe_text = lambda do |value, limit|
+  value.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "").byteslice(0, limit).to_s.force_encoding("UTF-8").scrub
+end %>
+<% card_key = read_card.call(:key).to_s %>
+<% card_prompt = read_card.call(:prompt).to_s %>
+<% card_answer = read_card.call(:answer_text).to_s %>
+<% card_context = safe_text.call(read_card.call(:context), 4 * 1024) %>
+<% critical = read_card.call(:critical_thinking).to_h.deep_stringify_keys %>
+<% provenance = read_card.call(:provenance).to_h.deep_stringify_keys %>
+<% source_lines = Array(read_card.call(:sources)).first(5).filter_map do |source|
+  if source.is_a?(Hash)
+    [ source["repo"], source["path"], source["note"] ].compact.join(" / ")
+  else
+    source.to_s
+  end
+end %>
+<% authored_context = [
+  card_context,
+  critical["problem_frame"],
+  critical.dig("evidence_check", "limitation"),
+  critical.dig("comparison", "decision_rule"),
+  critical.dig("failure_probe", "prompt"),
+  provenance["evidence_class"],
+  provenance["project"],
+  provenance["repository"],
+  *source_lines.map { |line| "Source boundary: #{line}" },
+  *Array(provenance["confirmation_required"]).first(3).map { |gap| "Confirm before claiming: #{gap}" }
+].filter_map { |value| value.to_s.strip.presence }.join("\n") %>
+<% authored_context = safe_text.call(authored_context, 8 * 1024) %>
+<section
+  class="english-arcade-voice"
+  data-controller="english-arcade-voice"
+  data-english-arcade-voice-call-url-value="<%= english_arcade_voice_calls_path %>"
+  data-english-arcade-voice-session-id-value="<%= arcade_session.id %>"
+  data-english-arcade-voice-card-key-value="<%= card_key %>"
+  data-english-arcade-voice-question-value="<%= card_prompt %>"
+  data-english-arcade-voice-answer-value="<%= card_answer %>"
+  data-english-arcade-voice-context-value="<%= authored_context %>"
+  data-english-arcade-voice-model-value="<%= configuration.default_model %>"
+  data-english-arcade-voice-realtime-available-value="<%= realtime_available %>"
+  data-english-arcade-voice-realtime-default-model-value="<%= configuration.default_model %>"
+  data-english-arcade-voice-realtime-quality-model-value="<%= configuration.quality_model %>"
+  data-english-arcade-voice-companion-base-url-value="http://127.0.0.1:43129"
+  data-english-arcade-voice-max-duration-seconds-value="<%= configuration.call_duration_seconds %>">
+  <style>
+    .english-arcade-voice { background: rgba(7, 21, 34, .72); border: 1px solid #2c5570; border-radius: 10px; color: #eaf5ff; display: grid; gap: 10px; padding: 13px; }
+    .english-arcade-voice h4, .english-arcade-voice h5 { color: #5eead4; margin: 0; }
+    .english-arcade-voice p { margin: 0; }
+    .english-arcade-voice .voice-copy { color: #b8cfdd; font-size: .86rem; line-height: 1.45; }
+    .english-arcade-voice .voice-controls, .english-arcade-voice .voice-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+    .english-arcade-voice label { display: grid; gap: 4px; }
+    .english-arcade-voice input, .english-arcade-voice button, .english-arcade-voice select { background: #193d5a; border: 1px solid #477b99; border-radius: 7px; color: #eaf5ff; font: inherit; min-height: 38px; padding: 7px 10px; }
+    .english-arcade-voice input { min-width: min(100%, 320px); }
+    .english-arcade-voice button { cursor: pointer; font-weight: 800; }
+    .english-arcade-voice button:hover, .english-arcade-voice button:focus-visible, .english-arcade-voice input:focus-visible, .english-arcade-voice select:focus-visible { border-color: #5eead4; outline: 3px solid #f0b429; outline-offset: 2px; }
+    .english-arcade-voice button[disabled], .english-arcade-voice select[disabled], .english-arcade-voice input[disabled] { cursor: not-allowed; opacity: .45; }
+    .english-arcade-voice [hidden] { display: none !important; }
+    .english-arcade-voice .voice-status { color: #f6c453; min-height: 1.35em; }
+    .english-arcade-voice .voice-transcript, .english-arcade-voice .voice-feedback { background: rgba(3, 18, 29, .55); border: 1px solid #28536f; border-radius: 7px; min-height: 3rem; padding: 8px; }
+    .english-arcade-voice .voice-transcript p, .english-arcade-voice .voice-feedback p { margin: 4px 0; }
+    .english-arcade-voice .voice-feedback { display: grid; gap: 6px; }
+    .english-arcade-voice .voice-feedback dl { display: grid; gap: 5px; grid-template-columns: minmax(95px, .28fr) minmax(0, 1fr); margin: 0; }
+    .english-arcade-voice .voice-feedback dt { color: #8ee8d7; font-weight: 800; }
+    .english-arcade-voice .voice-error { color: #ffb4a8; min-height: 1.35em; }
+    .english-arcade-voice .voice-provider-copy { border-left: 3px solid #5eead4; padding-left: 9px; }
+    .english-arcade-voice .voice-setup { align-items: end; display: flex; flex-wrap: wrap; gap: 8px; }
+    .english-arcade-voice audio { max-width: 100%; width: 360px; }
+    @media (prefers-reduced-motion: reduce) { .english-arcade-voice *, .english-arcade-voice *::before, .english-arcade-voice *::after { animation-duration: .001ms !important; scroll-behavior: auto !important; transition-duration: .001ms !important; } }
+  </style>
+
+  <header>
+    <h4>Voice rehearsal · choose a provider</h4>
+    <p class="voice-copy">This is a page-local rehearsal aid. Audio and transcript are temporary; they are not persisted by the cockpit. The authored question, answer, reasoning, trade-offs, sources, and provenance shown on this card remain the factual boundary.</p>
+    <p class="voice-copy">Feedback is practical language coaching, not an objective CEFR score and not a guarantee of phonetic accuracy.</p>
+  </header>
+
+  <section class="voice-copy" aria-label="Authoritative card material">
+    <p><strong>Question to rehearse:</strong> <%= card_prompt %></p>
+    <p><strong>Authored answer to repeat:</strong> <%= card_answer %></p>
+  </section>
+
+  <div class="voice-controls" aria-label="Voice provider controls">
+    <label for="english-arcade-voice-provider-<%= card_key %>">Provider</label>
+    <select id="english-arcade-voice-provider-<%= card_key %>" data-english-arcade-voice-target="provider" data-action="change->english-arcade-voice#chooseProvider">
+      <option value="apple_codex" selected>Apple Speech + Codex — Recommended</option>
+      <option value="openai_realtime">OpenAI Realtime API — Platform billing</option>
+    </select>
+  </div>
+  <p data-english-arcade-voice-target="providerCopy" class="voice-copy voice-provider-copy" aria-live="polite"></p>
+
+  <section data-english-arcade-voice-target="appleControls" aria-label="Apple Speech and Codex setup">
+    <p class="voice-copy">Apple Speech + Codex uses browser speech synthesis plus on-device macOS Apple Speech through the local companion. Analysis uses your managed ChatGPT/Codex sign-in and plan; it does not require an OpenAI Platform API key.</p>
+    <div class="voice-setup">
+      <label for="english-arcade-voice-pairing-<%= card_key %>">Local companion pairing secret (session only)
+        <input id="english-arcade-voice-pairing-<%= card_key %>" type="password" autocomplete="off" spellcheck="false" data-english-arcade-voice-target="pairingSecret" aria-describedby="english-arcade-voice-pairing-help-<%= card_key %>">
+      </label>
+      <button type="button" data-english-arcade-voice-target="pair" data-action="click->english-arcade-voice#pairCompanion">Pair / connect</button>
+      <button type="button" data-english-arcade-voice-target="refreshStatus" data-action="click->english-arcade-voice#refreshCompanionStatus" disabled>Refresh status</button>
+      <button type="button" data-english-arcade-voice-target="login" data-action="click->english-arcade-voice#startManagedLogin" disabled>Sign in with ChatGPT/Codex</button>
+    </div>
+    <p id="english-arcade-voice-pairing-help-<%= card_key %>" class="voice-copy">Start the companion in a local terminal, then paste its one-time secret here. It stays in this tab session only and is never sent to Rails, a URL, or a request body.</p>
+    <p data-english-arcade-voice-target="companionStatus" class="voice-copy" role="status" aria-live="polite">Companion not paired. Local reading remains available.</p>
+  </section>
+
+  <section data-english-arcade-voice-target="realtimeControls" hidden aria-label="OpenAI Realtime setup">
+    <p class="voice-copy">OpenAI Realtime is an explicit OpenAI Platform provider: it sends temporary audio/transcript data to the platform and is billed separately. It is not included in a ChatGPT subscription.</p>
+    <label data-english-arcade-voice-target="modelControls" for="english-arcade-voice-model-<%= card_key %>">Realtime model
+      <select id="english-arcade-voice-model-<%= card_key %>" data-english-arcade-voice-target="model" data-action="change->english-arcade-voice#chooseModel">
+        <option value="<%= configuration.default_model %>" selected>Mini · default</option>
+        <option value="<%= configuration.quality_model %>">Full quality · explicit selection</option>
+      </select>
+    </label>
+  </section>
+
+  <% unless realtime_available %>
+    <p data-english-arcade-voice-target="realtimeUnavailable" class="voice-copy">OpenAI Realtime is unavailable without its server-side feature flag and platform key. Apple Speech + Codex remains independently available.</p>
+  <% end %>
+
+  <div class="voice-controls">
+    <button type="button" data-english-arcade-voice-target="enable" data-action="click->english-arcade-voice#enableVoice">Connect selected provider</button>
+  </div>
+
+  <div class="voice-meta">
+    <span data-english-arcade-voice-target="status" class="voice-status" role="status" aria-live="polite">Apple Speech + Codex selected. Pair the local companion for speaking and analysis.</span>
+    <span>Time: <time data-english-arcade-voice-target="timer">00:00</time></span>
+  </div>
+
+  <audio data-english-arcade-voice-target="remoteAudio" autoplay controls hidden aria-label="Remote OpenAI Realtime rehearsal audio"></audio>
+
+  <div class="voice-controls" aria-label="Voice rehearsal actions">
+    <button type="button" data-english-arcade-voice-target="listenQuestion" data-action="click->english-arcade-voice#listenQuestion">Listen to exact question</button>
+    <button type="button" data-english-arcade-voice-target="listenAnswer" data-action="click->english-arcade-voice#listenAnswer">Listen / repeat exact answer</button>
+    <button type="button" data-english-arcade-voice-target="stopSpeaking" data-action="click->english-arcade-voice#stopSpeaking" disabled>Stop local speech</button>
+    <button type="button" data-english-arcade-voice-target="startMicrophone" data-action="click->english-arcade-voice#startMicrophone" disabled>Start microphone</button>
+    <button type="button" data-english-arcade-voice-target="stopMicrophone" data-action="click->english-arcade-voice#stopMicrophone" disabled>Stop microphone</button>
+    <button type="button" data-english-arcade-voice-target="analyze" data-action="click->english-arcade-voice#analyzeTranscript" disabled>Analyze transcript</button>
+    <button type="button" data-english-arcade-voice-target="end" data-action="click->english-arcade-voice#endVoice" disabled>End and clean up</button>
+    <button type="button" data-english-arcade-voice-target="clearTranscript" data-action="click->english-arcade-voice#clearTranscript">Clear transcript</button>
+  </div>
+
+  <section aria-labelledby="english-arcade-voice-transcript-title-<%= card_key %>">
+    <h5 id="english-arcade-voice-transcript-title-<%= card_key %>">Transcript and coach feedback</h5>
+    <div data-english-arcade-voice-target="transcript" class="voice-transcript" role="log" aria-live="polite" aria-label="Temporary voice transcript"></div>
+    <div data-english-arcade-voice-target="feedback" class="voice-feedback" aria-live="polite" hidden></div>
+    <p data-english-arcade-voice-target="error" class="voice-error" role="alert" aria-live="assertive"></p>
+  </section>
+</section>

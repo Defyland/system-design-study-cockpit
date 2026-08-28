@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   get "english-arcade", to: "english_arcade#show", as: :english_arcade_launcher
   resources :english_arcade_sessions, only: %i[create], path: "english-arcade/sessions", controller: :english_arcade
   post "english-arcade/attempts", to: "english_arcade#attempt", as: :english_arcade_attempts
+  post "english-arcade/voice/calls", to: "english_arcade_voice_calls#create", as: :english_arcade_voice_calls
   get "search", to: "search#index", as: :search
   resources :misconceptions, only: %i[index]
   resources :simulations, only: %i[index show], param: :slug do

@@ -112,6 +112,7 @@
           </section>
 
           <p class="guided-answer"><strong>My answer to practise aloud</strong><%= card.answer_text %></p>
+          <%= render "english_arcade/voice", card: card, arcade_session: @arcade_session %>
 
           <% if versions.any? %>
             <section class="guided-section" aria-labelledby="guided-versions-title-<%= index %>">
