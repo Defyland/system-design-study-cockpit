@@ -90,6 +90,29 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "input[name='english_arcade_session[target]'][value='golang']"
   end
 
+  test "guided study reveals authored coaching and keeps navigation non-assessing" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Start guided study"
+
+    assert_selector ".guided-experience"
+    assert_selector ".guided-board"
+    assert_selector ".guided-card", count: 5, visible: :all
+    assert_text(/My answer to practise aloud/i)
+    assert_text(/Medium · canonical/i)
+    assert_text(/Critical-thinking path/i)
+    assert_text(/Sources, provenance, and confidentiality boundary/i)
+    assert_no_selector ".arcade-question"
+    assert_no_selector "form[action*='english-arcade/attempts']"
+    assert_no_text "Commit answer"
+
+    click_button "Ready"
+    assert_text "Ready saved locally for this card."
+    click_button "Next card"
+    assert_text "Card 2 of 5"
+    assert_equal 0, EnglishArcadeAttempt.count
+  end
+
   private
 
   def fill_critical_ledger

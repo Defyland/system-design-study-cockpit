@@ -40,6 +40,58 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
     refute active_payload.to_json.include?("answer_text")
   end
 
+  test "guided launcher persists its experience and exposes study material without an assessment form" do
+    get "/english-arcade"
+    assert_response :success
+    assert_includes response.body, "Start guided study"
+    assert_includes response.body, "guided study arcade"
+
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
+    }
+    assert_response :redirect
+    session = EnglishArcadeSession.order(:id).last
+    assert_equal "guided", session.metadata.fetch("experience")
+
+    get "/english-arcade", params: { session_id: session.id }
+    assert_response :success
+    assert_includes response.body, "My answer to practise aloud"
+    assert_includes response.body, "Medium · canonical"
+    assert_includes response.body, "Authored trap"
+    assert_includes response.body, "Critical-thinking path"
+    assert_includes response.body, "Sources, provenance, and confidentiality boundary"
+    assert_includes response.body, "Review again"
+    assert_equal 5, response.body.scan('class="guided-card"').length
+    refute_includes response.body, "Commit answer"
+    refute_includes response.body, "Feynman pass before the reveal"
+    refute_match(%r{action="[^"]*english-arcade/attempts}, response.body)
+    assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
+    assert_empty EnglishArcadeCard.where(learner_key: "anonymous", target: "career")
+
+    card = @builder.call(target: "career", learner_key: "anonymous", session: session, limit: 1).cards.first
+    post "/english-arcade/attempts", params: {
+      session_id: session.id,
+      english_arcade_attempt: { card_key: card.key, answer_choice: card.correct_choice, typed_answer: meaningful_typed_answer }
+    }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal "guided_session_is_non_assessing", JSON.parse(response.body).fetch("error")
+    assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
+  end
+
+  test "guided finish completes the session without diagnostic evidence" do
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
+    }
+    session = EnglishArcadeSession.order(:id).last
+
+    post finish_english_arcade_path, params: { session_id: session.id }
+
+    assert_response :redirect
+    assert_equal "completed", session.reload.status
+    assert_includes flash[:notice], "no diagnostic attempt was recorded"
+    assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
+  end
+
   test "pre-Feynman correct and incorrect choices remain neutral in history and JSON" do
     [ true, false ].each do |correct_choice|
       session = start_session

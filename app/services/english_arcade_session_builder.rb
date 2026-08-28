@@ -66,7 +66,7 @@ class EnglishArcadeSessionBuilder
     :answer_text, :feedback, :rephrase_prompt, :extension_prompt, :follow_up_prompt,
     :compression_prompt, :feynman, :black_box, :recall, :tags, :source, :sources,
     :provenance, :variants, :variant_id, :variant_digest, :variant_contract, :critical_thinking,
-    :content_version,
+    :response_versions, :option_guides, :content_version,
     keyword_init: true
   )
   Grade = Struct.new(:correct, :feedback, :diagnostic_evidence, keyword_init: true)
@@ -360,6 +360,11 @@ class EnglishArcadeSessionBuilder
         sources: sources,
         provenance: provenance,
         variants: variants,
+        # Keep the authored response ladder on the private raw-card contract.
+        # ContentPackAdapter#cards_for is also used as a low-level projection
+        # by contract tests and callers; exposing a new public key there would
+        # blur the boundary between authored content and the runtime Card DTO.
+        _response_versions: stringify(item["response_versions"] || {}),
         content_version: EnglishArcadeAttemptContract.content_version(item)
       }
     end
@@ -453,9 +458,10 @@ class EnglishArcadeSessionBuilder
     MODES.key?(mode) ? mode : "daily"
   end
 
-  def call(target:, mode: "daily", learner_key: "anonymous", session: nil, limit: 5, on: @clock.call.to_date)
+  def call(target:, mode: "daily", learner_key: "anonymous", session: nil, limit: 5, persist_schedules: nil, on: @clock.call.to_date)
     target = normalize_target(target)
     mode = normalize_mode(mode)
+    persist_schedules = !guided_session?(session) if persist_schedules.nil?
     cards = cards_for(target)
     required_keys = Array(session&.metadata&.fetch("required_card_keys", []))
     cards = required_keys.filter_map { |key| cards.find { |card| card.fetch(:key) == key } } if required_keys.any?
@@ -480,7 +486,7 @@ class EnglishArcadeSessionBuilder
       cards = cards.reject { |card| completed_required_keys.include?(card.fetch(:key)) }
     end
 
-    schedules = schedules_for(cards, learner_key: learner_key, on: on)
+    schedules = schedules_for(cards, learner_key: learner_key, on: on, persist: persist_schedules)
     interleaved = %w[mixed interview].include?(target)
     ordered = if required_keys.any?
       cards
@@ -604,6 +610,8 @@ class EnglishArcadeSessionBuilder
       variants: {},
       variant_contract: {},
       critical_thinking: {},
+      response_versions: {},
+      option_guides: {},
       content_version: snapshot["content_version"].to_s
     )
 
@@ -619,6 +627,8 @@ class EnglishArcadeSessionBuilder
       card.content_version = snapshot["content_version"].to_s
       card.feynman = assessment["check"].is_a?(Hash) ? assessment["check"] : card.feynman
       card.critical_thinking = assessment["critical_thinking"].is_a?(Hash) ? assessment["critical_thinking"] : card.critical_thinking
+      card.response_versions = {}
+      card.option_guides = {}
       card.variant_contract = card.variant_contract.merge(
         "id" => card.variant_id,
         "digest" => card.variant_digest,
@@ -650,6 +660,10 @@ class EnglishArcadeSessionBuilder
 
   private
 
+  def guided_session?(session)
+    session && session.metadata.to_h.deep_stringify_keys["experience"].to_s.downcase.strip == "guided"
+  end
+
   def card_from(raw, session: nil, variant_id: "initial")
     metadata = TARGETS.fetch(raw.fetch(:target))
     raw_sources = raw[:sources]
@@ -680,6 +694,14 @@ class EnglishArcadeSessionBuilder
       card_key: raw.fetch(:key).to_s
     ).merge("content_version" => raw.fetch(:content_version, "unknown").to_s)
     selected_options = materialized.fetch("options").map { |choice| Choice.new(id: choice.fetch("id"), text: choice.fetch("text")) }
+    # Response versions belong to the initial authored item. Adaptive variants
+    # have their own best answer and must not inherit a misleading answer
+    # ladder from the base prompt. Do not synthesize missing short/deep copy.
+    response_versions = if selected_variant_id == "initial"
+      raw.fetch(:_response_versions, raw.fetch(:response_versions, {})).to_h
+    else
+      {}
+    end
     Card.new(
       key: raw.fetch(:key),
       target: raw.fetch(:target),
@@ -709,13 +731,47 @@ class EnglishArcadeSessionBuilder
       variant_digest: materialized.fetch("digest"),
       variant_contract: materialized,
       critical_thinking: materialized.fetch("critical_thinking", {}),
+      response_versions: response_versions,
+      option_guides: option_guides_for(materialized, selected_variant),
       content_version: materialized.fetch("content_version")
     )
   end
 
-  def schedules_for(cards, learner_key:, on:)
+  def option_guides_for(materialized, selected_variant)
+    distractors = Array(selected_variant["distractors"]).filter_map do |entry|
+      entry.is_a?(Hash) ? entry.deep_stringify_keys : nil
+    end
+
+    materialized.fetch("options").to_h do |option|
+      best = option.fetch("id") == materialized.fetch("correct_choice")
+      authored = distractors.find { |entry| entry["text"].to_s == option.fetch("text") }
+      [
+        option.fetch("id"),
+        {
+          "best" => best,
+          "trap" => authored&.fetch("trap", nil),
+          "explanation" => authored&.fetch("why_wrong", nil)
+        }.compact
+      ]
+    end
+  end
+
+  def schedules_for(cards, learner_key:, on:, persist: true)
     cards.each_with_object({}) do |card, result|
-      result[card.fetch(:key)] = schedule_for(card: card_from(card), learner_key: learner_key, on: on)
+      result[card.fetch(:key)] = if persist
+        schedule_for(card: card_from(card), learner_key: learner_key, on: on)
+      else
+        # Guided reading is non-assessing: sorting uses an ephemeral due card
+        # so opening a deck cannot create or advance server-side SRS state.
+        EnglishArcadeCard.new(
+          learner_key: learner_key,
+          target: card.fetch(:target),
+          card_key: card.fetch(:key),
+          due_on: on,
+          box: 1,
+          interval_days: EnglishArcadeCard::BOX_INTERVALS.fetch(1)
+        )
+      end
     end
   end
 

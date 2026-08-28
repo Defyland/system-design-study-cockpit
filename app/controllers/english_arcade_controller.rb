@@ -18,6 +18,10 @@ class EnglishArcadeController < ApplicationController
     @builder = EnglishArcadeSessionBuilder.new
     @targets = @builder.targets
     @modes = @builder.modes
+    # A bare launcher is the guided study entry point. Persisted sessions keep
+    # their own explicit experience so legacy/directly-created sessions remain
+    # closed-book assessment sessions by default.
+    @guided_experience = @arcade_session.nil? || guided_session?
     @selected_target = @arcade_session&.target || @builder.normalize_target(params[:target].presence || cockpit_session[:english_arcade_target])
     @selected_mode = @arcade_session&.mode || @builder.normalize_mode(params[:mode].presence || cockpit_session[:english_arcade_mode])
     @history = recent_attempts
@@ -31,7 +35,9 @@ class EnglishArcadeController < ApplicationController
         target: @arcade_session.target,
         mode: @arcade_session.mode,
         learner_key: learner_key,
-        session: @arcade_session
+        session: @arcade_session,
+        limit: @guided_experience ? guided_card_limit : 5,
+        persist_schedules: !@guided_experience
       )
       requested_attempt = @arcade_session.english_arcade_attempts.find_by(id: params[:attempt_id])
       @pending_attempt = requested_attempt unless requested_attempt&.feedback_revealed?
@@ -100,8 +106,10 @@ class EnglishArcadeController < ApplicationController
     payload = session_payload
     raw_target = payload[:target].presence || params.dig(:english_arcade_session, :target) || params[:target]
     raw_mode = payload[:mode].presence || params.dig(:english_arcade_session, :mode) || params[:mode]
+    raw_experience = payload[:experience].presence || params.dig(:english_arcade_session, :experience) || params[:experience]
     target = @builder.normalize_target(raw_target)
     mode = @builder.normalize_mode(raw_mode)
+    experience = normalize_experience(raw_experience)
     requested_card_key = payload[:card_key].to_s.presence
     requested_mock_id = payload[:mock_id].to_s.presence
     exercise = normalize_attempt_kind(payload[:exercise])
@@ -169,9 +177,10 @@ class EnglishArcadeController < ApplicationController
 
     metadata = {
       "source" => "english_arcade_launcher",
-      "content_source" => @builder.call(target: target, mode: mode, learner_key: learner_key, limit: 1).source,
+      "content_source" => @builder.call(target: target, mode: mode, learner_key: learner_key, limit: 1, persist_schedules: experience != "guided").source,
       "target_key" => target,
       "mode" => mode,
+      "experience" => experience,
       "exercise" => exercise,
       "required_card_keys" => required_card_keys,
       "scheduled_card_key" => required_card_keys.any? ? nil : requested_card_key,
@@ -209,6 +218,9 @@ class EnglishArcadeController < ApplicationController
   def attempt
     unless @arcade_session
       return redirect_to english_arcade_path, alert: "Start a session before answering."
+    end
+    if guided_session?
+      return reject_guided_attempt
     end
 
     payload = attempt_payload
@@ -628,6 +640,10 @@ class EnglishArcadeController < ApplicationController
       @arcade_session.expire!
       return redirect_to english_arcade_path(session_id: @arcade_session.id), alert: "This session has expired; its committed evidence was saved without completing the mock."
     end
+    if guided_session?
+      @arcade_session.complete! unless @arcade_session.completed? || @arcade_session.expired?
+      return redirect_to english_arcade_path(session_id: @arcade_session.id), notice: "Guided study complete. Local ratings remain in this browser; no diagnostic attempt was recorded."
+    end
     if session_mock_id.present?
       unless mock_session_compatible? && EnglishArcadeMockEvidence.qualifying?(session: @arcade_session, now: Time.current)
         return redirect_to english_arcade_path(session_id: @arcade_session.id), alert: "Complete the exact mock sequence, reveal each Feynman answer, and spend at least 90% of the timed window before finishing."
@@ -662,7 +678,7 @@ class EnglishArcadeController < ApplicationController
 
   def session_payload
     source = params[:english_arcade_session]
-    source.respond_to?(:permit) ? source.permit(:target, :mode, :card_key, :exercise, :mock_id) : params.permit(:target, :mode, :card_key, :exercise, :mock_id)
+    source.respond_to?(:permit) ? source.permit(:target, :mode, :card_key, :exercise, :mock_id, :experience) : params.permit(:target, :mode, :card_key, :exercise, :mock_id, :experience)
   end
 
   def attempt_payload
@@ -683,6 +699,29 @@ class EnglishArcadeController < ApplicationController
   def persist_launcher_choice(target, mode)
     cockpit_session[:english_arcade_target] = target
     cockpit_session[:english_arcade_mode] = mode
+  end
+
+  def normalize_experience(value)
+    value.to_s.downcase.strip == "guided" ? "guided" : "assessment"
+  end
+
+  def session_experience
+    return "assessment" unless @arcade_session
+
+    normalize_experience(@arcade_session.metadata.to_h.deep_stringify_keys["experience"])
+  end
+
+  def guided_session?
+    @arcade_session.present? && session_experience == "guided"
+  end
+
+  def guided_card_limit
+    mode = @arcade_session&.mode || @selected_mode
+    case mode.to_s
+    when "timed_30" then 10
+    when "timed_45" then 15
+    else 5
+    end
   end
 
   def requested_card
@@ -1111,6 +1150,13 @@ class EnglishArcadeController < ApplicationController
     respond_to do |format|
       format.html { redirect_to english_arcade_path(session_id: @arcade_session.id), alert: "This adaptation needs a revealed attempt for the same card." }
       format.json { render json: { error: "compatible_revealed_parent_required" }, status: :unprocessable_entity }
+    end
+  end
+
+  def reject_guided_attempt
+    respond_to do |format|
+      format.html { redirect_to english_arcade_path(session_id: @arcade_session.id), alert: "Guided study is non-assessing. Choose the explicit closed-book assessment mode to submit an answer." }
+      format.json { render json: { error: "guided_session_is_non_assessing" }, status: :unprocessable_entity }
     end
   end
 

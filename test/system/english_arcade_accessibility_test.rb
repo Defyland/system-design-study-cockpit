@@ -53,6 +53,17 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
       assert_operator scroll_width, :<=, viewport_width, "horizontal overflow at requested #{width}px (actual viewport #{viewport_width}px)"
       assert_selector "section.english-arcade[data-controller='english-arcade']"
     end
+
+    find("label[for='english-arcade-target-career']").click
+    click_button "Start guided study"
+    assert_selector ".guided-experience"
+    [ [ 390, 844 ], [ 768, 1024 ], [ 1440, 1000 ] ].each do |width, height|
+      page.driver.browser.manage.window.resize_to(width, height)
+      viewport_width = page.evaluate_script("window.innerWidth")
+      scroll_width = page.evaluate_script("document.documentElement.scrollWidth")
+      assert_operator scroll_width, :<=, viewport_width, "guided horizontal overflow at requested #{width}px (actual viewport #{viewport_width}px)"
+      assert_selector ".guided-board"
+    end
   end
 
   private

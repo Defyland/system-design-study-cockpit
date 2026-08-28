@@ -69,6 +69,18 @@ class EnglishArcadeSessionBuilderTest < ActiveSupport::TestCase
     assert @builder.grade(card: card, answer_choice: card.correct_choice).correct
   end
 
+  test "projects authored response versions and option guidance for guided study" do
+    card = @builder.card_for(target: "career", card_key: "career-01-a-60-to-90-second-introduction")
+
+    assert_equal %w[short medium deep], card.response_versions.keys
+    assert_equal card.answer_text, card.response_versions.fetch("medium")
+    best = card.option_guides.values.find { |guide| guide.fetch("best") }
+    distractor = card.option_guides.values.find { |guide| guide.key?("explanation") }
+    assert best, "the authored best option should be marked for guided study"
+    assert distractor, "an authored distractor explanation should be available"
+    assert_predicate distractor.fetch("explanation"), :present?
+  end
+
   test "uses a replaceable content adapter" do
     adapter = Class.new do
       def self.cards_for(target)
