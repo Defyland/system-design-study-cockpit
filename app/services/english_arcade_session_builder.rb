@@ -7,6 +7,7 @@ require "set"
 require "yaml"
 require_relative "english_arcade_curriculum"
 require_relative "english_arcade_attempt_contract"
+require_relative "english_arcade_resume_interview_profile"
 require_relative "../../lib/english_arcade/schema"
 require_relative "../../lib/english_arcade/pack_validator"
 
@@ -28,7 +29,7 @@ class EnglishArcadeSessionBuilder
     "system_design" => { label: "System design", short_label: "System design", focus: "requirements, capacity, source of truth, and failure trade-offs" },
     "salesforce" => { label: "Salesforce (elective)", short_label: "Salesforce", focus: "optional: governor limits, Apex, Flow, integration, and security" },
     "mixed" => { label: "Mixed practice", short_label: "Mixed", focus: "interleaved interview decisions across every target" },
-    "interview" => { label: "Interview mode", short_label: "Interview", focus: "closed-book answers with follow-ups and pragmatic phrasing" }
+    "interview" => { label: "Interview mode", short_label: "Interview", focus: "resume-backed stories, evidence boundaries, role relevance, and pragmatic phrasing" }
   }.freeze
 
   MODES = {
@@ -462,8 +463,12 @@ class EnglishArcadeSessionBuilder
     target = normalize_target(target)
     mode = normalize_mode(mode)
     persist_schedules = !guided_session?(session) if persist_schedules.nil?
-    cards = cards_for(target)
     required_keys = Array(session&.metadata&.fetch("required_card_keys", []))
+    cards = if target == "interview" && required_keys.empty?
+      EnglishArcadeResumeInterviewProfile.cards(@content.cards_for("career"))
+    else
+      cards_for(target)
+    end
     cards = required_keys.filter_map { |key| cards.find { |card| card.fetch(:key) == key } } if required_keys.any?
     attempts = session&.english_arcade_attempts&.pluck(:card_key) || []
     completed_required_keys = session&.english_arcade_attempts&.where(feedback_revealed: true, state: REQUIRED_MOCK_COMPLETED_STATES)&.to_a&.select { |attempt| attempt.correct? || attempt.black_box_complete? }&.map(&:card_key) || []
@@ -510,7 +515,14 @@ class EnglishArcadeSessionBuilder
   end
 
   def cards_for(target)
-    targets = %w[mixed interview].include?(target.to_s) ? canonical_target_keys : [ normalize_target(target) ]
+    if target.to_s == "interview"
+      resume_cards = EnglishArcadeResumeInterviewProfile.cards(@content.cards_for("career"))
+      resume_keys = resume_cards.to_set { |card| card.fetch(:key) }
+      canonical_cards = canonical_target_keys.flat_map { |key| @content.cards_for(key) }
+      return resume_cards + canonical_cards.reject { |card| resume_keys.include?(card.fetch(:key)) }
+    end
+
+    targets = target.to_s == "mixed" ? canonical_target_keys : [ normalize_target(target) ]
     targets.flat_map { |key| @content.cards_for(key) }
   end
 

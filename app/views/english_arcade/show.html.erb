@@ -1,37 +1,51 @@
 <% content_for :title, "English C2 Arcade" %>
 
 <style>
-  .english-arcade { --arcade-ink: #17252a; --arcade-muted: #5e6c70; --arcade-line: #ccd8d4; --arcade-panel: #fffdf7; --arcade-accent: #176b70; --arcade-accent-soft: #e4f1ed; --arcade-warn: #fff2c2; --arcade-danger: #8d352e; color: var(--arcade-ink); display: grid; gap: 18px; }
+  .english-arcade { --arcade-ink: #211d19; --arcade-muted: #6e665e; --arcade-line: #d8cdbf; --arcade-panel: #fffaf2; --arcade-accent: #b84a36; --arcade-accent-strong: #873326; --arcade-accent-soft: #f5e2d8; --arcade-warn: #fff2c2; --arcade-danger: #8d352e; color: var(--arcade-ink); display: grid; gap: clamp(18px, 3vw, 30px); }
   .english-arcade * { box-sizing: border-box; }
   html, body { max-width: 100vw; overflow-x: hidden; }
-  .arcade-hero, .arcade-panel { background: var(--arcade-panel); border: 1px solid var(--arcade-line); border-radius: 12px; padding: clamp(16px, 3vw, 28px); min-width: 0; }
-  .arcade-hero { background: linear-gradient(135deg, #e5f2ee, #fff9df); border-color: #b9d0c7; }
-  .arcade-kicker { color: var(--arcade-accent); font-size: .76rem; font-weight: 800; letter-spacing: .08em; }
-  .arcade-hero h1, .arcade-panel h2, .arcade-panel h3 { line-height: 1.2; margin: 6px 0 10px; }
+  .arcade-hero, .arcade-panel { background: var(--arcade-panel); border: 1px solid var(--arcade-line); border-radius: 3px; min-width: 0; padding: clamp(20px, 4vw, 44px); }
+  .arcade-hero { background: #f4eadf; overflow: hidden; position: relative; }
+  .arcade-hero::after { border: 1px solid rgba(184, 74, 54, .18); border-radius: 50%; content: ""; height: 320px; pointer-events: none; position: absolute; right: -150px; top: -180px; width: 320px; }
+  .arcade-kicker { color: var(--arcade-accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+  .arcade-hero h1 { font-size: clamp(3rem, 8vw, 6.2rem); letter-spacing: -.055em; line-height: .88; margin: 18px 0 24px; max-width: 10ch; }
+  .arcade-hero h1 em { color: var(--arcade-accent); display: block; font-weight: 500; }
+  .arcade-hero-copy { font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(1rem, 2vw, 1.18rem); max-width: 68ch; }
+  .arcade-hero-copy p { margin: 8px 0; }
+  .arcade-hero-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+  .arcade-hero-chip { border: 1px solid var(--arcade-line); border-radius: 999px; color: #50473f; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; padding: 7px 12px; }
+  .arcade-hero-cta { margin-top: 24px; position: relative; z-index: 1; }
+  .arcade-panel h2, .arcade-panel h3 { line-height: 1.12; margin: 6px 0 10px; }
   .arcade-muted { color: var(--arcade-muted); }
   .arcade-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.35fr) minmax(250px, .65fr); align-items: start; }
-  .arcade-targets { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+  .arcade-launcher-details > summary { align-items: center; cursor: pointer; display: flex; font-size: 1.15rem; font-weight: 800; justify-content: space-between; list-style: none; min-height: 44px; }
+  .arcade-launcher-details > summary::-webkit-details-marker { display: none; }
+  .arcade-launcher-details > summary::after { color: var(--arcade-accent); content: "+"; font-family: ui-monospace, monospace; font-size: 1.4rem; }
+  .arcade-launcher-details[open] > summary::after { content: "−"; }
+  .arcade-launcher-body { border-top: 1px solid var(--arcade-line); margin-top: 16px; padding-top: 22px; }
+  .arcade-targets { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
   .arcade-target { position: relative; }
   .arcade-target input { accent-color: var(--arcade-accent); cursor: pointer; height: 18px; left: 10px; opacity: 1; position: absolute; top: 10px; width: 18px; z-index: 2; }
-  .arcade-target label { background: #f6faf7; border: 1px solid var(--arcade-line); border-radius: 9px; cursor: pointer; display: grid; gap: 3px; min-height: 64px; padding: 10px 10px 10px 38px; }
-  .arcade-target input:checked + label { background: var(--arcade-accent-soft); border-color: var(--arcade-accent); box-shadow: 0 0 0 2px #bcded4; }
+  .arcade-target label { background: #fffdf8; border: 1px solid var(--arcade-line); border-radius: 3px; cursor: pointer; display: grid; gap: 3px; min-height: 76px; padding: 12px 12px 12px 40px; }
+  .arcade-target input:checked + label { background: var(--arcade-accent-soft); border-color: var(--arcade-accent); box-shadow: inset 4px 0 0 var(--arcade-accent); }
   .arcade-target input:focus-visible + label, .arcade-choice:focus-visible, .arcade-button:focus-visible, .arcade-text:focus-visible { outline: 3px solid #f0b429; outline-offset: 2px; }
   .arcade-target small { color: var(--arcade-muted); font-size: .75rem; }
   .arcade-modes, .arcade-actions, .arcade-choice-list, .arcade-stats, .arcade-history { display: grid; gap: 8px; }
   .arcade-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
-  .arcade-mode { align-items: center; background: #f6faf7; border: 1px solid var(--arcade-line); border-radius: 8px; display: flex; gap: 8px; min-height: 44px; padding: 9px; }
-  .arcade-button { background: var(--arcade-accent); border: 0; border-radius: 7px; color: #fff; cursor: pointer; display: inline-block; font: inherit; font-weight: 800; min-height: 44px; padding: 10px 14px; text-decoration: none; }
-  .arcade-button.secondary { background: #dce9e5; color: #174f53; }
+  .arcade-mode { align-items: center; background: #fffdf8; border: 1px solid var(--arcade-line); border-radius: 3px; display: flex; gap: 8px; min-height: 52px; padding: 10px; }
+  .arcade-button { background: var(--arcade-accent); border: 1px solid var(--arcade-accent); border-radius: 3px; color: #fff; cursor: pointer; display: inline-block; font: inherit; font-weight: 800; min-height: 46px; padding: 11px 16px; text-decoration: none; }
+  .arcade-button:hover { background: var(--arcade-accent-strong); }
+  .arcade-button.secondary { background: var(--arcade-accent-soft); color: var(--arcade-accent-strong); }
   .arcade-button.ghost { background: transparent; border: 1px solid var(--arcade-line); color: var(--arcade-ink); }
   .arcade-button[disabled] { cursor: not-allowed; opacity: .45; }
   .arcade-session-bar { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
   .arcade-session-meta, .arcade-stats { display: flex; flex-wrap: wrap; gap: 8px; }
-  .arcade-pill { background: var(--arcade-accent-soft); border-radius: 999px; color: #1b5d5c; font-size: .8rem; font-weight: 800; padding: 4px 9px; }
+  .arcade-pill { background: var(--arcade-accent-soft); border-radius: 999px; color: var(--arcade-accent-strong); font-size: .8rem; font-weight: 800; padding: 4px 9px; }
   .arcade-pill.warn { background: var(--arcade-warn); color: #6c5315; }
   .arcade-timer { font-variant-numeric: tabular-nums; font-weight: 900; min-width: 4.8rem; text-align: center; }
   .arcade-question { display: grid; gap: 14px; }
   .arcade-question h2 { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
-  .arcade-context { background: #f7f4ed; border-left: 4px solid #bbcfca; padding: 10px 12px; }
+  .arcade-context { background: #f7efe6; border-left: 4px solid var(--arcade-accent); padding: 10px 12px; }
   .arcade-choice-list { border: 0; margin: 0; padding: 0; }
   .arcade-choice { align-items: flex-start; background: #fbfcfa; border: 1px solid var(--arcade-line); border-radius: 8px; cursor: pointer; display: flex; gap: 10px; min-height: 44px; padding: 11px; }
   .arcade-choice:hover { border-color: var(--arcade-accent); }
@@ -57,7 +71,7 @@
   .arcade-progress li small { color: var(--arcade-muted); display: block; margin-top: 3px; }
   .arcade-evidence { display: grid; gap: 5px; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); margin-top: 8px; }
   .arcade-evidence span { background: #fffdf7; border: 1px solid var(--arcade-line); border-radius: 6px; padding: 6px 8px; }
-  @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 24px 14px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-grid { grid-template-columns: 1fr; } .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 18px 12px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-hero h1 { font-size: clamp(2.8rem, 17vw, 4.5rem); } .arcade-grid { grid-template-columns: 1fr; } .arcade-targets, .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } }
 </style>
 
 <section class="english-arcade" data-controller="english-arcade" data-english-arcade-duration-seconds-value="<%= @arcade_session&.duration_seconds || 0 %>" data-english-arcade-remaining-seconds-value="<%= @arcade_session&.remaining_seconds || 0 %>" data-english-arcade-active-value="<%= @arcade_session&.active? && !@arcade_session.expired? %>" data-english-arcade-guided-value="<%= @guided_experience %>" data-english-arcade-session-key-value="<%= @arcade_session&.id || "landing" %>" data-english-arcade-finish-url-value="<%= @arcade_session ? finish_english_arcade_path(session_id: @arcade_session.id) : "" %>">
@@ -67,21 +81,34 @@
     <% else %>
       <span class="arcade-kicker">English C2 · closed-book interview practice</span>
     <% end %>
-    <h1>English C2 Arcade</h1>
+    <h1>English <em>Arcade.</em></h1>
     <% if @guided_experience %>
-      <p class="arcade-muted">Study reviewed interview answers in a short, spoken rehearsal loop. The best answer is visible immediately; compare the authored alternatives, critical-thinking path, and evidence limits while the cards fall.</p>
-      <p class="arcade-muted">Choose a card, say the answer aloud, and rate your readiness. Guided study never records an attempt, grades correctness, or changes diagnostic mastery.</p>
+      <div class="arcade-hero-copy">
+        <p>Click, read, and choose while authored English phrases fall. The model answer stays visible, so this remains deliberate interview rehearsal rather than a hidden quiz.</p>
+        <p class="arcade-muted">Play either “best answer” or “complete the sentence”, then review alternatives, trade-offs, language coaching, and sources in a clear study dossier.</p>
+      </div>
     <% else %>
-      <p class="arcade-muted">Choose one target, type an answer before feedback appears, then turn each miss into a Black Box post-mortem and a scheduled reattempt. This is C2-calibrated typed interview practice, not a C2 certificate or a promise in 30 days.</p>
-      <p class="arcade-muted">This typed practice does not record, transcribe, or score audio. Use the documented external-platform handoff for assessment outside this product.</p>
+      <div class="arcade-hero-copy">
+        <p>Answer closed-book, explain your reasoning, then reveal the authored response and turn each miss into a concrete reattempt.</p>
+        <p class="arcade-muted">This is interview practice, not a CEFR certificate or a promise of objective speaking accuracy.</p>
+      </div>
     <% end %>
+    <div class="arcade-hero-chips" aria-label="Arcade features">
+      <span class="arcade-hero-chip">falling phrases</span>
+      <span class="arcade-hero-chip">model answer visible</span>
+      <span class="arcade-hero-chip">resume-aware interview drill</span>
+    </div>
+    <% unless @arcade_session %><div class="arcade-hero-cta"><a href="#arcade-launcher" class="arcade-button">Choose a target and play ↓</a></div><% end %>
   </header>
 
-  <section class="arcade-panel" aria-labelledby="arcade-launcher-title">
+  <section id="arcade-launcher" class="arcade-panel" aria-labelledby="arcade-launcher-title">
+    <details class="arcade-launcher-details" <%= "open" unless @arcade_session %>>
+      <summary><span id="arcade-launcher-title"><%= @arcade_session ? "Change target or session" : "Click to configure your round" %></span></summary>
+      <div class="arcade-launcher-body">
     <div class="arcade-session-bar">
       <div>
-        <h2 id="arcade-launcher-title">Choose your interview target</h2>
-        <p class="arcade-muted">Your last target is remembered in this browser and on the session record.</p>
+        <h2>Choose your interview target</h2>
+        <p class="arcade-muted">Interview Mode prioritizes questions connected to the supplied résumé evidence. Your last target remains selected locally.</p>
       </div>
       <% if @arcade_session %>
         <span class="arcade-pill"><%= @arcade_session.status.humanize %></span>
@@ -111,7 +138,7 @@
       </div>
 
       <div class="arcade-actions">
-        <%= button_tag(@arcade_session ? "Start another guided session" : "Start guided study", type: "submit", name: "english_arcade_session[experience]", value: "guided", class: "arcade-button") %>
+        <%= button_tag(@arcade_session ? "Play another falling-card round" : "Play falling cards", type: "submit", name: "english_arcade_session[experience]", value: "guided", class: "arcade-button") %>
         <%= button_tag("Start closed-book session", type: "submit", name: "english_arcade_session[experience]", value: "assessment", class: "arcade-button ghost") %>
         <% if @guided_experience %>
           <span class="arcade-muted" aria-live="polite">Guided self-ratings stay in this browser.</span>
@@ -128,6 +155,8 @@
         <%= link_to "Export 30-day progress JSON", english_arcade_path(format: :json, session_id: @arcade_session&.id), class: "arcade-button ghost", aria: { label: "Export the 30-day progress and practice plan as JSON" } %>
       </div>
     <% end %>
+      </div>
+    </details>
       <% if @guided_experience %>
         <% if @arcade_session %>
           <div class="arcade-progress">

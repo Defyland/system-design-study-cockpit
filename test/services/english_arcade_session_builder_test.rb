@@ -29,6 +29,52 @@ class EnglishArcadeSessionBuilderTest < ActiveSupport::TestCase
     assert_equal EnglishArcade::Schema::CANONICAL_TARGETS.sort, mixed_targets.sort
   end
 
+  test "interview mode uses the bounded user-supplied resume profile" do
+    plan = @builder.call(target: "interview", learner_key: "resume-interview", limit: 12, persist_schedules: false)
+
+    assert_equal EnglishArcadeResumeInterviewProfile::CARD_KEYS, plan.cards.map(&:key)
+    assert_equal [ "career" ], plan.cards.map(&:target).uniq
+    assert_equal 12, plan.cards.map(&:prompt).uniq.size
+    assert_equal 4, plan.cards.first.options.size
+    visible = plan.cards.flat_map do |card|
+      [ card.prompt, card.context, card.answer_text, card.response_versions.values, card.sources, card.provenance ].flatten
+    end.to_json
+    assert_includes visible, "100 million requests per day"
+    assert_includes visible, "eight microfrontends"
+    assert_includes visible, "Samsung Tizen"
+    assert_includes visible, "transactional outbox"
+    assert_includes visible, "four critical services"
+    assert_includes visible, "twenty-five minutes to eight minutes"
+    assert_includes visible, "seven seconds to two seconds"
+    assert_includes visible, "Yellow Team"
+    assert_includes visible, "2.5 million clients"
+    assert_includes visible, "allan_flavio_resume_fullstack_v3.pdf"
+    assert_includes visible, "allan_flavio_resume_smarttv.pdf"
+    assert_includes visible, "allan_flavio_resume_frontend.pdf"
+    refute_includes visible, "/Users/"
+    refute_match(/resume PDF is absent/i, visible)
+    refute_match(/self-reported|needs? confirmation|confirmation required/i, visible)
+    refute_match(/@|linkedin\.com|\+\d{2}/i, visible)
+    assert plan.cards.all? { |card| card.provenance.fetch("files").all? { |file| file.fetch("identifier_kind") == "sha256" } }
+    assert plan.cards.all? { |card| card.provenance.fetch("confirmation_required").empty? }
+    refute_match(/\bHTML\b|\bCSS\b|box model|semantic markup/i, plan.cards.map(&:prompt).join(" "))
+  end
+
+  test "resume interview decoration does not mutate the canonical career pack" do
+    interview = @builder.card_for(
+      target: "interview",
+      card_key: "career-01-a-60-to-90-second-introduction"
+    )
+    career = @builder.card_for(
+      target: "career",
+      card_key: "career-01-a-60-to-90-second-introduction"
+    )
+
+    assert_includes interview.prompt, "backend scale"
+    assert_equal "Tell me about yourself in a minute or so.", career.prompt
+    refute_equal interview.answer_text, career.answer_text
+  end
+
   test "builds a bounded mixed plan and persists due cards without answer metadata" do
     plan = @builder.call(target: "mixed", mode: "daily", learner_key: "study")
 

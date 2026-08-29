@@ -23,7 +23,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     visit "/english-arcade"
 
     assert_selector "section.english-arcade[data-controller='english-arcade']"
-    assert_selector "h1", text: /English C2 Arcade/i
+    assert_selector "h1", text: /English\s+Arcade/i
     assert_selector "form[action*='english-arcade'] [role='radiogroup'][aria-label='Interview target']"
     assert_link "Export 30-day progress JSON"
     assert_selector "details.arcade-progress"
@@ -51,7 +51,9 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     fill_in "Write the reasoning", with: "The invariant explains why the retained window remains valid, and I would trace a duplicate boundary before deciding the loop is correct."
     click_button "Reveal feedback"
 
-    assert_text "Black Box: the miss is evidence"
+    assert_selector "section.arcade-feedback.wrong[aria-live='assertive']", wait: 5
+    assert_no_selector "#feynman-title", wait: 5
+    assert_text "Black Box: the miss is evidence", wait: 5
     assert_text "Answer after attempt"
     assert_selector ".arcade-answer"
 
@@ -66,6 +68,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     fill_in "Targeted exercise", with: "Re-solve one sliding-window variant and narrate the invariant."
     fill_in "Retest dates", with: "Retry tomorrow, then review again in seven days."
     click_button "Save post-mortem"
+    assert_button "Retry this question", wait: 5
 
     assert_text "box 1"
     # Retry is the delayed_variant contract; age the persisted parent in this
@@ -87,30 +90,212 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
 
     assert_selector "input[name='english_arcade_session[target]'][value='golang']:checked", visible: :all
     assert_text "Golang"
-    assert_selector "input[name='english_arcade_session[target]'][value='golang']"
+    assert_selector "input[name='english_arcade_session[target]'][value='golang']", visible: :all
   end
 
   test "guided study reveals authored coaching and keeps navigation non-assessing" do
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
-    click_button "Start guided study"
+    click_button "Play falling cards"
 
     assert_selector ".guided-experience"
     assert_selector ".guided-board"
     assert_selector ".guided-card", count: 5, visible: :all
-    assert_text(/My answer to practise aloud/i)
-    assert_text(/Medium · canonical/i)
+    assert_equal [ 4 ] * 5, page.evaluate_script("Array.from(document.querySelectorAll('.guided-card')).map((card) => card.querySelectorAll('[data-guided-game-options=best_answer] [data-guided-game-option]').length)")
+    assert_text(/Best answer · practise in first person/i)
+    assert_text(/Canonical response/i)
     assert_text(/Critical-thinking path/i)
-    assert_text(/Sources, provenance, and confidentiality boundary/i)
+    assert_text(/Sources and evidence boundary/i)
+    assert_button "Start round"
     assert_no_selector ".arcade-question"
     assert_no_selector "form[action*='english-arcade/attempts']"
     assert_no_text "Commit answer"
+
+    within ".guided-card:not([hidden])" do
+      click_button "Start round"
+      assert_selector "[data-guided-game-option]:not([hidden])", count: 4, visible: :all
+      correct_index = find("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']", visible: :all)["data-guided-game-index"]
+      page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: '#{correct_index.to_i + 1}', bubbles: true }))")
+      assert_text "Correct phrase"
+      click_button "Complete the sentence"
+      assert_text(/Complete with the exact authored phrase/i)
+      click_button "Start round"
+      assert_selector "[data-guided-game-options='completion'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+    end
 
     click_button "Ready"
     assert_text "Ready saved locally for this card."
     click_button "Next card"
     assert_text "Card 2 of 5"
     assert_equal 0, EnglishArcadeAttempt.count
+  end
+
+  test "guided game resolves outcomes, accelerates the next card, and preserves score" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Play falling cards"
+
+    click_button "Start round"
+    assert_selector ".guided-game-stage[data-game-state='running']"
+    assert_selector "[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+
+    first_round = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
+        const option = stage.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        return {
+          deadline: Number(stage.dataset.gameDeadlineMs),
+          duration: Number.parseFloat(option.style.getPropertyValue('--duration')),
+          state: stage.dataset.gameState
+        }
+      })()
+    JAVASCRIPT
+    assert_equal "running", first_round.fetch("state")
+    assert_operator first_round.fetch("deadline"), :>, 0
+    assert_operator first_round.fetch("duration"), :>, 0
+    assert_text "Score 0"
+    assert_text "Streak 0"
+    assert_text "Level 1"
+    assert_text(/Speed 1\.0/i)
+    assert_text(/Deadline .*seconds/i)
+
+    page.execute_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']"))
+      })()
+    JAVASCRIPT
+    assert_selector ".guided-game-stage[data-game-state='correct']"
+    assert_text "Correct phrase"
+    assert_text "Score 100"
+    assert_text "Streak 1"
+    assert_text "Level 2"
+
+    # Navigation and mode changes are explicit while a round is running; they
+    # must not silently discard a live deadline or its falling cards.
+    click_button "Next round"
+    assert_text "Card 2 of 5"
+    assert_selector ".guided-game-stage[data-game-state='running']"
+    second_round = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
+        const option = stage.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        return {
+          deadline: Number(stage.dataset.gameDeadlineMs),
+          duration: Number.parseFloat(option.style.getPropertyValue('--duration')),
+          score: document.querySelector('.guided-card:not([hidden]) [data-guided-game-score]').textContent
+        }
+      })()
+    JAVASCRIPT
+    assert_operator second_round.fetch("duration"), :<, first_round.fetch("duration")
+    assert_operator second_round.fetch("deadline"), :<, first_round.fetch("deadline")
+    assert_includes second_round.fetch("score"), "Score 100"
+
+    click_button "Complete the sentence"
+    assert_text(/Finish the current round.*before changing modes/i)
+    assert_text "Card 2 of 5"
+    assert_selector ".guided-game-stage[data-game-state='running']"
+
+    page.execute_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='false']"))
+      })()
+    JAVASCRIPT
+    assert_selector ".guided-game-stage[data-game-state='wrong']"
+    assert_text(/Not the authored best phrase/i)
+    assert_text "Score 100"
+    assert_text "Streak 0"
+
+    click_button "Next round"
+    assert_text "Card 3 of 5"
+    assert_selector ".guided-game-stage[data-game-state='running']"
+    click_button "Next card"
+    assert_text(/previous round was canceled when you changed cards/i)
+    assert_text "Card 4 of 5"
+    click_button "Start round"
+    assert_selector ".guided-game-stage[data-game-state='running']"
+    page.execute_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        controller.expireGuidedGameRound(document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]'))
+      })()
+    JAVASCRIPT
+    assert_selector ".guided-game-stage[data-game-state='timeout']"
+    assert_text(/Time is up/i)
+    assert_text "Streak 0"
+  end
+
+  test "expired guided sessions lock gameplay while leaving the dossier readable" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Play falling cards"
+    click_button "Start round"
+
+    page.execute_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        controller.expireSession()
+      })()
+    JAVASCRIPT
+    assert_selector ".guided-game-stage[data-game-state='expired']"
+    assert_button "Session ended", disabled: true
+    assert_selector ".guided-card:not([hidden]) [data-guided-game-options='best_answer'] [data-guided-game-option][disabled]", count: 4, visible: :all
+    assert_text "Gameplay is locked"
+
+    result = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
+        const start = game.querySelector('[data-guided-game-start]')
+        const option = game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        controller.startGuidedGame({ currentTarget: start })
+        controller.nextGuidedGameRound({ preventDefault() {} })
+        controller.finishGuidedGameChoice(option)
+        controller.toggleGuidedPause()
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true }))
+        return {
+          state: game.querySelector('[data-guided-game-stage]').dataset.gameState,
+          rounds: controller.guidedGameRounds,
+          score: controller.guidedGameScore,
+          timeout: controller.guidedGameTimeout,
+          clock: controller.guidedGameClock
+        }
+      })()
+    JAVASCRIPT
+    assert_equal "expired", result.fetch("state")
+    assert_equal 0, result.fetch("rounds")
+    assert_equal 0, result.fetch("score")
+    assert_nil result.fetch("timeout")
+    assert_nil result.fetch("clock")
+
+    click_button "Next card"
+    assert_text "Card 2 of 5"
+    assert_selector ".guided-card:not([hidden]) .guided-game-stage[data-game-state='expired']"
+    assert_button "Session ended", disabled: true
+  end
+
+  test "interview mode focuses on advanced resume experience instead of frontend basics" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-interview']").click
+    find("input[name='english_arcade_session[mode]'][value='timed_45']").click
+    click_button "Play falling cards"
+
+    assert_selector ".guided-card", count: 12, visible: :all
+    prompts = page.evaluate_script("Array.from(document.querySelectorAll('.guided-card h3')).map((heading) => heading.textContent).join(' ')")
+    assert_match(/100 million requests/i, prompts)
+    assert_match(/event-driven communication/i, prompts)
+    assert_match(/CI time.*fifteen applications/i, prompts)
+    assert_match(/Yellow Team/i, prompts)
+    assert_match(/2.5 million clients/i, prompts)
+    refute_match(/\bHTML\b|\bCSS\b|box model|semantic markup/i, prompts)
   end
 
   private

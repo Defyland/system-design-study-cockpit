@@ -55,7 +55,7 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     end
 
     find("label[for='english-arcade-target-career']").click
-    click_button "Start guided study"
+    click_button "Play falling cards"
     assert_selector ".guided-experience"
     [ [ 390, 844 ], [ 768, 1024 ], [ 1440, 1000 ] ].each do |width, height|
       page.driver.browser.manage.window.resize_to(width, height)
@@ -64,6 +64,140 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
       assert_operator scroll_width, :<=, viewport_width, "guided horizontal overflow at requested #{width}px (actual viewport #{viewport_width}px)"
       assert_selector ".guided-board"
     end
+  end
+
+  test "mobile falling phrases stay readable within the level one separation budget" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Play falling cards"
+    page.driver.browser.manage.window.resize_to(390, 844)
+    click_button "Start round"
+
+    geometry = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
+        const options = Array.from(stage.querySelectorAll("[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])"))
+        const heights = options.map((option) => option.getBoundingClientRect().height)
+        const stageRect = stage.getBoundingClientRect()
+        const minimumHeight = Math.min(...heights)
+        const travel = Number(stage.dataset.gameTravelPx) + (Number(stage.dataset.gameStartOffsetPercent) / 100 * minimumHeight)
+        const separation = travel * Number(stage.dataset.gameStaggerMs) / Number(stage.dataset.gameFallDurationMs)
+        return {
+          count: options.length,
+          heights,
+          minimumHeight,
+          maximumHeight: Math.max(...heights),
+          separation,
+          innerWidth: window.innerWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          maxRight: Math.max(...options.map((option) => option.getBoundingClientRect().right)),
+          stageRight: stageRect.right
+        }
+      })()
+    JAVASCRIPT
+
+    assert_equal 4, geometry.fetch("count")
+    assert_operator geometry.fetch("minimumHeight"), :>=, 48
+    assert_operator geometry.fetch("maximumHeight"), :<, geometry.fetch("separation")
+    assert_operator geometry.fetch("scrollWidth"), :<=, geometry.fetch("innerWidth")
+    assert_operator geometry.fetch("maxRight"), :<=, geometry.fetch("stageRight")
+  end
+
+  test "reading pause clears the game clocks while preserving the remaining deadline" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Play falling cards"
+    click_button "Start round"
+    find(".guided-card:not([hidden]) [data-guided-choice-index='0']").click
+
+    paused = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
+        return {
+          state: stage.dataset.gameState,
+          readingPaused: controller.guidedReadingPaused,
+          stagePaused: stage.classList.contains('is-paused'),
+          timeout: controller.guidedGameTimeout,
+          clock: controller.guidedGameClock,
+          remaining: controller.guidedGameRemainingMs,
+          deadline: Number(stage.dataset.gameDeadlineMs)
+        }
+      })()
+    JAVASCRIPT
+    assert_equal "running", paused.fetch("state")
+    assert_equal true, paused.fetch("readingPaused")
+    assert_equal true, paused.fetch("stagePaused")
+    assert_nil paused.fetch("timeout")
+    assert_nil paused.fetch("clock")
+    assert_operator paused.fetch("remaining"), :>, 0
+    assert_operator paused.fetch("remaining"), :<=, paused.fetch("deadline")
+
+    find(".guided-card:not([hidden]) [data-guided-choice-index='1']").click
+    paused_again = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        return {
+          timeout: controller.guidedGameTimeout,
+          clock: controller.guidedGameClock,
+          remaining: controller.guidedGameRemainingMs
+        }
+      })()
+    JAVASCRIPT
+    assert_nil paused_again.fetch("timeout")
+    assert_nil paused_again.fetch("clock")
+    assert_in_delta paused.fetch("remaining"), paused_again.fetch("remaining"), 5
+
+    click_button "Resume"
+    resumed = page.evaluate_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        return { readingPaused: controller.guidedReadingPaused, remaining: controller.guidedGameRemainingMs }
+      })()
+    JAVASCRIPT
+    assert_equal false, resumed.fetch("readingPaused")
+    assert_operator resumed.fetch("remaining"), :>, 1
+    assert_in_delta paused_again.fetch("remaining"), resumed.fetch("remaining"), 5
+  end
+
+  test "reduced motion uses static choices with the same fair playable deadline" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-career']").click
+    click_button "Play falling cards"
+    page.execute_script(<<~JAVASCRIPT)
+      window.matchMedia = (query) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false
+      })
+    JAVASCRIPT
+
+    click_button "Start round"
+    assert_selector ".guided-game-stage.is-static-round[data-game-state='running']"
+    assert_selector "[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+    deadline = page.evaluate_script("Number(document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]').dataset.gameDeadlineMs)")
+    animation = page.evaluate_script("getComputedStyle(document.querySelector('.guided-card:not([hidden]) [data-guided-game-option]')).animationName")
+    assert_operator deadline, :>=, 7000
+    assert_equal "none", animation
+
+    page.execute_script(<<~JAVASCRIPT)
+      (() => {
+        const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
+        const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
+        const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']"))
+      })()
+    JAVASCRIPT
+    assert_selector ".guided-game-stage[data-game-state='correct']"
+    assert_text "Correct phrase"
   end
 
   private

@@ -43,7 +43,7 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
   test "guided launcher persists its experience and exposes study material without an assessment form" do
     get "/english-arcade"
     assert_response :success
-    assert_includes response.body, "Start guided study"
+    assert_includes response.body, "Play falling cards"
     assert_includes response.body, "guided study arcade"
 
     post "/english-arcade/sessions", params: {
@@ -55,11 +55,12 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
 
     get "/english-arcade", params: { session_id: session.id }
     assert_response :success
-    assert_includes response.body, "My answer to practise aloud"
-    assert_includes response.body, "Medium · canonical"
-    assert_includes response.body, "Authored trap"
+    assert_includes response.body, "Best answer · practise in first person"
+    assert_includes response.body, "Canonical response"
+    assert_includes response.body, "Trade-off or trap"
     assert_includes response.body, "Critical-thinking path"
-    assert_includes response.body, "Sources, provenance, and confidentiality boundary"
+    assert_includes response.body, "Sources and evidence boundary"
+    assert_includes response.body, "Falling phrase round"
     assert_includes response.body, "Review again"
     assert_equal 5, response.body.scan('class="guided-card"').length
     refute_includes response.body, "Commit answer"
@@ -76,6 +77,32 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_equal "guided_session_is_non_assessing", JSON.parse(response.body).fetch("error")
     assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
+  end
+
+  test "interview mode renders resume-backed questions without local paths or contact details" do
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "interview", mode: "timed_45", experience: "guided" }
+    }
+    session = EnglishArcadeSession.order(:id).last
+
+    get "/english-arcade", params: { session_id: session.id }
+
+    assert_response :success
+    assert_includes response.body, "connects your backend scale"
+    assert_includes response.body, "100 million requests per day"
+    assert_includes response.body, "eight microfrontends"
+    assert_includes response.body, "Samsung Tizen"
+    assert_includes response.body, "transactional outbox"
+    assert_includes response.body, "four critical services"
+    assert_includes response.body, "twenty-five minutes to eight minutes"
+    assert_includes response.body, "seven seconds to two seconds"
+    assert_includes response.body, "Yellow Team"
+    assert_includes response.body, "2.5 million clients"
+    assert_includes response.body, "allan_flavio_resume_fullstack_v3.pdf"
+    refute_includes response.body, "/Users/"
+    refute_match(/resume PDF is absent/i, response.body)
+    refute_match(/self-reported|needs? confirmation|confirmation required/i, response.body)
+    refute_match(/linkedin\.com|mailto:|\+\d{2}/i, response.body)
   end
 
   test "guided finish completes the session without diagnostic evidence" do

@@ -1,88 +1,124 @@
 <style>
-  .guided-experience { --guided-ink: #eaf5ff; --guided-muted: #9ab4c7; --guided-panel: #102a40; --guided-panel-deep: #071522; --guided-line: #28516d; --guided-accent: #5eead4; --guided-gold: #f6c453; --guided-purple: #b99cff; display: grid; gap: 14px; }
+  .guided-experience { --guided-ink: #211d19; --guided-muted: #746a61; --guided-paper: #fffaf2; --guided-cream: #f4eadf; --guided-line: #d8cdbf; --guided-accent: #b84a36; --guided-accent-dark: #873326; --guided-night: #161c24; --guided-gold: #f0c56c; display: grid; gap: 18px; }
   .guided-experience * { box-sizing: border-box; }
-  .guided-hero { background: linear-gradient(135deg, #091b2a, #173454 55%, #223164); border: 1px solid #2b5a76; border-radius: 14px; color: var(--guided-ink); overflow: hidden; padding: clamp(16px, 3vw, 28px); position: relative; }
-  .guided-hero::after { border: 1px solid rgba(94, 234, 212, .25); border-radius: 50%; content: ""; height: 260px; pointer-events: none; position: absolute; right: -90px; top: -115px; width: 260px; }
-  .guided-hero h2 { color: #fff; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.15; margin: 5px 0 8px; }
-  .guided-hero p { color: var(--guided-muted); margin: 4px 0; max-width: 72ch; }
-  .guided-kicker { color: var(--guided-accent); font-size: .73rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-  .guided-toolbar { align-items: center; background: var(--guided-panel); border: 1px solid var(--guided-line); border-radius: 12px; color: var(--guided-ink); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 11px 14px; }
-  .guided-toolbar-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
-  .guided-pill { background: #173b55; border: 1px solid #2c607b; border-radius: 999px; color: #cfeaff; font-size: .8rem; font-weight: 800; padding: 4px 9px; }
-  .guided-pill.timer { color: var(--guided-gold); font-variant-numeric: tabular-nums; min-width: 4.7rem; text-align: center; }
-  .guided-button { background: #1d8b86; border: 1px solid #5eead4; border-radius: 8px; color: #031923; cursor: pointer; display: inline-flex; font: inherit; font-weight: 900; gap: 6px; justify-content: center; min-height: 42px; padding: 9px 13px; text-decoration: none; }
-  .guided-button:hover, .guided-button:focus-visible { background: #5eead4; }
-  .guided-button.secondary { background: #193d5a; border-color: #477b99; color: var(--guided-ink); }
-  .guided-button.secondary:hover, .guided-button.secondary:focus-visible { background: #285979; }
-  .guided-button[disabled] { cursor: not-allowed; opacity: .45; }
-  .guided-board-wrap { background: var(--guided-panel-deep); border: 1px solid #244b66; border-radius: 14px; color: var(--guided-ink); overflow: hidden; padding: clamp(10px, 2vw, 18px); }
-  .guided-board-label { align-items: center; color: var(--guided-muted); display: flex; font-size: .8rem; gap: 8px; justify-content: space-between; margin-bottom: 9px; }
-  .guided-board-label strong { color: var(--guided-gold); }
-  .guided-board { background: radial-gradient(circle at 18% 12%, rgba(52, 111, 146, .28), transparent 31%), linear-gradient(180deg, #0d2336, #06131f); border: 1px solid #28536f; border-radius: 11px; min-height: 520px; overflow: hidden; padding: clamp(13px, 3vw, 30px); position: relative; }
-  .guided-board::before { background-image: linear-gradient(rgba(120, 183, 214, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 183, 214, .08) 1px, transparent 1px); background-size: 28px 28px; content: ""; inset: 0; pointer-events: none; position: absolute; }
-  .guided-board::after { border-top: 1px dashed rgba(246, 196, 83, .48); bottom: 19px; content: "READING LINE · PAUSE TO ABSORB"; color: rgba(246, 196, 83, .78); font-size: .63rem; font-weight: 800; left: 15px; letter-spacing: .08em; padding-top: 5px; position: absolute; right: 15px; }
-  .guided-card { animation: guided-card-drop .42s ease-out; background: linear-gradient(145deg, #173650, #10283d); border: 1px solid #3b7190; border-radius: 12px; box-shadow: 0 18px 42px rgba(0, 0, 0, .35); color: var(--guided-ink); display: grid; gap: 14px; margin: 0 auto 37px; max-width: 980px; padding: clamp(16px, 3vw, 28px); position: relative; z-index: 1; }
+  .guided-header { align-items: end; border-bottom: 1px solid var(--guided-line); display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; padding: 8px 0 20px; }
+  .guided-header h2 { font-size: clamp(2rem, 5vw, 4rem); letter-spacing: -.04em; line-height: .95; margin: 7px 0; }
+  .guided-header h2 em { color: var(--guided-accent); font-weight: 500; }
+  .guided-header p { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; max-width: 68ch; }
+  .guided-kicker { color: var(--guided-accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+  .guided-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+  .guided-pill { border: 1px solid var(--guided-line); border-radius: 999px; color: #5e544b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; font-weight: 700; padding: 6px 10px; }
+  .guided-pill.timer { color: var(--guided-accent-dark); font-variant-numeric: tabular-nums; min-width: 4.8rem; text-align: center; }
+  .guided-button { align-items: center; background: var(--guided-accent); border: 1px solid var(--guided-accent); border-radius: 3px; color: #fff; cursor: pointer; display: inline-flex; font: inherit; font-weight: 850; justify-content: center; min-height: 44px; padding: 9px 14px; text-decoration: none; }
+  .guided-button:hover, .guided-button:focus-visible { background: var(--guided-accent-dark); }
+  .guided-button.secondary { background: transparent; border-color: var(--guided-line); color: var(--guided-ink); }
+  .guided-button.secondary:hover, .guided-button.secondary:focus-visible { background: var(--guided-cream); }
+  .guided-button[disabled] { cursor: not-allowed; opacity: .42; }
+  .guided-study-layout { align-items: start; display: grid; gap: clamp(18px, 3vw, 36px); grid-template-columns: minmax(170px, .34fr) minmax(0, 1.66fr); }
+  .guided-outline { border-left: 1px solid var(--guided-line); display: grid; gap: 4px; padding-left: 16px; position: sticky; top: 18px; }
+  .guided-outline strong { font-size: 1.05rem; margin-bottom: 8px; }
+  .guided-outline a { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .86rem; padding: 5px 0; text-decoration: none; }
+  .guided-outline a:hover { color: var(--guided-accent); }
+  .guided-board { min-width: 0; }
+  .guided-card { background: var(--guided-paper); border: 1px solid var(--guided-line); display: grid; gap: 20px; min-width: 0; padding: clamp(18px, 4vw, 46px); }
   .guided-card[hidden] { display: none; }
-  .guided-card h3 { color: #fff; font-size: clamp(1.18rem, 2.8vw, 1.65rem); line-height: 1.22; margin: 0; overflow-wrap: anywhere; }
-  .guided-card p, .guided-card li { line-height: 1.55; overflow-wrap: anywhere; }
-  .guided-context { background: rgba(3, 18, 29, .55); border-left: 3px solid var(--guided-purple); color: #c4d7e3; margin: 0; padding: 10px 12px; }
-  .guided-section { background: rgba(7, 21, 34, .58); border: 1px solid #2c5570; border-radius: 9px; display: grid; gap: 7px; padding: 12px; }
-  .guided-section h4 { color: var(--guided-gold); font-size: .95rem; margin: 0; }
-  .guided-section h5 { color: #dff7ff; font-size: .84rem; margin: 5px 0 0; }
+  .guided-card h3 { font-size: clamp(1.65rem, 3.8vw, 3rem); letter-spacing: -.025em; line-height: 1.05; margin: 0; overflow-wrap: anywhere; }
+  .guided-card p, .guided-card li { line-height: 1.58; overflow-wrap: anywhere; }
+  .guided-context { border-left: 3px solid var(--guided-accent); color: #5d554e; font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 3px 0 3px 14px; }
+  .guided-answer { background: #f7e6dc; border: 1px solid #dcae9f; box-shadow: inset 5px 0 0 var(--guided-accent); display: grid; gap: 9px; padding: clamp(16px, 3vw, 26px); }
+  .guided-answer strong { color: var(--guided-accent-dark); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; letter-spacing: .15em; text-transform: uppercase; }
+  .guided-answer p { font-size: clamp(1.05rem, 2vw, 1.25rem); margin: 0; }
+  .guided-section { border-top: 1px solid var(--guided-line); display: grid; gap: 12px; padding-top: 20px; }
+  .guided-section h4 { font-size: clamp(1.25rem, 2.4vw, 1.75rem); margin: 0; }
+  .guided-section h5 { color: var(--guided-accent-dark); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .92rem; margin: 5px 0 0; }
   .guided-section p { margin: 0; }
-  .guided-answer { background: rgba(36, 139, 130, .18); border: 1px solid #48b8ab; border-left: 4px solid var(--guided-accent); border-radius: 8px; color: #f3fffe; margin: 0; padding: 13px 14px; }
-  .guided-answer strong { color: var(--guided-accent); display: block; font-size: .78rem; letter-spacing: .05em; margin-bottom: 5px; text-transform: uppercase; }
-  .guided-choice-list { display: grid; gap: 9px; margin: 0; }
-  .guided-choice { align-items: flex-start; background: #102a40; border: 1px solid #386780; border-radius: 9px; color: #e3f2fb; cursor: pointer; display: grid; gap: 5px; grid-template-columns: auto minmax(0, 1fr); padding: 11px 12px; text-align: left; width: 100%; }
-  .guided-choice:hover, .guided-choice:focus-visible { border-color: var(--guided-accent); box-shadow: 0 0 0 2px rgba(94, 234, 212, .18); }
-  .guided-choice.is-selected { background: #18435a; border-color: var(--guided-gold); box-shadow: 0 0 0 2px rgba(246, 196, 83, .2); }
-  .guided-choice.is-best { border-color: #4bbcae; }
-  .guided-choice-key { color: var(--guided-gold); font-size: 1rem; font-weight: 900; min-width: 1.35rem; }
-  .guided-choice-badge { color: var(--guided-accent); font-size: .68rem; font-weight: 900; letter-spacing: .06em; margin-right: 7px; text-transform: uppercase; }
-  .guided-choice-note { color: #9fc2d2; font-size: .86rem; grid-column: 2; line-height: 1.45; }
-  .guided-choice-note strong { color: #c6e6f1; }
-  .guided-version-grid { display: grid; gap: 9px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .guided-version { background: rgba(17, 46, 69, .72); border: 1px solid #315c76; border-radius: 8px; display: grid; gap: 5px; padding: 10px; }
-  .guided-version.canonical { border-color: var(--guided-accent); box-shadow: inset 0 0 0 1px rgba(94, 234, 212, .2); }
-  .guided-version h5 { margin: 0; }
-  .guided-version p { color: #d5e9f2; margin: 0; }
-  .guided-list { display: grid; gap: 6px; margin: 0; padding-left: 1.2rem; }
-  .guided-list.compact { gap: 4px; }
-  .guided-meta { color: var(--guided-muted); font-size: .82rem; }
-  .guided-nav, .guided-ratings { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-top: 10px; position: relative; z-index: 2; }
+  .guided-meta { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .84rem; }
+  .guided-choice-list { display: grid; gap: 9px; }
+  .guided-choice { align-items: start; background: #fffdf8; border: 1px solid var(--guided-line); border-radius: 3px; color: var(--guided-ink); cursor: pointer; display: grid; gap: 5px; grid-template-columns: auto minmax(0, 1fr); padding: 13px 14px; text-align: left; width: 100%; }
+  .guided-choice:hover, .guided-choice:focus-visible { border-color: var(--guided-accent); }
+  .guided-choice.is-selected { background: var(--guided-cream); box-shadow: inset 4px 0 0 var(--guided-accent); }
+  .guided-choice.is-best { border-color: #c9826f; }
+  .guided-choice-key { color: var(--guided-accent); font-family: ui-monospace, monospace; font-size: .9rem; font-weight: 900; min-width: 1.35rem; }
+  .guided-choice-badge { background: var(--guided-accent); color: #fff; display: inline-block; font-family: ui-monospace, monospace; font-size: .64rem; font-weight: 900; letter-spacing: .08em; margin-right: 8px; padding: 3px 6px; text-transform: uppercase; }
+  .guided-choice-note { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .84rem; grid-column: 2; }
+  .guided-choice-note strong { color: #514941; }
+  .guided-game { background: var(--guided-night); border: 1px solid #303c49; color: #f7f1e7; display: grid; gap: 14px; padding: clamp(14px, 3vw, 24px); }
+  .guided-game-head { align-items: start; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; }
+  .guided-game h4 { color: #fff; font-size: clamp(1.25rem, 2.7vw, 1.8rem); margin: 3px 0; }
+  .guided-game p { margin: 0; }
+  .guided-game-modes { display: flex; flex-wrap: wrap; gap: 7px; }
+  .guided-game-mode { background: transparent; border: 1px solid #647181; border-radius: 999px; color: #d7e0e7; cursor: pointer; font: inherit; font-size: .82rem; font-weight: 800; min-height: 38px; padding: 7px 11px; }
+  .guided-game-mode[aria-pressed="true"] { background: var(--guided-gold); border-color: var(--guided-gold); color: #282015; }
+  .guided-game-question { background: #202a35; border-left: 3px solid var(--guided-gold); color: #f8ead0; padding: 11px 13px; }
+  .guided-game-question strong { color: var(--guided-gold); display: block; font-family: ui-monospace, monospace; font-size: .66rem; letter-spacing: .12em; margin-bottom: 4px; text-transform: uppercase; }
+  .guided-game-stage { background: linear-gradient(180deg, #1f2a36, #10161e); border: 1px solid #3c4856; min-height: 510px; overflow: hidden; position: relative; }
+  .guided-game-stage::after { border-top: 2px dashed rgba(240, 197, 108, .65); bottom: 42px; color: var(--guided-gold); content: "CHOOSE BEFORE THE READING LINE"; font-family: ui-monospace, monospace; font-size: .62rem; left: 12px; letter-spacing: .09em; padding-top: 6px; pointer-events: none; position: absolute; right: 12px; }
+  .guided-game-stage[data-game-state="idle"]::before { color: #b8c2cc; content: "Press “Start round” and the phrases will begin to fall."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 30ch; position: absolute; text-align: center; top: 44%; transform: translate(-50%, -50%); }
+  .guided-game-stage[data-game-state="correct"]::before, .guided-game-stage[data-game-state="wrong"]::before, .guided-game-stage[data-game-state="timeout"]::before, .guided-game-stage[data-game-state="expired"]::before { color: #d8e1e7; content: "Feedback shown below. Start the next round when ready."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 35ch; position: absolute; text-align: center; top: 43%; transform: translate(-50%, -50%); }
+  .guided-game-stage[data-game-state="expired"]::before { content: "Study time ended. The dossier remains available."; }
+  .guided-game-option { --lane: 5%; --delay: 0ms; --duration: 9000ms; animation: guided-phrase-fall var(--duration) linear var(--delay) both; background: #fff9ef; border: 2px solid transparent; border-radius: 4px; box-shadow: 0 12px 28px rgba(0, 0, 0, .32); color: #211d19; cursor: pointer; font: inherit; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(.78rem, 1.5vw, .93rem); left: var(--lane); line-height: 1.38; max-height: 84px; min-height: 48px; overflow: hidden; padding: 11px 12px; position: absolute; text-align: left; top: 0; width: min(42%, 420px); z-index: 2; }
+  .guided-game-option:hover, .guided-game-option:focus-visible { border-color: var(--guided-gold); }
+  .guided-game-option.is-correct { background: #d8f1e5; border-color: #4aaa7c; }
+  .guided-game-option.is-wrong { background: #f6d7cf; border-color: #c15d48; }
+  .guided-game-stage.is-paused .guided-game-option { animation-play-state: paused; }
+  .guided-game-stage.is-static-round { align-content: start; display: grid; gap: 10px; padding: 18px 14px 84px; }
+  .guided-game-stage.is-static-round .guided-game-option { animation: none; left: auto; position: relative; top: auto; width: 100%; }
+  .guided-game-controls { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+  .guided-game-status { color: #b9c6d1; font-family: ui-sans-serif, system-ui, sans-serif; min-height: 1.5em; }
+  .guided-game-metrics { display: flex; flex-wrap: wrap; gap: 7px; }
+  .guided-game-metric { background: #202a35; border: 1px solid #3f4d5d; color: #dce7ed; font-family: ui-monospace, monospace; font-size: .75rem; padding: 6px 8px; }
+  .guided-game-metric[data-guided-game-level] { color: var(--guided-gold); }
+  .guided-game-metric[data-guided-game-deadline] { color: #f6d7a3; }
+  .guided-game-score { color: var(--guided-gold); font-family: ui-monospace, monospace; font-size: .78rem; }
+  .guided-version-grid, .guided-detail-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guided-version { background: #fffdf8; border: 1px solid var(--guided-line); display: grid; gap: 6px; padding: 13px; }
+  .guided-version.canonical { background: #f7e6dc; border-color: #dcae9f; }
+  .guided-version h5, .guided-version p { margin: 0; }
+  .guided-list { display: grid; gap: 7px; margin: 0; padding-left: 1.2rem; }
+  .guided-detail { background: #fffdf8; border: 1px solid var(--guided-line); padding: 14px; }
+  .guided-detail strong { color: var(--guided-accent-dark); }
+  .guided-disclosure { border: 1px solid var(--guided-line); background: #fffdf8; }
+  .guided-disclosure > summary { cursor: pointer; font-weight: 850; min-height: 48px; padding: 12px 14px; }
+  .guided-disclosure-body { border-top: 1px solid var(--guided-line); display: grid; gap: 10px; padding: 14px; }
+  .guided-nav, .guided-ratings { align-items: center; border-top: 1px solid var(--guided-line); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding-top: 16px; }
   .guided-nav-actions, .guided-rating-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-  .guided-ratings { background: #0f2940; border: 1px solid #28536e; border-radius: 10px; color: var(--guided-ink); padding: 12px; }
-  .guided-ratings strong { color: #fff; }
-  .guided-rating { background: transparent; border: 1px solid #48738d; border-radius: 7px; color: #d6edf6; cursor: pointer; font: inherit; font-weight: 800; min-height: 40px; padding: 8px 11px; }
-  .guided-rating:hover, .guided-rating:focus-visible, .guided-rating.is-selected { background: #275470; border-color: var(--guided-gold); color: #fff; }
-  .guided-status { color: var(--guided-muted); min-height: 1.4em; }
-  .guided-finish { display: flex; justify-content: flex-end; }
-  .guided-finish form { margin: 0; }
-  .guided-button:focus-visible, .guided-choice:focus-visible, .guided-rating:focus-visible, .guided-board:focus-visible { outline: 3px solid var(--guided-gold); outline-offset: 2px; }
-  @keyframes guided-card-drop { from { opacity: 0; transform: translateY(-18px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  @media (prefers-reduced-motion: reduce) { .guided-card { animation: none; } }
-  @media (max-width: 760px) { .guided-board { min-height: 460px; padding: 10px; } .guided-version-grid { grid-template-columns: 1fr; } .guided-choice { grid-template-columns: auto minmax(0, 1fr); } .guided-nav, .guided-ratings { align-items: stretch; flex-direction: column; } .guided-nav-actions, .guided-rating-actions { width: 100%; } .guided-nav-actions .guided-button, .guided-rating-actions .guided-rating { flex: 1 1 auto; } }
+  .guided-rating { background: transparent; border: 1px solid var(--guided-line); border-radius: 3px; color: var(--guided-ink); cursor: pointer; font: inherit; font-weight: 800; min-height: 40px; padding: 8px 11px; }
+  .guided-rating:hover, .guided-rating:focus-visible, .guided-rating.is-selected { background: var(--guided-cream); border-color: var(--guided-accent); }
+  .guided-status { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; min-height: 1.4em; }
+  .guided-footer { display: flex; justify-content: flex-end; }
+  .guided-button:focus-visible, .guided-choice:focus-visible, .guided-rating:focus-visible, .guided-game-mode:focus-visible, .guided-game-option:focus-visible, .guided-board:focus-visible { outline: 3px solid var(--guided-gold); outline-offset: 2px; }
+  @keyframes guided-phrase-fall { from { transform: translateY(-135%); } to { transform: translateY(500px); } }
+  @media (prefers-reduced-motion: reduce) { .guided-game-option { animation: none; } }
+  @media (max-width: 820px) { .guided-study-layout { grid-template-columns: 1fr; } .guided-outline { display: none; } .guided-header { align-items: start; flex-direction: column; } .guided-toolbar { justify-content: flex-start; } }
+  @media (max-width: 620px) { .guided-card { padding: 16px 12px; } .guided-game { padding: 12px; } .guided-game-stage { min-height: 540px; } .guided-game-option { left: 14px; font-size: .78rem; width: calc(100% - 28px); } .guided-version-grid, .guided-detail-grid { grid-template-columns: 1fr; } .guided-nav, .guided-ratings { align-items: stretch; flex-direction: column; } .guided-nav-actions, .guided-rating-actions { width: 100%; } .guided-nav-actions .guided-button, .guided-rating-actions .guided-rating { flex: 1 1 auto; } }
 </style>
 
 <section class="guided-experience" aria-labelledby="guided-title">
-  <header class="guided-hero">
-    <span class="guided-kicker">Guided daily study loop · <%= @plan.mode_label %></span>
-    <h2 id="guided-title"><%= @plan.target_label %> study deck</h2>
-    <p>Read the authored answer first, then rehearse it aloud and inspect the weaker alternatives. Choosing a card pauses your reading and highlights its explanation; nothing here is a correctness test.</p>
-  </header>
-
-  <div class="guided-toolbar" aria-label="Guided study controls">
-    <div class="guided-toolbar-meta">
+  <header class="guided-header">
+    <div>
+      <span class="guided-kicker"><%= @plan.mode_label %> · answered interview practice</span>
+      <h2 id="guided-title"><%= @plan.target_label %> <em>game.</em></h2>
+      <p>The answer remains visible. Start a round, choose a falling phrase, then use the dossier below to rehearse the reasoning and trade-offs in your own voice.</p>
+    </div>
+    <div class="guided-toolbar" aria-label="Study controls">
       <span class="guided-pill" data-english-arcade-target="guidedProgress">Card 1 of <%= @plan.cards.length %></span>
       <span class="guided-pill timer" data-english-arcade-target="countdown" aria-live="polite">--:--</span>
-      <span class="guided-pill">No score · no lives</span>
+      <button type="button" class="guided-button secondary" data-english-arcade-target="guidedPause" data-action="click->english-arcade#toggleGuidedPause" aria-pressed="false">Pause</button>
     </div>
-    <button type="button" class="guided-button secondary" data-english-arcade-target="guidedPause" data-action="click->english-arcade#toggleGuidedPause" aria-pressed="false">Pause</button>
-  </div>
+  </header>
 
-  <div class="guided-board-wrap">
-    <div class="guided-board-label"><span><strong>Falling-card practice</strong> · cards stop at the reading line</span><span class="guided-status" data-english-arcade-target="guidedStatus" role="status" aria-live="polite">Ready to practise aloud.</span></div>
-    <div class="guided-board" data-english-arcade-target="guidedBoard" tabindex="0" role="region" aria-label="Guided English study cards">
+  <div class="guided-study-layout">
+    <nav class="guided-outline" aria-label="Card dossier sections">
+      <strong>On this card</strong>
+      <a href="#guided-best-answer-0" data-guided-outline-link="best-answer">01 · Best answer</a>
+      <a href="#guided-game-0" data-guided-outline-link="game">02 · Play</a>
+      <a href="#guided-alternatives-0" data-guided-outline-link="alternatives">03 · Other options</a>
+      <a href="#guided-tradeoffs-0" data-guided-outline-link="tradeoffs">04 · Pros & trade-offs</a>
+      <a href="#guided-coaching-0" data-guided-outline-link="coaching">05 · Coaching</a>
+      <a href="#guided-sources-0" data-guided-outline-link="sources">06 · Sources</a>
+    </nav>
+
+    <div class="guided-board" data-english-arcade-target="guidedBoard" tabindex="0" role="region" aria-label="English Arcade falling phrase game and study dossier">
       <% @plan.cards.each_with_index do |card, index| %>
         <% critical = card.critical_thinking.to_h.deep_stringify_keys %>
         <% claim_map = critical["claim_map"].is_a?(Hash) ? critical["claim_map"] : {} %>
@@ -90,157 +126,117 @@
         <% evidence_check = critical["evidence_check"].is_a?(Hash) ? critical["evidence_check"] : {} %>
         <% certainty = critical["certainty"].is_a?(Hash) ? critical["certainty"] : {} %>
         <% versions = card.response_versions.to_h.deep_stringify_keys %>
-        <article id="guided-card-<%= index %>" class="guided-card" data-english-arcade-target="guidedCard" data-guided-card-index="<%= index %>" data-guided-card-key="<%= card.key %>" data-action="mouseenter->english-arcade#pauseForReading mouseleave->english-arcade#resumeAfterReading focusin->english-arcade#pauseForReading focusout->english-arcade#resumeAfterReading"<%= " hidden" unless index.zero? %>" tabindex="-1" aria-labelledby="guided-card-title-<%= index %>">
-          <span class="guided-kicker">Card <%= index + 1 %> · <%= card.target_label %> · authored study material</span>
+        <% answer_words = card.answer_text.to_s.split %>
+            <% completion_size = [[(answer_words.length * 0.3).ceil, 6].max, 8].min %>
+        <% completion_size = [completion_size, answer_words.length].min %>
+        <% completion_stem = answer_words.first(answer_words.length - completion_size).join(" ") %>
+        <% completion_answer = answer_words.last(completion_size).join(" ") %>
+        <% lanes = [4, 53, 10, 58] %>
+        <% game_choices = card.options.map { |choice| guide = card.option_guides.to_h.fetch(choice.id.to_s, {}); { id: choice.id.to_s, text: choice.text.to_s, best: guide["best"] == true, trap: guide["trap"], explanation: guide["explanation"] } } %>
+        <% authored_variants = card.variants.to_h.deep_stringify_keys.filter_map { |variant_key, variant| next if variant_key == "initial" || !variant.is_a?(Hash) || variant["best_answer"].blank?; ["variant-#{variant_key}", variant["best_answer"].to_s] } %>
+        <% supplemental_choices = ([ ["short", versions["short"]], ["deep", versions["deep"]], ["medium", versions["medium"]] ] + authored_variants).filter_map { |version_key, version_text| next if version_text.blank? || game_choices.any? { |choice| choice[:text] == version_text.to_s }; { id: "response-#{version_key}", text: version_text.to_s, best: false, trap: nil, explanation: "Authored response variant; compare its scope with the best answer." } } %>
+        <% game_choices = (game_choices + supplemental_choices).first(4) %>
+
+        <article id="guided-card-<%= index %>" class="guided-card" data-english-arcade-target="guidedCard" data-guided-card-index="<%= index %>" data-guided-card-key="<%= card.key %>"<%= " hidden" unless index.zero? %> aria-labelledby="guided-card-title-<%= index %>">
+          <span class="guided-kicker">Card <%= index + 1 %> · <%= card.target_label %> · authored material</span>
           <h3 id="guided-card-title-<%= index %>"><%= card.prompt %></h3>
           <% if card.context.present? %><p class="guided-context"><%= card.context %></p><% end %>
 
-          <section class="guided-section" aria-labelledby="guided-options-title-<%= index %>">
-            <h4 id="guided-options-title-<%= index %>">Explore the options</h4>
-            <p class="guided-meta">The best option is labelled from the outset. Select one to pause and focus your rehearsal; the labels describe authored intent, not a learner score.</p>
+          <section id="guided-best-answer-<%= index %>" class="guided-answer" aria-labelledby="guided-answer-title-<%= index %>">
+            <strong id="guided-answer-title-<%= index %>">Best answer · practise in first person</strong>
+            <p><%= card.answer_text %></p>
+          </section>
+          <%= render "english_arcade/voice", card: card, arcade_session: @arcade_session %>
+
+          <section id="guided-game-<%= index %>" class="guided-game" aria-labelledby="guided-game-title-<%= index %>" data-guided-game-card>
+            <div class="guided-game-head">
+              <div><span class="guided-kicker">Click to play</span><h4 id="guided-game-title-<%= index %>">Falling phrase round</h4><p class="guided-game-status" data-guided-game-status role="status" aria-live="polite">Choose a mode, then press Start round.</p></div>
+              <div class="guided-game-modes" role="group" aria-label="Game mode">
+                <button type="button" class="guided-game-mode" data-guided-game-mode="best_answer" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="true">Choose best answer</button>
+                <button type="button" class="guided-game-mode" data-guided-game-mode="completion" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="false">Complete the sentence</button>
+              </div>
+            </div>
+            <p class="guided-game-question" data-guided-game-prompt="best_answer"><strong>Question</strong><%= card.prompt %></p>
+            <p class="guided-game-question" data-guided-game-prompt="completion" hidden><strong>Complete with the exact authored phrase</strong><%= completion_stem.presence || card.prompt %> _____</p>
+            <div class="guided-game-stage" data-guided-game-stage data-game-state="idle" data-game-level="1" data-game-fall-duration-ms="9000" data-game-stagger-ms="1400" data-game-deadline-ms="13550" data-game-travel-px="500" data-game-start-offset-percent="135" aria-label="Falling answer phrases">
+              <div data-guided-game-options="best_answer">
+                <% game_choices.each_with_index do |choice, choice_index| %>
+                  <% choice_words = choice[:text].to_s.split %>
+                  <% choice_excerpt = choice_words.first(10).join(" ") %>
+                  <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 10 %>
+                  <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><%= choice_excerpt %></button>
+                <% end %>
+              </div>
+              <div data-guided-game-options="completion" hidden>
+                <% game_choices.each_with_index do |choice, choice_index| %>
+                  <% choice_words = choice[:text].to_s.split %>
+                  <% fragment = choice[:best] ? completion_answer : choice_words.last([completion_size, 8, choice_words.length].min).join(" ") %>
+                  <% fragment = "#{fragment}…" if choice_words.length > 8 %>
+                  <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><%= fragment %></button>
+                <% end %>
+              </div>
+            </div>
+            <div class="guided-game-metrics" aria-label="Game score and difficulty">
+              <span class="guided-game-metric" data-guided-game-score>Score 0</span>
+              <span class="guided-game-metric" data-guided-game-streak>Streak 0</span>
+              <span class="guided-game-metric" data-guided-game-level>Level 1</span>
+              <span class="guided-game-metric" data-guided-game-speed>Speed 1.0×</span>
+              <span class="guided-game-metric" data-guided-game-deadline>Deadline 13.6 seconds</span>
+              <span class="guided-game-score" data-guided-game-rounds>0 rounds · 0 correct</span>
+            </div>
+            <div class="guided-game-controls"><button type="button" class="guided-button" data-guided-game-start data-action="click->english-arcade#startGuidedGame">Start round</button><span class="guided-game-status" data-guided-game-hint>Complete a round to unlock the faster next level.</span></div>
+          </section>
+
+          <section id="guided-alternatives-<%= index %>" class="guided-section" aria-labelledby="guided-options-title-<%= index %>">
+            <h4 id="guided-options-title-<%= index %>">Other options, after the model answer</h4>
+            <p class="guided-meta">The authored best option remains labelled. Select any alternative to focus its explanation; this study path does not create an assessed attempt.</p>
             <div class="guided-choice-list" role="group" aria-label="Authored answer options">
               <% card.options.each_with_index do |choice, choice_index| %>
                 <% guide = card.option_guides.to_h.fetch(choice.id.to_s, {}) %>
                 <button type="button" class="guided-choice<%= " is-best" if guide["best"] %>" data-english-arcade-target="guidedChoice" data-guided-card-index="<%= index %>" data-guided-choice-index="<%= choice_index %>" data-action="click->english-arcade#selectGuidedChoice" aria-pressed="false">
-                  <span class="guided-choice-key"><%= (choice_index + 1).to_s %>.</span>
-                  <span><% if guide["best"] %><span class="guided-choice-badge">Best option</span><% end %><%= choice.text %></span>
-                  <% if guide["trap"].present? %><span class="guided-choice-note"><strong>Authored trap:</strong> <%= guide["trap"] %></span><% end %>
+                  <span class="guided-choice-key"><%= (choice_index + 1).to_s.rjust(2, "0") %></span><span><% if guide["best"] %><span class="guided-choice-badge">Best answer</span><% end %><%= choice.text %></span>
+                  <% if guide["trap"].present? %><span class="guided-choice-note"><strong>Trade-off or trap:</strong> <%= guide["trap"] %></span><% end %>
                   <% if guide["explanation"].present? %><span class="guided-choice-note"><strong>Why this is weaker:</strong> <%= guide["explanation"] %></span><% end %>
                 </button>
               <% end %>
             </div>
           </section>
 
-          <p class="guided-answer"><strong>My answer to practise aloud</strong><%= card.answer_text %></p>
-          <%= render "english_arcade/voice", card: card, arcade_session: @arcade_session %>
+          <% if comparison.any? %>
+            <section id="guided-tradeoffs-<%= index %>" class="guided-section" aria-labelledby="guided-tradeoffs-title-<%= index %>">
+              <h4 id="guided-tradeoffs-title-<%= index %>">Pros, costs & trade-offs</h4>
+              <% if comparison["applicable"] == true %><div class="guided-detail-grid"><% Array(comparison["alternatives"]).each do |alternative| %><% next unless alternative.is_a?(Hash) %><article class="guided-detail"><strong><%= alternative["option"] %></strong><p>Benefit: <%= alternative["benefit"] %></p><p>Cost or risk: <%= alternative["cost_or_risk"] %></p><p>Valid when: <%= alternative["valid_when"] %></p></article><% end %></div><% else %><div class="guided-detail"><p><strong>Rejected alternative:</strong> <%= comparison["rejected_alternative"] %></p><p><strong>Hard constraint:</strong> <%= comparison["hard_constraint"] %></p></div><% end %>
+              <% if comparison["decision_rule"].present? %><p><strong>Decision rule:</strong> <%= comparison["decision_rule"] %></p><% end %>
+            </section>
+          <% end %>
 
           <% if versions.any? %>
-            <section class="guided-section" aria-labelledby="guided-versions-title-<%= index %>">
-              <h4 id="guided-versions-title-<%= index %>">Response ladder</h4>
-              <p class="guided-meta">Use the medium version as the canonical rehearsal; shorten or deepen it only when the interview context calls for it.</p>
-              <div class="guided-version-grid">
-                <% [["short", "Short response"], ["medium", "Medium · canonical"], ["deep", "Deep response"]].each do |version_key, label| %>
-                  <% next unless versions[version_key].present? %>
-                  <article class="guided-version<%= " canonical" if version_key == "medium" %>">
-                    <h5><%= label %></h5>
-                    <p><%= versions[version_key] %></p>
-                  </article>
-                <% end %>
-              </div>
-            </section>
+            <section class="guided-section" aria-labelledby="guided-versions-title-<%= index %>"><h4 id="guided-versions-title-<%= index %>">Short, canonical, and deep versions</h4><div class="guided-version-grid"><% [["short", "Short response"], ["medium", "Canonical response"], ["deep", "Deep response"]].each do |version_key, label| %><% next unless versions[version_key].present? %><article class="guided-version<%= " canonical" if version_key == "medium" %>"><h5><%= label %></h5><p><%= versions[version_key] %></p></article><% end %></div></section>
           <% end %>
 
-          <% if card.feedback.to_h.any? %>
-            <section class="guided-section" aria-labelledby="guided-feedback-title-<%= index %>">
-              <h4 id="guided-feedback-title-<%= index %>">Language feedback axes</h4>
-              <ul class="guided-list compact">
-                <% EnglishArcadeController::FEEDBACK_AXES.each do |axis| %>
-                  <% next unless card.feedback[axis].present? %>
-                  <li><strong><%= axis.humanize %>:</strong> <%= card.feedback[axis] %></li>
-                <% end %>
-              </ul>
-            </section>
-          <% end %>
-
-          <% if critical.any? %>
-            <section class="guided-section" aria-labelledby="guided-critical-title-<%= index %>">
-              <h4 id="guided-critical-title-<%= index %>">Critical-thinking path</h4>
-              <% if critical["problem_frame"].present? %><p><strong>Problem frame:</strong> <%= critical["problem_frame"] %></p><% end %>
-              <% if claim_map.any? %>
-                <h5>Claim map</h5>
-                <ul class="guided-list compact">
-                  <% { "fact" => "Fact", "inference" => "Inference", "assumption" => "Assumption", "unknown" => "Unknown" }.each do |key, label| %>
-                    <% next unless claim_map[key].present? %>
-                    <li><strong><%= label %>:</strong> <%= claim_map[key] %></li>
-                  <% end %>
-                </ul>
-              <% end %>
-              <% if comparison["applicable"] == true %>
-                <h5>Comparison branch</h5>
-                <ul class="guided-list compact">
-                  <% Array(comparison["alternatives"]).each do |alternative| %>
-                    <% next unless alternative.is_a?(Hash) %>
-                    <li><strong><%= alternative["option"] %>:</strong> <%= alternative["benefit"] %> <span class="guided-meta">Cost/risk: <%= alternative["cost_or_risk"] %> · Valid when: <%= alternative["valid_when"] %></span></li>
-                  <% end %>
-                </ul>
-                <% if comparison["decision_rule"].present? %><p><strong>Decision rule:</strong> <%= comparison["decision_rule"] %></p><% end %>
-              <% elsif comparison["applicable"] == false %>
-                <h5>Hard-constraint branch</h5>
-                <% if comparison["rejected_alternative"].present? %><p><strong>Rejected alternative:</strong> <%= comparison["rejected_alternative"] %></p><% end %>
-                <% if comparison["hard_constraint"].present? %><p><strong>Hard constraint:</strong> <%= comparison["hard_constraint"] %></p><% end %>
-                <% if comparison["decision_rule"].present? %><p><strong>Decision rule:</strong> <%= comparison["decision_rule"] %></p><% end %>
-              <% end %>
-              <% failure_probe = critical["failure_probe"].is_a?(Hash) ? critical["failure_probe"] : {} %>
-              <% if failure_probe.any? %><p><strong>Failure probe (<%= failure_probe["kind"] %>):</strong> <%= failure_probe["prompt"] %></p><% end %>
-              <% if evidence_check.any? %>
-                <h5>Evidence check</h5>
-                <% if evidence_check["basis"].present? %><p><strong>Basis:</strong> <%= evidence_check["basis"] %></p><% end %>
-                <% if evidence_check["source_kind"].present? %><p><strong>Source kind:</strong> <%= evidence_check["source_kind"] %></p><% end %>
-                <% if evidence_check["limitation"].present? %><p><strong>Limitation:</strong> <%= evidence_check["limitation"] %></p><% end %>
-                <% if evidence_check["checked_on"].present? %><p><strong>Checked on:</strong> <%= evidence_check["checked_on"] %></p><% end %>
-              <% end %>
-              <% if certainty.any? %>
-                <h5>Certainty and update trigger</h5>
-                <% if certainty["level"].present? %><p><strong>Level:</strong> <%= certainty["level"] %></p><% end %>
-                <% if certainty["rationale"].present? %><p><strong>Rationale:</strong> <%= certainty["rationale"] %></p><% end %>
-                <% if certainty["update_trigger"].present? %><p><strong>Update when:</strong> <%= certainty["update_trigger"] %></p><% end %>
-              <% end %>
-              <% rubric = critical["rubric"].is_a?(Hash) ? critical["rubric"] : {} %>
-              <% if rubric.any? %>
-                <details>
-                  <summary>Authored critical-thinking checks</summary>
-                  <ul class="guided-list compact">
-                    <% rubric.each do |axis, guidance| %><li><strong><%= axis.humanize %>:</strong> <%= guidance %></li><% end %>
-                  </ul>
-                </details>
-              <% end %>
-            </section>
-          <% end %>
+          <section id="guided-coaching-<%= index %>" class="guided-section" aria-labelledby="guided-coaching-title-<%= index %>">
+            <h4 id="guided-coaching-title-<%= index %>">Coaching and reasoning</h4>
+            <% if card.feedback.to_h.any? %><details class="guided-disclosure" open><summary>Language coaching</summary><div class="guided-disclosure-body"><ul class="guided-list"><% EnglishArcadeController::FEEDBACK_AXES.each do |axis| %><% next unless card.feedback[axis].present? %><li><strong><%= axis.humanize %>:</strong> <%= card.feedback[axis] %></li><% end %></ul></div></details><% end %>
+            <% if critical.any? %><details class="guided-disclosure"><summary>Critical-thinking path</summary><div class="guided-disclosure-body"><% if critical["problem_frame"].present? %><p><strong>Problem frame:</strong> <%= critical["problem_frame"] %></p><% end %><% if claim_map.any? %><ul class="guided-list"><% { "fact" => "Fact", "inference" => "Inference", "assumption" => "Assumption", "unknown" => "Unknown" }.each do |key, label| %><% next unless claim_map[key].present? %><li><strong><%= label %>:</strong> <%= claim_map[key] %></li><% end %></ul><% end %><% failure_probe = critical["failure_probe"].is_a?(Hash) ? critical["failure_probe"] : {} %><% if failure_probe.any? %><p><strong>Failure probe:</strong> <%= failure_probe["prompt"] %></p><% end %><% if certainty.any? %><p><strong>Certainty:</strong> <%= certainty["level"] %> — <%= certainty["rationale"] %></p><p><strong>Update when:</strong> <%= certainty["update_trigger"] %></p><% end %></div></details><% end %>
+          </section>
 
           <% if card.sources.any? || card.provenance.to_h.any? %>
-            <section class="guided-section" aria-labelledby="guided-evidence-title-<%= index %>">
-              <h4 id="guided-evidence-title-<%= index %>">Sources, provenance, and confidentiality boundary</h4>
-              <% if card.sources.any? %>
-                <h5>Sources</h5>
-                <ul class="guided-list compact">
-                  <% card.sources.each do |source| %>
-                    <li><% if source.is_a?(Hash) %><strong><%= source["repo"] %> / <%= source["path"] %></strong><% else %><strong><%= source %></strong><% end %><% if source.is_a?(Hash) && source["note"].present? %> — <%= source["note"] %><% end %></li>
-                  <% end %>
-                </ul>
-              <% end %>
-              <% provenance = card.provenance.to_h.deep_stringify_keys %>
-              <% if provenance["evidence_class"].present? %><p><strong>Evidence class:</strong> <%= provenance["evidence_class"] %></p><% end %>
-              <% if provenance["project"].present? %><p><strong>Project:</strong> <%= provenance["project"] %></p><% end %>
-              <% if provenance["repository"].present? %><p><strong>Repository:</strong> <%= provenance["repository"] %></p><% end %>
+            <% provenance = card.provenance.to_h.deep_stringify_keys %>
+            <section id="guided-sources-<%= index %>" class="guided-section" aria-labelledby="guided-evidence-title-<%= index %>"><h4 id="guided-evidence-title-<%= index %>">Sources and evidence boundary</h4><details class="guided-disclosure"><summary>Open sources, provenance, and confidentiality notes</summary><div class="guided-disclosure-body">
+              <% if card.sources.any? %><ul class="guided-list"><% card.sources.each do |source| %><li><% if source.is_a?(Hash) %><strong><%= source["repo"] %> / <%= source["path"] %></strong><% else %><strong><%= source %></strong><% end %><% if source.is_a?(Hash) && source["note"].present? %> — <%= source["note"] %><% end %></li><% end %></ul><% end %>
               <% if provenance["safe_interview_version"].present? %><p><strong>Safe interview version:</strong> <%= provenance["safe_interview_version"] %></p><% end %>
-              <% if provenance["confidentiality"].is_a?(Hash) %><p><strong>Confidentiality:</strong> <%= provenance["confidentiality"]["level"] %><% if provenance["confidentiality"]["note"].present? %> — <%= provenance["confidentiality"]["note"] %><% end %></p><% end %>
-              <% if Array(provenance["verified_claims"]).any? %><p><strong>Verified claims</strong></p><ul class="guided-list compact"><% provenance["verified_claims"].each { |claim| %><li><%= claim %></li><% } %></ul><% end %>
-              <% if Array(provenance["confirmation_required"]).any? %><p><strong>Confirm before claiming</strong></p><ul class="guided-list compact"><% provenance["confirmation_required"].each { |gap| %><li><%= gap %></li><% } %></ul><% end %>
-              <% if Array(provenance["files"]).any? %><p><strong>Inspectable evidence</strong></p><ul class="guided-list compact"><% provenance["files"].each do |file| %><% next unless file.is_a?(Hash) %><li><%= file["path"] %> @ <%= file["commit"] %> — <%= file["claim"] %></li><% end %></ul><% end %>
-            </section>
+              <% if evidence_check.any? %><p><strong>Evidence basis:</strong> <%= evidence_check["basis"] %></p><% if evidence_check["limitation"].present? %><p><strong>Limitation:</strong> <%= evidence_check["limitation"] %></p><% end %><% end %>
+              <% if Array(provenance["verified_claims"]).any? %><p><strong>Verified claims</strong></p><ul class="guided-list"><% provenance["verified_claims"].each { |claim| %><li><%= claim %></li><% } %></ul><% end %>
+              <% if Array(provenance["confirmation_required"]).any? %><p><strong>Confirm before claiming</strong></p><ul class="guided-list"><% provenance["confirmation_required"].each { |gap| %><li><%= gap %></li><% } %></ul><% end %>
+              <% if provenance["confidentiality"].is_a?(Hash) %><p><strong>Confidentiality:</strong> <%= provenance["confidentiality"]["level"] %> — <%= provenance["confidentiality"]["note"] %></p><% end %>
+            </div></details></section>
           <% end %>
         </article>
       <% end %>
-    </div>
-    <div class="guided-nav">
-      <span class="guided-meta">Use 1–4 to select an option. Arrow keys move between cards.</span>
-      <div class="guided-nav-actions">
-        <button type="button" class="guided-button secondary" data-english-arcade-target="guidedPrevious" data-action="click->english-arcade#previousGuidedCard" disabled>Previous card</button>
-        <button type="button" class="guided-button" data-english-arcade-target="guidedNext" data-action="click->english-arcade#nextGuidedCard">Next card</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="guided-ratings">
-    <div><strong>How ready does this card feel?</strong><div class="guided-status" data-english-arcade-target="guidedRatingStatus">Saved only in this browser for guided review.</div></div>
-    <div class="guided-rating-actions" role="group" aria-label="Self-rating">
-      <button type="button" class="guided-rating" data-guided-rating="review_again" data-action="click->english-arcade#rateGuidedCard">Review again</button>
-      <button type="button" class="guided-rating" data-guided-rating="almost" data-action="click->english-arcade#rateGuidedCard">Almost</button>
-      <button type="button" class="guided-rating" data-guided-rating="ready" data-action="click->english-arcade#rateGuidedCard">Ready</button>
+      <div class="guided-nav"><span class="guided-status" data-english-arcade-target="guidedStatus" role="status" aria-live="polite">Choose a game mode and start the round.</span><div class="guided-nav-actions"><button type="button" class="guided-button secondary" data-english-arcade-target="guidedPrevious" data-action="click->english-arcade#previousGuidedCard" disabled>← Previous</button><button type="button" class="guided-button" data-english-arcade-target="guidedNext" data-action="click->english-arcade#nextGuidedCard">Next card →</button></div></div>
+      <div class="guided-ratings"><div><strong>How ready does this answer feel?</strong><div class="guided-status" data-english-arcade-target="guidedRatingStatus">Saved only in this browser.</div></div><div class="guided-rating-actions" role="group" aria-label="Self-rating"><button type="button" class="guided-rating" data-guided-rating="review_again" data-action="click->english-arcade#rateGuidedCard">Review again</button><button type="button" class="guided-rating" data-guided-rating="almost" data-action="click->english-arcade#rateGuidedCard">Almost</button><button type="button" class="guided-rating" data-guided-rating="ready" data-action="click->english-arcade#rateGuidedCard">Ready</button></div></div>
     </div>
   </div>
-
-  <div class="guided-finish">
-    <% if @arcade_session.active? %><%= button_to "Finish guided study", finish_english_arcade_path(session_id: @arcade_session.id), method: :post, class: "guided-button secondary" %><% end %>
-  </div>
+  <div class="guided-footer"><% if @arcade_session.active? %><%= button_to "Finish guided study", finish_english_arcade_path(session_id: @arcade_session.id), method: :post, class: "guided-button secondary" %><% end %></div>
 </section>

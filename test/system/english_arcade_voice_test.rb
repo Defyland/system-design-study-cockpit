@@ -76,7 +76,7 @@ class EnglishArcadeVoiceTest < ApplicationSystemTestCase
     visit "/english-arcade"
     page.execute_script("window.localStorage.clear(); window.sessionStorage.clear()")
     find("label[for='english-arcade-target-career']").click
-    click_button "Start guided study"
+    click_button "Play falling cards"
 
     assert_selector ".guided-experience"
     assert_selector ".english-arcade-voice", minimum: 1
@@ -100,7 +100,7 @@ class EnglishArcadeVoiceTest < ApplicationSystemTestCase
     assert_equal 0, page.evaluate_script("window.__voiceLocalFake.companionFetches")
     refute voice_target("listenQuestion").disabled?
     refute voice_target("listenAnswer").disabled?
-    assert_text(/My answer to practise aloud/i)
+    assert_text(/Best answer · practise in first person/i)
 
     click_voice_target("listenQuestion")
     click_voice_target("listenAnswer")
@@ -316,7 +316,7 @@ class EnglishArcadeVoiceTest < ApplicationSystemTestCase
     page.execute_script("window.localStorage.clear(); window.sessionStorage.clear()")
     find("label[for='english-arcade-target-career']").click
     assert_selector("#english-arcade-target-career:checked")
-    click_button "Start guided study"
+    click_button "Play falling cards"
     assert_current_path(/\/english_arcade\?session_id=/)
     assert_selector ".guided-experience"
     assert_selector ".english-arcade-voice", minimum: 1
