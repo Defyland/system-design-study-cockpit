@@ -107,6 +107,9 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
+
+    assert_current_path %r{/english_arcade\?session_id=\d+\z}
+    page.driver.browser.manage.window.resize_to(1400, 1000)
     click_button "Start round"
     click_button "03 · Learning review"
     within "dialog.guided-learning-dialog[open]" do
