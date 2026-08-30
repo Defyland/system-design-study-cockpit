@@ -175,6 +175,8 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
+
+    assert_current_path %r{/english_arcade\?session_id=\d+\z}
     page.execute_script(<<~JAVASCRIPT)
       window.matchMedia = (query) => ({
         matches: query.includes('prefers-reduced-motion'),

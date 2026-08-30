@@ -31,13 +31,15 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "input#english-arcade-target-dsa:checked", visible: :all
     click_button "Start closed-book session"
 
+    assert_current_path %r{/english_arcade\?session_id=\d+\z}
+    session = EnglishArcadeSession.order(:id).last
+
     assert_selector ".arcade-kicker", text: /closed-book question/i
     assert_selector "form[data-english-arcade-target='form']"
     assert_no_selector ".arcade-answer"
 
     # The card itself is randomized by session. Select any authored distractor
     # from the current card instead of assuming one fixed opening question.
-    session = EnglishArcadeSession.order(:id).last
     card_key = find("input[name='english_arcade_attempt[card_key]']", visible: :all).value
     correct_choice = EnglishArcadeSessionBuilder.new.card_for(target: "dsa", card_key: card_key, session: session).correct_choice
     page.execute_script(<<~JAVASCRIPT, correct_choice)
