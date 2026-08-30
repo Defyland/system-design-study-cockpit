@@ -116,6 +116,7 @@ export default class extends Controller {
   handleGuidedKeydown(event) {
     if (event.metaKey || event.ctrlKey || event.altKey) return
     if (!this.hasGuidedCardTarget) return
+    if (this.element.querySelector("[data-guided-learning-dialog][open]")) return
 
     const activeTag = document.activeElement?.tagName
     if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) return
@@ -145,6 +146,94 @@ export default class extends Controller {
 
   selectGuidedChoice(event) {
     this.setGuidedChoice(event.currentTarget)
+  }
+
+  openCurrentGuidedLearningDialog() {
+    this.openGuidedLearningDialog(this.currentGuidedCard())
+  }
+
+  openGuidedLearningDialog(container) {
+    const dialog = container?.querySelector("[data-guided-learning-dialog]")
+    if (!dialog || dialog.open) return
+
+    if (this.currentGuidedGameStage()?.dataset.gameState === "running") {
+      this.toggleGuidedGameClock(true)
+      this.guidedReadingPaused = true
+      this.setGuidedPauseUi(true)
+    }
+    if (typeof dialog.showModal === "function") dialog.showModal()
+    else dialog.setAttribute("open", "")
+    dialog.querySelector("[data-action*='closeGuidedLearningDialog']")?.focus()
+  }
+
+  closeGuidedLearningDialog(event) {
+    const dialog = event.currentTarget.closest("dialog")
+    if (!dialog) return
+
+    if (typeof dialog.close === "function") dialog.close()
+    else dialog.removeAttribute("open")
+  }
+
+  closeGuidedLearningDialogs() {
+    this.element.querySelectorAll("[data-guided-learning-dialog][open]").forEach((dialog) => {
+      if (typeof dialog.close === "function") dialog.close()
+      else dialog.removeAttribute("open")
+    })
+  }
+
+  async fillBestAnswer(event) {
+    event.preventDefault()
+    const form = event.currentTarget.closest("form")
+    if (!form) return
+
+    const button = event.currentTarget
+    const status = form.querySelector("[data-best-answer-fill-status]")
+    button.disabled = true
+    if (status) status.textContent = "Loading the authored best answer…"
+
+    let values
+    try {
+      const response = await fetch(form.dataset.bestAnswerFillUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || ""
+        },
+        body: JSON.stringify({
+          session_id: this.sessionKeyValue,
+          card_key: form.querySelector("input[name='english_arcade_attempt[card_key]']")?.value
+        })
+      })
+      if (!response.ok) throw new Error(`Best answer request failed with ${response.status}`)
+      values = await response.json()
+    } catch (_error) {
+      if (status) status.textContent = "The best answer could not be loaded. Your current work was not changed."
+      return
+    } finally {
+      button.disabled = false
+    }
+
+    Array.from(form.elements).forEach((control) => {
+      if (!control.name) return
+
+      const match = control.name.match(/^english_arcade_attempt\[([^\]]+)\]$/)
+      if (!match || !(match[1] in values)) return
+
+      const value = String(values[match[1]])
+      if (control.type === "radio" || control.type === "checkbox") {
+        control.checked = control.value === value
+      } else {
+        control.value = value
+      }
+      control.closest("details")?.setAttribute("open", "")
+      control.dispatchEvent(new Event("input", { bubbles: true }))
+      control.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+
+    if (status) status.textContent = "Best authored answer and all authored fields filled. Add your confidence and optional self-ratings before committing."
+    form.querySelector("[data-english-arcade-target='typed']")?.focus()
   }
 
   chooseGuidedOption(index) {
@@ -186,6 +275,8 @@ export default class extends Controller {
 
   setGuidedIndex(index, { focus = true } = {}) {
     if (!this.hasGuidedCardTarget) return
+
+    this.closeGuidedLearningDialogs()
 
     const nextIndex = Math.min(Math.max(index, 0), this.guidedCardTargets.length - 1)
     const interruptedRound = this.currentGuidedGameStage()?.dataset.gameState === "running"
@@ -299,6 +390,7 @@ export default class extends Controller {
       return
     }
 
+    this.closeGuidedLearningDialogs()
     this.resetGuidedGame({ announce: false })
     this.guidedUserPaused = false
     this.guidedReadingPaused = false
@@ -336,6 +428,7 @@ export default class extends Controller {
     const stage = this.currentGuidedGameStage()
     if (!stage || !["correct", "wrong", "timeout"].includes(stage.dataset.gameState)) return
 
+    this.closeGuidedLearningDialogs()
     const nextIndex = (this.guidedIndex + 1) % this.guidedCardTargets.length
     this.setGuidedIndex(nextIndex, { focus: false })
     const nextStart = this.currentGuidedCard()?.querySelector("[data-guided-game-start]")
@@ -372,10 +465,11 @@ export default class extends Controller {
     })
     if (!correct) option.classList.add("is-wrong")
     this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
-    const message = correct ? `Correct phrase. Rehearse the highlighted model answer aloud. Next round: level ${this.guidedGameLevel}, ${this.formatGuidedGameSeconds(this.guidedGameDifficulty().deadlineMs)}.` : `Not the authored best phrase. The correct option is highlighted; compare its reasoning below. Streak reset; next round is level ${this.guidedGameLevel}.`
+    const message = correct ? `Correct phrase. Rehearse the highlighted model answer aloud. Next round: level ${this.guidedGameLevel}, ${this.formatGuidedGameSeconds(this.guidedGameDifficulty().deadlineMs)}.` : `Not the authored best phrase. The correct option is highlighted in the learning review. Streak reset; next round is level ${this.guidedGameLevel}.`
     this.setGuidedGameStatus(message, game)
     this.setGuidedGameNextRoundLabel(game)
     this.announceGuided(message)
+    this.openGuidedLearningDialog(game.closest("[data-guided-card-index]"))
   }
 
   expireGuidedGameRound(game) {
@@ -396,10 +490,11 @@ export default class extends Controller {
       button.classList.toggle("is-correct", button.dataset.guidedGameCorrect === "true")
     })
     this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
-    const message = `Time is up. The authored answer is highlighted; compare its reasoning below. Streak reset; next round is level ${this.guidedGameLevel}.`
+    const message = `Time is up. The authored answer is highlighted in the learning review. Streak reset; next round is level ${this.guidedGameLevel}.`
     this.setGuidedGameStatus(message, game)
     this.setGuidedGameNextRoundLabel(game)
     this.announceGuided(message)
+    this.openGuidedLearningDialog(game.closest("[data-guided-card-index]"))
   }
 
   markGuidedGameExpired(game) {

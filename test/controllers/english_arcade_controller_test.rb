@@ -79,6 +79,52 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
     assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
   end
 
+  test "new sessions persist a private randomized deck seed" do
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "rails", mode: "daily", experience: "assessment" }
+    }
+
+    session = EnglishArcadeSession.order(:id).last
+    assert_match(/\A[0-9a-f]{32}\z/, session.metadata.fetch("deck_seed"))
+    assert_nil session.metadata.fetch("scheduled_card_key")
+  end
+
+  test "best answer fill is revealed only on an explicit valid assessment request" do
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "rails", mode: "daily", experience: "assessment" }
+    }
+    session = EnglishArcadeSession.order(:id).last
+    card = @builder.call(target: "rails", learner_key: "anonymous", session: session, limit: 1, persist_schedules: false).cards.first
+
+    get "/english-arcade", params: { session_id: session.id }
+    assert_response :success
+    assert_includes response.body, "data-best-answer-fill-url"
+    refute_includes response.body, "data-best-answer-fill="
+
+    post "/english-arcade/best-answer-fill", params: { session_id: session.id, card_key: card.key }, as: :json
+
+    assert_response :success
+    fill = JSON.parse(response.body)
+    assert_equal card.correct_choice, fill.fetch("answer_choice")
+    assert_equal card.answer_text, fill.fetch("typed_answer")
+    refute fill.key?("self_technical_correctness")
+
+    post "/english-arcade/best-answer-fill", params: { session_id: session.id, card_key: "rails-future-card" }, as: :json
+    assert_response :not_found
+  end
+
+  test "guided sessions cannot request the assessment best answer fill" do
+    post "/english-arcade/sessions", params: {
+      english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
+    }
+    session = EnglishArcadeSession.order(:id).last
+
+    post "/english-arcade/best-answer-fill", params: { session_id: session.id, card_key: "career-01-a-60-to-90-second-introduction" }, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "guided_session_is_non_assessing", JSON.parse(response.body).fetch("error")
+  end
+
   test "interview mode renders resume-backed questions without local paths or contact details" do
     post "/english-arcade/sessions", params: {
       english_arcade_session: { target: "interview", mode: "timed_45", experience: "guided" }

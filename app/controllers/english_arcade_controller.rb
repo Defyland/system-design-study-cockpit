@@ -1,5 +1,6 @@
 class EnglishArcadeController < ApplicationController
   require "ostruct"
+  require "securerandom"
   require_relative "../services/english_arcade_attempt_contract"
   require_relative "../services/english_arcade_evidence_eligibility"
   require_relative "../services/english_arcade_mock_evidence"
@@ -12,7 +13,7 @@ class EnglishArcadeController < ApplicationController
   ADAPTIVE_ATTEMPT_KINDS = %w[retry rephrase follow_up compression extension].freeze
   REQUIRED_MOCK_COMPLETED_STATES = %w[scheduled mastered revealed].freeze
 
-  before_action :load_arcade_session, only: %i[show attempt finish]
+  before_action :load_arcade_session, only: %i[show best_answer_fill attempt finish]
 
   def show
     @builder = EnglishArcadeSessionBuilder.new
@@ -56,6 +57,7 @@ class EnglishArcadeController < ApplicationController
         variant_id: requested_attempt.variant_key
       )
       @exercise = attempt_kind_for_variant(@current_card&.variant_id) if @current_card
+      @best_answer_fill_available = @current_card && !@guided_experience && EnglishArcadeBestAnswerFill.available_for?(@current_card)
       raw_feedback = @feedback_attempt&.diagnostic_evidence&.fetch("feedback", nil)
       feedback_contract = @feedback_attempt&.diagnostic_evidence&.fetch("assessment", nil) || @feedback_card&.variant_contract
       @feedback = if raw_feedback
@@ -90,6 +92,30 @@ class EnglishArcadeController < ApplicationController
         render json: public_payload
       end
     end
+  end
+
+  def best_answer_fill
+    return head :not_found unless @arcade_session
+    return render json: { error: "guided_session_is_non_assessing" }, status: :unprocessable_entity if guided_session?
+
+    expire_if_needed
+    return render json: { error: "session_is_not_active" }, status: :unprocessable_entity unless @arcade_session.active? && !@arcade_session.expired?
+
+    @builder = EnglishArcadeSessionBuilder.new
+    plan = @builder.call(
+      target: @arcade_session.target,
+      mode: @arcade_session.mode,
+      learner_key: learner_key,
+      session: @arcade_session,
+      limit: 5,
+      persist_schedules: false
+    )
+    card = scheduled_card || plan.cards.first
+    return head :not_found unless card && ActiveSupport::SecurityUtils.secure_compare(card.key, params[:card_key].to_s)
+
+    return render json: { error: "authored_fill_unavailable_for_variant" }, status: :unprocessable_entity unless EnglishArcadeBestAnswerFill.available_for?(card)
+
+    render json: EnglishArcadeBestAnswerFill.call(card)
   end
 
   def create
@@ -187,7 +213,8 @@ class EnglishArcadeController < ApplicationController
       "parent_attempt_id" => parent_attempt&.id,
       "content_version" => content_probe&.content_version.to_s.presence || "unknown",
       "contract_version" => EnglishArcadeAttemptContract::CONTRACT_VERSION,
-      "active_variant_id" => @builder.variant_id_for(exercise)
+      "active_variant_id" => @builder.variant_id_for(exercise),
+      "deck_seed" => SecureRandom.hex(16)
     }
     if mock_spec
       metadata.merge!(

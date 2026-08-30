@@ -464,6 +464,7 @@ class EnglishArcadeSessionBuilder
     mode = normalize_mode(mode)
     persist_schedules = !guided_session?(session) if persist_schedules.nil?
     required_keys = Array(session&.metadata&.fetch("required_card_keys", []))
+    deck_seed = session&.metadata&.fetch("deck_seed", nil).to_s.presence
     cards = if target == "interview" && required_keys.empty?
       EnglishArcadeResumeInterviewProfile.cards(@content.cards_for("career"))
     else
@@ -499,7 +500,13 @@ class EnglishArcadeSessionBuilder
       cards.each_with_index.sort_by do |card, index|
         card_key = card.fetch(:key)
         schedule = schedules.fetch(card_key)
-        [ attempted_keys.include?(card_key) ? 1 : 0, schedule.due? ? 0 : 1, schedule.due_on, interleaved ? index % canonical_target_keys.length : 0, card_key ]
+        deck_rank = deck_seed ? Digest::SHA256.hexdigest("#{deck_seed}:#{card_key}") : card_key
+        tie_breakers = if deck_seed
+          [ deck_rank ]
+        else
+          [ schedule.due_on, interleaved ? index % canonical_target_keys.length : 0, card_key ]
+        end
+        [ attempted_keys.include?(card_key) ? 1 : 0, schedule.due? ? 0 : 1, *tie_breakers ]
       end.map(&:first)
     end
 

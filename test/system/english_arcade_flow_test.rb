@@ -35,10 +35,17 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "form[data-english-arcade-target='form']"
     assert_no_selector ".arcade-answer"
 
-    # Select an authored distractor by its learner-visible text. Choice order
-    # is opaque and may rotate, so position is not a valid test contract.
-    assert_selector "label.arcade-choice", text: /Obviously it is a sliding window/i
-    find("label.arcade-choice", text: /Obviously it is a sliding window/i).click
+    # The card itself is randomized by session. Select any authored distractor
+    # from the current card instead of assuming one fixed opening question.
+    session = EnglishArcadeSession.order(:id).last
+    card_key = find("input[name='english_arcade_attempt[card_key]']", visible: :all).value
+    correct_choice = EnglishArcadeSessionBuilder.new.card_for(target: "dsa", card_key: card_key, session: session).correct_choice
+    page.execute_script(<<~JAVASCRIPT, correct_choice)
+      const correctChoice = arguments[0]
+      const distractor = Array.from(document.querySelectorAll("input[name='english_arcade_attempt[answer_choice]']"))
+        .find((input) => input.value !== correctChoice)
+      distractor.click()
+    JAVASCRIPT
     fill_in "Typed answer", with: "I would state the invariant, explain the trade-off, and verify the boundary with a counterexample before writing implementation details."
     fill_critical_ledger
     select "English directly", from: "english_arcade_attempt_english_directness"
@@ -93,6 +100,36 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector "input[name='english_arcade_session[target]'][value='golang']", visible: :all
   end
 
+  test "fill with best answer completes the current authored assessment form" do
+    visit "/english-arcade"
+    find("label[for='english-arcade-target-rails']").click
+    click_button "Start closed-book session"
+
+    session = EnglishArcadeSession.order(:id).last
+    card_key = find("input[name='english_arcade_attempt[card_key]']", visible: :all).value
+    card = EnglishArcadeSessionBuilder.new.card_for(target: "rails", card_key: card_key, session: session)
+    fill = EnglishArcadeBestAnswerFill.call(card)
+
+    assert_selector "form[data-best-answer-fill-url]"
+    assert_nil find("form[data-best-answer-fill-url]")["data-best-answer-fill"]
+
+    click_button "Fill with best answer"
+
+    assert_selector "input[name='english_arcade_attempt[answer_choice]']:checked", count: 1, visible: :all
+    assert_field "Typed answer", with: fill.fetch("typed_answer")
+    assert_field "Verified fact(s)", with: fill.fetch("evidence_verified")
+    assert_field "Problem frame", with: fill.fetch("problem_frame")
+    assert_field "Counterexample or failure mode", with: fill.fetch("counterexample")
+    assert_field "Confidence before reveal (0–100)", with: ""
+    assert_field "english_arcade_attempt_self_clarity", with: ""
+    assert_field "english_arcade_attempt_english_directness", with: ""
+    assert_text "Best authored answer and all authored fields filled"
+
+    fill_in "Confidence before reveal (0–100)", with: "70"
+    click_button "Commit answer"
+    assert_selector "#feynman-title", text: /Feynman pass before the reveal/i
+  end
+
   test "guided study reveals authored coaching and keeps navigation non-assessing" do
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
@@ -103,9 +140,8 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector ".guided-card", count: 5, visible: :all
     assert_equal [ 4 ] * 5, page.evaluate_script("Array.from(document.querySelectorAll('.guided-card')).map((card) => card.querySelectorAll('[data-guided-game-options=best_answer] [data-guided-game-option]').length)")
     assert_text(/Best answer · practise in first person/i)
-    assert_text(/Canonical response/i)
-    assert_text(/Critical-thinking path/i)
-    assert_text(/Sources and evidence boundary/i)
+    assert_no_text(/Canonical response/i)
+    assert_no_selector "dialog.guided-learning-dialog[open]"
     assert_button "Start round"
     assert_no_selector ".arcade-question"
     assert_no_selector "form[action*='english-arcade/attempts']"
@@ -114,9 +150,22 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     within ".guided-card:not([hidden])" do
       click_button "Start round"
       assert_selector "[data-guided-game-option]:not([hidden])", count: 4, visible: :all
+      assert_selector "[data-guided-game-option].is-authored-best:not([hidden])", count: 1, visible: :all
       correct_index = find("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']", visible: :all)["data-guided-game-index"]
       page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: '#{correct_index.to_i + 1}', bubbles: true }))")
       assert_text "Correct phrase"
+      assert_selector "dialog.guided-learning-dialog[open]"
+      within "dialog.guided-learning-dialog[open]" do
+        assert_text "Why this is the strongest answer"
+        assert_text "Other options, after the model answer"
+        assert_text "Critical-thinking path"
+        assert_text "Sources and evidence boundary"
+      end
+      page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))")
+      page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))")
+      assert_equal "0", page.evaluate_script("document.querySelector('.guided-card:not([hidden])').dataset.guidedCardIndex")
+      page.driver.browser.action.send_keys(:escape).perform
+      assert_no_selector "dialog.guided-learning-dialog[open]"
       click_button "Complete the sentence"
       assert_text(/Complete with the exact authored phrase/i)
       click_button "Start round"
@@ -175,7 +224,10 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
 
     # Navigation and mode changes are explicit while a round is running; they
     # must not silently discard a live deadline or its falling cards.
-    click_button "Next round"
+    within "dialog.guided-learning-dialog[open]" do
+      assert_text "Why this is the strongest answer"
+      click_button "Next round"
+    end
     assert_text "Card 2 of 5"
     assert_selector ".guided-game-stage[data-game-state='running']"
     second_round = page.evaluate_script(<<~JAVASCRIPT)
@@ -211,7 +263,9 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_text "Score 100"
     assert_text "Streak 0"
 
-    click_button "Next round"
+    within "dialog.guided-learning-dialog[open]" do
+      click_button "Next round"
+    end
     assert_text "Card 3 of 5"
     assert_selector ".guided-game-stage[data-game-state='running']"
     click_button "Next card"

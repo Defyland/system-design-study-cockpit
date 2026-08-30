@@ -107,6 +107,30 @@ class EnglishArcadeSessionBuilderTest < ActiveSupport::TestCase
     assert_equal card.provenance, grade.feedback.fetch("provenance")
   end
 
+  test "uses a stable randomized deck order for each normal session" do
+    seeded_cards = @builder.call(target: "rails", learner_key: "study", limit: 20, persist_schedules: true).cards
+    EnglishArcadeCard.where(learner_key: "study", target: "rails").order(:card_key).each_with_index do |schedule, index|
+      schedule.update!(due_on: Date.current - index.days)
+    end
+    first_session = EnglishArcadeSession.create!(
+      learner_key: "study", target: "rails", mode: "daily", duration_seconds: 600,
+      started_at: Time.current, metadata: { "deck_seed" => "first-session-seed" }
+    )
+    second_session = EnglishArcadeSession.create!(
+      learner_key: "study", target: "rails", mode: "daily", duration_seconds: 600,
+      started_at: Time.current, metadata: { "deck_seed" => "second-session-seed" }
+    )
+
+    first_order = @builder.call(target: "rails", learner_key: "study", session: first_session, limit: 20, persist_schedules: false).cards.map(&:key)
+    repeated_order = @builder.call(target: "rails", learner_key: "study", session: first_session, limit: 20, persist_schedules: false).cards.map(&:key)
+    second_order = @builder.call(target: "rails", learner_key: "study", session: second_session, limit: 20, persist_schedules: false).cards.map(&:key)
+
+    assert_equal first_order, repeated_order
+    assert_equal first_order.sort, second_order.sort
+    assert_equal seeded_cards.map(&:key).sort_by { |key| Digest::SHA256.hexdigest("first-session-seed:#{key}") }, first_order
+    refute_equal first_order, second_order
+  end
+
   test "keeps the canonical answer key attached when choices are rotated" do
     card = @builder.card_for(target: "react", card_key: "react-01-state-ownership")
     correct = card.options.find { |choice| choice.id == card.correct_choice }

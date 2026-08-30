@@ -115,7 +115,7 @@
       <% end %>
     </div>
 
-    <%= form_with url: english_arcade_sessions_path, scope: :english_arcade_session, local: true do |form| %>
+    <%= form_with url: english_arcade_sessions_path, scope: :english_arcade_session, local: true, data: { turbo: false } do |form| %>
       <div class="arcade-targets" role="radiogroup" aria-label="Interview target">
         <% @targets.each do |key, target| %>
           <div class="arcade-target">
@@ -393,11 +393,19 @@
             <p class="arcade-context"><%= @current_card.context %><% if @exercise == "rephrase" %> <strong><%= @current_card.rephrase_prompt %></strong><% elsif @exercise == "extension" %> <strong><%= @current_card.extension_prompt %></strong><% elsif @exercise == "compression" %> <strong><%= @current_card.compression_prompt %></strong><% end %></p>
           </div>
 
-          <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submit", english_arcade_target: "form" } do |form| %>
+          <%= form_with url: english_arcade_attempts_path(session_id: @arcade_session.id), scope: :english_arcade_attempt, local: true, data: { action: "submit->english-arcade#submit", english_arcade_target: "form", best_answer_fill_url: (@best_answer_fill_available ? english_arcade_best_answer_fill_path : nil) } do |form| %>
             <%= form.hidden_field :card_key, value: @current_card.key %>
             <%= form.hidden_field :exercise, value: (@pending_attempt&.attempt_kind || @exercise) %>
             <%= form.hidden_field :parent_attempt_id, value: @pending_attempt&.parent_attempt_id %>
             <%= form.hidden_field :response_ms, value: nil, data: { english_arcade_target: "responseMs" } %>
+            <div class="arcade-actions">
+              <% if @best_answer_fill_available %>
+                <%= form.button "Fill with best answer", type: "button", class: "arcade-button ghost", data: { action: "click->english-arcade#fillBestAnswer" } %>
+                <span class="arcade-muted" data-best-answer-fill-status role="status" aria-live="polite">Fills the authored answer and applicable reasoning fields. Confidence and optional self-ratings stay yours. Nothing is submitted until you commit.</span>
+              <% else %>
+                <span class="arcade-muted">This adaptive variant has no complete authored ledger to fill safely.</span>
+              <% end %>
+            </div>
             <fieldset class="arcade-choice-list">
               <legend class="arcade-muted">Choose the strongest answer before revealing feedback.</legend>
               <% @current_card.options.each_with_index do |choice, index| %>

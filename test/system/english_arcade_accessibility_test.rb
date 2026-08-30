@@ -108,7 +108,10 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
     click_button "Start round"
-    find(".guided-card:not([hidden]) [data-guided-choice-index='0']").click
+    click_button "03 · Learning review"
+    within "dialog.guided-learning-dialog[open]" do
+      find("[data-guided-choice-index='0']").click
+    end
 
     paused = page.evaluate_script(<<~JAVASCRIPT)
       (() => {
@@ -134,7 +137,9 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     assert_operator paused.fetch("remaining"), :>, 0
     assert_operator paused.fetch("remaining"), :<=, paused.fetch("deadline")
 
-    find(".guided-card:not([hidden]) [data-guided-choice-index='1']").click
+    within "dialog.guided-learning-dialog[open]" do
+      find("[data-guided-choice-index='1']").click
+    end
     paused_again = page.evaluate_script(<<~JAVASCRIPT)
       (() => {
         const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
@@ -150,6 +155,9 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     assert_nil paused_again.fetch("clock")
     assert_in_delta paused.fetch("remaining"), paused_again.fetch("remaining"), 5
 
+    within "dialog.guided-learning-dialog[open]" do
+      click_button "Close and keep reviewing"
+    end
     click_button "Resume"
     resumed = page.evaluate_script(<<~JAVASCRIPT)
       (() => {

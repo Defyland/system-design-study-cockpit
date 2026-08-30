@@ -17,8 +17,8 @@
   .guided-study-layout { align-items: start; display: grid; gap: clamp(18px, 3vw, 36px); grid-template-columns: minmax(170px, .34fr) minmax(0, 1.66fr); }
   .guided-outline { border-left: 1px solid var(--guided-line); display: grid; gap: 4px; padding-left: 16px; position: sticky; top: 18px; }
   .guided-outline strong { font-size: 1.05rem; margin-bottom: 8px; }
-  .guided-outline a { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: .86rem; padding: 5px 0; text-decoration: none; }
-  .guided-outline a:hover { color: var(--guided-accent); }
+  .guided-outline a, .guided-outline button { background: transparent; border: 0; color: var(--guided-muted); cursor: pointer; font-family: ui-sans-serif, system-ui, sans-serif; font-size: .86rem; padding: 5px 0; text-align: left; text-decoration: none; }
+  .guided-outline a:hover, .guided-outline button:hover { color: var(--guided-accent); }
   .guided-board { min-width: 0; }
   .guided-card { background: var(--guided-paper); border: 1px solid var(--guided-line); display: grid; gap: 20px; min-width: 0; padding: clamp(18px, 4vw, 46px); }
   .guided-card[hidden] { display: none; }
@@ -54,10 +54,12 @@
   .guided-game-stage { background: linear-gradient(180deg, #1f2a36, #10161e); border: 1px solid #3c4856; min-height: 510px; overflow: hidden; position: relative; }
   .guided-game-stage::after { border-top: 2px dashed rgba(240, 197, 108, .65); bottom: 42px; color: var(--guided-gold); content: "CHOOSE BEFORE THE READING LINE"; font-family: ui-monospace, monospace; font-size: .62rem; left: 12px; letter-spacing: .09em; padding-top: 6px; pointer-events: none; position: absolute; right: 12px; }
   .guided-game-stage[data-game-state="idle"]::before { color: #b8c2cc; content: "Press “Start round” and the phrases will begin to fall."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 30ch; position: absolute; text-align: center; top: 44%; transform: translate(-50%, -50%); }
-  .guided-game-stage[data-game-state="correct"]::before, .guided-game-stage[data-game-state="wrong"]::before, .guided-game-stage[data-game-state="timeout"]::before, .guided-game-stage[data-game-state="expired"]::before { color: #d8e1e7; content: "Feedback shown below. Start the next round when ready."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 35ch; position: absolute; text-align: center; top: 43%; transform: translate(-50%, -50%); }
+  .guided-game-stage[data-game-state="correct"]::before, .guided-game-stage[data-game-state="wrong"]::before, .guided-game-stage[data-game-state="timeout"]::before, .guided-game-stage[data-game-state="expired"]::before { color: #d8e1e7; content: "Learning review opened. Start the next round when ready."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 35ch; position: absolute; text-align: center; top: 43%; transform: translate(-50%, -50%); }
   .guided-game-stage[data-game-state="expired"]::before { content: "Study time ended. The dossier remains available."; }
   .guided-game-option { --lane: 5%; --delay: 0ms; --duration: 9000ms; animation: guided-phrase-fall var(--duration) linear var(--delay) both; background: #fff9ef; border: 2px solid transparent; border-radius: 4px; box-shadow: 0 12px 28px rgba(0, 0, 0, .32); color: #211d19; cursor: pointer; font: inherit; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(.78rem, 1.5vw, .93rem); left: var(--lane); line-height: 1.38; max-height: 84px; min-height: 48px; overflow: hidden; padding: 11px 12px; position: absolute; text-align: left; top: 0; width: min(42%, 420px); z-index: 2; }
   .guided-game-option:hover, .guided-game-option:focus-visible { border-color: var(--guided-gold); }
+  .guided-game-option.is-authored-best { background: #f6d889; border-color: #ffe7a8; box-shadow: 0 12px 30px rgba(240, 197, 108, .42), inset 0 0 0 2px #6d5320; color: #241b0c; }
+  .guided-game-best-badge { background: #5b4317; border-radius: 999px; color: #fff3cf; display: inline-block; font-family: ui-monospace, monospace; font-size: .58rem; font-weight: 900; letter-spacing: .08em; margin-right: 6px; padding: 2px 6px; text-transform: uppercase; }
   .guided-game-option.is-correct { background: #d8f1e5; border-color: #4aaa7c; }
   .guided-game-option.is-wrong { background: #f6d7cf; border-color: #c15d48; }
   .guided-game-stage.is-paused .guided-game-option { animation-play-state: paused; }
@@ -80,6 +82,14 @@
   .guided-disclosure { border: 1px solid var(--guided-line); background: #fffdf8; }
   .guided-disclosure > summary { cursor: pointer; font-weight: 850; min-height: 48px; padding: 12px 14px; }
   .guided-disclosure-body { border-top: 1px solid var(--guided-line); display: grid; gap: 10px; padding: 14px; }
+  .guided-learning-dialog { background: var(--guided-paper); border: 1px solid var(--guided-line); color: var(--guided-ink); max-height: min(88vh, 920px); overflow: auto; padding: 0; width: min(960px, calc(100vw - 28px)); }
+  .guided-learning-dialog::backdrop { background: rgba(12, 16, 21, .76); backdrop-filter: blur(3px); }
+  .guided-learning-shell { display: grid; gap: 18px; padding: clamp(18px, 4vw, 36px); }
+  .guided-learning-header { align-items: start; background: #f7e6dc; border: 1px solid #dcae9f; box-shadow: inset 5px 0 0 var(--guided-accent); display: flex; gap: 16px; justify-content: space-between; padding: 18px; }
+  .guided-learning-header h4 { font-size: clamp(1.35rem, 3vw, 2rem); margin: 3px 0 10px; }
+  .guided-learning-header p { font-size: 1.05rem; margin: 0; }
+  .guided-learning-close { background: transparent; border: 1px solid var(--guided-line); border-radius: 999px; color: var(--guided-ink); cursor: pointer; flex: 0 0 auto; font: inherit; font-weight: 900; min-height: 42px; min-width: 42px; }
+  .guided-learning-actions { align-items: center; border-top: 1px solid var(--guided-line); display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; padding-top: 18px; }
   .guided-nav, .guided-ratings { align-items: center; border-top: 1px solid var(--guided-line); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding-top: 16px; }
   .guided-nav-actions, .guided-rating-actions { display: flex; flex-wrap: wrap; gap: 8px; }
   .guided-rating { background: transparent; border: 1px solid var(--guided-line); border-radius: 3px; color: var(--guided-ink); cursor: pointer; font: inherit; font-weight: 800; min-height: 40px; padding: 8px 11px; }
@@ -98,7 +108,7 @@
     <div>
       <span class="guided-kicker"><%= @plan.mode_label %> · answered interview practice</span>
       <h2 id="guided-title"><%= @plan.target_label %> <em>game.</em></h2>
-      <p>The answer remains visible. Start a round, choose a falling phrase, then use the dossier below to rehearse the reasoning and trade-offs in your own voice.</p>
+      <p>The answer remains visible. Start a round and choose a falling phrase; the complete learning review opens immediately after your choice.</p>
     </div>
     <div class="guided-toolbar" aria-label="Study controls">
       <span class="guided-pill" data-english-arcade-target="guidedProgress">Card 1 of <%= @plan.cards.length %></span>
@@ -112,10 +122,7 @@
       <strong>On this card</strong>
       <a href="#guided-best-answer-0" data-guided-outline-link="best-answer">01 · Best answer</a>
       <a href="#guided-game-0" data-guided-outline-link="game">02 · Play</a>
-      <a href="#guided-alternatives-0" data-guided-outline-link="alternatives">03 · Other options</a>
-      <a href="#guided-tradeoffs-0" data-guided-outline-link="tradeoffs">04 · Pros & trade-offs</a>
-      <a href="#guided-coaching-0" data-guided-outline-link="coaching">05 · Coaching</a>
-      <a href="#guided-sources-0" data-guided-outline-link="sources">06 · Sources</a>
+      <button type="button" data-action="click->english-arcade#openCurrentGuidedLearningDialog">03 · Learning review</button>
     </nav>
 
     <div class="guided-board" data-english-arcade-target="guidedBoard" tabindex="0" role="region" aria-label="English Arcade falling phrase game and study dossier">
@@ -164,7 +171,7 @@
                   <% choice_words = choice[:text].to_s.split %>
                   <% choice_excerpt = choice_words.first(10).join(" ") %>
                   <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 10 %>
-                  <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><%= choice_excerpt %></button>
+                  <button type="button" hidden class="guided-game-option<%= " is-authored-best" if choice[:best] %>" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %><%= ", authored best answer" if choice[:best] %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><% if choice[:best] %><span class="guided-game-best-badge">Best</span><% end %><%= choice_excerpt %></button>
                 <% end %>
               </div>
               <div data-guided-game-options="completion" hidden>
@@ -172,7 +179,7 @@
                   <% choice_words = choice[:text].to_s.split %>
                   <% fragment = choice[:best] ? completion_answer : choice_words.last([completion_size, 8, choice_words.length].min).join(" ") %>
                   <% fragment = "#{fragment}…" if choice_words.length > 8 %>
-                  <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><%= fragment %></button>
+                  <button type="button" hidden class="guided-game-option<%= " is-authored-best" if choice[:best] %>" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %><%= ", authored best answer" if choice[:best] %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><% if choice[:best] %><span class="guided-game-best-badge">Best</span><% end %><%= fragment %></button>
                 <% end %>
               </div>
             </div>
@@ -186,6 +193,13 @@
             </div>
             <div class="guided-game-controls"><button type="button" class="guided-button" data-guided-game-start data-action="click->english-arcade#startGuidedGame">Start round</button><span class="guided-game-status" data-guided-game-hint>Complete a round to unlock the faster next level.</span></div>
           </section>
+
+          <dialog class="guided-learning-dialog" data-guided-learning-dialog aria-labelledby="guided-learning-title-<%= index %>">
+            <div class="guided-learning-shell">
+              <header class="guided-learning-header">
+                <div><span class="guided-kicker">Post-choice learning review</span><h4 id="guided-learning-title-<%= index %>">Why this is the strongest answer</h4><p><%= card.answer_text %></p></div>
+                <button type="button" class="guided-learning-close" aria-label="Close learning review" data-action="click->english-arcade#closeGuidedLearningDialog">×</button>
+              </header>
 
           <section id="guided-alternatives-<%= index %>" class="guided-section" aria-labelledby="guided-options-title-<%= index %>">
             <h4 id="guided-options-title-<%= index %>">Other options, after the model answer</h4>
@@ -231,6 +245,12 @@
               <% if provenance["confidentiality"].is_a?(Hash) %><p><strong>Confidentiality:</strong> <%= provenance["confidentiality"]["level"] %> — <%= provenance["confidentiality"]["note"] %></p><% end %>
             </div></details></section>
           <% end %>
+              <footer class="guided-learning-actions">
+                <button type="button" class="guided-button secondary" data-action="click->english-arcade#closeGuidedLearningDialog">Close and keep reviewing</button>
+                <button type="button" class="guided-button" data-action="click->english-arcade#nextGuidedGameRound">Next round →</button>
+              </footer>
+            </div>
+          </dialog>
         </article>
       <% end %>
 
