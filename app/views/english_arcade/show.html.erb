@@ -84,8 +84,8 @@
     <h1>English <em>Arcade.</em></h1>
     <% if @guided_experience %>
       <div class="arcade-hero-copy">
-        <p>Click, read, and choose while authored English phrases fall. The model answer stays visible, so this remains deliberate interview rehearsal rather than a hidden quiz.</p>
-        <p class="arcade-muted">Play either “best answer” or “complete the sentence”, then review alternatives, trade-offs, language coaching, and sources in a clear study dossier.</p>
+        <p>Click, read, and choose while authored English phrases fall. Each card starts with the model, hides it for recall, then changes the prompt for transfer.</p>
+        <p class="arcade-muted">Progress through Learn → Recall → Transfer, then review alternatives, trade-offs, language coaching, and sources in a clear study dossier.</p>
       </div>
     <% else %>
       <div class="arcade-hero-copy">
@@ -95,7 +95,7 @@
     <% end %>
     <div class="arcade-hero-chips" aria-label="Arcade features">
       <span class="arcade-hero-chip">falling phrases</span>
-      <span class="arcade-hero-chip">model answer visible</span>
+      <span class="arcade-hero-chip">progressive cue removal</span>
       <span class="arcade-hero-chip">resume-aware interview drill</span>
     </div>
     <% unless @arcade_session %><div class="arcade-hero-cta"><a href="#arcade-launcher" class="arcade-button">Choose a target and play ↓</a></div><% end %>

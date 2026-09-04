@@ -49,14 +49,16 @@
   .guided-game-modes { display: flex; flex-wrap: wrap; gap: 7px; }
   .guided-game-mode { background: transparent; border: 1px solid #647181; border-radius: 999px; color: #d7e0e7; cursor: pointer; font: inherit; font-size: .82rem; font-weight: 800; min-height: 38px; padding: 7px 11px; }
   .guided-game-mode[aria-pressed="true"] { background: var(--guided-gold); border-color: var(--guided-gold); color: #282015; }
+  .guided-game-mode[disabled] { cursor: not-allowed; opacity: .42; }
+  .guided-card[data-guided-phase="recall"] [data-guided-model], .guided-card[data-guided-phase="transfer"] [data-guided-model] { display: none; }
   .guided-game-question { background: #202a35; border-left: 3px solid var(--guided-gold); color: #f8ead0; padding: 11px 13px; }
   .guided-game-question strong { color: var(--guided-gold); display: block; font-family: ui-monospace, monospace; font-size: .66rem; letter-spacing: .12em; margin-bottom: 4px; text-transform: uppercase; }
-  .guided-game-stage { background: linear-gradient(180deg, #1f2a36, #10161e); border: 1px solid #3c4856; min-height: 510px; overflow: hidden; position: relative; }
+  .guided-game-stage { background: linear-gradient(180deg, #1f2a36, #10161e); border: 1px solid #3c4856; min-height: clamp(680px, 72vh, 900px); overflow: hidden; position: relative; }
   .guided-game-stage::after { border-top: 2px dashed rgba(240, 197, 108, .65); bottom: 42px; color: var(--guided-gold); content: "CHOOSE BEFORE THE READING LINE"; font-family: ui-monospace, monospace; font-size: .62rem; left: 12px; letter-spacing: .09em; padding-top: 6px; pointer-events: none; position: absolute; right: 12px; }
   .guided-game-stage[data-game-state="idle"]::before { color: #b8c2cc; content: "Press “Start round” and the phrases will begin to fall."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 30ch; position: absolute; text-align: center; top: 44%; transform: translate(-50%, -50%); }
   .guided-game-stage[data-game-state="correct"]::before, .guided-game-stage[data-game-state="wrong"]::before, .guided-game-stage[data-game-state="timeout"]::before, .guided-game-stage[data-game-state="expired"]::before { color: #d8e1e7; content: "Learning review opened. Start the next round when ready."; font-family: ui-sans-serif, system-ui, sans-serif; left: 50%; max-width: 35ch; position: absolute; text-align: center; top: 43%; transform: translate(-50%, -50%); }
   .guided-game-stage[data-game-state="expired"]::before { content: "Study time ended. The dossier remains available."; }
-  .guided-game-option { --lane: 5%; --delay: 0ms; --duration: 9000ms; animation: guided-phrase-fall var(--duration) linear var(--delay) both; background: #fff9ef; border: 2px solid transparent; border-radius: 4px; box-shadow: 0 12px 28px rgba(0, 0, 0, .32); color: #211d19; cursor: pointer; font: inherit; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(.78rem, 1.5vw, .93rem); left: var(--lane); line-height: 1.38; max-height: 84px; min-height: 48px; overflow: hidden; padding: 11px 12px; position: absolute; text-align: left; top: 0; width: min(42%, 420px); z-index: 2; }
+  .guided-game-option { --lane: 5%; --delay: 0ms; --duration: 18000ms; --travel: 760px; animation: guided-phrase-fall var(--duration) linear var(--delay) both; background: #fff9ef; border: 2px solid transparent; border-radius: 4px; box-shadow: 0 12px 28px rgba(0, 0, 0, .32); color: #211d19; cursor: pointer; font: inherit; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(.82rem, 1.5vw, 1rem); left: var(--lane); line-height: 1.45; max-height: 128px; min-height: 58px; overflow: hidden; padding: 13px 14px; position: absolute; text-align: left; top: 0; width: min(43%, 540px); z-index: 2; }
   .guided-game-option:hover, .guided-game-option:focus-visible { border-color: var(--guided-gold); }
   .guided-game-option.is-authored-best { background: #f6d889; border-color: #ffe7a8; box-shadow: 0 12px 30px rgba(240, 197, 108, .42), inset 0 0 0 2px #6d5320; color: #241b0c; }
   .guided-game-best-badge { background: #5b4317; border-radius: 999px; color: #fff3cf; display: inline-block; font-family: ui-monospace, monospace; font-size: .58rem; font-weight: 900; letter-spacing: .08em; margin-right: 6px; padding: 2px 6px; text-transform: uppercase; }
@@ -97,10 +99,10 @@
   .guided-status { color: var(--guided-muted); font-family: ui-sans-serif, system-ui, sans-serif; min-height: 1.4em; }
   .guided-footer { display: flex; justify-content: flex-end; }
   .guided-button:focus-visible, .guided-choice:focus-visible, .guided-rating:focus-visible, .guided-game-mode:focus-visible, .guided-game-option:focus-visible, .guided-board:focus-visible { outline: 3px solid var(--guided-gold); outline-offset: 2px; }
-  @keyframes guided-phrase-fall { from { transform: translateY(-135%); } to { transform: translateY(500px); } }
+  @keyframes guided-phrase-fall { from { transform: translateY(-135%); } to { transform: translateY(var(--travel)); } }
   @media (prefers-reduced-motion: reduce) { .guided-game-option { animation: none; } }
   @media (max-width: 820px) { .guided-study-layout { grid-template-columns: 1fr; } .guided-outline { display: none; } .guided-header { align-items: start; flex-direction: column; } .guided-toolbar { justify-content: flex-start; } }
-  @media (max-width: 620px) { .guided-card { padding: 16px 12px; } .guided-game { padding: 12px; } .guided-game-stage { min-height: 540px; } .guided-game-option { left: 14px; font-size: .78rem; width: calc(100% - 28px); } .guided-version-grid, .guided-detail-grid { grid-template-columns: 1fr; } .guided-nav, .guided-ratings { align-items: stretch; flex-direction: column; } .guided-nav-actions, .guided-rating-actions { width: 100%; } .guided-nav-actions .guided-button, .guided-rating-actions .guided-rating { flex: 1 1 auto; } }
+  @media (max-width: 620px) { .guided-card { padding: 16px 12px; } .guided-game { padding: 12px; } .guided-game-stage { min-height: max(620px, 68vh); } .guided-game-option { left: 14px; font-size: .82rem; max-height: 116px; width: calc(100% - 28px); } .guided-version-grid, .guided-detail-grid { grid-template-columns: 1fr; } .guided-nav, .guided-ratings { align-items: stretch; flex-direction: column; } .guided-nav-actions, .guided-rating-actions { width: 100%; } .guided-nav-actions .guided-button, .guided-rating-actions .guided-rating { flex: 1 1 auto; } }
 </style>
 
 <section class="guided-experience" aria-labelledby="guided-title">
@@ -108,7 +110,7 @@
     <div>
       <span class="guided-kicker"><%= @plan.mode_label %> · answered interview practice</span>
       <h2 id="guided-title"><%= @plan.target_label %> <em>game.</em></h2>
-      <p>The answer remains visible. Start a round and choose a falling phrase; the complete learning review opens immediately after your choice.</p>
+      <p>Each card moves through Learn, Recall, and Transfer. Read the model first, retrieve it without cues, then apply it to a changed prompt.</p>
     </div>
     <div class="guided-toolbar" aria-label="Study controls">
       <span class="guided-pill" data-english-arcade-target="guidedProgress">Card 1 of <%= @plan.cards.length %></span>
@@ -133,71 +135,84 @@
         <% evidence_check = critical["evidence_check"].is_a?(Hash) ? critical["evidence_check"] : {} %>
         <% certainty = critical["certainty"].is_a?(Hash) ? critical["certainty"] : {} %>
         <% versions = card.response_versions.to_h.deep_stringify_keys %>
-        <% answer_words = card.answer_text.to_s.split %>
-            <% completion_size = [[(answer_words.length * 0.3).ceil, 6].max, 8].min %>
-        <% completion_size = [completion_size, answer_words.length].min %>
-        <% completion_stem = answer_words.first(answer_words.length - completion_size).join(" ") %>
-        <% completion_answer = answer_words.last(completion_size).join(" ") %>
         <% lanes = [4, 53, 10, 58] %>
         <% game_choices = card.options.map { |choice| guide = card.option_guides.to_h.fetch(choice.id.to_s, {}); { id: choice.id.to_s, text: choice.text.to_s, best: guide["best"] == true, trap: guide["trap"], explanation: guide["explanation"] } } %>
         <% authored_variants = card.variants.to_h.deep_stringify_keys.filter_map { |variant_key, variant| next if variant_key == "initial" || !variant.is_a?(Hash) || variant["best_answer"].blank?; ["variant-#{variant_key}", variant["best_answer"].to_s] } %>
         <% supplemental_choices = ([ ["short", versions["short"]], ["deep", versions["deep"]], ["medium", versions["medium"]] ] + authored_variants).filter_map { |version_key, version_text| next if version_text.blank? || game_choices.any? { |choice| choice[:text] == version_text.to_s }; { id: "response-#{version_key}", text: version_text.to_s, best: false, trap: nil, explanation: "Authored response variant; compare its scope with the best answer." } } %>
         <% game_choices = (game_choices + supplemental_choices).first(4) %>
+        <% variant_ids = card.variants.to_h.deep_stringify_keys.keys %>
+        <% transfer_variant_id = %w[follow_up delayed_variant rephrase extension compression].find { |variant_id| variant_ids.include?(variant_id) } %>
+        <% transfer_card = transfer_variant_id && @builder.card_for(target: @arcade_session.target, card_key: card.key, session: @arcade_session, variant_id: transfer_variant_id) %>
+        <% transfer_choices = transfer_card&.options.to_a.map { |choice| { id: choice.id.to_s, text: choice.text.to_s, best: choice.id.to_s == transfer_card.correct_choice.to_s } } %>
 
-        <article id="guided-card-<%= index %>" class="guided-card" data-english-arcade-target="guidedCard" data-guided-card-index="<%= index %>" data-guided-card-key="<%= card.key %>"<%= " hidden" unless index.zero? %> aria-labelledby="guided-card-title-<%= index %>">
+        <article id="guided-card-<%= index %>" class="guided-card" data-english-arcade-target="guidedCard" data-guided-card-index="<%= index %>" data-guided-card-key="<%= card.key %>" data-guided-phase="learn"<%= " hidden" unless index.zero? %> aria-labelledby="guided-card-title-<%= index %>">
           <span class="guided-kicker">Card <%= index + 1 %> · <%= card.target_label %> · authored material</span>
           <h3 id="guided-card-title-<%= index %>"><%= card.prompt %></h3>
           <% if card.context.present? %><p class="guided-context"><%= card.context %></p><% end %>
 
-          <section id="guided-best-answer-<%= index %>" class="guided-answer" aria-labelledby="guided-answer-title-<%= index %>">
-            <strong id="guided-answer-title-<%= index %>">Best answer · practise in first person</strong>
-            <p><%= card.answer_text %></p>
-          </section>
-          <%= render "english_arcade/voice", card: card, arcade_session: @arcade_session %>
+          <div data-guided-model>
+            <section id="guided-best-answer-<%= index %>" class="guided-answer" aria-labelledby="guided-answer-title-<%= index %>">
+              <strong id="guided-answer-title-<%= index %>">Best answer · practise in first person</strong>
+              <p><%= card.answer_text %></p>
+            </section>
+            <%= render "english_arcade/voice", card: card, arcade_session: @arcade_session %>
+          </div>
 
-          <section id="guided-game-<%= index %>" class="guided-game" aria-labelledby="guided-game-title-<%= index %>" data-guided-game-card>
+          <section id="guided-game-<%= index %>" class="guided-game" aria-labelledby="guided-game-title-<%= index %>" data-guided-game-card data-guided-transfer-available="<%= transfer_card.present? ? "true" : "false" %>">
             <div class="guided-game-head">
-              <div><span class="guided-kicker">Click to play</span><h4 id="guided-game-title-<%= index %>">Falling phrase round</h4><p class="guided-game-status" data-guided-game-status role="status" aria-live="polite">Choose a mode, then press Start round.</p></div>
-              <div class="guided-game-modes" role="group" aria-label="Game mode">
-                <button type="button" class="guided-game-mode" data-guided-game-mode="best_answer" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="true">Choose best answer</button>
-                <button type="button" class="guided-game-mode" data-guided-game-mode="completion" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="false">Complete the sentence</button>
+              <div><span class="guided-kicker">Click to play</span><h4 id="guided-game-title-<%= index %>">Falling phrase round</h4><p class="guided-game-status" data-guided-game-status role="status" aria-live="polite">Learn is ready. Study the model, then start.</p></div>
+              <div class="guided-game-modes" role="group" aria-label="Learning phase">
+                <button type="button" class="guided-game-mode" data-guided-game-mode="learn" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="true">1 · Learn</button>
+                <button type="button" class="guided-game-mode" data-guided-game-mode="recall" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="false">2 · Recall</button>
+                <button type="button" class="guided-game-mode" data-guided-game-mode="transfer" data-action="click->english-arcade#selectGuidedGameMode" aria-pressed="false"<%= " disabled title=\"This card has no authored transfer variant.\"" unless transfer_card.present? %>>3 · Transfer</button>
               </div>
             </div>
-            <p class="guided-game-question" data-guided-game-prompt="best_answer"><strong>Question</strong><%= card.prompt %></p>
-            <p class="guided-game-question" data-guided-game-prompt="completion" hidden><strong>Complete with the exact authored phrase</strong><%= completion_stem.presence || card.prompt %> _____</p>
-            <div class="guided-game-stage" data-guided-game-stage data-game-state="idle" data-game-level="1" data-game-fall-duration-ms="9000" data-game-stagger-ms="1400" data-game-deadline-ms="13550" data-game-travel-px="500" data-game-start-offset-percent="135" aria-label="Falling answer phrases">
-              <div data-guided-game-options="best_answer">
+            <p class="guided-game-question" data-guided-game-prompt="learn"><strong>Learn · study the model</strong><%= card.prompt %></p>
+            <p class="guided-game-question" data-guided-game-prompt="recall" hidden><strong>Recall · answer without the model</strong><%= card.prompt %></p>
+            <% if transfer_card.present? %><p class="guided-game-question" data-guided-game-prompt="transfer" hidden><strong>Transfer · apply it to a changed prompt</strong><%= transfer_card.prompt %><% if transfer_card.context.present? %> — <%= transfer_card.context %><% end %></p><% end %>
+            <div class="guided-game-stage" data-guided-game-stage data-game-state="idle" data-game-level="1" data-game-fall-duration-ms="18000" data-game-stagger-ms="3200" data-game-deadline-ms="28400" data-game-travel-px="760" data-game-start-offset-percent="135" aria-label="Falling answer phrases">
+              <div data-guided-game-options="learn">
                 <% game_choices.each_with_index do |choice, choice_index| %>
                   <% choice_words = choice[:text].to_s.split %>
-                  <% choice_excerpt = choice_words.first(10).join(" ") %>
-                  <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 10 %>
-                  <button type="button" hidden class="guided-game-option<%= " is-authored-best" if choice[:best] %>" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %><%= ", authored best answer" if choice[:best] %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><% if choice[:best] %><span class="guided-game-best-badge">Best</span><% end %><%= choice_excerpt %></button>
+                  <% choice_excerpt = choice_words.first(18).join(" ") %>
+                  <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 18 %>
+                  <button type="button" hidden class="guided-game-option<%= " is-authored-best" if choice[:best] %>" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" data-guided-game-word-count="<%= choice_words.first(18).length %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %><%= ", authored best answer" if choice[:best] %>: <%= choice[:text] %>" data-action="mouseenter->english-arcade#pauseForReading mouseleave->english-arcade#resumeAfterReading focusin->english-arcade#pauseForReading focusout->english-arcade#resumeAfterReading click->english-arcade#selectGuidedGameOption"><% if choice[:best] %><span class="guided-game-best-badge">Best</span><% end %><%= choice_excerpt %></button>
                 <% end %>
               </div>
-              <div data-guided-game-options="completion" hidden>
+              <div data-guided-game-options="recall" hidden>
                 <% game_choices.each_with_index do |choice, choice_index| %>
                   <% choice_words = choice[:text].to_s.split %>
-                  <% fragment = choice[:best] ? completion_answer : choice_words.last([completion_size, 8, choice_words.length].min).join(" ") %>
-                  <% fragment = "#{fragment}…" if choice_words.length > 8 %>
-                  <button type="button" hidden class="guided-game-option<%= " is-authored-best" if choice[:best] %>" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %><%= ", authored best answer" if choice[:best] %>: <%= choice[:text] %>" data-action="click->english-arcade#selectGuidedGameOption"><% if choice[:best] %><span class="guided-game-best-badge">Best</span><% end %><%= fragment %></button>
+                  <% choice_excerpt = choice_words.first(18).join(" ") %>
+                  <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 18 %>
+                  <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" data-guided-game-word-count="<%= choice_words.first(18).length %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="mouseenter->english-arcade#pauseForReading mouseleave->english-arcade#resumeAfterReading focusin->english-arcade#pauseForReading focusout->english-arcade#resumeAfterReading click->english-arcade#selectGuidedGameOption"><%= choice_excerpt %></button>
                 <% end %>
               </div>
+              <% if transfer_card.present? %>
+                <div data-guided-game-options="transfer" hidden>
+                  <% transfer_choices.each_with_index do |choice, choice_index| %>
+                    <% choice_words = choice[:text].to_s.split %>
+                    <% choice_excerpt = choice_words.first(18).join(" ") %>
+                    <% choice_excerpt = "#{choice_excerpt}…" if choice_words.length > 18 %>
+                    <button type="button" hidden class="guided-game-option" style="--lane: <%= lanes.fetch(choice_index, 5) %>%" data-guided-game-option data-guided-game-correct="<%= choice[:best] ? "true" : "false" %>" data-guided-game-index="<%= choice_index %>" data-guided-game-word-count="<%= choice_words.first(18).length %>" title="<%= choice[:text] %>" aria-label="Choice <%= choice_index + 1 %>: <%= choice[:text] %>" data-action="mouseenter->english-arcade#pauseForReading mouseleave->english-arcade#resumeAfterReading focusin->english-arcade#pauseForReading focusout->english-arcade#resumeAfterReading click->english-arcade#selectGuidedGameOption"><%= choice_excerpt %></button>
+                  <% end %>
+                </div>
+              <% end %>
             </div>
             <div class="guided-game-metrics" aria-label="Game score and difficulty">
               <span class="guided-game-metric" data-guided-game-score>Score 0</span>
               <span class="guided-game-metric" data-guided-game-streak>Streak 0</span>
               <span class="guided-game-metric" data-guided-game-level>Level 1</span>
               <span class="guided-game-metric" data-guided-game-speed>Speed 1.0×</span>
-              <span class="guided-game-metric" data-guided-game-deadline>Deadline 13.6 seconds</span>
+              <span class="guided-game-metric" data-guided-game-deadline>Deadline 28.4 seconds</span>
               <span class="guided-game-score" data-guided-game-rounds>0 rounds · 0 correct</span>
             </div>
-            <div class="guided-game-controls"><button type="button" class="guided-button" data-guided-game-start data-action="click->english-arcade#startGuidedGame">Start round</button><span class="guided-game-status" data-guided-game-hint>Complete a round to unlock the faster next level.</span></div>
+            <div class="guided-game-controls"><button type="button" class="guided-button" data-guided-game-start data-action="click->english-arcade#startGuidedGame">Start Learn</button><span class="guided-game-status" data-guided-game-hint>Hover or focus a phrase to pause while you read.</span></div>
           </section>
 
           <dialog class="guided-learning-dialog" data-guided-learning-dialog aria-labelledby="guided-learning-title-<%= index %>">
             <div class="guided-learning-shell">
               <header class="guided-learning-header">
-                <div><span class="guided-kicker">Post-choice learning review</span><h4 id="guided-learning-title-<%= index %>">Why this is the strongest answer</h4><p><%= card.answer_text %></p></div>
+                <div><span class="guided-kicker">Post-choice learning review</span><h4 id="guided-learning-title-<%= index %>">Why this is the strongest answer</h4><p data-guided-review-answer="base"><%= card.answer_text %></p><% if transfer_card.present? %><p data-guided-review-answer="transfer" hidden><%= transfer_card.answer_text %></p><% end %></div>
                 <button type="button" class="guided-learning-close" aria-label="Close learning review" data-action="click->english-arcade#closeGuidedLearningDialog">×</button>
               </header>
 
@@ -247,7 +262,7 @@
           <% end %>
               <footer class="guided-learning-actions">
                 <button type="button" class="guided-button secondary" data-action="click->english-arcade#closeGuidedLearningDialog">Close and keep reviewing</button>
-                <button type="button" class="guided-button" data-action="click->english-arcade#nextGuidedGameRound">Next round →</button>
+                <button type="button" class="guided-button" data-guided-game-next data-action="click->english-arcade#nextGuidedGameRound">Continue to Recall →</button>
               </footer>
             </div>
           </dialog>

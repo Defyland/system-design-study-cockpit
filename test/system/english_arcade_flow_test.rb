@@ -140,20 +140,20 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_selector ".guided-experience"
     assert_selector ".guided-board"
     assert_selector ".guided-card", count: 5, visible: :all
-    assert_equal [ 4 ] * 5, page.evaluate_script("Array.from(document.querySelectorAll('.guided-card')).map((card) => card.querySelectorAll('[data-guided-game-options=best_answer] [data-guided-game-option]').length)")
+    assert_equal [ 4 ] * 5, page.evaluate_script("Array.from(document.querySelectorAll('.guided-card')).map((card) => card.querySelectorAll('[data-guided-game-options=learn] [data-guided-game-option]').length)")
     assert_text(/Best answer · practise in first person/i)
     assert_no_text(/Canonical response/i)
     assert_no_selector "dialog.guided-learning-dialog[open]"
-    assert_button "Start round"
+    assert_button "Start Learn"
     assert_no_selector ".arcade-question"
     assert_no_selector "form[action*='english-arcade/attempts']"
     assert_no_text "Commit answer"
 
     within ".guided-card:not([hidden])" do
-      click_button "Start round"
+      click_button "Start Learn"
       assert_selector "[data-guided-game-option]:not([hidden])", count: 4, visible: :all
       assert_selector "[data-guided-game-option].is-authored-best:not([hidden])", count: 1, visible: :all
-      correct_index = find("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']", visible: :all)["data-guided-game-index"]
+      correct_index = find("[data-guided-game-options='learn'] [data-guided-game-correct='true']", visible: :all)["data-guided-game-index"]
       page.execute_script("window.dispatchEvent(new KeyboardEvent('keydown', { key: '#{correct_index.to_i + 1}', bubbles: true }))")
       assert_text "Correct phrase"
       assert_selector "dialog.guided-learning-dialog[open]"
@@ -168,10 +168,12 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
       assert_equal "0", page.evaluate_script("document.querySelector('.guided-card:not([hidden])').dataset.guidedCardIndex")
       page.driver.browser.action.send_keys(:escape).perform
       assert_no_selector "dialog.guided-learning-dialog[open]"
-      click_button "Complete the sentence"
-      assert_text(/Complete with the exact authored phrase/i)
-      click_button "Start round"
-      assert_selector "[data-guided-game-options='completion'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+      click_button "2 · Recall"
+      assert_text(/Recall · answer without the model/i)
+      assert_no_selector "[data-guided-model]", visible: true
+      click_button "Start Recall"
+      assert_selector "[data-guided-game-options='recall'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+      assert_no_selector "[data-guided-game-options='recall'] .is-authored-best", visible: true
     end
 
     click_button "Ready"
@@ -181,29 +183,32 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_equal 0, EnglishArcadeAttempt.count
   end
 
-  test "guided game resolves outcomes, accelerates the next card, and preserves score" do
+  test "guided game progresses through learn recall and transfer while preserving score" do
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
 
-    click_button "Start round"
+    click_button "Start Learn"
     assert_selector ".guided-game-stage[data-game-state='running']"
-    assert_selector "[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+    assert_selector "[data-guided-game-options='learn'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
 
     first_round = page.evaluate_script(<<~JAVASCRIPT)
       (() => {
         const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
-        const option = stage.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        const option = stage.querySelector("[data-guided-game-options='learn'] [data-guided-game-option]")
         return {
           deadline: Number(stage.dataset.gameDeadlineMs),
           duration: Number.parseFloat(option.style.getPropertyValue('--duration')),
-          state: stage.dataset.gameState
+          state: stage.dataset.gameState,
+          height: stage.getBoundingClientRect().height
         }
       })()
     JAVASCRIPT
     assert_equal "running", first_round.fetch("state")
     assert_operator first_round.fetch("deadline"), :>, 0
     assert_operator first_round.fetch("duration"), :>, 0
+    assert_operator first_round.fetch("deadline"), :>=, 20_000
+    assert_operator first_round.fetch("height"), :>=, 620
     assert_text "Score 0"
     assert_text "Streak 0"
     assert_text "Level 1"
@@ -215,7 +220,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
         const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
         const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
         const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
-        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']"))
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='learn'] [data-guided-game-correct='true']"))
       })()
     JAVASCRIPT
     assert_selector ".guided-game-stage[data-game-state='correct']"
@@ -228,14 +233,15 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     # must not silently discard a live deadline or its falling cards.
     within "dialog.guided-learning-dialog[open]" do
       assert_text "Why this is the strongest answer"
-      click_button "Next round"
+      click_button "Continue to Recall →"
     end
-    assert_text "Card 2 of 5"
+    assert_text "Card 1 of 5"
+    assert_selector "button[data-guided-game-mode='recall'][aria-pressed='true']", text: "2 · Recall"
     assert_selector ".guided-game-stage[data-game-state='running']"
     second_round = page.evaluate_script(<<~JAVASCRIPT)
       (() => {
         const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
-        const option = stage.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        const option = stage.querySelector("[data-guided-game-options='recall'] [data-guided-game-option]")
         return {
           deadline: Number(stage.dataset.gameDeadlineMs),
           duration: Number.parseFloat(option.style.getPropertyValue('--duration')),
@@ -247,9 +253,9 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_operator second_round.fetch("deadline"), :<, first_round.fetch("deadline")
     assert_includes second_round.fetch("score"), "Score 100"
 
-    click_button "Complete the sentence"
+    click_button "3 · Transfer"
     assert_text(/Finish the current round.*before changing modes/i)
-    assert_text "Card 2 of 5"
+    assert_text "Card 1 of 5"
     assert_selector ".guided-game-stage[data-game-state='running']"
 
     page.execute_script(<<~JAVASCRIPT)
@@ -257,7 +263,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
         const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
         const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
         const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
-        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='false']"))
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='recall'] [data-guided-game-correct='false']"))
       })()
     JAVASCRIPT
     assert_selector ".guided-game-stage[data-game-state='wrong']"
@@ -266,14 +272,18 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     assert_text "Streak 0"
 
     within "dialog.guided-learning-dialog[open]" do
-      click_button "Next round"
+      click_button "Continue to Transfer →"
     end
-    assert_text "Card 3 of 5"
+    assert_text "Card 1 of 5"
+    assert_selector "button[data-guided-game-mode='transfer'][aria-pressed='true']", text: "3 · Transfer"
     assert_selector ".guided-game-stage[data-game-state='running']"
+    assert_selector "[data-guided-game-options='transfer'] [data-guided-game-option]:not([hidden])", minimum: 3, visible: :all
+    assert_no_selector "[data-guided-model]", visible: true
     click_button "Next card"
     assert_text(/previous round was canceled when you changed cards/i)
-    assert_text "Card 4 of 5"
-    click_button "Start round"
+    assert_text "Card 2 of 5"
+    assert_selector "button[data-guided-game-mode='learn'][aria-pressed='true']", text: "1 · Learn"
+    click_button "Start Learn"
     assert_selector ".guided-game-stage[data-game-state='running']"
     page.execute_script(<<~JAVASCRIPT)
       (() => {
@@ -291,7 +301,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     visit "/english-arcade"
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
-    click_button "Start round"
+    click_button "Start Learn"
 
     page.execute_script(<<~JAVASCRIPT)
       (() => {
@@ -302,7 +312,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
     JAVASCRIPT
     assert_selector ".guided-game-stage[data-game-state='expired']"
     assert_button "Session ended", disabled: true
-    assert_selector ".guided-card:not([hidden]) [data-guided-game-options='best_answer'] [data-guided-game-option][disabled]", count: 4, visible: :all
+    assert_selector ".guided-card:not([hidden]) [data-guided-game-options='learn'] [data-guided-game-option][disabled]", count: 4, visible: :all
     assert_text "Gameplay is locked"
 
     result = page.evaluate_script(<<~JAVASCRIPT)
@@ -311,7 +321,7 @@ class EnglishArcadeFlowTest < ApplicationSystemTestCase
         const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
         const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
         const start = game.querySelector('[data-guided-game-start]')
-        const option = game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-option]")
+        const option = game.querySelector("[data-guided-game-options='learn'] [data-guided-game-option]")
         controller.startGuidedGame({ currentTarget: start })
         controller.nextGuidedGameRound({ preventDefault() {} })
         controller.finishGuidedGameChoice(option)

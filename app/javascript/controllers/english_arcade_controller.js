@@ -3,14 +3,16 @@ import { Controller } from "@hotwired/stimulus"
 // Guided rounds are deliberately deterministic. A completed round advances the
 // level, while a miss only resets the streak; the authored card and its answer
 // remain the source of truth for every option.
-const GUIDED_GAME_INITIAL_FALL_MS = 9000
-const GUIDED_GAME_MIN_FALL_MS = 4500
+const GUIDED_GAME_INITIAL_FALL_MS = 18000
+const GUIDED_GAME_MIN_FALL_MS = 12000
 const GUIDED_GAME_FALL_STEP_MS = 750
-const GUIDED_GAME_INITIAL_STAGGER_MS = 1400
-const GUIDED_GAME_MIN_STAGGER_MS = 800
+const GUIDED_GAME_INITIAL_STAGGER_MS = 3200
+const GUIDED_GAME_MIN_STAGGER_MS = 2500
 const GUIDED_GAME_STAGGER_STEP_MS = 100
-const GUIDED_GAME_DEADLINE_BUFFER_MS = 350
+const GUIDED_GAME_DEADLINE_BUFFER_MS = 800
 const GUIDED_GAME_MIN_DEADLINE_MS = GUIDED_GAME_MIN_FALL_MS + (3 * GUIDED_GAME_MIN_STAGGER_MS) + GUIDED_GAME_DEADLINE_BUFFER_MS
+const GUIDED_GAME_READING_BASE_MS = 6000
+const GUIDED_GAME_READING_MS_PER_WORD = 450
 const GUIDED_GAME_MAX_LEVEL = 8
 const GUIDED_GAME_CLOCK_INTERVAL_MS = 100
 
@@ -41,7 +43,7 @@ export default class extends Controller {
     this.guidedRatings = {}
     this.guidedUserPaused = false
     this.guidedReadingPaused = false
-    this.guidedGameMode = "best_answer"
+    this.guidedGameMode = "learn"
     this.guidedGameScore = 0
     this.guidedGameStreak = 0
     this.guidedGameLevel = 1
@@ -110,7 +112,7 @@ export default class extends Controller {
     this.guidedIndex = Math.min(Math.max(progress.currentIndex, 0), this.guidedCardTargets.length - 1)
     this.renderGuidedCard({ focus: false, persist: false })
     this.resetGuidedGame({ announce: false })
-    this.announceGuided(this.expired ? "Study time is complete. Gameplay is locked; the dossier remains available." : "Choose a game mode and start the round.")
+    this.announceGuided(this.expired ? "Study time is complete. Gameplay is locked; the dossier remains available." : "Start with Learn, then continue through Recall and Transfer.")
   }
 
   handleGuidedKeydown(event) {
@@ -290,11 +292,12 @@ export default class extends Controller {
     if (interruptedRound) this.resetGuidedGame({ announce: false })
 
     this.guidedIndex = nextIndex
+    this.guidedGameMode = "learn"
     this.renderGuidedCard({ focus, persist: true })
     this.guidedReadingPaused = false
     this.resetGuidedGame({ announce: false })
     this.setGuidedPauseUi(this.guidedUserPaused)
-    this.announceGuided(interruptedRound ? `Card ${this.guidedIndex + 1} of ${this.guidedCardTargets.length}. The previous round was canceled when you changed cards; choose a mode and start again.` : `Card ${this.guidedIndex + 1} of ${this.guidedCardTargets.length}. Choose a mode and start the round.`)
+    this.announceGuided(interruptedRound ? `Card ${this.guidedIndex + 1} of ${this.guidedCardTargets.length}. The previous round was canceled when you changed cards; restart with Learn.` : `Card ${this.guidedIndex + 1} of ${this.guidedCardTargets.length}. Start with Learn.`)
   }
 
   renderGuidedCard({ focus = false, persist = true } = {}) {
@@ -336,6 +339,7 @@ export default class extends Controller {
   resumeAfterReading(event) {
     if (!this.guidedValue || this.guidedUserPaused) return
     if (event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) return
+    if (event.currentTarget.matches(":hover, :focus-within")) return
     this.guidedReadingPaused = false
     this.toggleGuidedGameClock(false)
     this.setGuidedPauseUi(false)
@@ -352,7 +356,7 @@ export default class extends Controller {
 
   selectGuidedGameMode(event) {
     const mode = event.currentTarget.dataset.guidedGameMode
-    if (!["best_answer", "completion"].includes(mode)) return
+    if (!["learn", "recall", "transfer"].includes(mode)) return
 
     if (this.expired) {
       this.announceGuided("Study time is complete. Gameplay is locked; the dossier remains available.")
@@ -365,19 +369,17 @@ export default class extends Controller {
       return
     }
 
+    const game = event.currentTarget.closest("[data-guided-game-card]")
+    if (mode === "transfer" && game?.dataset.guidedTransferAvailable !== "true") return
+
     this.guidedGameMode = mode
     this.resetGuidedGame({ announce: false })
-    const game = event.currentTarget.closest("[data-guided-game-card]")
-    game?.querySelectorAll("[data-guided-game-mode]").forEach((button) => {
-      button.setAttribute("aria-pressed", button.dataset.guidedGameMode === mode ? "true" : "false")
-    })
-    game?.querySelectorAll("[data-guided-game-prompt]").forEach((prompt) => {
-      prompt.hidden = prompt.dataset.guidedGamePrompt !== mode
-    })
-    game?.querySelectorAll("[data-guided-game-options]").forEach((group) => {
-      group.hidden = group.dataset.guidedGameOptions !== mode
-    })
-    this.setGuidedGameStatus(mode === "completion" ? "Sentence completion selected. Press Start round." : "Best-answer recognition selected. Press Start round.")
+    const message = {
+      learn: "Learn selected. Study the visible model, then press Start Learn.",
+      recall: "Recall selected. The model is hidden; retrieve the answer before choosing.",
+      transfer: "Transfer selected. Apply the same reasoning to the changed prompt."
+    }[mode]
+    this.setGuidedGameStatus(message)
   }
 
   startGuidedGame(event) {
@@ -398,24 +400,34 @@ export default class extends Controller {
     stage.dataset.gameState = "running"
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
     stage.classList.toggle("is-static-round", Boolean(reducedMotion))
+    stage.scrollIntoView({ block: "start", inline: "nearest" })
     const difficulty = this.guidedGameDifficulty()
     const options = this.guidedGameOptions(game)
+    const travelPx = Math.ceil(stage.getBoundingClientRect().height + 150)
+    stage.dataset.gameTravelPx = String(travelPx)
+    let roundDeadlineMs = difficulty.deadlineMs
     options.forEach((button) => {
+      const wordCount = Number(button.dataset.guidedGameWordCount || 0)
+      const durationMs = Math.max(difficulty.fallDurationMs, GUIDED_GAME_READING_BASE_MS + (wordCount * GUIDED_GAME_READING_MS_PER_WORD))
+      const delayMs = difficulty.staggerMs * Number(button.dataset.guidedGameIndex || 0)
+      roundDeadlineMs = Math.max(roundDeadlineMs, durationMs + delayMs + GUIDED_GAME_DEADLINE_BUFFER_MS)
       button.hidden = false
       button.disabled = false
       button.classList.remove("is-correct", "is-wrong")
       button.setAttribute("aria-pressed", "false")
-      button.style.setProperty("--duration", `${difficulty.fallDurationMs}ms`)
-      button.style.setProperty("--delay", `${difficulty.staggerMs * Number(button.dataset.guidedGameIndex || 0)}ms`)
+      button.style.setProperty("--duration", `${durationMs}ms`)
+      button.style.setProperty("--delay", `${delayMs}ms`)
+      button.style.setProperty("--travel", `${travelPx}px`)
       button.style.animation = "none"
       void button.offsetWidth
       button.style.animation = ""
     })
-    this.setGuidedGameDifficultyUi(game, difficulty)
+    const roundDifficulty = { ...difficulty, deadlineMs: roundDeadlineMs }
+    this.setGuidedGameDifficultyUi(game, roundDifficulty)
     event.currentTarget.textContent = "Restart round"
-    this.setGuidedGameStatus(reducedMotion ? `Reduced motion is active. Choose from the static phrase list within ${this.formatGuidedGameSeconds(difficulty.deadlineMs)}.` : `Phrases are falling. Click one, or use keys 1–4 within ${this.formatGuidedGameSeconds(difficulty.deadlineMs)}.`, game)
-    this.announceGuided("Round started. Choose the strongest falling phrase.")
-    this.scheduleGuidedGameExpiry(game, difficulty.deadlineMs)
+    this.setGuidedGameStatus(reducedMotion ? `Reduced motion is active. Choose from the static phrase list within ${this.formatGuidedGameSeconds(roundDeadlineMs)}.` : `Phrases are falling. Hover or focus to pause; choose within ${this.formatGuidedGameSeconds(roundDeadlineMs)}.`, game)
+    this.announceGuided(`${this.guidedGamePhaseLabel()} round started. Choose the strongest falling phrase.`)
+    this.scheduleGuidedGameExpiry(game, roundDeadlineMs)
   }
 
   selectGuidedGameOption(event) {
@@ -429,8 +441,16 @@ export default class extends Controller {
     if (!stage || !["correct", "wrong", "timeout"].includes(stage.dataset.gameState)) return
 
     this.closeGuidedLearningDialogs()
-    const nextIndex = (this.guidedIndex + 1) % this.guidedCardTargets.length
-    this.setGuidedIndex(nextIndex, { focus: false })
+    const game = this.currentGuidedCard()?.querySelector("[data-guided-game-card]")
+    const nextMode = this.nextGuidedGameMode(game)
+    if (nextMode) {
+      this.guidedGameMode = nextMode
+      this.resetGuidedGame({ announce: false })
+    } else {
+      this.guidedGameMode = "learn"
+      const nextIndex = (this.guidedIndex + 1) % this.guidedCardTargets.length
+      this.setGuidedIndex(nextIndex, { focus: false })
+    }
     const nextStart = this.currentGuidedCard()?.querySelector("[data-guided-game-start]")
     if (nextStart) {
       this.startGuidedGame({ currentTarget: nextStart })
@@ -465,7 +485,9 @@ export default class extends Controller {
     })
     if (!correct) option.classList.add("is-wrong")
     this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
-    const message = correct ? `Correct phrase. Rehearse the highlighted model answer aloud. Next round: level ${this.guidedGameLevel}, ${this.formatGuidedGameSeconds(this.guidedGameDifficulty().deadlineMs)}.` : `Not the authored best phrase. The correct option is highlighted in the learning review. Streak reset; next round is level ${this.guidedGameLevel}.`
+    const nextPhase = this.nextGuidedGameMode(game)
+    const continuation = nextPhase ? `Next: ${this.guidedGamePhaseLabel(nextPhase)} on this card.` : "Next: Learn on the following card."
+    const message = correct ? `Correct phrase. Review the model answer. ${continuation}` : `Not the authored best phrase. Review the correct answer, then continue. ${continuation}`
     this.setGuidedGameStatus(message, game)
     this.setGuidedGameNextRoundLabel(game)
     this.announceGuided(message)
@@ -490,7 +512,9 @@ export default class extends Controller {
       button.classList.toggle("is-correct", button.dataset.guidedGameCorrect === "true")
     })
     this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
-    const message = `Time is up. The authored answer is highlighted in the learning review. Streak reset; next round is level ${this.guidedGameLevel}.`
+    const nextPhase = this.nextGuidedGameMode(game)
+    const continuation = nextPhase ? `Next: ${this.guidedGamePhaseLabel(nextPhase)} on this card.` : "Next: Learn on the following card."
+    const message = `Time is up. Review the authored answer before continuing. ${continuation}`
     this.setGuidedGameStatus(message, game)
     this.setGuidedGameNextRoundLabel(game)
     this.announceGuided(message)
@@ -531,6 +555,31 @@ export default class extends Controller {
     stage.dataset.gameState = "idle"
     delete stage.dataset.gameOutcome
     stage.classList.remove("is-static-round", "is-paused")
+    this.applyGuidedGamePhase(card, game)
+    game.querySelectorAll("[data-guided-game-option]").forEach((button) => {
+      button.hidden = true
+      button.disabled = false
+      button.classList.remove("is-correct", "is-wrong")
+      button.style.animation = ""
+      button.style.animationPlayState = ""
+      button.style.removeProperty("--duration")
+      button.style.removeProperty("--delay")
+      button.style.removeProperty("--travel")
+      button.setAttribute("aria-pressed", "false")
+    })
+    const start = game.querySelector("[data-guided-game-start]")
+    if (start) {
+      start.textContent = `Start ${this.guidedGamePhaseLabel()}`
+      start.dataset.action = "click->english-arcade#startGuidedGame"
+    }
+    this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
+    if (announce) this.setGuidedGameStatus(`${this.guidedGamePhaseLabel()} is ready. Start when you are ready.`, game)
+  }
+
+  applyGuidedGamePhase(card = this.currentGuidedCard(), game = card?.querySelector("[data-guided-game-card]")) {
+    if (!card || !game) return
+
+    card.dataset.guidedPhase = this.guidedGameMode
     game.querySelectorAll("[data-guided-game-mode]").forEach((button) => {
       button.setAttribute("aria-pressed", button.dataset.guidedGameMode === this.guidedGameMode ? "true" : "false")
     })
@@ -540,23 +589,19 @@ export default class extends Controller {
     game.querySelectorAll("[data-guided-game-options]").forEach((group) => {
       group.hidden = group.dataset.guidedGameOptions !== this.guidedGameMode
     })
-    game.querySelectorAll("[data-guided-game-option]").forEach((button) => {
-      button.hidden = true
-      button.disabled = false
-      button.classList.remove("is-correct", "is-wrong")
-      button.style.animation = ""
-      button.style.animationPlayState = ""
-      button.style.removeProperty("--duration")
-      button.style.removeProperty("--delay")
-      button.setAttribute("aria-pressed", "false")
+    card.querySelectorAll("[data-guided-review-answer]").forEach((answer) => {
+      answer.hidden = answer.dataset.guidedReviewAnswer !== (this.guidedGameMode === "transfer" ? "transfer" : "base")
     })
-    const start = game.querySelector("[data-guided-game-start]")
-    if (start) {
-      start.textContent = "Start round"
-      start.dataset.action = "click->english-arcade#startGuidedGame"
-    }
-    this.setGuidedGameDifficultyUi(game, this.guidedGameDifficulty())
-    if (announce) this.setGuidedGameStatus("Choose a mode, then press Start round.", game)
+  }
+
+  nextGuidedGameMode(game = this.currentGuidedCard()?.querySelector("[data-guided-game-card]")) {
+    if (this.guidedGameMode === "learn") return "recall"
+    if (this.guidedGameMode === "recall" && game?.dataset.guidedTransferAvailable === "true") return "transfer"
+    return null
+  }
+
+  guidedGamePhaseLabel(mode = this.guidedGameMode) {
+    return { learn: "Learn", recall: "Recall", transfer: "Transfer" }[mode] || "Learn"
   }
 
   currentGuidedCard() {
@@ -669,7 +714,7 @@ export default class extends Controller {
     if (level) level.textContent = `Level ${difficulty.level}`
     if (speed) speed.textContent = `Speed ${difficulty.speed.toFixed(1)}×`
     if (rounds) rounds.textContent = `${this.guidedGameRounds} rounds · ${this.guidedGameCorrect} correct`
-    this.setGuidedGameDeadlineUi(game, this.guidedGameRemainingMs)
+    this.setGuidedGameDeadlineUi(game, this.guidedGameRemainingMs == null ? difficulty.deadlineMs : this.guidedGameRemainingMs)
   }
 
   setGuidedGameDeadlineUi(game, remainingMs = null) {
@@ -682,10 +727,15 @@ export default class extends Controller {
 
   setGuidedGameNextRoundLabel(game) {
     const start = game?.querySelector("[data-guided-game-start]")
+    const nextMode = this.nextGuidedGameMode(game)
+    const label = nextMode ? `Continue to ${this.guidedGamePhaseLabel(nextMode)}` : "Continue to next card"
     if (start) {
-      start.textContent = "Next round"
+      start.textContent = label
       start.dataset.action = "click->english-arcade#nextGuidedGameRound"
     }
+    this.currentGuidedCard()?.querySelectorAll("[data-guided-game-next]").forEach((button) => {
+      button.textContent = `${label} →`
+    })
   }
 
   rateGuidedCard(event) {

@@ -71,12 +71,12 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
     find("label[for='english-arcade-target-career']").click
     click_button "Play falling cards"
     page.driver.browser.manage.window.resize_to(390, 844)
-    click_button "Start round"
+    click_button "Start Learn"
 
     geometry = page.evaluate_script(<<~JAVASCRIPT)
       (() => {
         const stage = document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]')
-        const options = Array.from(stage.querySelectorAll("[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])"))
+        const options = Array.from(stage.querySelectorAll("[data-guided-game-options='learn'] [data-guided-game-option]:not([hidden])"))
         const heights = options.map((option) => option.getBoundingClientRect().height)
         const stageRect = stage.getBoundingClientRect()
         const minimumHeight = Math.min(...heights)
@@ -110,7 +110,7 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
 
     assert_current_path %r{/english_arcade\?session_id=\d+\z}
     page.driver.browser.manage.window.resize_to(1400, 1000)
-    click_button "Start round"
+    click_button "Start Learn"
     click_button "03 · Learning review"
     within "dialog.guided-learning-dialog[open]" do
       find("[data-guided-choice-index='0']").click
@@ -193,9 +193,9 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
       })
     JAVASCRIPT
 
-    click_button "Start round"
+    click_button "Start Learn"
     assert_selector ".guided-game-stage.is-static-round[data-game-state='running']"
-    assert_selector "[data-guided-game-options='best_answer'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
+    assert_selector "[data-guided-game-options='learn'] [data-guided-game-option]:not([hidden])", count: 4, visible: :all
     deadline = page.evaluate_script("Number(document.querySelector('.guided-card:not([hidden]) [data-guided-game-stage]').dataset.gameDeadlineMs)")
     animation = page.evaluate_script("getComputedStyle(document.querySelector('.guided-card:not([hidden]) [data-guided-game-option]')).animationName")
     assert_operator deadline, :>=, 7000
@@ -206,7 +206,7 @@ class EnglishArcadeAccessibilityTest < ApplicationSystemTestCase
         const root = document.querySelector("section.english-arcade[data-controller='english-arcade']")
         const controller = window.Stimulus.getControllerForElementAndIdentifier(root, 'english-arcade')
         const game = document.querySelector('.guided-card:not([hidden]) [data-guided-game-card]')
-        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='best_answer'] [data-guided-game-correct='true']"))
+        controller.finishGuidedGameChoice(game.querySelector("[data-guided-game-options='learn'] [data-guided-game-correct='true']"))
       })()
     JAVASCRIPT
     assert_selector ".guided-game-stage[data-game-state='correct']"
