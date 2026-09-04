@@ -13,6 +13,14 @@ The exact daily calendar, baseline, mock catalogue, gate thresholds and
 project-provenance inventory are in
 `docs/english-c2-arcade-30-day-program.md`.
 
+## Arena practice boundary
+
+`/arena` is a separate full-screen practice game. Its stage state, lessons,
+and exercise events live only in the `arcade_*` tables; they never write to or
+qualify the closed-book `english_arcade_*` assessment, its mastery evidence, or
+its release gates. The launcher remains the entry point for closed-book work
+and links to Arena explicitly.
+
 ## Contract under test
 
 The historical fixture at

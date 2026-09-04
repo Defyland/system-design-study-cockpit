@@ -1,4 +1,6 @@
 class EnglishArcadeController < ApplicationController
+  include ArcadeLearnerIdentity
+
   require "ostruct"
   require "securerandom"
   require_relative "../services/english_arcade_attempt_contract"
@@ -691,12 +693,6 @@ class EnglishArcadeController < ApplicationController
 
   def cockpit_session
     session
-  end
-
-  def learner_key
-    # Basic auth is the cockpit's only identity boundary today. Never persist a
-    # password; an anonymous fallback keeps local development and tests useful.
-    request.get_header("REMOTE_USER").presence || ENV["STUDY_COCKPIT_USERNAME"].presence || "anonymous"
   end
 
   def public_prompt_snapshot(card)

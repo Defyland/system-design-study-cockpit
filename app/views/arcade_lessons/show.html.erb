@@ -1,0 +1,32 @@
+<% content_for :title, "Lesson · Arena" %>
+<section class="arena-shell arena-lesson" data-controller="arcade-lesson" data-arcade-lesson-id-value="<%= @lesson_payload.fetch("id") %>" data-arcade-lesson-result-url-value="<%= @lesson_payload.dig("urls", "result") %>" data-arcade-lesson-finish-url-value="<%= @lesson_payload.dig("urls", "finish") %>">
+  <header class="arena-lesson-header">
+    <div class="arena-lesson-brand"><%= link_to "Arena", arena_path, class: "arena-wordmark" %><span class="arena-slash">/</span><span>Lesson</span></div>
+    <div class="arena-lesson-controls"><button type="button" class="arena-icon-button" data-action="arcade-lesson#pause" aria-label="Pause lesson">Pause <kbd>Space</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openDossier">Dossier <kbd>D</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openHelp">Help <kbd>?</kbd></button></div>
+  </header>
+
+  <section class="arena-hud" aria-label="Lesson progress">
+    <div class="arena-progress-track" aria-hidden="true"><i data-arcade-lesson-target="progress"></i></div>
+    <div class="arena-hud-meta"><span><strong data-arcade-lesson-target="position">1</strong> / <%= @lesson_payload.dig("totals", "total") %></span><span class="arena-stage-badge" data-arcade-lesson-target="stage">Meet</span><span class="arena-target-badge" data-arcade-lesson-target="target">Mixed</span><span class="arena-combo" data-arcade-lesson-target="combo">Combo 0</span></div>
+  </section>
+
+  <main class="arena-exercise-wrap" aria-live="polite">
+    <div class="arena-exercise" data-arcade-lesson-target="exercise"></div>
+    <section class="arena-feedback" data-arcade-lesson-target="feedback" hidden aria-live="assertive"></section>
+    <section class="arena-results" data-arcade-lesson-target="results" tabindex="-1" hidden></section>
+  </main>
+
+  <footer class="arena-key-help"><span><kbd>1</kbd>–<kbd>6</kbd> choose when shown</span><span><kbd>Tab</kbd>/<kbd>Enter</kbd> use focused controls</span><span><kbd>Enter</kbd> continues feedback</span><span><kbd>Space</kbd> pause</span><span><kbd>D</kbd> dossier</span></footer>
+
+  <dialog class="arena-dialog" data-arcade-lesson-target="exitDialog" aria-labelledby="arena-exit-title">
+    <h2 id="arena-exit-title">Leave this lesson?</h2><p>Your recorded stages remain saved. You can return from the Arena hub.</p><div class="arena-dialog-actions"><button type="button" class="arena-button arena-button-quiet" data-action="arcade-lesson#closeDialog">Keep going</button><%= link_to "Exit to hub", arena_path, class: "arena-button" %></div>
+  </dialog>
+  <dialog class="arena-dialog" data-arcade-lesson-target="dossierDialog" aria-labelledby="arena-dossier-title">
+    <h2 id="arena-dossier-title">Today's dossier</h2><div data-arcade-lesson-target="dossierCopy"><p>Reference notes appear after an exercise is answered. The Arena does not preload answer keys.</p></div><button type="button" class="arena-button arena-button-quiet" data-action="arcade-lesson#closeDossier">Close <kbd>Esc</kbd></button>
+  </dialog>
+  <dialog class="arena-dialog" data-arcade-lesson-target="helpDialog" aria-labelledby="arena-help-title">
+    <h2 id="arena-help-title">Keyboard help</h2><p><kbd>1</kbd>–<kbd>6</kbd> choose when a numbered option is shown; <kbd>Tab</kbd> moves through chips, chunks, and form controls; <kbd>Enter</kbd> activates focused buttons or continues after feedback. In free text, use the visible submit button. <kbd>Space</kbd> pauses when a control is not focused; <kbd>D</kbd> opens the dossier; <kbd>Esc</kbd> opens the exit dialog.</p><button type="button" class="arena-button arena-button-quiet" data-action="arcade-lesson#closeHelp">Close</button>
+  </dialog>
+
+  <script id="arcade-lesson-data" type="application/json"><%= raw json_escape(@lesson_payload.to_json) %></script>
+</section>

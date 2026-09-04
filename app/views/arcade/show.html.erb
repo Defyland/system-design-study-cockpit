@@ -1,0 +1,108 @@
+<% content_for :title, "Arena · English C2" %>
+<% targets = EnglishArcadeSessionBuilder::TARGETS.except("mixed", "interview") %>
+<% due = @progress.fetch("due", {}) %>
+<% retention = @progress.fetch("retention", {}) %>
+<section class="arena-shell arena-hub" data-controller="arcade-hub" data-arcade-hub-progress-url-value="<%= arcade_progress_path(format: :json) %>">
+  <header class="arena-header">
+    <div>
+      <p class="arena-eyebrow">English C2 · practice arena</p>
+      <h1>Make the phrase hold.</h1>
+      <p class="arena-lede">Short retrieval loops for precise interview English. Accuracy is the score; the combo only keeps the pressure honest.</p>
+    </div>
+    <div class="arena-header-actions">
+      <%= link_to "Back to launcher", english_arcade_path, class: "arena-button arena-button-quiet" %>
+    </div>
+  </header>
+
+  <section class="arena-stat-strip" aria-label="Today's Arena metrics">
+    <article><span class="arena-stat-label">Streak</span><strong data-arena-metric="streak"><%= @progress.fetch("streak_days", 0) %></strong><small>days</small></article>
+    <article><span class="arena-stat-label">Due now</span><strong data-arena-metric="due"><%= due.fetch("total", 0) %></strong><small>stages</small></article>
+    <article><span class="arena-stat-label">Minutes today</span><strong data-arena-metric="minutes"><%= @progress.fetch("minutes_today", 0) %></strong><small>focused</small></article>
+    <article><span class="arena-stat-label">Retention now</span><strong data-arena-metric="retention"><%= (retention.fetch("predicted_now", 0).to_f * 100).round %>%</strong><small>predicted</small></article>
+  </section>
+
+  <section class="arena-start-grid" aria-labelledby="arena-start-title">
+    <div class="arena-start-card">
+      <p class="arena-eyebrow">Next best loop</p>
+      <h2 id="arena-start-title">Start a lesson</h2>
+      <p>Mix due stages with two new cards. Every miss stays useful and comes back later in the same lesson.</p>
+      <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false } do |form| %>
+        <%= form.hidden_field :target_mode, value: "mixed" %>
+        <%= form.hidden_field :size, value: ArcadeLessonComposer::SIZE %>
+        <%= form.submit "Start mixed lesson", class: "arena-button" %>
+      <% end %>
+      <div class="arena-secondary-actions">
+        <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false } do |form| %>
+          <%= form.hidden_field :target_mode, value: "interview" %>
+          <%= form.hidden_field :size, value: ArcadeLessonComposer::SIZE %>
+          <%= form.submit "Interview mode", class: "arena-button arena-button-secondary" %>
+        <% end %>
+        <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false } do |form| %>
+          <%= form.hidden_field :target_mode, value: "mixed" %>
+          <%= form.hidden_field :size, value: 6 %>
+          <%= form.hidden_field :new_cards, value: 0 %>
+          <%= form.hidden_field :boss_only, value: true %>
+          <%= form.submit "Rain round only", class: "arena-button arena-button-quiet" %>
+        <% end %>
+      </div>
+    </div>
+    <aside class="arena-principles">
+      <h3>How the ladder works</h3>
+      <ol>
+        <li><span>01</span> Recognize the strongest phrasing.</li>
+        <li><span>02</span> Spot the language trap.</li>
+        <li><span>03</span> Rebuild, produce, and transfer.</li>
+      </ol>
+      <p class="arena-muted">No lives. No assessment writes. Arena progress is practice data only.</p>
+    </aside>
+  </section>
+
+  <div class="arena-content-grid">
+    <section class="arena-panel" aria-labelledby="target-map-title">
+      <div class="arena-panel-heading">
+        <div><p class="arena-eyebrow">14 tracks</p><h2 id="target-map-title">Target map</h2></div>
+        <span class="arena-muted"><%= due.fetch("forecast_7d", 0) %> due in 7 days</span>
+      </div>
+      <div class="arena-target-grid">
+        <% targets.each do |key, target| %>
+          <% mastery = @progress.fetch("mastery_by_target", {}).fetch(key, {}) %>
+          <% score = mastery.fetch("score", 0).to_f %>
+          <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false }, class: "arena-target-form" do |form| %>
+            <%= form.hidden_field :target_mode, value: "single" %>
+            <%= form.hidden_field :target, value: key %>
+            <%= form.hidden_field :size, value: ArcadeLessonComposer::SIZE %>
+            <button class="arena-target-card" type="submit" aria-label="Practice <%= target[:label] %>">
+              <span class="arena-ring" style="--ring-progress: <%= (score * 100).round(1) %>%" aria-hidden="true"><span><%= (score * 100).round %>%</span></span>
+              <% weakest_axis = mastery["weakest_axis"].to_s.presence %>
+              <span class="arena-target-copy"><strong><%= target[:label] %></strong><small><%= weakest_axis ? "#{weakest_axis.humanize} focus" : "No exposure yet" %></small></span>
+            </button>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="arena-panel arena-precision" aria-labelledby="precision-title">
+      <div class="arena-panel-heading"><div><p class="arena-eyebrow">30-day signal</p><h2 id="precision-title">Precision profile</h2></div></div>
+      <div class="arena-axis-list">
+        <% @progress.fetch("accuracy_by_axis_30d", {}).each do |axis, metric| %>
+          <% rate = metric.fetch("error_rate", 0).to_f %>
+          <div class="arena-axis-row"><span><%= axis.humanize %></span><div class="arena-bar"><i style="width: <%= [rate * 100, 100].min.round(1) %>%"></i></div><strong><%= (rate * 100).round %>%</strong></div>
+        <% end %>
+      </div>
+      <p class="arena-muted">Error rate = wrong answers / exposed stages. Rebuild order is tracked separately.</p>
+    </section>
+  </div>
+
+  <section class="arena-panel arena-metrics-panel" aria-labelledby="metrics-title">
+    <div class="arena-panel-heading"><div><p class="arena-eyebrow">Evidence, not XP</p><h2 id="metrics-title">Your practice signal</h2></div></div>
+    <div class="arena-metric-columns">
+      <div><h3>Retrieval accuracy by stage</h3><dl class="arena-definition-list">
+        <% @progress.fetch("accuracy_by_stage_30d", {}).each do |stage, metric| %><div><dt><%= stage.humanize %></dt><dd><%= (metric.fetch("accuracy", 0).to_f * 100).round %>% <small>(<%= metric.fetch("total", 0) %>)</small></dd></div><% end %>
+      </dl></div>
+      <div><h3>Response time</h3><dl class="arena-definition-list">
+        <% @progress.fetch("response_ms_by_stage_30d", {}).each do |stage, metric| %><div><dt><%= stage.humanize %></dt><dd><%= metric.fetch("median_ms", "—") || "—" %><% if metric.fetch("median_ms", nil) %> ms<% end %></dd></div><% end %>
+      </dl></div>
+      <div><h3>Retention</h3><dl class="arena-definition-list"><div><dt>Observed 7d</dt><dd><%= (retention.fetch("observed_7d", 0).to_f * 100).round %>%</dd></div><div><dt>Observed 30d</dt><dd><%= (retention.fetch("observed_30d", 0).to_f * 100).round %>%</dd></div><div><dt>Delayed transfer pass rate</dt><dd><%= (retention.fetch("delayed_variant_pass_rate", 0).to_f * 100).round %>%</dd></div></dl></div>
+    </div>
+  </section>
+</section>

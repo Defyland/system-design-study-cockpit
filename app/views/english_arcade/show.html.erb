@@ -98,7 +98,12 @@
       <span class="arcade-hero-chip">progressive cue removal</span>
       <span class="arcade-hero-chip">resume-aware interview drill</span>
     </div>
-    <% unless @arcade_session %><div class="arcade-hero-cta"><a href="#arcade-launcher" class="arcade-button">Choose a target and play ↓</a></div><% end %>
+    <% unless @arcade_session %>
+      <div class="arcade-hero-cta">
+        <a href="#arcade-launcher" class="arcade-button">Choose a target and play ↓</a>
+        <%= link_to "Open the full-screen Arena", arena_path, class: "arcade-button ghost" %>
+      </div>
+    <% end %>
   </header>
 
   <section id="arcade-launcher" class="arcade-panel" aria-labelledby="arcade-launcher-title">

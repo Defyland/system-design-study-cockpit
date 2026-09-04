@@ -7,6 +7,15 @@ the study-cockpit directory:
 bin/english_arcade_voice_companion
 ```
 
+## Arena boundary
+
+Arena speaking practice is optional and does not feed the closed-book
+assessment or its mastery gates. The Arena does not silently fall back to the
+paid OpenAI Realtime path: browser playback and an optional transcript are the
+available in-game aids, while the local Apple Speech + Codex companion remains
+an explicit local workflow. Realtime support for Arena requires a later,
+separately authorized integration.
+
 It binds only to `127.0.0.1` on port `43129` by default. The process creates a
 new high-entropy pairing secret in memory and prints it once to its terminal.
 Paste that value into the Guided voice panel. The browser keeps the secret only

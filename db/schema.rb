@@ -10,9 +10,99 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_23_010300) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "arcade_exercise_events", force: :cascade do |t|
+    t.decimal "actual_interval_days", precision: 10, scale: 4
+    t.integer "anchors_hit"
+    t.integer "anchors_total"
+    t.datetime "answered_at", null: false
+    t.bigint "arcade_lesson_id", null: false
+    t.integer "attempt_no", default: 1, null: false
+    t.boolean "boss_round", default: false, null: false
+    t.string "card_key", null: false
+    t.string "content_version", null: false
+    t.boolean "correct", null: false
+    t.datetime "created_at", null: false
+    t.string "exercise_id", null: false
+    t.string "exercise_type", null: false
+    t.string "learner_key", default: "anonymous", null: false
+    t.integer "position", null: false
+    t.integer "rating", null: false
+    t.string "reason"
+    t.jsonb "response", default: {}, null: false
+    t.integer "response_ms"
+    t.text "response_text"
+    t.decimal "retrievability", precision: 8, scale: 5
+    t.decimal "scheduled_interval_days", precision: 10, scale: 4
+    t.integer "self_rating"
+    t.decimal "similarity", precision: 6, scale: 4
+    t.decimal "stability_after", precision: 10, scale: 4
+    t.decimal "stability_before", precision: 10, scale: 4
+    t.string "stage", null: false
+    t.string "target", null: false
+    t.string "trap_axis"
+    t.datetime "updated_at", null: false
+    t.index ["arcade_lesson_id", "exercise_id", "attempt_no"], name: "idx_arcade_exercise_events_idempotency", unique: true
+    t.index ["arcade_lesson_id"], name: "index_arcade_exercise_events_on_arcade_lesson_id"
+    t.index ["learner_key", "answered_at"], name: "idx_arcade_exercise_events_learner_answered"
+    t.index ["learner_key", "card_key", "stage", "answered_at"], name: "idx_arcade_exercise_events_card_stage_answered"
+    t.index ["learner_key", "trap_axis", "answered_at"], name: "idx_arcade_exercise_events_axis_answered"
+  end
+
+  create_table "arcade_lessons", force: :cascade do |t|
+    t.decimal "accuracy", precision: 6, scale: 4
+    t.integer "boss_correct", default: 0, null: false
+    t.integer "boss_total", default: 0, null: false
+    t.integer "correct_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "duration_ms"
+    t.integer "exercises_done", default: 0, null: false
+    t.integer "exercises_total", default: 0, null: false
+    t.datetime "finished_at"
+    t.string "learner_key", default: "anonymous", null: false
+    t.decimal "mastery_delta", precision: 8, scale: 4
+    t.integer "new_cards_count", default: 0, null: false
+    t.jsonb "plan", default: [], null: false
+    t.integer "review_count", default: 0, null: false
+    t.string "seed", null: false
+    t.datetime "started_at", null: false
+    t.string "status", default: "active", null: false
+    t.jsonb "summary", default: {}, null: false
+    t.string "target", default: "mixed", null: false
+    t.string "target_mode", default: "mixed", null: false
+    t.jsonb "targets", default: [], null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "started_at"], name: "idx_arcade_lessons_learner_started"
+    t.index ["learner_key", "status"], name: "idx_arcade_lessons_learner_status"
+  end
+
+  create_table "arcade_stage_states", force: :cascade do |t|
+    t.string "card_key", null: false
+    t.string "content_version", null: false
+    t.datetime "created_at", null: false
+    t.decimal "difficulty", precision: 5, scale: 2, default: "5.0", null: false
+    t.datetime "due_at", null: false
+    t.integer "lapses", default: 0, null: false
+    t.integer "last_rating"
+    t.boolean "last_result"
+    t.datetime "last_reviewed_at"
+    t.string "learner_key", default: "anonymous", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.integer "reps", default: 0, null: false
+    t.decimal "stability", precision: 10, scale: 4, default: "0.0", null: false
+    t.string "stage", null: false
+    t.string "status", default: "new", null: false
+    t.integer "streak", default: 0, null: false
+    t.string "target", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "card_key", "stage"], name: "idx_arcade_stage_states_identity", unique: true
+    t.index ["learner_key", "card_key"], name: "idx_arcade_stage_states_card"
+    t.index ["learner_key", "status", "due_at"], name: "idx_arcade_stage_states_due"
+    t.index ["learner_key", "target", "stage"], name: "idx_arcade_stage_states_target_stage"
+  end
 
   create_table "checkpoint_attempts", force: :cascade do |t|
     t.datetime "answered_at", null: false
@@ -264,6 +354,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_23_010300) do
     t.index ["study_document_id"], name: "index_study_progresses_on_study_document_id", unique: true
   end
 
+  add_foreign_key "arcade_exercise_events", "arcade_lessons"
   add_foreign_key "checkpoint_attempts", "checkpoints"
   add_foreign_key "checkpoints", "study_documents"
   add_foreign_key "english_arcade_attempts", "english_arcade_attempts", column: "parent_attempt_id"

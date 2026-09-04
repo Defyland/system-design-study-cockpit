@@ -1,6 +1,15 @@
 Rails.application.routes.draw do
   root "dashboard#index"
 
+  get "arena", to: "arcade#show", as: :arena
+  scope "arena", as: :arcade do
+    resources :lessons, only: %i[create show], controller: :arcade_lessons do
+      post :finish, on: :member
+      resources :results, only: :create, controller: :arcade_exercise_results
+    end
+    resource :progress, only: :show, controller: :arcade_progress
+  end
+
   resources :chapters, only: %i[index show], param: :slug
   resources :drills, only: %i[index]
   resource :study_plan, only: %i[show]

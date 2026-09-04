@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" class="arcade-document">
+  <head>
+    <title><%= content_for(:title) || "English Arcade Arena" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#0b1117">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <%= stylesheet_link_tag "arcade", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="arcade-body">
+    <a class="arcade-skip-link" href="#main-content">Skip to arena</a>
+    <main id="main-content" tabindex="-1">
+      <%= yield %>
+    </main>
+  </body>
+</html>
