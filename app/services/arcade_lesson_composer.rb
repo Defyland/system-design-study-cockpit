@@ -133,6 +133,10 @@ class ArcadeLessonComposer
   def build_plan(items:, mode:, target:, size:, new_cards:, seed:, now:, boss_only: false)
     state_scope = ArcadeStageState.where(learner_key: @learner_key)
     states = state_scope.to_a.group_by(&:card_key)
+    if mode == "card" && !boss_only
+      explicit_plan = explicit_card_plan(items.first, states: states, seed: seed)
+      return explicit_plan if explicit_plan
+    end
     due_items = items.select do |item|
       Array(states[item.fetch(:key).to_s]).any? { |state| state.due?(now) }
     end.sort_by do |item|
@@ -202,6 +206,44 @@ class ArcadeLessonComposer
     end
 
     [ entries, touched, { new_cards: fresh_items.length, review_count: entries.count { |entry| entry["reason"] == "due" } } ]
+  end
+
+  def explicit_card_plan(item, states:, seed:)
+    return nil unless item
+
+    card_states = Array(states[item.fetch(:key).to_s])
+    stage_state, slot = highest_reviewed_stage(item, card_states)
+    return nil unless stage_state
+
+    entry = entry_for(
+      item,
+      stage: stage_state.stage,
+      reason: "practice",
+      position: 0,
+      attempt_no: 1,
+      slot: slot,
+      seed: seed
+    )
+    return nil unless entry
+
+    [ [ entry ], [ item ], { new_cards: 0, review_count: 0 } ]
+  end
+
+  def highest_reviewed_stage(item, states)
+    states.select { |state| reviewed_state?(state) }
+      .sort_by { |state| -STAGE_RANK.fetch(state.stage.to_s, -1) }
+      .filter_map do |state|
+        stage = state.stage.to_s
+        next unless STAGE_RANK.key?(stage)
+
+        slots = [ stage_slot(stage, states: states), 0 ].uniq
+        slot = slots.find { |candidate| @content.supported?(item, stage: stage, slot: candidate) }
+        [ state, slot ] if slot
+      end.first
+  end
+
+  def reviewed_state?(state)
+    state.reps.to_i.positive? || state.last_reviewed_at.present?
   end
 
   def next_stage(item, states:, now:)

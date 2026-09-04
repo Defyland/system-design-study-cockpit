@@ -74,34 +74,22 @@
   @media (max-width: 760px) { html, body { max-width: 100vw; overflow-x: hidden; width: 100%; } body { overflow-x: hidden; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; max-width: 100vw; min-width: 0; overflow: hidden; width: 100%; } .nav { gap: 8px 14px; justify-content: flex-start; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; } .nav a { overflow-wrap: anywhere; } .page { max-width: 100vw; min-width: 0; overflow-x: hidden; padding: 18px 12px 40px; width: 100%; } .english-arcade { min-width: 0; width: 100%; max-width: 100%; overflow-x: hidden; } .arcade-hero h1 { font-size: clamp(2.8rem, 17vw, 4.5rem); } .arcade-grid { grid-template-columns: 1fr; } .arcade-targets, .arcade-modes, .arcade-capture { grid-template-columns: 1fr; } }
 </style>
 
-<section class="english-arcade" data-controller="english-arcade" data-english-arcade-duration-seconds-value="<%= @arcade_session&.duration_seconds || 0 %>" data-english-arcade-remaining-seconds-value="<%= @arcade_session&.remaining_seconds || 0 %>" data-english-arcade-active-value="<%= @arcade_session&.active? && !@arcade_session.expired? %>" data-english-arcade-guided-value="<%= @guided_experience %>" data-english-arcade-session-key-value="<%= @arcade_session&.id || "landing" %>" data-english-arcade-finish-url-value="<%= @arcade_session ? finish_english_arcade_path(session_id: @arcade_session.id) : "" %>">
+<section class="english-arcade" data-controller="english-arcade" data-english-arcade-duration-seconds-value="<%= @arcade_session&.duration_seconds || 0 %>" data-english-arcade-remaining-seconds-value="<%= @arcade_session&.remaining_seconds || 0 %>" data-english-arcade-active-value="<%= @arcade_session&.active? && !@arcade_session.expired? %>" data-english-arcade-session-key-value="<%= @arcade_session&.id || "landing" %>" data-english-arcade-finish-url-value="<%= @arcade_session ? finish_english_arcade_path(session_id: @arcade_session.id) : "" %>">
   <header class="arcade-hero">
-    <% if @guided_experience %>
-      <span class="arcade-kicker">English C2 · guided study arcade</span>
-    <% else %>
-      <span class="arcade-kicker">English C2 · closed-book interview practice</span>
-    <% end %>
+    <span class="arcade-kicker">English C2 · closed-book interview practice</span>
     <h1>English <em>Arcade.</em></h1>
-    <% if @guided_experience %>
-      <div class="arcade-hero-copy">
-        <p>Click, read, and choose while authored English phrases fall. Each card starts with the model, hides it for recall, then changes the prompt for transfer.</p>
-        <p class="arcade-muted">Progress through Learn → Recall → Transfer, then review alternatives, trade-offs, language coaching, and sources in a clear study dossier.</p>
-      </div>
-    <% else %>
-      <div class="arcade-hero-copy">
-        <p>Answer closed-book, explain your reasoning, then reveal the authored response and turn each miss into a concrete reattempt.</p>
-        <p class="arcade-muted">This is interview practice, not a CEFR certificate or a promise of objective speaking accuracy.</p>
-      </div>
-    <% end %>
+    <div class="arcade-hero-copy">
+      <p>Answer closed-book, explain your reasoning, then reveal the authored response and turn each miss into a concrete reattempt.</p>
+      <p class="arcade-muted">This is interview practice, not a CEFR certificate or a promise of objective speaking accuracy.</p>
+    </div>
     <div class="arcade-hero-chips" aria-label="Arcade features">
-      <span class="arcade-hero-chip">falling phrases</span>
-      <span class="arcade-hero-chip">progressive cue removal</span>
-      <span class="arcade-hero-chip">resume-aware interview drill</span>
+      <span class="arcade-hero-chip">closed-book answers</span>
+      <span class="arcade-hero-chip">server-owned feedback</span>
+      <span class="arcade-hero-chip">30-day diagnostic</span>
     </div>
     <% unless @arcade_session %>
       <div class="arcade-hero-cta">
         <a href="#arcade-launcher" class="arcade-button">Choose a target and play ↓</a>
-        <%= link_to "Open the full-screen Arena", arena_path, class: "arcade-button ghost" %>
       </div>
     <% end %>
   </header>
@@ -137,44 +125,23 @@
         <% @modes.each do |key, mode| %>
           <label class="arcade-mode">
             <%= form.radio_button :mode, key, checked: key == @selected_mode %>
-            <span><strong><%= mode[:label] %></strong><br><small class="arcade-muted"><%= mode[:duration_seconds] / 60 %> minutes · <%= @guided_experience ? "guided cards and spoken rehearsal" : "feedback after submit" %></small></span>
+            <span><strong><%= mode[:label] %></strong><br><small class="arcade-muted"><%= mode[:duration_seconds] / 60 %> minutes · feedback after submit</small></span>
           </label>
         <% end %>
       </div>
 
       <div class="arcade-actions">
-        <%= button_tag(@arcade_session ? "Play another falling-card round" : "Play falling cards", type: "submit", name: "english_arcade_session[experience]", value: "guided", class: "arcade-button") %>
-        <%= button_tag("Start closed-book session", type: "submit", name: "english_arcade_session[experience]", value: "assessment", class: "arcade-button ghost") %>
-        <% if @guided_experience %>
-          <span class="arcade-muted" aria-live="polite">Guided self-ratings stay in this browser.</span>
-        <% else %>
-          <span class="arcade-muted" aria-live="polite"><%= @schedule_summary[:due] %> cards due · <%= @schedule_summary[:mastered] %> in box 5</span>
-        <% end %>
+        <%= button_tag("Start closed-book session", type: "submit", class: "arcade-button") %>
+        <%= link_to "Enter the Arena", arena_path, class: "arcade-button ghost" %>
+        <span class="arcade-muted" aria-live="polite"><%= @schedule_summary[:due] %> cards due · <%= @schedule_summary[:mastered] %> in box 5</span>
       </div>
-      <% if @guided_experience %>
-        <p class="arcade-muted">Guided progress is saved only in this browser. It does not create attempts, grades, or diagnostic mastery records.</p>
-      <% else %>
-        <p class="arcade-muted">Program day <%= @progress_30_days[:program_day] %> · <%= @progress_30_days[:practice_days] %> practice days · <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> completed Black Box post-mortems (<%= @progress_30_days[:black_box_required] %> required).</p>
-      <% end %>
+      <p class="arcade-muted">Program day <%= @progress_30_days[:program_day] %> · <%= @progress_30_days[:practice_days] %> practice days · <%= @progress_30_days[:attempts] %> attempts · <%= @progress_30_days[:correct] %> revealed correct · <%= @progress_30_days[:black_box] %> completed Black Box post-mortems (<%= @progress_30_days[:black_box_required] %> required).</p>
       <div class="arcade-actions">
         <%= link_to "Export 30-day progress JSON", english_arcade_path(format: :json, session_id: @arcade_session&.id), class: "arcade-button ghost", aria: { label: "Export the 30-day progress and practice plan as JSON" } %>
       </div>
     <% end %>
       </div>
     </details>
-      <% if @guided_experience %>
-        <% if @arcade_session %>
-          <div class="arcade-progress">
-            <strong>Guided deck</strong>
-            <p class="arcade-muted">Read the authored cards below, rehearse aloud, and use the local self-rating controls when you are ready.</p>
-          </div>
-        <% else %>
-          <details class="arcade-progress">
-            <summary>How guided study works</summary>
-            <p class="arcade-muted">Choose a target and a 10-, 30-, or 45-minute deck. The authored answer and explanations stay visible while each falling card pauses at the reading line. Your self-rating and position stay in this browser; the guided loop does not create diagnostic attempts.</p>
-          </details>
-        <% end %>
-      <% else %>
       <details class="arcade-progress">
         <summary>Open the 30-day practice plan</summary>
         <p class="arcade-muted">Every day has a target selector, timed evidence, due SRS review, reattempt, follow-up, and compression. Gates pass only on typed evidence; they do not certify CEFR level.</p>
@@ -215,13 +182,9 @@
           <% end %>
         </ol>
       </details>
-      <% end %>
   </section>
 
   <% if @arcade_session %>
-    <% if @guided_experience %>
-      <%= render "guided" %>
-    <% else %>
     <div class="arcade-grid">
       <div class="arcade-panel arcade-question">
         <div class="arcade-session-bar">
@@ -552,6 +515,5 @@
         </div>
       </aside>
     </div>
-    <% end %>
   <% end %>
 </section>

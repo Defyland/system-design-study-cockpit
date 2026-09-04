@@ -18,12 +18,17 @@ separately authorized integration.
 
 It binds only to `127.0.0.1` on port `43129` by default. The process creates a
 new high-entropy pairing secret in memory and prints it once to its terminal.
-Paste that value into the Guided voice panel. The browser keeps the secret only
+Paste that value into the optional companion panel in an Arena Speak exercise. The browser keeps the secret only
 in tab `sessionStorage` under its pairing key; it is never placed in
 `localStorage`, a URL, a request body, or a log. `ENGLISH_ARCADE_VOICE_COMPANION_PORT`
 may choose another local port. `ENGLISH_ARCADE_VOICE_COMPANION_ORIGINS` is an
 explicit comma-separated exact-origin allowlist; when omitted it is
 `http://localhost:3000,http://127.0.0.1:3000`.
+
+Start Rails with the same `ENGLISH_ARCADE_VOICE_COMPANION_PORT` value when you
+override the port, so the Arena emits the matching loopback URL. For a deployed
+cockpit, add its exact HTTPS origin to `ENGLISH_ARCADE_VOICE_COMPANION_ORIGINS`;
+the local defaults intentionally reject every non-local origin.
 
 ## Browser API
 

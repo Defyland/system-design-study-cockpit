@@ -21,10 +21,6 @@ class EnglishArcadeController < ApplicationController
     @builder = EnglishArcadeSessionBuilder.new
     @targets = @builder.targets
     @modes = @builder.modes
-    # A bare launcher is the guided study entry point. Persisted sessions keep
-    # their own explicit experience so legacy/directly-created sessions remain
-    # closed-book assessment sessions by default.
-    @guided_experience = @arcade_session.nil? || guided_session?
     @selected_target = @arcade_session&.target || @builder.normalize_target(params[:target].presence || cockpit_session[:english_arcade_target])
     @selected_mode = @arcade_session&.mode || @builder.normalize_mode(params[:mode].presence || cockpit_session[:english_arcade_mode])
     @history = recent_attempts
@@ -33,14 +29,19 @@ class EnglishArcadeController < ApplicationController
     @thirty_day_plan = @builder.thirty_day_plan
 
     if @arcade_session
+      # Guided sessions predate Arena. Do not render them as assessment pages
+      # after the old partial is removed; legacy non-assessing guards remain
+      # active for attempts, fills, finishes, and voice calls.
+      return redirect_to arena_path, alert: "Guided study has moved to the Arena." if guided_session?
+
       expire_if_needed
       @plan = @builder.call(
         target: @arcade_session.target,
         mode: @arcade_session.mode,
         learner_key: learner_key,
         session: @arcade_session,
-        limit: @guided_experience ? guided_card_limit : 5,
-        persist_schedules: !@guided_experience
+        limit: 5,
+        persist_schedules: true
       )
       requested_attempt = @arcade_session.english_arcade_attempts.find_by(id: params[:attempt_id])
       @pending_attempt = requested_attempt unless requested_attempt&.feedback_revealed?
@@ -59,7 +60,7 @@ class EnglishArcadeController < ApplicationController
         variant_id: requested_attempt.variant_key
       )
       @exercise = attempt_kind_for_variant(@current_card&.variant_id) if @current_card
-      @best_answer_fill_available = @current_card && !@guided_experience && EnglishArcadeBestAnswerFill.available_for?(@current_card)
+      @best_answer_fill_available = @current_card && EnglishArcadeBestAnswerFill.available_for?(@current_card)
       raw_feedback = @feedback_attempt&.diagnostic_evidence&.fetch("feedback", nil)
       feedback_contract = @feedback_attempt&.diagnostic_evidence&.fetch("assessment", nil) || @feedback_card&.variant_contract
       @feedback = if raw_feedback
@@ -135,9 +136,11 @@ class EnglishArcadeController < ApplicationController
     raw_target = payload[:target].presence || params.dig(:english_arcade_session, :target) || params[:target]
     raw_mode = payload[:mode].presence || params.dig(:english_arcade_session, :mode) || params[:mode]
     raw_experience = payload[:experience].presence || params.dig(:english_arcade_session, :experience) || params[:experience]
+    return redirect_to arena_path, status: :see_other if normalize_experience(raw_experience) == "guided"
+
     target = @builder.normalize_target(raw_target)
     mode = @builder.normalize_mode(raw_mode)
-    experience = normalize_experience(raw_experience)
+    experience = "assessment"
     requested_card_key = payload[:card_key].to_s.presence
     requested_mock_id = payload[:mock_id].to_s.presence
     exercise = normalize_attempt_kind(payload[:exercise])
@@ -205,7 +208,7 @@ class EnglishArcadeController < ApplicationController
 
     metadata = {
       "source" => "english_arcade_launcher",
-      "content_source" => @builder.call(target: target, mode: mode, learner_key: learner_key, limit: 1, persist_schedules: experience != "guided").source,
+      "content_source" => @builder.call(target: target, mode: mode, learner_key: learner_key, limit: 1, persist_schedules: true).source,
       "target_key" => target,
       "mode" => mode,
       "experience" => experience,
@@ -670,8 +673,7 @@ class EnglishArcadeController < ApplicationController
       return redirect_to english_arcade_path(session_id: @arcade_session.id), alert: "This session has expired; its committed evidence was saved without completing the mock."
     end
     if guided_session?
-      @arcade_session.complete! unless @arcade_session.completed? || @arcade_session.expired?
-      return redirect_to english_arcade_path(session_id: @arcade_session.id), notice: "Guided study complete. Local ratings remain in this browser; no diagnostic attempt was recorded."
+      return redirect_to arena_path, alert: "Guided study has moved to the Arena."
     end
     if session_mock_id.present?
       unless mock_session_compatible? && EnglishArcadeMockEvidence.qualifying?(session: @arcade_session, now: Time.current)
@@ -736,15 +738,6 @@ class EnglishArcadeController < ApplicationController
 
   def guided_session?
     @arcade_session.present? && session_experience == "guided"
-  end
-
-  def guided_card_limit
-    mode = @arcade_session&.mode || @selected_mode
-    case mode.to_s
-    when "timed_30" then 10
-    when "timed_45" then 15
-    else 5
-    end
   end
 
   def requested_card

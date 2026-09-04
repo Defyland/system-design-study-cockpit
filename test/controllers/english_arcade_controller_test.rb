@@ -40,43 +40,19 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
     refute active_payload.to_json.include?("answer_text")
   end
 
-  test "guided launcher persists its experience and exposes study material without an assessment form" do
+  test "legacy guided launch redirects to Arena without creating an assessment session" do
     get "/english-arcade"
     assert_response :success
-    assert_includes response.body, "Play falling cards"
-    assert_includes response.body, "guided study arcade"
+    assert_includes response.body, "Enter the Arena"
+    refute_includes response.body, "Play falling cards"
+    assert_includes response.body, "closed-book interview practice"
 
+    sessions_before = EnglishArcadeSession.count
     post "/english-arcade/sessions", params: {
       english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
     }
-    assert_response :redirect
-    session = EnglishArcadeSession.order(:id).last
-    assert_equal "guided", session.metadata.fetch("experience")
-
-    get "/english-arcade", params: { session_id: session.id }
-    assert_response :success
-    assert_includes response.body, "Best answer · practise in first person"
-    assert_includes response.body, "Canonical response"
-    assert_includes response.body, "Trade-off or trap"
-    assert_includes response.body, "Critical-thinking path"
-    assert_includes response.body, "Sources and evidence boundary"
-    assert_includes response.body, "Falling phrase round"
-    assert_includes response.body, "Review again"
-    assert_equal 5, response.body.scan('class="guided-card"').length
-    refute_includes response.body, "Commit answer"
-    refute_includes response.body, "Feynman pass before the reveal"
-    refute_match(%r{action="[^"]*english-arcade/attempts}, response.body)
-    assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
-    assert_empty EnglishArcadeCard.where(learner_key: "anonymous", target: "career")
-
-    card = @builder.call(target: "career", learner_key: "anonymous", session: session, limit: 1).cards.first
-    post "/english-arcade/attempts", params: {
-      session_id: session.id,
-      english_arcade_attempt: { card_key: card.key, answer_choice: card.correct_choice, typed_answer: meaningful_typed_answer }
-    }, as: :json
-    assert_response :unprocessable_entity
-    assert_equal "guided_session_is_non_assessing", JSON.parse(response.body).fetch("error")
-    assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
+    assert_redirected_to arena_path
+    assert_equal sessions_before, EnglishArcadeSession.count
   end
 
   test "new sessions persist a private randomized deck seed" do
@@ -113,11 +89,16 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "guided sessions cannot request the assessment best answer fill" do
-    post "/english-arcade/sessions", params: {
-      english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
-    }
-    session = EnglishArcadeSession.order(:id).last
+  test "legacy guided sessions cannot request the assessment best answer fill" do
+    session = EnglishArcadeSession.create!(
+      learner_key: "anonymous",
+      target: "career",
+      mode: "daily",
+      duration_seconds: 600,
+      started_at: Time.current,
+      expires_at: 10.minutes.from_now,
+      metadata: { "experience" => "guided" }
+    )
 
     post "/english-arcade/best-answer-fill", params: { session_id: session.id, card_key: "career-01-a-60-to-90-second-introduction" }, as: :json
 
@@ -127,41 +108,37 @@ class EnglishArcadeControllerTest < ActionDispatch::IntegrationTest
 
   test "interview mode renders resume-backed questions without local paths or contact details" do
     post "/english-arcade/sessions", params: {
-      english_arcade_session: { target: "interview", mode: "timed_45", experience: "guided" }
+      english_arcade_session: { target: "interview", mode: "timed_45" }
     }
     session = EnglishArcadeSession.order(:id).last
+    card = @builder.call(target: "interview", mode: "timed_45", learner_key: "anonymous", session: session, limit: 5, persist_schedules: false).cards.first
 
     get "/english-arcade", params: { session_id: session.id }
 
     assert_response :success
-    assert_includes response.body, "connects your backend scale"
-    assert_includes response.body, "100 million requests per day"
-    assert_includes response.body, "eight microfrontends"
-    assert_includes response.body, "Samsung Tizen"
-    assert_includes response.body, "transactional outbox"
-    assert_includes response.body, "four critical services"
-    assert_includes response.body, "twenty-five minutes to eight minutes"
-    assert_includes response.body, "seven seconds to two seconds"
-    assert_includes response.body, "Yellow Team"
-    assert_includes response.body, "2.5 million clients"
-    assert_includes response.body, "allan_flavio_resume_fullstack_v3.pdf"
+    assert_match(/closed-book question/i, response.body)
+    assert_includes response.body, card.prompt
     refute_includes response.body, "/Users/"
     refute_match(/resume PDF is absent/i, response.body)
-    refute_match(/self-reported|needs? confirmation|confirmation required/i, response.body)
     refute_match(/linkedin\.com|mailto:|\+\d{2}/i, response.body)
   end
 
-  test "guided finish completes the session without diagnostic evidence" do
-    post "/english-arcade/sessions", params: {
-      english_arcade_session: { target: "career", mode: "daily", experience: "guided" }
-    }
-    session = EnglishArcadeSession.order(:id).last
+  test "legacy guided sessions cannot finish as assessment sessions" do
+    session = EnglishArcadeSession.create!(
+      learner_key: "anonymous",
+      target: "career",
+      mode: "daily",
+      duration_seconds: 600,
+      started_at: Time.current,
+      expires_at: 10.minutes.from_now,
+      metadata: { "experience" => "guided" }
+    )
 
     post finish_english_arcade_path, params: { session_id: session.id }
 
     assert_response :redirect
-    assert_equal "completed", session.reload.status
-    assert_includes flash[:notice], "no diagnostic attempt was recorded"
+    assert_redirected_to arena_path
+    assert_equal "active", session.reload.status
     assert_empty EnglishArcadeAttempt.where(english_arcade_session: session)
   end
 

@@ -2,6 +2,8 @@
 <% targets = EnglishArcadeSessionBuilder::TARGETS.except("mixed", "interview") %>
 <% due = @progress.fetch("due", {}) %>
 <% retention = @progress.fetch("retention", {}) %>
+<% calibration = @progress.fetch("calibration_30d", {}) %>
+<% skill_map = @progress.fetch("skill_map", {}) %>
 <section class="arena-shell arena-hub" data-controller="arcade-hub" data-arcade-hub-progress-url-value="<%= arcade_progress_path(format: :json) %>">
   <header class="arena-header">
     <div>
@@ -67,16 +69,29 @@
         <% targets.each do |key, target| %>
           <% mastery = @progress.fetch("mastery_by_target", {}).fetch(key, {}) %>
           <% score = mastery.fetch("score", 0).to_f %>
-          <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false }, class: "arena-target-form" do |form| %>
-            <%= form.hidden_field :target_mode, value: "single" %>
-            <%= form.hidden_field :target, value: key %>
-            <%= form.hidden_field :size, value: ArcadeLessonComposer::SIZE %>
-            <button class="arena-target-card" type="submit" aria-label="Practice <%= target[:label] %>">
-              <span class="arena-ring" style="--ring-progress: <%= (score * 100).round(1) %>%" aria-hidden="true"><span><%= (score * 100).round %>%</span></span>
-              <% weakest_axis = mastery["weakest_axis"].to_s.presence %>
-              <span class="arena-target-copy"><strong><%= target[:label] %></strong><small><%= weakest_axis ? "#{weakest_axis.humanize} focus" : "No exposure yet" %></small></span>
-            </button>
-          <% end %>
+          <% drill_card_key = mastery.fetch("drill_card_key", nil).to_s.presence %>
+          <div class="arena-target-actions">
+            <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false }, class: "arena-target-form" do |form| %>
+              <%= form.hidden_field :target_mode, value: "single" %>
+              <%= form.hidden_field :target, value: key %>
+              <%= form.hidden_field :size, value: ArcadeLessonComposer::SIZE %>
+              <button class="arena-target-card" type="submit" aria-label="Practice <%= target[:label] %>">
+                <span class="arena-ring" style="--ring-progress: <%= (score * 100).round(1) %>%" aria-hidden="true"><span><%= (score * 100).round %>%</span></span>
+                <% weakest_axis = mastery["weakest_axis"].to_s.presence %>
+                <span class="arena-target-copy"><strong><%= target[:label] %></strong><small><%= weakest_axis ? "#{weakest_axis.humanize} focus" : "No exposure yet" %></small></span>
+              </button>
+            <% end %>
+            <% if drill_card_key %>
+              <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false }, class: "arena-target-drill-form" do |form| %>
+                <%= form.hidden_field :target_mode, value: "card" %>
+                <%= form.hidden_field :target, value: key %>
+                <%= form.hidden_field :card_key, value: drill_card_key %>
+                <%= form.hidden_field :size, value: 6 %>
+                <%= form.hidden_field :new_cards, value: 1 %>
+                <%= form.submit "Drill one card", class: "arena-button arena-button-quiet" %>
+              <% end %>
+            <% end %>
+          </div>
         <% end %>
       </div>
     </section>
@@ -93,6 +108,59 @@
     </section>
   </div>
 
+  <section class="arena-panel arena-skill-map" data-arena-skill-map aria-labelledby="skill-map-title">
+    <div class="arena-panel-heading">
+      <div><p class="arena-eyebrow">164 core cards · one next move</p><h2 id="skill-map-title">Skill map</h2></div>
+      <span class="arena-muted">Click a node to drill its highest reviewed stage.</span>
+    </div>
+    <div class="arena-skill-targets">
+      <% skill_map.each do |target_key, cards| %>
+        <% target_metadata = EnglishArcadeSessionBuilder::TARGETS.fetch(target_key, { label: target_key.to_s.humanize }) %>
+        <details class="arena-skill-target" data-arena-skill-target="<%= target_key %>">
+          <summary>
+            <span><strong><%= target_metadata.fetch(:label) %></strong><small><%= cards.length %> cards</small></span>
+            <span class="arena-skill-target-hint">Open map</span>
+          </summary>
+          <div class="arena-skill-nodes">
+            <% cards.each do |card| %>
+              <% card_key = card.fetch("card_key") %>
+              <% highest_stage = card.fetch("highest_stage", nil).to_s.presence %>
+              <% stage_class = highest_stage || "new" %>
+              <% status = card.fetch("status", "new").to_s %>
+              <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false }, class: "arena-skill-form" do |form| %>
+                <%= form.hidden_field :target_mode, value: "card" %>
+                <%= form.hidden_field :target, value: target_key %>
+                <%= form.hidden_field :card_key, value: card_key %>
+                <%= form.hidden_field :size, value: 1 %>
+                <%= form.hidden_field :new_cards, value: 1 %>
+                <button class="arena-skill-node arena-skill-node--<%= stage_class %>" type="submit" data-highest-stage="<%= highest_stage || "new" %>" aria-label="Drill <%= card.fetch("title") %>">
+                  <span class="arena-skill-node-title"><strong><%= card.fetch("title") %></strong><small><%= card.fetch("topic", card.fetch("title")) %></small></span>
+                  <span class="arena-skill-node-stage"><%= highest_stage ? highest_stage.humanize : "New" %></span>
+                  <span class="arena-skill-node-status arena-skill-node-status--<%= status %>"><%= status.humanize %></span>
+                </button>
+              <% end %>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-confusions" aria-labelledby="confusions-title">
+    <div class="arena-panel-heading"><div><p class="arena-eyebrow">30-day signal</p><h2 id="confusions-title">Top confusions</h2></div></div>
+    <ol data-arena-top-confusions>
+      <% top_confusions = @progress.fetch("top_confusions_30d", []) %>
+      <% if top_confusions.empty? %>
+        <li class="arena-muted">No recorded confusions yet.</li>
+      <% else %>
+        <% top_confusions.each do |confusion| %>
+          <li><strong><%= confusion.fetch("axis", "content").to_s.humanize %></strong> · <%= confusion.fetch("selected", "(blank)") %> · <%= confusion.fetch("count", 0) %> recorded</li>
+        <% end %>
+      <% end %>
+    </ol>
+    <p class="arena-muted">Repeated wrong selections only; this is a practice signal, not a diagnosis.</p>
+  </section>
+
   <section class="arena-panel arena-metrics-panel" aria-labelledby="metrics-title">
     <div class="arena-panel-heading"><div><p class="arena-eyebrow">Evidence, not XP</p><h2 id="metrics-title">Your practice signal</h2></div></div>
     <div class="arena-metric-columns">
@@ -103,6 +171,23 @@
         <% @progress.fetch("response_ms_by_stage_30d", {}).each do |stage, metric| %><div><dt><%= stage.humanize %></dt><dd><%= metric.fetch("median_ms", "—") || "—" %><% if metric.fetch("median_ms", nil) %> ms<% end %></dd></div><% end %>
       </dl></div>
       <div><h3>Retention</h3><dl class="arena-definition-list"><div><dt>Observed 7d</dt><dd><%= (retention.fetch("observed_7d", 0).to_f * 100).round %>%</dd></div><div><dt>Observed 30d</dt><dd><%= (retention.fetch("observed_30d", 0).to_f * 100).round %>%</dd></div><div><dt>Delayed transfer pass rate</dt><dd><%= (retention.fetch("delayed_variant_pass_rate", 0).to_f * 100).round %>%</dd></div></dl></div>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-calibration" aria-labelledby="calibration-title">
+    <div class="arena-panel-heading"><div><p class="arena-eyebrow">Self-check signal · 30 days</p><h2 id="calibration-title">Calibration</h2></div></div>
+    <p class="arena-muted">Self-rating versus the recorded exercise result. This is a practice signal, not a proficiency score.</p>
+    <div data-arena-calibration>
+      <% if calibration.fetch("rated_events", 0).to_i.zero? %>
+        <p class="arena-muted">No self-rated answers yet.</p>
+      <% else %>
+        <dl class="arena-definition-list">
+          <% calibration.fetch("by_rating", {}).each do |rating, metric| %>
+            <% next if metric.fetch("events", 0).to_i.zero? %>
+            <div><dt>Self-rated <%= rating %>/4</dt><dd><%= (metric.fetch("accuracy", 0).to_f * 100).round %>% correct <small>(<%= metric.fetch("events", 0) %>)</small></dd></div>
+          <% end %>
+        </dl>
+      <% end %>
     </div>
   </section>
 </section>

@@ -113,6 +113,7 @@ class ArcadeLessonsController < ApplicationController
     respond_to do |format|
       format.html do
         @lesson_payload = payload
+        @companion_base_url = companion_base_url
         render :show, status: status
       end
       format.json { render json: { lesson: payload }, status: status }
@@ -121,6 +122,14 @@ class ArcadeLessonsController < ApplicationController
 
   def render_invalid_target
     render_error("invalid_target", :unprocessable_entity)
+  end
+
+  def companion_base_url
+    port = Integer(ENV.fetch("ENGLISH_ARCADE_VOICE_COMPANION_PORT", "43129"), 10)
+    port = 43_129 unless port.between?(1, 65_535)
+    "http://127.0.0.1:#{port}"
+  rescue ArgumentError
+    "http://127.0.0.1:43129"
   end
 
   def render_error(code, status)

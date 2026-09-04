@@ -21,9 +21,11 @@ class ArcadeProgressDashboard
     {
       "streak_days" => streak_days(events, now: now),
       "due" => due_summary(states, now: now),
-      "mastery_by_target" => mastery_by_target(states, events),
+      "mastery_by_target" => mastery_by_target(states, events, now: now),
+      "skill_map" => skill_map(states, now: now),
       "accuracy_by_axis_30d" => accuracy_by_axis(events),
       "top_confusions_30d" => top_confusions(events),
+      "calibration_30d" => calibration(events),
       "retention" => retention(states, events, now: now),
       "response_ms_by_stage_30d" => response_times(events),
       "accuracy_by_stage_30d" => stage_accuracy(events),
@@ -42,6 +44,57 @@ class ArcadeProgressDashboard
     @content.targets.each_with_object({}) do |target, result|
       result[target] = { "items" => @content.items_for(target).length }
     end
+  end
+
+  def skill_map(states, now:)
+    states_by_card = states.group_by { |state| [ state.target.to_s, state.card_key.to_s ] }
+    EnglishArcade::Schema::CANONICAL_TARGETS.each_with_object({}) do |target, result|
+      result[target] = @content.items_for(target).map do |item|
+        card_key = item_value(item, :key).to_s
+        card_states = states_by_card.fetch([ target.to_s, card_key ], [])
+        reviewed_states = card_states.select { |state| reviewed_state?(state) }
+        {
+          "card_key" => card_key,
+          "title" => card_title(item),
+          "topic" => card_topic(item),
+          "highest_stage" => highest_reviewed_stage(reviewed_states),
+          "status" => card_status(card_states, now: now)
+        }
+      end
+    end
+  end
+
+  def item_value(item, key)
+    item[key] || item[key.to_s]
+  end
+
+  def card_topic(item)
+    item_value(item, :topic).to_s.presence || Array(item_value(item, :tags)).first.to_s.presence
+  end
+
+  def card_title(item)
+    card_topic(item) || item_value(item, :prompt).to_s.split(/[.!?]/, 2).first.to_s.strip.presence || item_value(item, :key).to_s
+  end
+
+  def reviewed_state?(state)
+    state.reps.to_i.positive? || state.last_reviewed_at.present?
+  end
+
+  def highest_reviewed_stage(states)
+    states.filter_map do |state|
+      stage = state.stage.to_s
+      next unless STAGES.include?(stage)
+
+      [ stage, STAGES.index(stage) ]
+    end.max_by(&:last)&.first
+  end
+
+  def card_status(states, now:)
+    return "new" if states.empty?
+    return "due" if states.any? { |state| state.due_at.present? && state.due_at <= now }
+    return "review" if states.any? { |state| reviewed_state?(state) }
+
+    "new"
   end
 
   def streak_days(events, now:)
@@ -70,7 +123,7 @@ class ArcadeProgressDashboard
     }
   end
 
-  def mastery_by_target(states, events)
+  def mastery_by_target(states, events, now:)
     cards = states.group_by { |state| [ state.target.to_s, state.card_key.to_s ] }
     scores = cards.each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |((target, _card), rows), result|
       result[target] << mastery_score(rows)
@@ -82,7 +135,8 @@ class ArcadeProgressDashboard
         "score" => item_count.zero? ? 0.0 : (values.sum / item_count).round(4),
         "items" => item_count,
         "mastered" => values.count { |score| score >= 1.0 },
-        "weakest_axis" => weakest_axis(target, events)
+        "weakest_axis" => weakest_axis(target, events),
+        "drill_card_key" => drill_card_key(target, states, now: now)
       }
     end
   end
@@ -120,8 +174,7 @@ class ArcadeProgressDashboard
     pairs = Hash.new(0)
     events.each do |event|
       next unless event.trap_axis
-      response = event.response.to_h
-      selected = response.reject { |key, _| key.to_s.start_with?("_") }.values.flatten.first.to_s.strip
+      selected = selected_response(event)
       next if selected.blank?
 
       pairs[[ event.trap_axis, selected ]] += 1
@@ -129,6 +182,51 @@ class ArcadeProgressDashboard
     pairs.sort_by { |(_axis, _selected), count| -count }.first(8).map do |(axis, selected), count|
       { "axis" => axis, "selected" => selected, "count" => count }
     end
+  end
+
+  def selected_response(event)
+    response = event.response.to_h
+    selected = response.dig("_reveal", "details", "selected").to_s.strip
+    return selected if selected.present?
+
+    response.reject { |key, _| key.to_s.start_with?("_") }.values.flatten.map(&:to_s).map(&:strip).reject(&:blank?).join(" · ")
+  end
+
+  def calibration(events)
+    rated = events.reject { |event| event.boss_round? || event.stage == "meet" }.select do |event|
+      event.self_rating.to_i.between?(1, 4)
+    end
+    by_rating = (1..4).each_with_object({}) do |rating, result|
+      rows = rated.select { |event| event.self_rating.to_i == rating }
+      result[rating.to_s] = {
+        "self_rating" => rating,
+        "events" => rows.length,
+        "correct" => rows.count(&:correct?),
+        "accuracy" => ratio(rows.count(&:correct?), rows.length)
+      }
+    end
+    { "rated_events" => rated.length, "by_rating" => by_rating }
+  end
+
+  def drill_card_key(target, states, now:)
+    items = @content.items_for(target)
+    return nil if items.empty?
+
+    rows_by_card = states.select { |state| state.target.to_s == target.to_s }.group_by { |state| state.card_key.to_s }
+    due = items.filter_map do |item|
+      rows = Array(rows_by_card[item.fetch(:key).to_s]).select { |state| state.due_at && state.due_at <= now }
+      next if rows.empty?
+
+      [ item, rows.min_by(&:due_at) ]
+    end.min_by { |item, state| [ state.due_at, item.fetch(:key).to_s ] }
+    return due.first.fetch(:key) if due
+
+    unreviewed = items.reject { |item| rows_by_card.key?(item.fetch(:key).to_s) }.min_by { |item| item.fetch(:key).to_s }
+    return unreviewed.fetch(:key) if unreviewed
+
+    # Keep the target-level shortcut focused on due or unseen work. Reviewed
+    # cards remain available individually in the complete skill map.
+    nil
   end
 
   def retention(states, events, now:)

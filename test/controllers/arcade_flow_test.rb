@@ -35,6 +35,30 @@ class ArcadeFlowTest < ActionDispatch::IntegrationTest
     assert_select "section.arena-lesson[data-controller='arcade-lesson']"
   end
 
+  test "lesson shell exposes opt-in sound but no Arena Realtime controls" do
+    post arcade_lessons_path,
+      params: { lesson: { target_mode: "mixed", size: 1, seed: "sound-shell" } },
+      headers: { "REMOTE_USER" => "arena-flow-test" }
+
+    follow_redirect!(headers: { "REMOTE_USER" => "arena-flow-test" })
+    assert_select "button[data-arcade-lesson-target='audioToggle'][aria-pressed='false']", text: "Sound off"
+    assert_select "[data-arena-realtime]", count: 0
+    assert_select "[data-english-arcade-voice-target]", count: 0
+  end
+
+  test "lesson shell follows the configured loopback companion port" do
+    previous = ENV["ENGLISH_ARCADE_VOICE_COMPANION_PORT"]
+    ENV["ENGLISH_ARCADE_VOICE_COMPANION_PORT"] = "43210"
+    post arcade_lessons_path,
+      params: { lesson: { target_mode: "mixed", size: 1, seed: "companion-port" } },
+      headers: { "REMOTE_USER" => "arena-flow-test" }
+
+    follow_redirect!(headers: { "REMOTE_USER" => "arena-flow-test" })
+    assert_select "[data-arcade-lesson-companion-base-url-value='http://127.0.0.1:43210']"
+  ensure
+    previous.nil? ? ENV.delete("ENGLISH_ARCADE_VOICE_COMPANION_PORT") : ENV["ENGLISH_ARCADE_VOICE_COMPANION_PORT"] = previous
+  end
+
   test "serves only the active answer-bearing payload and records idempotently without legacy writes" do
     legacy_counts = legacy_counts()
 

@@ -1,8 +1,8 @@
 <% content_for :title, "Lesson · Arena" %>
-<section class="arena-shell arena-lesson" data-controller="arcade-lesson" data-arcade-lesson-id-value="<%= @lesson_payload.fetch("id") %>" data-arcade-lesson-result-url-value="<%= @lesson_payload.dig("urls", "result") %>" data-arcade-lesson-finish-url-value="<%= @lesson_payload.dig("urls", "finish") %>">
+<section class="arena-shell arena-lesson" data-controller="arcade-lesson" data-arcade-lesson-id-value="<%= @lesson_payload.fetch("id") %>" data-arcade-lesson-result-url-value="<%= @lesson_payload.dig("urls", "result") %>" data-arcade-lesson-finish-url-value="<%= @lesson_payload.dig("urls", "finish") %>" data-arcade-lesson-companion-base-url-value="<%= @companion_base_url %>">
   <header class="arena-lesson-header">
     <div class="arena-lesson-brand"><%= link_to "Arena", arena_path, class: "arena-wordmark" %><span class="arena-slash">/</span><span>Lesson</span></div>
-    <div class="arena-lesson-controls"><button type="button" class="arena-icon-button" data-action="arcade-lesson#pause" aria-label="Pause lesson">Pause <kbd>Space</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openDossier">Dossier <kbd>D</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openHelp">Help <kbd>?</kbd></button></div>
+    <div class="arena-lesson-controls"><button type="button" class="arena-icon-button" data-action="arcade-lesson#pause" aria-label="Pause lesson">Pause <kbd>Space</kbd></button><button type="button" class="arena-icon-button" data-arcade-lesson-target="audioToggle" data-action="arcade-lesson#toggleSound" aria-pressed="false">Sound off</button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openDossier">Dossier <kbd>D</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openHelp">Help <kbd>?</kbd></button></div>
   </header>
 
   <section class="arena-hud" aria-label="Lesson progress">

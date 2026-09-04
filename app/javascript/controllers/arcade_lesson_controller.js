@@ -12,12 +12,13 @@ import * as compress from "arcade/exercises/compress"
 import * as feynman from "arcade/exercises/feynman"
 import * as rain from "arcade/exercises/rain"
 import { escape } from "arcade/exercise_helpers"
+import { ArenaAudio } from "arcade/audio"
 
 const RENDERERS = Object.freeze({ meet, choose_best: chooseBest, trap_axis: trapAxis, cloze, rebuild, produce, speak, transfer, compress, feynman, rain })
 
 export default class extends Controller {
-  static values = { id: Number, resultUrl: String, finishUrl: String }
-  static targets = ["exercise", "feedback", "results", "progress", "position", "stage", "target", "combo", "exitDialog", "dossierDialog", "dossierCopy", "helpDialog"]
+  static values = { id: Number, resultUrl: String, finishUrl: String, companionBaseUrl: String }
+  static targets = ["exercise", "feedback", "results", "progress", "position", "stage", "target", "combo", "audioToggle", "exitDialog", "dossierDialog", "dossierCopy", "helpDialog"]
 
   connect() {
     this.destroyed = false
@@ -28,11 +29,13 @@ export default class extends Controller {
     this.startedAt = this.lessonStartedAt
     this.lastFocus = null
     this.keyboardHandler = null
+    this.audio = new ArenaAudio()
     this.lessonData = this.readData()
     this.exercises = this.lessonData.exercises || []
     this.machine = new LessonMachine(this.exercises.length)
     this.machine.start(this.lessonData.resume_position || 0)
     this.renderCurrent()
+    this.renderAudioToggle()
     this.boundKeydown = (event) => this.handleKeydown(event)
     document.addEventListener("keydown", this.boundKeydown)
     ;[this.exitDialogTarget, this.dossierDialogTarget, this.helpDialogTarget].forEach((dialog) => dialog?.addEventListener("cancel", (event) => event.preventDefault()))
@@ -58,7 +61,7 @@ export default class extends Controller {
     this.cleanupExercise?.()
     this.keyboardHandler = null
     this.exerciseTarget.innerHTML = ""
-    const context = { submit: () => this.submit(), keyboard: null, cleanup: [] }
+    const context = { submit: () => this.submit(), keyboard: null, cleanup: [], audio: this.audio, companionBaseUrl: this.companionBaseUrlValue }
     renderer.render(this.exerciseTarget, exercise, context)
     this.cleanupExercise = () => context.cleanup.forEach((callback) => callback())
     this.keyboardHandler = context.keyboard
@@ -121,6 +124,18 @@ export default class extends Controller {
     } else this.exerciseTarget.querySelector("[data-arena-pause-notice]")?.remove()
   }
 
+  toggleSound() {
+    this.audio.toggle()
+    this.audio.play("tap")
+    this.renderAudioToggle()
+  }
+
+  renderAudioToggle() {
+    if (!this.hasAudioToggleTarget) return
+    this.audioToggleTarget.setAttribute("aria-pressed", String(this.audio.enabled))
+    this.audioToggleTarget.textContent = this.audio.enabled ? "Sound on" : "Sound off"
+  }
+
   async submit() {
     if (this.busy || this.paused || !this.current) return
     const exercise = this.current
@@ -136,6 +151,7 @@ export default class extends Controller {
       if (!response.ok) throw new Error(result.error || "Could not record this exercise")
       this.lastResult = result
       this.combo = result.correct ? this.combo + 1 : 0
+      this.audio.play(result.correct ? "success" : "stop")
       this.machine.showFeedback()
       this.renderFeedback(result)
     } catch (error) {
