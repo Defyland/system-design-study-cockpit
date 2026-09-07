@@ -11,7 +11,7 @@ import * as transfer from "arcade/exercises/transfer"
 import * as compress from "arcade/exercises/compress"
 import * as feynman from "arcade/exercises/feynman"
 import * as rain from "arcade/exercises/rain"
-import { escape } from "arcade/exercise_helpers"
+import { escape, learningMarkup } from "arcade/exercise_helpers"
 import { ArenaAudio } from "arcade/audio"
 
 const RENDERERS = Object.freeze({ meet, choose_best: chooseBest, trap_axis: trapAxis, cloze, rebuild, produce, speak, transfer, compress, feynman, rain })
@@ -61,8 +61,11 @@ export default class extends Controller {
     this.cleanupExercise?.()
     this.keyboardHandler = null
     this.exerciseTarget.innerHTML = ""
+    this.exerciseTarget.removeAttribute("inert")
+    this.dossierCopyTarget.innerHTML = "<p>Answer this exercise to open its reference notes. Try recalling it without the previous model.</p>"
     const context = { submit: () => this.submit(), keyboard: null, cleanup: [], audio: this.audio, companionBaseUrl: this.companionBaseUrlValue }
     renderer.render(this.exerciseTarget, exercise, context)
+    this.startedAt = performance.now()
     this.cleanupExercise = () => context.cleanup.forEach((callback) => callback())
     this.keyboardHandler = context.keyboard
     this.updateHud(exercise)
@@ -137,7 +140,7 @@ export default class extends Controller {
   }
 
   async submit() {
-    if (this.busy || this.paused || !this.current) return
+    if (this.busy || this.paused || this.machine.state !== "exercise" || !this.current) return
     const exercise = this.current
     const renderer = RENDERERS[exercise.type] || chooseBest
     const collected = renderer.collect(this.exerciseTarget) || {}
@@ -150,6 +153,7 @@ export default class extends Controller {
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || "Could not record this exercise")
       this.lastResult = result
+      this.exerciseTarget.setAttribute("inert", "")
       this.combo = result.correct ? this.combo + 1 : 0
       this.audio.play(result.correct ? "success" : "stop")
       this.machine.showFeedback()
@@ -164,14 +168,29 @@ export default class extends Controller {
     const reveal = result.reveal || {}
     const feedback = reveal.feedback || {}
     const wrong = !result.correct
+    const recallCheck = reveal.details?.assessment_kind === "phrase_recall"
+    const heading = recallCheck ? (wrong ? "Needs another recall pass" : "Recall recorded") : (wrong ? "Not this time" : "Held")
     this.feedbackTarget.hidden = false
     this.feedbackTarget.classList.toggle("is-wrong", wrong)
     const feedbackLines = Object.entries(feedback).filter(([key, value]) => value && !["answer", "selected", "sources", "provenance"].includes(key)).slice(0, 6).map(([key, value]) => `<p><strong>${escape(key.replaceAll("_", " "))}:</strong> ${escape(value)}</p>`).join("")
     const why = reveal.why_wrong ? `<p><strong>Why this was weaker:</strong> ${escape(reveal.why_wrong)}</p>` : ""
     const axis = reveal.trap_axis || result.trap_axis
     const axisLine = axis ? `<span class="arena-axis">Trap axis · ${escape(axis)}</span>` : ""
-    this.feedbackTarget.innerHTML = `<h2>${wrong ? "Not this time" : "Held"}</h2>${axisLine}<div class="arena-feedback-grid"><p class="arena-answer-reveal"><strong>Model answer:</strong> ${escape(reveal.best_answer || "Recorded. Keep the distinction explicit.")}</p>${why}${reveal.pt_help ? `<p><strong>Portuguese cue:</strong> ${escape(reveal.pt_help)}</p>` : ""}${feedbackLines}</div><div class="arena-exercise-actions"><button type="button" class="arena-button" data-arena-continue="true">${result.requeue ? "Try it again later" : "Continue"} <kbd>Enter</kbd></button></div>`
+    this.feedbackTarget.innerHTML = `<h2>${heading}</h2>${axisLine}<div class="arena-feedback-grid"><p class="arena-answer-reveal"><strong>Model answer:</strong> ${escape(reveal.best_answer || "Recorded. Keep the distinction explicit.")}</p>${why}${reveal.pt_help ? `<p><strong>Portuguese cue:</strong> ${escape(reveal.pt_help)}</p>` : ""}${feedbackLines}</div><div class="arena-exercise-actions"><button type="button" class="arena-button" data-arena-continue="true">${result.requeue ? "Try it again later" : "Continue"} <kbd>Enter</kbd></button></div>`
     this.feedbackTarget.querySelector("[data-arena-continue]")?.addEventListener("click", () => this.next())
+    const actions = this.feedbackTarget.querySelector(".arena-exercise-actions")
+    actions?.insertAdjacentHTML("beforebegin", learningMarkup(reveal.learning))
+    if (["produce", "compress", "feynman", "speak"].includes(this.current?.type)) {
+      const note = document.createElement("p")
+      note.className = "arena-response-scope"
+      note.textContent = recallCheck
+        ? `Automatic phrase recall: ${Number(reveal.details.key_points_hit || 0)} key phrase groups found. Meaning, grammar, fluency, and pronunciation are not assessed. Compare your answer with the model before continuing.`
+        : "Use this feedback to improve your next answer. The practice result is not a fluency or proficiency score."
+      actions?.before(note)
+    }
+    if (Array.isArray(reveal.evidence?.verified_claims)) {
+      actions?.insertAdjacentHTML("beforebegin", `<details class="arena-pt-help"><summary>Resume facts used in this answer</summary><p>${escape(reveal.evidence.claim_boundary)}</p><ul>${reveal.evidence.verified_claims.map((claim) => `<li>${escape(claim)}</li>`).join("")}</ul></details>`)
+    }
     this.comboTarget.textContent = `Combo ${this.combo}`
     if (reveal.best_answer) {
       const feedback = reveal.feedback || {}
@@ -229,8 +248,15 @@ export default class extends Controller {
     this.resultsTarget.hidden = false
     const accuracy = Number(result.accuracy || 0)
     const cards = result.cards || result.summary?.cards || []
-    const cardLines = cards.slice(0, 6).map((card) => `<li><strong>${escape(card.card_key)}</strong> · ${(Number(card.mastery?.score || 0) * 100).toFixed(0)}% mastery</li>`).join("")
+    const progressLabel = this.lessonData.interview_role ? "rehearsal progress" : "mastery"
+    const cardLines = cards.slice(0, 6).map((card) => `<li><strong>${escape(card.card_key)}</strong> · ${(Number(card.mastery?.score || 0) * 100).toFixed(0)}% ${progressLabel}</li>`).join("")
     this.resultsTarget.innerHTML = `<p class="arena-eyebrow">Lesson complete</p><h2>${result.perfect ? "Perfect lesson." : "The next pass is clear."}</h2><div class="arena-results-grid"><div class="arena-result-stat"><strong>${Math.round(accuracy * 100)}%</strong><span>accuracy</span></div><div class="arena-result-stat"><strong>${result.max_combo || 0}</strong><span>max combo</span></div><div class="arena-result-stat"><strong>${Object.values(result.misses_by_axis || {}).reduce((sum, value) => sum + Number(value || 0), 0)}</strong><span>misses</span></div></div><h3>Cards that moved</h3><ul>${cardLines || "<li>Keep the first stage moving.</li>"}</ul><div class="arena-exercise-actions"><a class="arena-button" href="/arena">Return to hub</a><a class="arena-button arena-button-quiet" href="/arena">Again</a></div>`
+    if (this.lessonData.interview_role) {
+      const note = document.createElement("p")
+      note.className = "arena-response-scope"
+      note.textContent = "This is rehearsal progress from phrase recall and question choices. It is not a fluency or proficiency score."
+      this.resultsTarget.querySelector("h2")?.after(note)
+    }
     this.resultsTarget.focus()
   }
 

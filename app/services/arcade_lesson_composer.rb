@@ -24,10 +24,11 @@ class ArcadeLessonComposer
     @clock = clock
   end
 
-  def call(target_mode: "mixed", target: nil, card_key: nil, size: SIZE, new_cards: MAX_NEW, seed: nil, boss_only: false)
+  def call(target_mode: "mixed", target: nil, card_key: nil, interview_role: nil, size: SIZE, new_cards: MAX_NEW, seed: nil, boss_only: false)
     mode = normalize_mode(target_mode)
     target = normalize_target(target, mode)
-    items = available_items(mode, target, card_key)
+    interview_role = normalize_interview_role(interview_role, mode)
+    items = available_items(mode, target, card_key, interview_role)
     raise ArgumentError, "invalid_target" if items.empty?
 
     size = [ [ size.to_i, 1 ].max, 30 ].min
@@ -117,11 +118,20 @@ class ArcadeLessonComposer
     normalized.presence || "mixed"
   end
 
-  def available_items(mode, target, card_key)
+  def normalize_interview_role(value, mode)
+    return nil unless mode == "interview"
+
+    role = value.to_s.downcase.strip.presence || "fullstack"
+    return role if EnglishArcadeResumeInterviewProfile.interview_roles.include?(role)
+
+    raise ArgumentError, "invalid_target"
+  end
+
+  def available_items(mode, target, card_key, interview_role)
     items = if mode == "mixed"
       @content.items_for("mixed")
     elsif mode == "interview"
-      @content.items_for("interview")
+      @content.items_for("interview", interview_role: interview_role)
     else
       @content.items_for(target)
     end
@@ -137,13 +147,19 @@ class ArcadeLessonComposer
       explicit_plan = explicit_card_plan(items.first, states: states, seed: seed)
       return explicit_plan if explicit_plan
     end
-    due_items = items.select do |item|
-      Array(states[item.fetch(:key).to_s]).any? { |state| state.due?(now) }
-    end.sort_by do |item|
-      state = Array(states[item.fetch(:key).to_s]).select { |candidate| candidate.due?(now) }.min_by(&:due_at)
-      [ state&.due_at || now, -STAGE_RANK.fetch(state&.stage.to_s, 0), item.fetch(:key).to_s ]
+    due_items = if mode == "interview"
+      interview_due_items(items, states: states, now: now)
+    else
+      items.select do |item|
+        Array(states[item.fetch(:key).to_s]).any? { |state| state.due?(now) }
+      end.sort_by do |item|
+        state = Array(states[item.fetch(:key).to_s]).select { |candidate| candidate.due?(now) }.min_by(&:due_at)
+        [ state&.due_at || now, -STAGE_RANK.fetch(state&.stage.to_s, 0), item.fetch(:key).to_s ]
+      end
     end
     fresh_items = round_robin(items.reject { |item| states.key?(item.fetch(:key).to_s) }, seed: seed).first(new_cards)
+    return interview_plan(items: items, states: states, due_items: due_items, fresh_items: fresh_items, size: size, seed: seed) if mode == "interview" && !boss_only
+
     touched = (fresh_items + due_items + items).uniq { |item| item.fetch(:key).to_s }
     touched = round_robin(touched, seed: seed)
 
@@ -170,8 +186,10 @@ class ArcadeLessonComposer
     # Only schedule a stage that already exists as an unlocked/due state.
     # Fresh cards have Meet + Recognize above; they must earn later rungs from
     # the recorder instead of being placed directly into Produce/Transfer.
-    candidates = round_robin(
-      touched.select { |item| Array(states[item.fetch(:key).to_s]).any? },
+    # Keep the oldest due cards first; target rotation must not let optional
+    # practice consume the remaining review slots.
+    candidates = due_items + round_robin(
+      touched.reject { |item| due_items.include?(item) }.select { |item| Array(states[item.fetch(:key).to_s]).any? },
       seed: seed
     )
     candidates.each do |item|
@@ -206,6 +224,52 @@ class ArcadeLessonComposer
     end
 
     [ entries, touched, { new_cards: fresh_items.length, review_count: entries.count { |entry| entry["reason"] == "due" } } ]
+  end
+
+  def interview_plan(items:, states:, due_items:, fresh_items:, size:, seed:)
+    entries = []
+    stages = ArcadeContent::INTERVIEW_PRACTICE_STAGES
+    append_interview_stages(entries, due_items, stages: stages, states: states, reason: "due", size: size, seed: seed)
+    append_interview_stages(entries, fresh_items, stages: [ "meet", *stages ], states: states, reason: "new", size: size, seed: seed)
+
+    practiced = interview_review_items(items, states: states)
+      .reject { |item| due_items.include?(item) || fresh_items.include?(item) }
+    append_interview_stages(entries, practiced, stages: stages, states: states, reason: "practice", size: size, seed: seed)
+
+    touched = entries.map { |entry| items.find { |item| item.fetch(:key).to_s == entry.fetch("card_key") } }.compact.uniq { |item| item.fetch(:key).to_s }
+    [ entries, touched, { new_cards: entries.count { |entry| entry["stage"] == "meet" }, review_count: entries.count { |entry| entry["reason"] == "due" } } ]
+  end
+
+  def append_interview_stages(entries, items, stages:, states:, reason:, size:, seed:)
+    items.each do |item|
+      break if entries.length >= size
+
+      stages.each do |stage|
+        break if entries.length >= size
+
+        slot = stage_slot(stage, states: Array(states[item.fetch(:key).to_s]))
+        entry = entry_for(item, stage: stage, reason: reason, position: entries.length, attempt_no: 1, slot: slot, seed: seed)
+        entries << entry if entry
+      end
+    end
+  end
+
+  def interview_due_items(items, states:, now:)
+    items.filter_map do |item|
+      state = Array(states[item.fetch(:key).to_s])
+        .select { |candidate| ArcadeContent::INTERVIEW_PRACTICE_STAGES.include?(candidate.stage.to_s) && candidate.due?(now) }
+        .min_by(&:due_at)
+      [ item, state ] if state
+    end.sort_by { |item, state| [ state.due_at, item.fetch(:key).to_s ] }.map(&:first)
+  end
+
+  def interview_review_items(items, states:)
+    items.select { |item| Array(states[item.fetch(:key).to_s]).any? }
+      .sort_by do |item|
+        rows = Array(states[item.fetch(:key).to_s])
+        last_reviewed = rows.filter_map(&:last_reviewed_at).max
+        [ last_reviewed || Time.at(0), item.fetch(:key).to_s ]
+      end
   end
 
   def explicit_card_plan(item, states:, seed:)

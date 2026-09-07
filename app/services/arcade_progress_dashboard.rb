@@ -16,6 +16,8 @@ class ArcadeProgressDashboard
   def call
     now = @clock.call
     states = ArcadeStageState.where(learner_key: @learner_key).to_a
+    role_keys = @content.items_for("interview").map { |item| item_value(item, :key).to_s }
+    states.reject! { |state| role_keys.include?(state.card_key) && !ArcadeContent::INTERVIEW_PRACTICE_STAGES.include?(state.stage) }
     events = ArcadeExerciseEvent.where(learner_key: @learner_key).where(answered_at: 30.days.ago(now)..).to_a
     lessons = ArcadeLesson.where(learner_key: @learner_key).where(started_at: 14.days.ago(now)..)
     {
@@ -125,17 +127,18 @@ class ArcadeProgressDashboard
 
   def mastery_by_target(states, events, now:)
     cards = states.group_by { |state| [ state.target.to_s, state.card_key.to_s ] }
-    scores = cards.each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |((target, _card), rows), result|
-      result[target] << mastery_score(rows)
-    end
     @content.targets.each_with_object({}) do |target, result|
-      values = scores[target]
-      item_count = @content.items_for(target).length
+      item_keys = @content.items_for(target).map { |item| item_value(item, :key).to_s }
+      values = item_keys.filter_map do |key|
+        rows = cards[[ target.to_s, key ]]
+        mastery_score(rows) if rows
+      end
+      item_count = item_keys.length
       result[target] = {
         "score" => item_count.zero? ? 0.0 : (values.sum / item_count).round(4),
         "items" => item_count,
         "mastered" => values.count { |score| score >= 1.0 },
-        "weakest_axis" => weakest_axis(target, events),
+        "weakest_axis" => weakest_axis(target, events.select { |event| item_keys.include?(event.card_key) }),
         "drill_card_key" => drill_card_key(target, states, now: now)
       }
     end

@@ -33,6 +33,31 @@ class ArcadeHubTest < ActionDispatch::IntegrationTest
     assert_equal [ item.fetch(:key) ], lesson.plan.map { |entry| entry.fetch("card_key") }.uniq
   end
 
+  test "hub resumes only the learner's latest active lesson without creating another" do
+    composer = ArcadeLessonComposer.new(learner_key: "arcade-hub-test")
+    previous = composer.call(seed: "previous")
+    current = composer.call(seed: "current")
+    previous.update!(updated_at: 1.hour.ago)
+    finished = composer.call(seed: "finished")
+    finished.complete!
+    foreign = ArcadeLessonComposer.new(learner_key: "someone-else").call(seed: "foreign")
+
+    assert_no_difference("ArcadeLesson.count") do
+      get arena_path, headers: { "REMOTE_USER" => "arcade-hub-test" }
+    end
+
+    assert_response :success
+    assert_select "a[href='#{arcade_lesson_path(current)}']", text: "Resume lesson"
+    [ previous, finished, foreign ].each do |lesson|
+      assert_select "a[href='#{arcade_lesson_path(lesson)}']", count: 0
+    end
+
+    current.complete!
+    previous.complete!
+    get arena_path, headers: { "REMOTE_USER" => "arcade-hub-test" }
+    assert_select "[data-arena-resume]", count: 0
+  end
+
   test "a reviewed card drill uses its highest supported stage even when not due" do
     content = ArcadeContent.new
     item = content.items_for("dsa").find { |candidate| content.supported?(candidate, stage: "cloze", slot: 0) }

@@ -288,6 +288,8 @@ class ArcadeLessonRecorder
   end
 
   def unlock_next_stage(item:, stage:, grade:, now:)
+    # Role rehearsal has its own explicit Produce/Transfer sequence.
+    return [] if @content.interview_item?(item)
     return [] unless grade.fetch("rating").to_i >= 3
     return [] unless STAGES.include?(stage.to_s)
 
@@ -388,7 +390,7 @@ class ArcadeLessonRecorder
     reencode_entry = nil
     if entry["stage"].to_s == "produce"
       item = @content.item_by_key(entry.fetch("card_key"))
-      if item && @content.supported?(item, stage: "cloze", slot: entry.fetch("slot", 0).to_i)
+      if item && !@content.interview_item?(item) && @content.supported?(item, stage: "cloze", slot: entry.fetch("slot", 0).to_i)
         cloze = @content.build(item, stage: "cloze", slot: entry.fetch("slot", 0).to_i)
         reencode_entry = entry.merge(
           "exercise_id" => "#{cloze.fetch("exercise_id")}:reencode:#{next_attempt}",
@@ -538,6 +540,7 @@ class ArcadeLessonRecorder
     states = states || ArcadeStageState.where(learner_key: @learner_key, card_key: card_key).to_a
     states = states.index_by(&:stage)
     weights = { "recognize" => 1.0, "trap" => 1.0, "cloze" => 2.0, "rebuild" => 2.0, "produce" => 3.0, "transfer" => 3.0 }
+    weights = weights.slice(*ArcadeContent::INTERVIEW_PRACTICE_STAGES) if @content.interview_item?(@content.item_by_key(card_key))
     total = weights.sum do |stage, weight|
       stability = (states[stage]&.stability || 0).to_f
       weight * [ stability / STAGE_TARGETS.fetch(stage), 1.0 ].min

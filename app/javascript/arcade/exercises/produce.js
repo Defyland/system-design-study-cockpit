@@ -3,6 +3,7 @@ import { diffWords } from "arcade/diff"
 
 export function render(root, exercise, ctx) {
   root.innerHTML = `<p class="arena-eyebrow">Produce · recall without the model</p><h2>${escape(exercise.prompt)}</h2><p class="arena-question-context">${escape(exercise.context)}</p><p class="arena-instruction">Cue: ${escape(exercise.payload?.cue || "State the decision and the evidence.")}</p><label for="arena-response">Your answer</label><textarea id="arena-response" class="arena-input" rows="6" autocomplete="off"></textarea><label for="arena-self-rating">Self-rate your recall (1–4)</label><select id="arena-self-rating" class="arena-input"><option value="">Choose</option><option value="1">1 · again</option><option value="2">2 · hard</option><option value="3">3 · good</option><option value="4">4 · easy</option></select>`
+  root.insertAdjacentHTML("beforeend", `<p class="arena-response-scope">Use your own words. After submitting, compare the meaning, wording, and evidence with the model. The automatic result checks phrase recall; it does not assess your fluency or all valid paraphrases.</p>`)
   watchForReveal(root, ctx)
   addSubmit(root, ctx, "Submit production")
 }

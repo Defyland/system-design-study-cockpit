@@ -1,19 +1,50 @@
 <% content_for :title, "Lesson · Arena" %>
+<% lesson_mode = @lesson_payload.fetch("target_mode", "").to_s %>
+<% interview_role = @lesson_payload["interview_role"].to_s.presence %>
+<% role_metadata = EnglishArcadeResumeInterviewProfile.role_metadata %>
+<% interview_role_label = role_metadata.fetch(interview_role).fetch(:label) if interview_role.present? %>
 <section class="arena-shell arena-lesson" data-controller="arcade-lesson" data-arcade-lesson-id-value="<%= @lesson_payload.fetch("id") %>" data-arcade-lesson-result-url-value="<%= @lesson_payload.dig("urls", "result") %>" data-arcade-lesson-finish-url-value="<%= @lesson_payload.dig("urls", "finish") %>" data-arcade-lesson-companion-base-url-value="<%= @companion_base_url %>">
   <header class="arena-lesson-header">
     <div class="arena-lesson-brand"><%= link_to "Arena", arena_path, class: "arena-wordmark" %><span class="arena-slash">/</span><span>Lesson</span></div>
-    <div class="arena-lesson-controls"><button type="button" class="arena-icon-button" data-action="arcade-lesson#pause" aria-label="Pause lesson">Pause <kbd>Space</kbd></button><button type="button" class="arena-icon-button" data-arcade-lesson-target="audioToggle" data-action="arcade-lesson#toggleSound" aria-pressed="false">Sound off</button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openDossier">Dossier <kbd>D</kbd></button><button type="button" class="arena-icon-button" data-action="arcade-lesson#openHelp">Help <kbd>?</kbd></button></div>
+    <div class="arena-lesson-context" aria-label="Lesson context">
+      <% if lesson_mode == "interview" %>
+        <span class="arena-lesson-context-label">Interview rehearsal</span>
+        <% if interview_role %><span class="arena-lesson-role"><%= interview_role_label %> lens</span><% end %>
+      <% else %>
+        <span class="arena-lesson-context-label">English practice</span>
+      <% end %>
+    </div>
+    <div class="arena-lesson-controls"><button type="button" class="arena-icon-button" data-action="arcade-lesson#pause" aria-label="Pause lesson">Pause <kbd>Space</kbd></button><button type="button" class="arena-icon-button arena-icon-button-secondary" data-arcade-lesson-target="audioToggle" data-action="arcade-lesson#toggleSound" aria-pressed="false">Sound off</button><button type="button" class="arena-icon-button arena-icon-button-secondary" data-action="arcade-lesson#openDossier">Dossier <kbd>D</kbd></button><button type="button" class="arena-icon-button arena-icon-button-secondary" data-action="arcade-lesson#openHelp">Help <kbd>?</kbd></button></div>
   </header>
 
   <section class="arena-hud" aria-label="Lesson progress">
+    <div class="arena-hud-heading">
+      <div><p class="arena-eyebrow">Learning route</p><strong>Learn → Recall → Transfer</strong></div>
+      <span><strong data-arcade-lesson-target="position">1</strong> / <%= @lesson_payload.dig("totals", "total") %></span>
+    </div>
     <div class="arena-progress-track" aria-hidden="true"><i data-arcade-lesson-target="progress"></i></div>
-    <div class="arena-hud-meta"><span><strong data-arcade-lesson-target="position">1</strong> / <%= @lesson_payload.dig("totals", "total") %></span><span class="arena-stage-badge" data-arcade-lesson-target="stage">Meet</span><span class="arena-target-badge" data-arcade-lesson-target="target">Mixed</span><span class="arena-combo" data-arcade-lesson-target="combo">Combo 0</span></div>
+    <div class="arena-hud-meta"><span class="arena-hud-meta-note">Answer the prompt, then use the feedback to choose the next move.</span><span class="arena-stage-badge" data-arcade-lesson-target="stage">Meet</span><span class="arena-target-badge" data-arcade-lesson-target="target">Mixed</span><span class="arena-combo" data-arcade-lesson-target="combo">Combo 0</span></div>
   </section>
 
   <main class="arena-exercise-wrap" aria-live="polite">
-    <div class="arena-exercise" data-arcade-lesson-target="exercise"></div>
-    <section class="arena-feedback" data-arcade-lesson-target="feedback" hidden aria-live="assertive"></section>
-    <section class="arena-results" data-arcade-lesson-target="results" tabindex="-1" hidden></section>
+    <div class="arena-lesson-layout">
+      <div class="arena-exercise-column">
+        <div class="arena-exercise" data-arcade-lesson-target="exercise"></div>
+        <section class="arena-feedback" data-arcade-lesson-target="feedback" hidden aria-live="assertive"></section>
+        <section class="arena-results" data-arcade-lesson-target="results" tabindex="-1" hidden></section>
+      </div>
+      <aside class="arena-lesson-guide" aria-labelledby="lesson-guide-title">
+        <p class="arena-eyebrow">How to use this lesson</p>
+        <h2 id="lesson-guide-title">Build a clear answer.</h2>
+        <ol class="arena-guide-steps">
+          <li><span>01</span><div><strong>Read the situation</strong><small>Notice the constraint and the audience.</small></div></li>
+          <li><span>02</span><div><strong>Answer from memory</strong><small>Lead with the decision before the detail.</small></div></li>
+          <li><span>03</span><div><strong>Use the feedback</strong><small>Keep the distinction, then try the next variation.</small></div></li>
+        </ol>
+        <div class="arena-guide-callout"><strong>Small moves compound.</strong><p>Accuracy comes from making the boundary explicit, not from saying more.</p></div>
+        <% if interview_role %><p class="arena-guide-role"><span class="arena-eyebrow">Role lens</span><strong><%= interview_role_label %></strong></p><% end %>
+      </aside>
+    </div>
   </main>
 
   <footer class="arena-key-help"><span><kbd>1</kbd>–<kbd>6</kbd> choose when shown</span><span><kbd>Tab</kbd>/<kbd>Enter</kbd> use focused controls</span><span><kbd>Enter</kbd> continues feedback</span><span><kbd>Space</kbd> pause</span><span><kbd>D</kbd> dossier</span></footer>

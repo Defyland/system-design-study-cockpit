@@ -10,7 +10,8 @@ class ArcadeLessonsController < ApplicationController
     mode = payload[:target_mode].to_s.presence || "mixed"
     target = payload[:target].to_s.presence
     card_key = payload[:card_key].to_s.presence
-    unless ArcadeLesson::TARGET_MODES.include?(mode) && valid_target?(mode, target, card_key)
+    interview_role = payload[:interview_role].to_s.presence
+    unless ArcadeLesson::TARGET_MODES.include?(mode) && valid_target?(mode, target, card_key, interview_role)
       return render_invalid_target
     end
 
@@ -18,6 +19,7 @@ class ArcadeLessonsController < ApplicationController
       target_mode: mode,
       target: target,
       card_key: card_key,
+      interview_role: interview_role,
       size: payload[:size].presence || ArcadeLessonComposer::SIZE,
       new_cards: payload[:new_cards].presence || ArcadeLessonComposer::MAX_NEW,
       seed: payload[:seed],
@@ -68,12 +70,16 @@ class ArcadeLessonsController < ApplicationController
   end
 
   def lesson_params
-    params.fetch(:lesson, {}).permit(:target_mode, :target, :card_key, :size, :new_cards, :seed, :boss_only)
+    params.fetch(:lesson, {}).permit(:target_mode, :target, :card_key, :interview_role, :size, :new_cards, :seed, :boss_only)
   end
 
-  def valid_target?(mode, target, card_key)
+  def valid_target?(mode, target, card_key, interview_role)
     return true if mode == "mixed"
-    return true if mode == "interview"
+    if mode == "interview"
+      return true if interview_role.blank?
+
+      return EnglishArcadeResumeInterviewProfile.interview_roles.include?(interview_role.to_s.downcase.strip)
+    end
     return false if target.blank?
 
     normalized = ArcadeContent.new.normalize_target(target)
@@ -93,6 +99,7 @@ class ArcadeLessonsController < ApplicationController
       "id" => lesson.id,
       "target_mode" => lesson.target_mode,
       "target" => lesson.target,
+      "interview_role" => composer.content.item_by_key(lesson.plan.first.fetch("card_key"))&.fetch("interview_role", nil),
       "targets" => lesson.targets,
       "status" => lesson.status,
       "seed" => lesson.seed,

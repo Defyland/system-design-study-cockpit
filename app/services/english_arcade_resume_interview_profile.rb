@@ -34,6 +34,102 @@ class EnglishArcadeResumeInterviewProfile
     career-12-what-i-would-change-now
   ].freeze
 
+  # These keys deliberately do not reuse the career-pack IDs. The same learner
+  # can therefore rehearse a role-specific answer without changing the legacy
+  # closed-book career deck or its spaced-repetition history.
+  ROLE_METADATA = {
+    "frontend" => { label: "Frontend", focus: "UI systems, performance, and platform trade-offs" }.freeze,
+    "backend" => { label: "Backend", focus: "APIs, data, reliability, and operations" }.freeze,
+    "fullstack" => { label: "Full-stack", focus: "End-to-end decisions and product context" }.freeze,
+    "smarttv" => { label: "Smart TV", focus: "Constrained devices, playback, and delivery" }.freeze
+  }.freeze
+  INTERVIEW_ROLES = ROLE_METADATA.keys.freeze
+  PRACTICE_STAGES = %w[produce transfer].freeze
+  ROLE_CONTENT_VERSION = "resume-role-interview-2026-09-07-v1"
+
+  ROLE_DECKS = {
+    "frontend" => [
+      { id: "resume-frontend-01", profile: 0, prompt: "Give a recruiter a concise introduction for a senior frontend role.", context: "Lead with frontend platform ownership, then one measurable delivery result. Do not turn breadth into a technology inventory.", answer: "I’m a frontend engineer who has also worked close to backend and product constraints. I led a migration from a monolithic frontend to eight microfrontends across five squads, reducing release lead time from roughly two days to under one hour. I have also improved a critical list from seven seconds to two seconds under the same data volume through render optimisation and virtualization. I focus on making frontend architecture help teams ship independently while keeping the user-visible path measurable and reliable.", short: "I lead frontend platform work that improves delivery and measurable user performance, including eight microfrontends across five squads and a critical list reduced from seven seconds to two.", deep: "My frontend work combines platform architecture with user-visible performance. I led a Module Federation migration from a monolithic frontend to eight microfrontends across five squads, with release lead time moving from roughly two days to under one hour. On a separate critical list, I kept the data volume constant and used targeted render optimisation and virtualization to reduce load time from seven seconds to two. I would start with the role’s immediate need—delivery autonomy or performance—and then explain the boundary, trade-off, and measured result.", learning: { "answer_structure" => [ "Name your frontend ownership.", "Give one bounded architecture or performance result.", "State the trade-off you managed." ], "useful_phrases" => [ "I led a migration from…", "The measured result was…", "The trade-off was…" ], "pt_help" => "Apresente responsabilidade, resultado mensurável e trade-off. Não liste tecnologias sem conectar ao impacto." } },
+      { id: "resume-frontend-02", profile: 2, answer: "I led a migration from a monolithic frontend to eight microfrontends across five squads using Module Federation. The practical goal was independent delivery, and release lead time moved from roughly two days to under one hour. The benefit was team autonomy, with a larger coordination surface for shared contracts, integration, and consistency. I would choose that structure only when team boundaries and release independence justify the operational overhead.", short: "I led eight microfrontends across five squads, moving release lead time from roughly two days to under one hour while keeping shared contracts explicit.", deep: "I led the migration from a monolithic frontend to eight microfrontends across five squads using Module Federation. Release lead time moved from roughly two days to under one hour, enabling more independent releases. I would frame the decision around team and deployment boundaries: autonomy was the advantage, while integration, shared dependencies, consistency, and observability became explicit coordination costs. If independent ownership does not repay those costs, I would prefer a modular monolith." },
+      { id: "resume-frontend-03", profile: 7 }
+    ],
+    "backend" => [
+      { id: "resume-backend-01", profile: 0, prompt: "Give a concise introduction for a senior backend role.", context: "Connect production scale, reliability responsibility, and one concrete system boundary. Keep implementation details inside the resume evidence.", answer: "I’m a backend engineer with experience in Rails and Go systems where reliability, payment correctness, and delivery speed were product concerns. I worked on Rails APIs handling more than 100 million requests per day, with targeted API and query optimisation, and on Go Pix settlement services with idempotent message processing. I like making failure boundaries explicit—what can retry, what must remain idempotent, and which signal verifies the change—before choosing a mechanism.", short: "I build Rails and Go services with explicit reliability and payment boundaries, including Rails APIs above 100 million requests per day and retry-safe Pix processing.", deep: "My backend profile is centred on reliable state changes under real workload. I have worked on Rails APIs handling more than 100 million requests per day, with API and query optimisation, incident response, and test coverage, and on Go Pix settlement services using transactional outbox and idempotent inbox patterns. In an interview I would choose one system boundary, explain the failure mode it contained, then name the observable result rather than claiming that a single tool solved reliability.", learning: { "answer_structure" => [ "Name the system responsibility.", "Choose one reliability or payment boundary.", "Name the verification signal or outcome." ], "useful_phrases" => [ "I treated retries as part of the contract.", "The boundary I owned was…", "I would verify it through…" ], "pt_help" => "Use 'reliability' como responsabilidade de produto: explique o limite de falha e como você verificaria o resultado." } },
+      { id: "resume-backend-02", profile: 1, answer: "At that scale, I treated latency, incidents, and data correctness as product responsibilities rather than cleanup work. I worked on Rails APIs handling more than 100 million requests per day, with targeted API and query optimisation, incident response, and strong automated test coverage on a platform designed for Brazilian Central Bank requirements. I would explain the specific signal I owned—latency, query behaviour, incident response, or regression protection—and clarify the exact service boundary before going deeper.", short: "At more than 100 million Rails API requests per day, I treated latency, query behaviour, incident response, and regression protection as product responsibilities.", deep: "The scale made reliability an everyday constraint. I worked on Rails APIs handling more than 100 million requests per day, with targeted API and query tuning, incident response, and about 95% RSpec coverage on a platform designed for Brazilian Central Bank requirements. I would describe the observed performance or correctness problem, the bounded change I owned, and the verification signal. I would not invent a database plan or incident mechanism without tying it to the project example." },
+      { id: "resume-backend-03", profile: 5 }
+    ],
+    "fullstack" => [
+      { id: "resume-fullstack-01", profile: 0, prompt: "Give a concise introduction for a senior full-stack role.", context: "Connect one backend scale example, one frontend delivery example, and the engineering thread between them.", answer: "I’m a full-stack engineer with more than ten years across Rails, Go, React, React Native, and TypeScript. On the backend, I worked on Rails APIs handling more than 100 million requests per day and payment and Pix reliability boundaries. On the frontend, I led eight microfrontends across five squads and improved a critical list from seven seconds to two under the same data volume. The thread is translating product needs into dependable delivery across the API, interface, and operational boundary.", short: "I’m a full-stack engineer across Rails and Go services, including APIs above 100 million daily requests and eight microfrontends across five squads.", deep: "I work across the product boundary when it helps a team make a coherent decision. My backend experience includes Rails APIs above 100 million requests per day and retry-safe payment and Pix processing. My frontend experience includes a migration to eight microfrontends across five squads and a measured list-load improvement from seven seconds to two. I do not present that range as universal expertise; I use it to connect API, interface, release, and reliability trade-offs when a role needs that view.", learning: { "answer_structure" => [ "State your full-stack through-line.", "Give one backend and one frontend evidence point.", "Connect them to a product outcome." ], "useful_phrases" => [ "The thread connecting the work is…", "On the backend…", "On the frontend…" ], "pt_help" => "Conecte backend e frontend por uma decisão de produto; evite apenas enumerar linguagens e frameworks." } },
+      { id: "resume-fullstack-02", profile: 4 },
+      { id: "resume-fullstack-03", profile: 9 }
+    ],
+    "smarttv" => [
+      { id: "resume-smarttv-01", profile: 0, prompt: "Give a concise introduction for a Smart TV engineering role.", context: "Start with television constraints and product surface, then name a platform or performance result from the resume.", answer: "I build television experiences where remote navigation, constrained hardware, content scale, and playback behaviour all shape the architecture. I shipped one React Native codebase through ReNative to Samsung Tizen and LG webOS, covering Live, VOD, catch-up, Bitmovin, and multi-DRM. I also measured the channel-change path; after moving EPG pagination to the server side, that scenario improved by roughly one third. I treat shared code as a starting point, while keeping device-specific performance and playback boundaries explicit.", short: "I ship Smart TV products for Tizen and webOS, balancing shared code with explicit remote, performance, EPG, playback, and DRM constraints.", deep: "My Smart TV experience is product and platform work together. I shipped a shared React Native/ReNative application to Samsung Tizen and LG webOS for Live, VOD, and catch-up, with Bitmovin and multi-DRM. On performance, I used the Performance API to baseline channel changes and saw roughly a one-third reduction after server-side EPG pagination. I would start with the device constraint, explain the bounded change, and avoid implying that a shared framework removes platform-specific work.", learning: { "answer_structure" => [ "Name the television constraint.", "Describe the platform or playback scope.", "Give one measured, bounded improvement." ], "useful_phrases" => [ "The device constraint was…", "I kept platform-specific behaviour explicit.", "The measured scenario improved by…" ], "pt_help" => "Em Smart TV, destaque navegação por controle remoto, hardware limitado, EPG e playback antes de falar de UI genérica." } },
+      { id: "resume-smarttv-02", profile: 10 },
+      { id: "resume-smarttv-03", profile: 3, answer: "On Samsung Tizen and LG webOS, memory and CPU constraints meant I used the Performance API to establish a channel-change baseline instead of optimising by feel. After moving EPG pagination to the server side, the measured scenario improved by roughly one third. I would present that as an observed result of the bounded change, then explain the broader lesson: instrument the user-visible path first and move work away from constrained hardware when the measurement supports it.", short: "I measured Smart TV channel-change time with the Performance API and saw roughly a one-third reduction after server-side EPG pagination in the measured scenario.", deep: "Samsung Tizen and LG webOS made memory and CPU limits part of the design. I used the Performance API to baseline the channel-change path, then moved EPG pagination to the server side; the measured scenario improved by roughly one third. I would explain the device constraint, measurement, bounded change, and observed result in that order. Bitmovin and multi-DRM are relevant platform experience, but I would not claim they caused this particular improvement." }
+    ]
+  }.freeze
+
+  # Private scoring anchors for the role rehearsal only. They are sourced from
+  # the same bounded claims as the response, support ordinary paraphrases, and
+  # deliberately do not attempt to judge grammar, fluency, or semantic truth.
+  CARD_RECALL_CHECKS = {
+    "resume-frontend-01" => [ [ "frontend platform", "frontend engineer" ], [ "eight microfrontends", "8 microfrontends" ], [ "seven seconds to two", "7 seconds to 2" ] ],
+    "resume-frontend-02" => [ [ "eight microfrontends", "8 microfrontends" ], [ "five squads", "5 squads" ], [ "under one hour", "less than one hour" ] ],
+    "resume-frontend-03" => [ [ "critical list", "list component" ], [ "seven seconds", "7 seconds" ], [ "two seconds", "2 seconds" ] ],
+    "resume-backend-01" => [ [ "rails and go", "go and rails" ], [ "100 million requests", "100m requests" ], [ "pix", "payment" ] ],
+    "resume-backend-02" => [ [ "rails apis", "rails api" ], [ "100 million requests", "100m requests" ], [ "query", "incident" ] ],
+    "resume-backend-03" => [ [ "apache kafka", "kafka" ], [ "four critical services", "4 critical services" ], [ "asynchronous", "event-driven" ] ],
+    "resume-fullstack-01" => [ [ "full-stack engineer", "fullstack engineer" ], [ "100 million requests", "100m requests" ], [ "eight microfrontends", "8 microfrontends" ] ],
+    "resume-fullstack-02" => [ [ "idempotent", "idempotency" ], [ "payment", "pix" ], [ "transactional outbox", "idempotent inbox" ] ],
+    "resume-fullstack-03" => [ [ "eight engineers", "8 engineers" ], [ "code reviews", "technical interviews" ], [ "knowledge sharing", "mentored" ] ],
+    "resume-smarttv-01" => [ [ "samsung tizen", "tizen" ], [ "lg webos", "webos" ], [ "epg pagination", "server side epg" ] ],
+    "resume-smarttv-02" => [ [ "samsung tizen", "tizen" ], [ "lg webos", "webos" ], [ "bitmovin", "multi-drm" ] ],
+    "resume-smarttv-03" => [ [ "performance api", "performance" ], [ "epg pagination", "server-side epg" ], [ "one third", "one-third" ] ]
+  }.freeze
+
+  CARD_VARIANT_CONTENT = {
+    "resume-frontend-01" => { follow_up: [ "What made the microfrontend boundary useful rather than just more complicated?", "The boundary was useful because five squads needed independent release cycles, and the measured lead time moved from roughly two days to under one hour. That benefit required shared contracts and integration discipline; I would not claim the architecture removes coordination.", [ "Each squad chose unrelated standards, so integration no longer needed ownership.", "Module Federation alone made every frontend change faster." ] ], delayed_variant: [ "If the next team is smaller, would you repeat that migration?", "I would first test whether independent ownership and release cadence repay the integration cost. For a smaller team, a well-modularised application can preserve clarity with less operational overhead than eight deployable frontends.", [ "Yes, because smaller repositories are always easier to maintain.", "Yes, because microfrontends eliminate shared dependency work." ] ] },
+    "resume-frontend-02" => { follow_up: [ "How did you keep eight microfrontends from becoming eight incompatible products?", "Independent releases still needed deliberate contracts around shared dependencies, integration, and consistency. I would describe autonomy as the result, while making the coordination surface visible rather than presenting each squad as fully isolated.", [ "I let every squad select any runtime contract so delivery stayed fast.", "After the split, shared standards were no longer necessary." ] ], delayed_variant: [ "What would make you stop a microfrontend migration before completing it?", "I would stop if the organisational boundary or release need did not justify the extra integration and observability cost. The architecture should follow independent ownership, not serve as a default modernization step.", [ "I would continue because the migration already proves the target architecture is correct.", "I would decide only from the number of repositories created." ] ] },
+    "resume-frontend-03" => { follow_up: [ "How did you establish that the list improvement was meaningful?", "I kept the data volume constant, measured the critical list path, and then applied targeted render optimisation and virtualization. The comparison stayed useful because the workload did not become smaller just to improve the number.", [ "I returned fewer records, which made the list appear faster.", "I assumed virtualization was sufficient without measuring the critical path." ] ], delayed_variant: [ "A later release feels slower. Where would you begin?", "I would remeasure the same user-visible list path under the same data volume, then inspect rendering work before changing the architecture. That keeps a regression investigation comparable to the original seven-to-two-second result.", [ "I would claim the original metric guarantees every interaction is still fast.", "I would remove detail from the UI before checking the workload." ] ] },
+    "resume-backend-01" => { follow_up: [ "Which backend boundary would you explain first in a payments interview?", "I would start with the state transition that must not duplicate, then explain retries, idempotency, and the signal used to verify the result. That makes the reliability decision concrete before naming Rails, Go, or a queue.", [ "I would start by listing every backend technology I have used.", "I would say retries are rare enough to handle manually." ] ], delayed_variant: [ "How would you adapt that introduction for a Go-focused team?", "I would keep the same reliability through-line and lead with the Pix settlement work: transactional outbox, idempotent inbox, and dead-letter handling for retried payment messages. I would still keep the claim tied to that payment boundary.", [ "I would claim all Rails experience transfers unchanged to every Go service.", "I would omit the payment boundary and focus only on language syntax." ] ] },
+    "resume-backend-02" => { follow_up: [ "Which signal would tell you a reliability change helped at 100M daily requests?", "I would name the bounded signal for the change—latency, query behaviour, incident response, or regression protection—and the service boundary it belongs to. High traffic provides context, but it does not make one metric explain the whole system.", [ "I would use request volume alone as proof that the change worked.", "I would promise every request became fast and error-free." ] ], delayed_variant: [ "What would you say when asked for an incident detail you cannot support from memory?", "I would keep the supported responsibility clear, say that I would need to verify the exact incident detail, and offer the closest documented example. Adding a likely database or incident mechanism would make the story less trustworthy.", [ "I would fill in a plausible incident narrative to keep the answer fluent.", "I would generalise the latency result to every service." ] ] },
+    "resume-backend-03" => { follow_up: [ "What new operational work came with Kafka across four services?", "Kafka removed synchronous bottlenecks, but it made message contracts, duplicate handling, retries, observability, and consumer recovery explicit responsibilities. I would use asynchronous communication selectively where the workflow can progress independently.", [ "Kafka guarantees consumers never need duplicate protection.", "After Kafka, direct calls are inappropriate for every request." ] ], delayed_variant: [ "When would you keep a synchronous call instead?", "I would keep it where the caller needs an immediate, bounded result. The event-driven path is useful when decoupling improves the critical workflow; it is not a substitute for an explicit response requirement.", [ "I would replace every call with events because they are always more scalable.", "I would choose based only on whether Kafka is already installed." ] ] },
+    "resume-fullstack-01" => { follow_up: [ "How do you decide whether to go deep on the API or the interface in a full-stack interview?", "I start from the product failure or delivery constraint, then choose the layer that owns it. For example, payment retries belong to a state boundary, while list load time belongs to rendering work under the same data volume.", [ "I would always start with the frontend because it is visible to users.", "I would list both stacks without connecting either to an outcome." ] ], delayed_variant: [ "This role is backend-heavy. Which part of your story changes?", "I would lead with the Rails and Go reliability work—high-volume APIs, payment idempotency, and Pix message handling—then mention frontend experience only where it clarifies an end-to-end decision.", [ "I would repeat the same broad introduction regardless of the role.", "I would claim frontend metrics prove backend correctness." ] ] },
+    "resume-fullstack-02" => { follow_up: [ "How would you explain protection against a duplicated payment message?", "I would describe the business transition first, then the idempotent state boundary and recovery trail. In the Pix work, transactional outbox, idempotent inbox, and dead-letter queues made retried messages safe to process.", [ "I would rely on a single local transaction with the external provider.", "I would limit retries instead of making the operation idempotent." ] ], delayed_variant: [ "What does tokenization leave unresolved?", "Tokenization addresses a payment-data boundary, but it does not replace release safety, idempotent processing, or operational recovery. I would keep those responsibilities separate instead of treating one mechanism as a guarantee.", [ "Tokenization makes payment reliability and deployment controls unnecessary.", "Tokenization proves every transaction completes faster." ] ] },
+    "resume-fullstack-03" => { follow_up: [ "How did you keep leadership technical while leading eight engineers?", "I used reviews, technical interviews, and structured knowledge sharing while staying accountable for architecture, reliability, and delivery. The aim was to make decision boundaries and quality standards repeatable rather than centralising every decision in one person.", [ "I made every architectural decision so the team could avoid debate.", "I measured leadership mainly through my individual code volume." ] ], delayed_variant: [ "What would you do when a review disagreement blocks delivery?", "I would make the constraint and production outcome explicit, ask for evidence for the competing options, and record the decision boundary so the team can apply it again. That turns a local disagreement into shared capability.", [ "I would end the discussion by choosing the option I personally prefer.", "I would defer quality entirely to CI so delivery can continue." ] ] },
+    "resume-smarttv-01" => { follow_up: [ "What did the shared Tizen and webOS codebase still need to keep separate?", "It could share stable product flows, but remote focus navigation, memory and CPU behaviour, rendering throughput, playback, and device capabilities needed explicit platform boundaries. Shared code reduced duplication; it did not create complete parity.", [ "ReNative removed the need for device-specific performance work.", "Large television screens made responsive styling the only important constraint." ] ], delayed_variant: [ "A new device behaves differently from the shared implementation. What is your first move?", "I would isolate the device-specific capability or performance boundary, measure the user-visible path, and avoid changing common product logic until the constraint is clear. That preserves the value of shared code without hiding the platform difference.", [ "I would force the device to follow the shared path without measurement.", "I would duplicate the entire application for the new device immediately." ] ] },
+    "resume-smarttv-02" => { follow_up: [ "Why did player and DRM experience not remove the Smart TV engineering problem?", "Bitmovin and multi-DRM supported Live, VOD, and catch-up, but remote navigation, hardware limits, EPG scale, and network behaviour still shaped the product. I would explain the player as one boundary within a broader television experience.", [ "Bitmovin made channel changes and DRM behaviour universal across platforms.", "Multi-DRM removed the need to test device-specific playback." ] ], delayed_variant: [ "How would you frame playback risk for an interviewer?", "I would name the content mode and platform constraint, then explain the observable behaviour to protect—such as channel changes, audio or subtitle switching, or recovery under network conditions. I would not claim one player abstraction guarantees parity.", [ "I would say the player vendor owns all playback risk.", "I would discuss only visual styling because playback is infrastructure." ] ] },
+    "resume-smarttv-03" => { follow_up: [ "Why move EPG pagination server-side after measuring channel changes?", "The Performance API baseline pointed to a user-visible path on constrained television hardware. Moving pagination server-side reduced work on the device, and the measured scenario improved by roughly one third; I would keep that causal claim limited to the measured path.", [ "I would say server-side pagination makes every television model consistently fast.", "I would attribute the improvement to Bitmovin without evidence." ] ], delayed_variant: [ "How would you investigate a regression on only one television model?", "I would reproduce and measure the channel-change path on that model, compare the device constraint with the prior baseline, and then decide whether the EPG or rendering boundary changed. A prior one-third result is a reference, not a universal guarantee.", [ "I would assume the original result rules out a device-specific regression.", "I would remove animations before measuring the channel-change path." ] ] }
+  }.freeze
+
+  INTRO_CARD_IDS = %w[
+    resume-frontend-01 resume-backend-01 resume-fullstack-01 resume-smarttv-01
+  ].freeze
+
+  INTRO_EVIDENCE = {
+    "frontend" => {
+      sources: %i[frontend smarttv],
+      verified: [ "Led a migration to eight microfrontends across five squads.", "Release lead time moved from roughly two days to under one hour.", "Reduced a critical list from seven seconds to two seconds under the same data volume." ],
+      distractors: [ [ "I can use any frontend architecture because I know many frameworks.", "breadth without evidence", "The introduction needs a responsibility and bounded result." ], [ "Microfrontends and virtualization made every frontend problem disappear.", "universal mechanism", "Both decisions carried explicit trade-offs and bounded outcomes." ] ]
+    },
+    "backend" => {
+      sources: %i[fullstack],
+      verified: [ "Owned Rails APIs handling more than 100 million daily requests.", "Built Go Pix settlement services with transactional outbox and idempotent inbox.", "Used targeted API and query optimisation with incident-response accountability." ],
+      distractors: [ [ "At high traffic, adding servers is the only reliability decision that matters.", "single mechanism", "Reliability also required explicit state and recovery boundaries." ], [ "I can guarantee every request is fast and error-free.", "absolute guarantee", "The evidence supports bounded engineering responsibility, not an absolute outcome." ] ]
+    },
+    "fullstack" => {
+      sources: %i[fullstack frontend smarttv],
+      verified: [ "Rails APIs handled more than 100 million daily requests.", "Built retry-safe payment and Pix processing boundaries.", "Led eight microfrontends across five squads.", "Reduced a critical list from seven seconds to two seconds under the same data volume." ],
+      distractors: [ [ "I can solve every product problem because I work across the stack.", "universal capability", "Range needs to remain tied to a specific product boundary." ], [ "Frontend and backend work are separate, so their trade-offs should never inform each other.", "false separation", "The introduction explains how the roles connect through delivery outcomes." ] ]
+    },
+    "smarttv" => {
+      sources: %i[smarttv fullstack],
+      verified: [ "Shipped one ReNative codebase to Samsung Tizen and LG webOS.", "The product covered Live, VOD, catch-up, Bitmovin, and multi-DRM.", "Performance API measurement and server-side EPG pagination improved the channel-change scenario by roughly one third." ],
+      distractors: [ [ "A shared codebase removes television-specific navigation and performance work.", "false parity", "Shared code still needed explicit device boundaries." ], [ "The player vendor guarantees consistent playback behaviour on every device.", "vendor guarantee", "Playback and device behaviour remained an engineering responsibility." ] ]
+    }
+  }.freeze
+
   PROFILES = [
     {
       prompt: "Give me a concise introduction that connects your backend scale, frontend leadership, and Smart TV work.",
@@ -260,6 +356,72 @@ class EnglishArcadeResumeInterviewProfile
     end
   end
 
+  def self.interview_roles
+    INTERVIEW_ROLES
+  end
+
+  def self.role_metadata(role = nil)
+    return ROLE_METADATA if role.nil?
+
+    ROLE_METADATA[role.to_s]
+  end
+
+  # Role cards have their own immutable IDs and target. They must never be
+  # decorated career cards: Arena resolves a persisted ID on every show and
+  # grade, while the career cards remain part of the legacy assessment deck.
+  def self.role_cards(cards, role: nil, decks: ROLE_DECKS)
+    roles = role.to_s.present? ? [ role.to_s ] : INTERVIEW_ROLES
+    return [] unless roles.all? { |value| INTERVIEW_ROLES.include?(value) }
+
+    indexed = Array(cards).index_by { |card| card.fetch(:key).to_s }
+    roles.flat_map do |role_name|
+      decks.fetch(role_name).filter_map do |definition|
+        card_id = definition.fetch(:id)
+        profile = role_profile(role_name, definition, card_id)
+        raw = indexed[CARD_KEYS.fetch(definition.fetch(:profile))]
+        next unless raw
+
+        decorate(raw, profile).merge(
+          key: card_id,
+          target: "interview",
+          interview_role: role_name,
+          learning: profile.fetch(:learning),
+          recall_check: profile.fetch(:recall_check),
+          recall: {
+            "active_recall_cue" => "Answer as a #{role_name.tr('_', ' ')} candidate: name the responsibility, one supported result, and the limit of the claim."
+          },
+          content_version: ROLE_CONTENT_VERSION
+        )
+      end
+    end
+  end
+
+  def self.role_profile(role, definition, card_id)
+    base = PROFILES.fetch(definition.fetch(:profile)).deep_dup
+    overrides = definition.except(:id, :profile).deep_dup
+    profile = base.merge(overrides)
+    profile = profile.merge(INTRO_EVIDENCE.fetch(role)) if INTRO_CARD_IDS.include?(card_id)
+    profile[:learning] ||= {
+      "answer_structure" => [ "Answer the question directly.", "Use one resume-backed responsibility and result.", "Name the relevant trade-off or boundary." ],
+      "useful_phrases" => [ "A concrete example is…", "The measured result was…", "I would keep that claim bounded to…" ],
+      "pt_help" => "Responda primeiro e use um exemplo do currículo. Métricas pertencem ao cenário citado, não a toda a sua carreira."
+    }
+    profile[:recall_check] = {
+      "minimum_words" => 15,
+      "required_groups" => 2,
+      "key_points" => CARD_RECALL_CHECKS.fetch(card_id)
+    }
+    profile[:interview_role] = role
+    profile[:role_card_id] = card_id
+    profile[:learning]["answer_versions"] = {
+      "short" => profile.fetch(:short),
+      "medium" => profile.fetch(:answer),
+      "deep" => profile.fetch(:deep)
+    }
+    profile
+  end
+  private_class_method :role_profile
+
   def self.decorate(raw, profile)
     card = raw.deep_dup
     variants = card.fetch(:variants).deep_dup
@@ -271,6 +433,7 @@ class EnglishArcadeResumeInterviewProfile
       "feedback" => feedback(profile),
       "critical_thinking" => critical_thinking(profile)
     )
+    variants = role_variants(variants, profile) if profile.key?(:role_card_id)
     sources = profile.fetch(:sources).map { |source_key| source_for(source_key) }
     card.merge(
       prompt: profile.fetch(:prompt),
@@ -290,6 +453,30 @@ class EnglishArcadeResumeInterviewProfile
     )
   end
   private_class_method :decorate
+
+  def self.role_variants(variants, profile)
+    authored = CARD_VARIANT_CONTENT.fetch(profile.fetch(:role_card_id))
+    variants.merge(
+      "follow_up" => authored_variant(authored.fetch(:follow_up), profile),
+      "delayed_variant" => authored_variant(authored.fetch(:delayed_variant), profile)
+    )
+  end
+  private_class_method :role_variants
+
+  def self.authored_variant(definition, profile)
+    prompt, answer, distractor_texts = definition
+    {
+      "prompt" => prompt,
+      "context" => "Answer the changed interviewer question directly and keep the claim inside the supplied resume evidence.",
+      "best_answer" => answer,
+      "distractors" => distractor_texts.map do |text|
+        { "text" => text, "trap" => "role-specific overclaim", "why_wrong" => "This answer drops the documented constraint or substitutes an unsupported mechanism." }
+      end,
+      "feedback" => feedback(profile),
+      "critical_thinking" => critical_thinking(profile)
+    }
+  end
+  private_class_method :authored_variant
 
   def self.distractors(profile)
     profile.fetch(:distractors).map do |text, trap, why_wrong|

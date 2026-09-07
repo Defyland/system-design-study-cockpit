@@ -14,11 +14,32 @@ class ArcadeAccessibilityTest < ApplicationSystemTestCase
     assert_selector "section.arena-hub"
     assert_named_buttons
 
-    [ [ 390, 844 ], [ 768, 1024 ], [ 1440, 1000 ] ].each do |width, height|
+    [ [ 360, 800 ], [ 390, 844 ], [ 768, 1024 ], [ 1440, 1000 ] ].each do |width, height|
       page.driver.browser.manage.window.resize_to(width, height)
       assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, page.evaluate_script("window.innerWidth"), "horizontal overflow at #{width}px"
       assert_named_buttons
+      if width == 360
+        assert page.evaluate_script(<<~JAVASCRIPT), "primary practice paths should stack at 360px"
+          (() => {
+            const cards = [
+              document.querySelector('.arena-practice-card'),
+              document.querySelector('.arena-interview-card')
+            ].filter(Boolean).map((card) => card.getBoundingClientRect())
+            return cards.length === 2 && cards[1].top > cards[0].top && Math.abs(cards[1].left - cards[0].left) <= 1
+          })()
+        JAVASCRIPT
+      end
     end
+  end
+
+  test "interview entry point exposes the supported role lenses and defaults to full stack" do
+    visit "/arena"
+
+    assert_selector "form.arena-interview-form input[name='lesson[interview_role]'][value='frontend']"
+    assert_selector "form.arena-interview-form input[name='lesson[interview_role]'][value='backend']"
+    assert_selector "form.arena-interview-form input[name='lesson[interview_role]'][value='fullstack'][checked]"
+    assert_selector "form.arena-interview-form input[name='lesson[interview_role]'][value='smarttv']"
+    assert_selector "form.arena-interview-form input[name='lesson[target_mode]'][value='interview']", visible: :all
   end
 
   test "lesson controls support keyboard completion and Escape opens a focused exit dialog" do

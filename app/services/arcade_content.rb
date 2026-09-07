@@ -11,9 +11,10 @@ require_relative "../../lib/english_arcade/exercise_factory"
 # materializes the already-gated content exposed by SessionBuilder.
 class ArcadeContent
   CORE_STAGES = %w[meet recognize trap cloze rebuild produce speak transfer compress feynman].freeze
+  INTERVIEW_PRACTICE_STAGES = EnglishArcadeResumeInterviewProfile::PRACTICE_STAGES
   FORBIDDEN_KEYS = %w[
     reveal best_answer correct correct_choice why_wrong pt_help sources provenance
-    critical_thinking black_box variants response_versions answer
+    critical_thinking black_box variants response_versions answer recall_check
   ].freeze
 
   attr_reader :builder, :items, :index
@@ -24,6 +25,7 @@ class ArcadeContent
     @elective_items = EnglishArcade::Schema::ELECTIVE_TARGETS.flat_map do |target|
       @builder.cards_for(target).compact.map { |item| factory_item(item) }
     end.freeze
+    @interview_items = EnglishArcadeResumeInterviewProfile.role_cards(@builder.cards_for("career")).map { |item| factory_item(item) }.freeze
     @lookup_items = (@items + @elective_items).uniq { |item| item.fetch("id").to_s }.freeze
     @index = EnglishArcade::CorpusIndex.new(@lookup_items)
     @factory = EnglishArcade::ExerciseFactory.new(corpus_index: @index)
@@ -33,10 +35,15 @@ class ArcadeContent
     EnglishArcade::Schema::TARGETS
   end
 
-  def items_for(target)
+  def items_for(target, interview_role: nil)
     target = normalize_target(target)
     source = if target == "mixed"
       @items
+    elsif target == "interview"
+      role = interview_role.to_s.presence
+      return [] if role && !EnglishArcadeResumeInterviewProfile.interview_roles.include?(role)
+
+      role ? @interview_items.select { |item| item.fetch("interview_role").to_s == role } : @interview_items
     else
       @builder.cards_for(target).compact.map { |item| factory_item(item) }
     end
@@ -49,8 +56,15 @@ class ArcadeContent
   end
 
   def item_by_key(card_key)
-    @lookup_items.find { |item| item.fetch("id").to_s == card_key.to_s } ||
-      @builder.cards_for("interview").compact.map { |item| factory_item(item) }.find { |item| item.fetch("id").to_s == card_key.to_s }
+    # Resume-role keys are isolated from canonical career IDs and checked
+    # first. A persisted interview lesson must not silently materialize a
+    # similarly named closed-book career card during show or grading.
+    @interview_items.find { |item| item.fetch("id").to_s == card_key.to_s } ||
+      @lookup_items.find { |item| item.fetch("id").to_s == card_key.to_s }
+  end
+
+  def interview_item?(item)
+    item && item["interview_role"].present?
   end
 
   def content_version(item)
@@ -83,6 +97,9 @@ class ArcadeContent
       # Meet/Speak card. Future exercises never receive this field.
       exercise.fetch("payload")["model_text"] = factory_item(item).fetch("best_answer").to_s
     end
+    if include_model && exercise["stage"].to_s == "meet" && interview_item?(factory_item(item))
+      exercise.fetch("payload")["learning"] = stringify(factory_item(item)["learning"] || {})
+    end
     exercise
   end
 
@@ -102,6 +119,15 @@ class ArcadeContent
     reveal["correct"] = !!grade["correct"]
     reveal["rating"] = grade["rating"].to_i
     reveal["trap_axis"] = grade["trap_axis"] if grade.key?("trap_axis")
+    if interview_item?(factory_item(item))
+      learning = stringify(factory_item(item)["learning"] || {})
+      reveal["learning"] = learning if learning.present?
+      claims = Array(factory_item(item).dig("provenance", "verified_claims")).map(&:to_s).reject(&:blank?)
+      reveal["evidence"] = {
+        "claim_boundary" => "Resume-derived claims only; clarify details the supplied resumes do not establish.",
+        "verified_claims" => claims
+      } if claims.any?
+    end
     reveal.compact
   end
 

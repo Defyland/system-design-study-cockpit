@@ -112,6 +112,10 @@ module EnglishArcade
     end
 
     def grade_production(response_text, self_rating, allow_self_rate: false)
+      if @exercise["type"] == "produce" && @item.key?("recall_check")
+        return grade_resume_recall(response_text, self_rating)
+      end
+
       similarity = TextTools.similarity(response_text, @item["best_answer"])
       anchors = production_anchors
       anchors_hit = anchors.count { |anchor| TextTools.normalize(response_text).include?(TextTools.normalize(anchor)) }
@@ -128,6 +132,30 @@ module EnglishArcade
       cap = rating_cap(ratio)
       rating = [ rating_value(self_rating), cap ].min
       result(correct: rating >= 3, rating: rating, details: { "similarity" => similarity, "anchors_hit" => anchors_hit, "anchors_total" => anchors.length })
+    end
+
+    def grade_resume_recall(response_text, self_rating)
+      check = @item.fetch("recall_check")
+      groups = check.fetch("key_points")
+      required = check.fetch("required_groups").to_i
+      words = TextTools.word_count(response_text)
+      response = " #{TextTools.normalize(response_text)} "
+      hits = groups.count do |alternatives|
+        alternatives.any? do |phrase|
+          normalized = TextTools.normalize(phrase)
+          !normalized.empty? && response.include?(" #{normalized} ")
+        end
+      end
+      covered = required.positive? && hits >= required && words >= [ check.fetch("minimum_words").to_i, 15 ].max
+      rating = covered ? [ rating_value(self_rating), 3 ].min : 1
+      result(
+        correct: rating >= 3, rating: rating,
+        details: {
+          "assessment_kind" => "phrase_recall", "word_count" => words,
+          "key_points_hit" => hits, "key_points_required" => required,
+          "unassessed" => %w[meaning grammar fluency pronunciation]
+        }
+      )
     end
 
     def grade_compress(response_text, self_rating)

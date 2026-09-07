@@ -16,6 +16,19 @@ export function button(label, className = "arena-button") {
   return element
 }
 
+export function learningMarkup(learning = {}) {
+  const structure = Array.isArray(learning.answer_structure) ? learning.answer_structure : []
+  const phrases = Array.isArray(learning.useful_phrases) ? learning.useful_phrases : []
+  const columns = []
+  if (structure.length) columns.push(`<section><h3>Build the answer</h3><ol>${structure.map((step) => `<li>${escape(step)}</li>`).join("")}</ol></section>`)
+  if (phrases.length) columns.push(`<section><h3>Useful English</h3><ul>${phrases.map((phrase) => `<li>${escape(phrase)}</li>`).join("")}</ul></section>`)
+  const help = learning.pt_help ? `<details class="arena-pt-help"><summary>Ajuda em português</summary><p lang="pt-BR">${escape(learning.pt_help)}</p></details>` : ""
+  const versions = learning.answer_versions || {}
+  const short = versions.short ? `<details class="arena-pt-help"><summary>Short recruiter answer</summary><p>${escape(versions.short)}</p></details>` : ""
+  const deep = versions.deep ? `<details class="arena-pt-help"><summary>Engineering deep dive</summary><p>${escape(versions.deep)}</p></details>` : ""
+  return columns.length || help || short || deep ? `<aside class="arena-learning-card" aria-label="English coaching"><div class="arena-learning-grid">${columns.join("")}</div>${short}${deep}${help}</aside>` : ""
+}
+
 export function selectedButton(root) {
   return root.querySelector("[data-arena-selected='true']")
 }

@@ -86,6 +86,27 @@ class ArcadeProgressDashboardTest < ActiveSupport::TestCase
     assert_equal stages, ArcadeProgressDashboard::STAGES
   end
 
+  test "resume rehearsal does not increase mastery of canonical career cards" do
+    career_item = @content.items_for("career").first
+    stage_state(career_item, "recognize", reps: 1, due_at: @now + 1.day)
+    event(correct: false, trap_axis: "grammar", response: { "_exposed_axes" => [ "grammar" ] })
+      .update!(target: "career", card_key: career_item.fetch(:key))
+    original = dashboard.dig("mastery_by_target", "career")
+    item = @content.items_for("interview", interview_role: "frontend").first
+    %w[recognize trap cloze rebuild produce transfer].each do |stage|
+      stage_state(item, stage, reps: 8, due_at: @now).update!(stability: 30)
+    end
+    event(correct: false, trap_axis: "content", response: { "_exposed_axes" => [ "content" ] })
+      .update!(target: "career", card_key: item.fetch(:key))
+
+    progress = dashboard
+    assert_equal original, progress.dig("mastery_by_target", "career")
+    assert_operator original.fetch("score"), :>, 0
+    assert_equal 2, progress.dig("due", "total")
+    assert_equal 2, progress.fetch("recent_lapses").length
+    assert progress.fetch("skill_map").values.flatten.none? { |card| card.fetch("card_key").start_with?("resume-") }
+  end
+
   test "skill map includes every card and only counts reviewed states toward its stage" do
     items = @content.items_for("dsa")
     reviewed = items.fetch(0)

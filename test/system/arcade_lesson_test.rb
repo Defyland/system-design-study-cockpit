@@ -62,6 +62,12 @@ class ArcadeLessonTest < ApplicationSystemTestCase
     assert_selector "[data-arcade-lesson-target='position']", text: "2", wait: 5
     assert_selector "[data-arcade-lesson-target='stage']", text: /meet/i
 
+    visit arena_path
+    assert_selector "[data-arena-resume]", text: "1 of 2 exercises saved"
+    assert_no_difference("ArcadeLesson.count") { click_link "Resume lesson" }
+    assert_current_path arcade_lesson_path(lesson)
+    assert_selector "[data-arcade-lesson-target='position']", text: "2", wait: 5
+
     click_button "Got it"
     assert_selector ".arena-feedback:not([hidden])", wait: 5
     click_button "Continue"
@@ -71,6 +77,40 @@ class ArcadeLessonTest < ApplicationSystemTestCase
     assert_text "accuracy"
     assert_equal "finished", lesson.reload.status
     assert_equal 2, ArcadeExerciseEvent.where(arcade_lesson: lesson).count
+  end
+
+  test "a new exercise clears the previous reference and starts its own response timer" do
+    lesson = create_lesson(%w[meet meet])
+    visit arcade_lesson_path(lesson)
+    assert_selector "[data-arcade-lesson-target='position']", text: "1"
+    click_button "Got it"
+    assert_selector ".arena-feedback:not([hidden])"
+    assert_selector "[data-arcade-lesson-target='exercise'][inert]"
+
+    find("[data-action='arcade-lesson#openDossier']").click
+    assert_selector "dialog[open]", text: "Model answer:"
+    find("[data-action='arcade-lesson#closeDossier']").click
+
+    # Simulate a long feedback-reading break without sleeping in the test.
+    page.execute_script(<<~JS)
+      window.arenaTestClockOffset = 60000;
+      const originalNow = performance.now.bind(performance);
+      performance.now = () => originalNow() + window.arenaTestClockOffset;
+    JS
+    click_button "Continue"
+    assert_selector "[data-arcade-lesson-target='position']", text: "2"
+    assert_no_selector "[data-arcade-lesson-target='exercise'][inert]"
+    find("[data-action='arcade-lesson#openDossier']").click
+    assert_selector "dialog[open]", text: "Answer this exercise"
+    assert_no_selector "dialog[open]", text: "Model answer:"
+    find("[data-action='arcade-lesson#closeDossier']").click
+
+    page.execute_script("window.arenaTestClockOffset = 62000")
+    click_button "Got it"
+    assert_selector ".arena-feedback:not([hidden])"
+    event = lesson.arcade_exercise_events.order(:position).last
+    assert_operator event.response_ms, :>=, 2000
+    assert_operator event.response_ms, :<, 15000
   end
 
   private
