@@ -64,8 +64,10 @@ class ArcadeLessonTest < ApplicationSystemTestCase
 
     visit arena_path
     assert_selector "[data-arena-resume]", text: "1 of 2 exercises saved"
-    assert_no_difference("ArcadeLesson.count") { click_link "Resume lesson" }
-    assert_current_path arcade_lesson_path(lesson)
+    assert_no_difference("ArcadeLesson.count") do
+      click_link "Resume lesson"
+      assert_current_path arcade_lesson_path(lesson), wait: 10
+    end
     assert_selector "[data-arcade-lesson-target='position']", text: "2", wait: 5
 
     click_button "Got it"
