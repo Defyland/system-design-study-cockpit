@@ -1,0 +1,138 @@
+<% content_for :title, "Pause, associate, respond · English Arcade" %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<div class="arena-shell arena-warmup" data-controller="arcade-warmup">
+  <header class="arena-header">
+    <div class="arena-header-copy">
+      <p class="arena-eyebrow">Optional speaking warmup</p>
+      <h1>Pause, associate, respond</h1>
+      <p class="arena-lede">Pause without rushing. Explore a few associations, then practice a focused interview answer.</p>
+      <p class="arena-muted">No timer or score. Your answers and self-review stay on this page and are not saved. Leaving, reloading, or applying a role starts a fresh round.</p>
+      <p class="arena-muted">Speak aloud or type in English. Nothing is recorded; this practice does not use your microphone.</p>
+    </div>
+    <%= link_to "Back to Arena", arena_path, class: "arena-header-link" %>
+  </header>
+
+  <%= form_with url: arcade_warmup_path, method: :get, local: true, data: { turbo: false }, class: "arena-warmup-role" do |form| %>
+    <div class="arena-warmup-field">
+      <%= form.label :interview_role, "Interview role" %>
+      <%= form.select :interview_role, @roles.map { |key, metadata| [metadata.fetch(:label), key] }, { selected: @role }, class: "arena-input" %>
+    </div>
+    <%= form.submit "Apply role", class: "arena-button arena-button-quiet" %>
+  <% end %>
+
+  <p class="arena-eyebrow" data-arcade-warmup-target="progress" role="status" aria-live="polite">Step 1 of 4</p>
+  <p id="warmup-error" class="arena-warmup-error" data-arcade-warmup-target="error" role="alert" hidden></p>
+  <noscript><p class="arena-panel">Enable JavaScript to move through this optional practice.</p></noscript>
+
+  <section class="arena-panel arena-warmup-step" data-arcade-warmup-target="step" aria-labelledby="warmup-associate-heading">
+    <h2 id="warmup-associate-heading" data-arcade-warmup-target="heading" tabindex="-1">Pause and find three associations</h2>
+    <p>Take a comfortable pause. What comes to mind when you see this word? There are no expected answers.</p>
+    <p class="arena-language-note">Give yourself space: “Let me think for a moment.” Then continue with one idea.</p>
+    <p class="arena-warmup-word" data-arcade-warmup-target="word" aria-live="polite">duck</p>
+    <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#changeWord">Change word</button>
+    <div class="arena-warmup-fields arena-warmup-associations">
+      <% 3.times do |index| %>
+        <div class="arena-warmup-field">
+          <label for="warmup-association-<%= index + 1 %>">Association <%= index + 1 %></label>
+          <input id="warmup-association-<%= index + 1 %>" type="text" class="arena-input" autocomplete="off" aria-describedby="warmup-error" data-arcade-warmup-target="association">
+        </div>
+      <% end %>
+    </div>
+    <p class="arena-muted">Use three different words or short phrases. Associations are for exploring ideas; they are not graded.</p>
+    <div class="arena-warmup-actions">
+      <button type="button" class="arena-button" data-action="arcade-warmup#next">Continue to short response</button>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-warmup-step" data-arcade-warmup-target="step" aria-labelledby="warmup-short-heading" hidden>
+    <h2 id="warmup-short-heading" data-arcade-warmup-target="heading" tabindex="-1">Make a short response</h2>
+    <p>Choose one association and say something about it in English: a memory, an observation, or a simple explanation. Around 20–30 seconds is a guide, not a limit. Pauses are welcome.</p>
+    <div class="arena-warmup-fields">
+      <div class="arena-warmup-field">
+        <label for="warmup-choice">Choose an association</label>
+        <select id="warmup-choice" class="arena-input" data-arcade-warmup-target="choice" data-action="change->arcade-warmup#changeAssociation" aria-describedby="warmup-error">
+          <option value="">Select an association</option>
+        </select>
+      </div>
+      <div class="arena-warmup-field">
+        <label for="warmup-short-response">Short response</label>
+        <textarea id="warmup-short-response" class="arena-input" rows="4" data-arcade-warmup-target="response" aria-describedby="warmup-error"></textarea>
+      </div>
+      <label class="arena-warmup-check" for="warmup-short-aloud">
+        <input id="warmup-short-aloud" type="checkbox" data-arcade-warmup-target="aloud"> I answered aloud
+      </label>
+    </div>
+    <div class="arena-warmup-actions">
+      <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#back">Back</button>
+      <button type="button" class="arena-button" data-action="arcade-warmup#next">Continue to interview</button>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-warmup-step" data-arcade-warmup-target="step" aria-labelledby="warmup-interview-heading" hidden>
+    <p class="arena-eyebrow"><%= @warmup_payload.fetch("role_label") %> interview</p>
+    <h2 id="warmup-interview-heading" data-arcade-warmup-target="heading" tabindex="-1">Pause, then answer the interview question</h2>
+    <p><%= @warmup_payload.fetch("prompt") %></p>
+    <p class="arena-language-note">Professional cue: <strong><%= @warmup_payload.fetch("cue") %></strong>. “One example that comes to mind is…”</p>
+    <p>Use <strong>Problem → Action → Result</strong> with experience and outcomes you can verify. Make one clear point. Do not force the random word or an association into your professional answer.</p>
+    <div class="arena-warmup-fields">
+      <div class="arena-warmup-field">
+        <label for="warmup-interview-response">Interview response</label>
+        <textarea id="warmup-interview-response" class="arena-input" rows="6" data-arcade-warmup-target="response" aria-describedby="warmup-error"></textarea>
+      </div>
+      <label class="arena-warmup-check" for="warmup-interview-aloud">
+        <input id="warmup-interview-aloud" type="checkbox" data-arcade-warmup-target="aloud"> I answered aloud
+      </label>
+    </div>
+    <div class="arena-warmup-actions">
+      <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#back">Back</button>
+      <button type="button" class="arena-button" data-action="arcade-warmup#next">Continue to follow-up</button>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-warmup-step" data-arcade-warmup-target="step" aria-labelledby="warmup-follow-up-heading" hidden>
+    <h2 id="warmup-follow-up-heading" data-arcade-warmup-target="heading" tabindex="-1">Respond to a follow-up</h2>
+    <p><%= @warmup_payload.fetch("follow_up") %></p>
+    <p class="arena-muted">Pause again if you need to. Respond to this new question using the same real experience, and say when you do not know or cannot verify a detail.</p>
+    <div class="arena-warmup-fields">
+      <div class="arena-warmup-field">
+        <label for="warmup-follow-up-response">Follow-up response</label>
+        <textarea id="warmup-follow-up-response" class="arena-input" rows="4" data-arcade-warmup-target="response" aria-describedby="warmup-error"></textarea>
+      </div>
+      <label class="arena-warmup-check" for="warmup-follow-up-aloud">
+        <input id="warmup-follow-up-aloud" type="checkbox" data-arcade-warmup-target="aloud"> I answered aloud
+      </label>
+    </div>
+    <div class="arena-warmup-actions">
+      <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#back">Back</button>
+      <button type="button" class="arena-button" data-action="arcade-warmup#next">Reflect on this round</button>
+    </div>
+  </section>
+
+  <section class="arena-panel arena-warmup-step" data-arcade-warmup-target="step" aria-labelledby="warmup-reflection-heading" hidden>
+    <h2 id="warmup-reflection-heading" data-arcade-warmup-target="heading" tabindex="-1">Notice what happened</h2>
+    <p>Self-review only. Check what you noticed in your interview and follow-up answers. These observations are not a fluency assessment, and they do not affect Arcade progress.</p>
+    <div class="arena-warmup-fields">
+      <% ["I stayed relevant to the question", "I made one clear main point", "I continued after a pause"].each_with_index do |label, index| %>
+        <label class="arena-warmup-check" for="warmup-reflection-<%= index %>">
+          <input id="warmup-reflection-<%= index %>" type="checkbox" data-arcade-warmup-target="reflection" data-action="change->arcade-warmup#reflect"> <%= label %>
+        </label>
+      <% end %>
+    </div>
+    <h3>A next step to try</h3>
+    <ul data-arcade-warmup-target="suggestions" aria-live="polite"></ul>
+    <p class="arena-muted">Try the interview answer again to reformulate one clear point. Your draft stays available to revise; confirm again if you answer aloud.</p>
+    <div class="arena-warmup-actions">
+      <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#back">Back</button>
+      <button type="button" class="arena-button arena-button-secondary" data-action="arcade-warmup#retryInterview">Try the interview answer again</button>
+      <button type="button" class="arena-button arena-button-quiet" data-action="arcade-warmup#changeWord">Practice another word</button>
+      <%= form_with url: arcade_lessons_path, scope: :lesson, method: :post, local: true, data: { turbo: false } do |form| %>
+        <%= form.hidden_field :target_mode, value: "interview" %>
+        <%= form.hidden_field :interview_role, value: @role %>
+        <%= form.submit "Start interview rehearsal", class: "arena-button" %>
+      <% end %>
+    </div>
+  </section>
+</div>

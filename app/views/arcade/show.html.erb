@@ -95,6 +95,10 @@
         <%= form.submit "Interview mode", class: "arena-button" %>
       <% end %>
       <p class="arena-muted arena-card-note">Prompts stay anchored to the experience and boundaries in your resumes.</p>
+      <div class="arena-warmup-entry">
+        <%= link_to "Warm up before an interview", arcade_warmup_path, class: "arena-button arena-button-quiet" %>
+        <p class="arena-muted arena-card-note">Choose a role and try Pause → Associate → Respond. No timer or score.</p>
+      </div>
     </article>
   </section>
 

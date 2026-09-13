@@ -342,3 +342,26 @@ kbd { background: #0d161d; border: 1px solid var(--arena-line); border-bottom-wi
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } .arena-target-card:hover, .arena-skill-node:hover { transform: none; } .arena-rain-lanes { align-items: stretch; grid-template-columns: 1fr; min-height: 0; } .arena-rain-choice, .arena-rain-choice[data-arena-lane="1"], .arena-rain-choice[data-arena-lane="3"] { animation: none !important; margin-top: 0; transform: none; } }
+
+/* Optional conversation warm-up. */
+.arena-warmup-entry { border-top: 1px solid var(--arena-line); margin-top: 22px; padding-top: 18px; }
+.arena-warmup { max-width: 1060px; }
+.arena-warmup-role { align-items: end; display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0; }
+.arena-warmup-role .arena-input { width: auto; max-width: 100%; }
+.arena-warmup-step { min-width: 0; }
+.arena-warmup-step h2 { font-size: clamp(1.65rem, 4vw, 2.5rem); }
+.arena-warmup-fields { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); margin: 20px 0; }
+.arena-warmup-associations { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.arena-warmup-field { display: grid; gap: 7px; min-width: 0; margin-bottom: 16px; }
+.arena-warmup-field label { font-weight: 700; }
+.arena-warmup-word { color: var(--arena-gold-strong); font: 700 clamp(2.5rem, 7vw, 4rem)/1.2 ui-serif, Georgia, serif; overflow-wrap: anywhere; }
+.arena-warmup-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.arena-warmup-check { align-items: start; display: flex; gap: 10px; margin: 16px 0; }
+.arena-warmup-check input { accent-color: var(--arena-cyan); flex: 0 0 auto; margin-top: 6px; }
+.arena-warmup-error { color: var(--arena-danger); }
+.arena-warmup-error:empty { display: none; }
+@media (max-width: 620px) {
+  .arena-warmup-fields { grid-template-columns: minmax(0, 1fr); }
+  .arena-warmup-actions { align-items: stretch; flex-direction: column; }
+  .arena-warmup-actions form, .arena-warmup-actions .arena-button { width: 100%; }
+}

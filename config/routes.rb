@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   root "dashboard#index"
 
   get "arena", to: "arcade#show", as: :arena
+  get "arena/warmup", to: "arcade#warmup", as: :arcade_warmup
   scope "arena", as: :arcade do
     resources :lessons, only: %i[create show], controller: :arcade_lessons do
       post :finish, on: :member
