@@ -18,6 +18,11 @@ class ArcadeResumePayloadTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_equal "stale_content", response.parsed_body.fetch("error")
 
+    get arcade_lesson_path(lesson), headers: headers
+    assert_response :unprocessable_entity
+    assert_select "h1", "This lesson's study material has changed."
+    assert_select "a[href=?]", arena_path, text: "Return to Arena"
+
     assert_no_difference "ArcadeExerciseEvent.count" do
       post arcade_lesson_results_path(lesson_id: lesson.id, format: :json),
         params: { result: { exercise_id: factory_id, response: { confirmed: true }, response_ms: 100 } },
@@ -45,6 +50,9 @@ class ArcadeResumePayloadTest < ActionDispatch::IntegrationTest
       [ future.fetch("prompt"), future.fetch("best_answer"), future.dig("follow_up", "best_answer"), future.dig("delayed_variant", "best_answer") ].each do |text|
         refute_includes serialized, text.to_json
       end
+      future.dig("learning", "reasoning_questions").each do |entry|
+        refute_includes serialized, entry.fetch("answer").to_json
+      end
       refute_includes serialized, "recall_check"
 
       assert_no_difference "ArcadeExerciseEvent.count" do
@@ -67,6 +75,7 @@ class ArcadeResumePayloadTest < ActionDispatch::IntegrationTest
       end
       refute_includes serialized, "recall_check"
       refute_includes serialized, "answer_structure"
+      refute_includes serialized, "reasoning_questions"
     end
   end
 end

@@ -141,7 +141,13 @@ class ArcadeLessonsController < ApplicationController
 
   def render_error(code, status)
     respond_to do |format|
-      format.html { render plain: code.to_s, status: status }
+      format.html do
+        if code.to_s == "stale_content"
+          render :stale_content, status: status
+        else
+          render plain: code.to_s, status: status
+        end
+      end
       format.json { render json: { error: code.to_s }, status: status }
     end
   end

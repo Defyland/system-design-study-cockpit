@@ -27,8 +27,8 @@ cards:
   - id: salesforce-card-bulkification
     front: What is the first thing to say about any trigger?
     back: >-
-      That it handles collections, not single records. Queries and DML belong
-      outside the loop, because the platform enforces limits per transaction.
+      I design it to handle collections, not single records. I put queries and DML
+      outside the loop because the platform enforces limits per transaction.
     box: 1
     source:
       repo: original
@@ -37,8 +37,8 @@ cards:
   - id: salesforce-card-flow-vs-apex
     front: How do you choose between Flow and Apex without dogma?
     back: >-
-      By who maintains it and how complex the logic is. Flow for declarative
-      admin-owned rules; Apex when logic needs tests, reuse or bulk control.
+      I ask who maintains it and how complex the logic is. I use Flow for declarative
+      admin-owned rules, and Apex when I need tests, reuse, or bulk control.
     box: 2
     source:
       repo: original
@@ -47,8 +47,8 @@ cards:
   - id: salesforce-card-stakeholder
     front: How do you decline a customisation request well?
     back: >-
-      Name the ongoing cost in their terms, then offer the configuration path
-      that meets the same business outcome.
+      I name the ongoing cost in their terms, then offer a configuration path that
+      meets the same business outcome.
     box: 2
     source:
       repo: system-design-estudos
@@ -154,10 +154,10 @@ items:
       several years. The interviewer wants the ordering problem named
       explicitly.
     best_answer: >-
-      Because the platform does not guarantee the order two triggers on the same
-      object will run in, so behaviour depends on something you cannot control
-      or test reliably. With one trigger delegating to a handler, the sequence is
-      explicit in code and reviewable.
+      I use one trigger per object and delegate to a handler because Salesforce
+      does not guarantee the order of multiple triggers on the same object. That
+      keeps the sequence explicit in code and reviewable instead of making behavior
+      depend on an order I cannot control.
     distractors:
       - text: >-
           Because it keeps the code organised and easier to maintain, since
@@ -406,13 +406,14 @@ items:
       Does your Apex class respect the user's record access by default?
     context: >-
       A security question that catches many candidates. The interviewer wants to
-      know whether you understand that Apex runs in system context unless you
-      say otherwise.
+      know whether you can separate record-level sharing from object and field
+      permissions, and whether you check the execution mode and API version.
     best_answer: >-
-      No, Apex runs in system context by default, so it ignores sharing rules
-      unless the class is declared with sharing. Field and object permissions
-      are separate again, and need stripInaccessible or explicit checks, since
-      sharing only governs record visibility.
+      I would check the API version and execution mode before making a blanket
+      claim. The `with sharing` declaration governs record-level sharing, while
+      object and field permissions remain separate. I would make access explicit
+      with user mode, `stripInaccessible`, or permission checks as the operation
+      requires; I would not infer field access from `with sharing` alone.
     distractors:
       - text: >-
           Yes, the platform enforces the security model consistently, so a user
@@ -751,10 +752,11 @@ items:
       A limits question with a clear answer. The interviewer wants the choice
       plus the property that makes it the only viable one at that volume.
     best_answer: >-
-      Batch Apex, because it chunks the records and each chunk gets its own set
-      of governor limits. Queueable and future methods run in a single
-      transaction, so at two million records they would hit the limits long
-      before finishing.
+      I would choose Batch Apex because it chunks the records and gives each
+      chunk its own governor-limit budget. I would use Queueable for a bounded
+      unit or a chained workflow, but I would not send two million records through
+      one transaction; I would verify the batch size, query selectivity, and
+      restart behavior first.
     distractors:
       - text: >-
           I would use Queueable Apex, since it is the more modern option and it

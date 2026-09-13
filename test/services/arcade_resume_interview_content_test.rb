@@ -75,10 +75,31 @@ class ArcadeResumeInterviewContentTest < ActiveSupport::TestCase
     produce = content.learner_exercise(item, stage: "produce")
     transfer = content.learner_exercise(item, stage: "transfer", slot: 0)
 
-    assert_equal %w[answer_structure answer_versions pt_help useful_phrases], meet.dig("payload", "learning").keys.sort
+    assert_equal %w[answer_structure answer_versions pt_help reasoning_questions useful_phrases], meet.dig("payload", "learning").keys.sort
     assert_equal %w[deep medium short], meet.dig("payload", "learning", "answer_versions").keys.sort
     refute produce.dig("payload", "learning")
     refute transfer.dig("payload", "learning")
+  end
+
+  test "every role card teaches a first person decision path only during study and reveal" do
+    content = ArcadeContent.new
+    content.items_for("interview").each do |item|
+      questions = item.dig("learning", "reasoning_questions")
+      assert_equal 4, questions.length, item.fetch("id")
+      questions.each do |entry|
+        assert entry.fetch("question").end_with?("?"), item.fetch("id")
+        assert_match(/\bI(?:\b|[’'])/, entry.fetch("answer"), item.fetch("id"))
+        assert_operator entry.fetch("answer").split.length, :>=, 20
+      end
+
+      exercise = content.build(item, stage: "produce")
+      reveal = content.reveal(item, exercise: exercise)
+      assert_equal questions, reveal.dig("learning", "reasoning_questions")
+      %w[produce transfer].each do |stage|
+        payload = content.learner_exercise(item, stage: stage).to_json
+        questions.each { |entry| refute_includes payload, entry.fetch("answer") }
+      end
+    end
   end
 
   test "each role card accepts its authored medium and short recall answers with an honest assessment label" do

@@ -53,7 +53,7 @@ target:
 cards:
 - id: rails-card-n-plus-one
   front: How do you describe an N+1 without sounding rehearsed?
-  back: 'Name the query count, the fix, and the check: "one query per row, fixed with
+  back: 'I would name the query count, the fix, and the check: "one query per row, fixed with
     includes, verified by asserting query count in a test".'
   box: 1
   source:
@@ -68,8 +68,10 @@ cards:
       and state what evidence would update the recommendation?
 - id: rails-card-idempotency
   front: What makes a job safe to retry?
-  back: A stable idempotency key plus a uniqueness constraint at the database level,
-    so a duplicate delivery collides instead of double-charging.
+  back: I would use a stable local idempotency key and an atomic result record, then
+    pass a provider idempotency key or reconcile status before retrying. A local
+    uniqueness constraint contains the application race; it cannot alone prevent an
+    external double charge.
   box: 2
   source:
     repo: system-design-estudos
@@ -82,8 +84,8 @@ cards:
       and state what evidence would update the recommendation?
 - id: rails-card-cache-invalidation
   front: How do you talk about cache invalidation credibly?
-  back: Prefer key-based expiry over manual deletion, and say what staleness the product
-    can tolerate before choosing a TTL.
+  back: I would prefer key-based expiry over manual deletion, and I would state the
+    staleness the product can tolerate before choosing a TTL.
   box: 2
   source:
     repo: system-design-estudos
@@ -114,9 +116,10 @@ items:
     challenge_kind: assumption
     best_answer: >-
       I would check the query log for an N+1 first, because the symptom scales
-      with row count. I would label the follow-up premise as an assumption, ask the
-      smallest question that could disprove it, and protect the edge case before committing to
-      the recommendation.
+      with row count. I would compare the query count before and after preloading, confirm that
+      author lookup is the repeated query, and add a query-count regression test. If the trace
+      instead points to serialization, I would project only the needed author fields; I would not
+      change the query until the trace and plan identify the bottleneck.
     distractors:
     - text: I would repeat my original Query design answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -197,20 +200,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-01-n-plus-one-delayed-1
-      prompt: 'Query design: the later Query design review says a trace of Query design
-        isolates a different Query design bottleneck than the one you named. Under
-        the Query design workload for Query design no longer fits the original resource
-        bound, which part of Query design survives and which Query design claim changes?'
-      changed_constraint: the Query design workload for Query design no longer fits
-        the original resource bound
-      new_evidence: a trace of Query design isolates a different Query design bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Query design,
-        treat a trace of Query design isolates a different Query design bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under the Query design workload for Query design no
-        longer fits the original resource bound. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        A trace now shows author serialization dominates this page while the query count stays bounded. What claim survives, and what would you measure before changing the fix?
+      changed_constraint: >-
+        the serializer, rather than association lookup, dominates measured time
+      new_evidence: >-
+        a request trace attributes most time to author serialization and shows no query-count growth
+      best_answer: >-
+        I would keep query-count measurement as a guard, narrow the preload change to the association only if the trace still needs it, and measure serializer projection and request timing before calling a cache or index the fix.
       distractors:
       - text: I would preserve every part of the original Query design answer because
           changing it after review would be inconsistent.
@@ -233,31 +230,29 @@ items:
     goal: Move from the short Query design answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Query design before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The page has a row-count-scaled latency symptom and an author association; I must distinguish query multiplicity from serialization or plan cost before choosing a fix.
     claim_map:
-      fact: The prompt explicitly tests Query design within a Rails context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Query design,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Query design constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Query design: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The prompt establishes a listing with repeated author display and worsening response time.
+      inference: >-
+        An N+1 is plausible because work scales with rows, but the trace must show repeated author queries before preload is the right fix.
+      assumption: >-
+        I am assuming association lookup, rather than serialization or a database plan, dominates the measured time.
+      unknown: >-
+        The query count, row width, serializer cost, and representative trace are still unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Query design would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Query design constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Query design; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: >-
+        Treating preload, serializer work, and an index as interchangeable fixes would be a false equivalence: each addresses a different measured cost.
+      hard_constraint: >-
+        The hard constraint is to keep the listing contract while identifying whether repeated queries, row width, or database planning dominates.
+      decision_rule: >-
+        Capture query count and a representative trace first; choose preload only when repeated association queries explain the latency, and choose projection or a plan change when those measurements point elsewhere.
     failure_probe:
       kind: counterexample
-      prompt: 'Query design: what minimum input for Query design would break the Query
-        design recommendation, and how would you revise the Query design claim?'
+      prompt: >-
+        What observation would show that the first request is slow because of serialization or a plan rather than N+1 queries?
     evidence_check:
       basis: Check the Query design claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
         and the exact interview context; record whether each part is fact, inference,
@@ -269,12 +264,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Query design question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "This index page is slow. What is", update Query design
-        when Query design evidence—a Query design trace or Query design test—contradicts
-        the Query design constraint in case "This index page is slow. What is"; ask
-        a stakeholder about Query design before revising.
+      rationale: >-
+        I keep high confidence in measuring query count, but the remedy remains provisional until the trace identifies the dominant cost.
+      update_trigger: >-
+        Update when a query trace, query-count test, or serializer profile contradicts repeated author lookup; keep the regression check even if the fix changes.
     rubric:
       facts_correct: Names the verified Query design facts without smuggling in a
         result, scale, or capability that the prompt does not establish.
@@ -307,9 +300,10 @@ items:
     challenge_kind: evidence
     best_answer: >-
       Because the worker can pick the job up before the transaction commits, and then
-      it queries a row that does not exist yet. I would treat the follow-up
-      observation as evidence, not as proof of impact; I would inspect the smallest relevant
-      trace or test and state what remains uncertain before changing the decision.
+      it queries a row that does not exist yet. I would wait for commit before dispatching. An
+      after_commit callback means a rollback emits no email; an outbox keeps the delivery intent in
+      the same transaction and lets a worker retry it later. I would test rollback, a worker racing
+      the commit, and duplicate delivery before choosing the simpler callback.
     distractors:
     - text: I would cite my experience with Transactions as enough proof and move
         on without naming an observation.
@@ -387,20 +381,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-02-transaction-boundaries-delayed-2
-      prompt: 'Review note for Transactions: a code inspection of Transactions confirms
-        the Transactions mechanism but not its impact. Given a stakeholder asks for
-        a stronger Transactions guarantee than the first Transactions answer promised,
-        what would you now defend, retract, and verify about Transactions?'
-      changed_constraint: a stakeholder asks for a stronger Transactions guarantee
-        than the first Transactions answer promised
-      new_evidence: a code inspection of Transactions confirms the Transactions mechanism
-        but not its impact
-      best_answer: I would keep the facts that remain supported about Transactions,
-        treat a code inspection of Transactions confirms the Transactions mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Transactions guarantee
-        than the first Transactions answer promised. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A worker ran before commit in a staging replay, while an outbox row was present after rollback. Which delivery boundary would you defend and what would you test?
+      changed_constraint: >-
+        the worker must observe only committed state and rollback must not publish an email
+      new_evidence: >-
+        the replay shows a worker can see a job before the row commits, while rollback removes the outbox row
+      best_answer: >-
+        I would dispatch after commit or from a transactional outbox, test worker-before-commit and rollback, and verify duplicate delivery handling before treating the callback as sufficient.
       distractors:
       - text: I would preserve every part of the original Transactions answer because
           changing it after review would be inconsistent.
@@ -423,41 +411,33 @@ items:
     goal: Move from the short Transactions answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Transactions before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A payment record and confirmation side effect cross a commit boundary; I must decide when a worker may observe durable state and how rollback affects delivery.
     claim_map:
-      fact: The prompt explicitly tests Transactions within a Rails context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Transactions,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Transactions constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Transactions: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A worker can run before the transaction commits if enqueue happens inside it.
+      inference: >-
+        An after_commit callback is simple, while an outbox preserves delivery intent transactionally and supports retries.
+      assumption: >-
+        I am assuming the email can tolerate asynchronous delivery and does not need to be sent before commit.
+      unknown: >-
+        The worker race window, rollback behavior, duplicate policy, and delivery freshness target are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Transactions
-        benefit: It keeps the Transactions reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Transactions workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Transactions contract and its invariant
-          are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Transactions
-        benefit: It can make the Transactions boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Transactions evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Transactions option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Rails
-        constraint makes the first assumption unsafe.
+      - option: a transactional outbox row written with the domain change
+        benefit: I get durable intent and can lease, retry, and audit publication after commit without exposing a pre-commit job.
+        cost_or_risk: I must operate an outbox relay and reconcile duplicates; it adds storage and recovery work.
+        valid_when: Use it when delivery, auditability, or recovery matters beyond the local transaction.
+      - option: an after_commit enqueue of an idempotent job
+        benefit: It is smaller when the queue is the only durable hand-off and the job can safely reload committed state.
+        cost_or_risk: A queue outage delays dispatch, and the callback gives less durable visibility into what still needs delivery.
+        valid_when: Use it when the post-commit queue is reliable and no separate delivery audit is required.
+      decision_rule: I choose the outbox when durable intent or reconciliation is a requirement; I keep after_commit when the simpler queue hand-off meets the measured contract.
     failure_probe:
       kind: edge_case
-      prompt: 'Transactions: what Transactions limit should you probe before trusting
-        the answer, and how would Transactions behave there?'
+      prompt: >-
+        What happens if the worker starts before commit or the transaction rolls back after enqueue?
     evidence_check:
       basis: Check the Transactions claim against system-design-estudos/chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
         and the exact interview context; record whether each part is fact, inference,
@@ -469,12 +449,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Transactions question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why should you avoid enqueueing a job", update Transactions
-        when Transactions evidence—a Transactions trace or Transactions test—contradicts
-        the Transactions constraint in case "Why should you avoid enqueueing a job";
-        ask a stakeholder about Transactions before revising.
+      rationale: >-
+        I am highly certain about the pre-commit visibility race; the choice between callback and outbox depends on retry and audit requirements.
+      update_trigger: >-
+        Update when a race test, rollback test, or delivery contract requires durable intent beyond after_commit.
     rubric:
       facts_correct: Names the verified Transactions facts without smuggling in a
         result, scale, or capability that the prompt does not establish.
@@ -507,9 +485,11 @@ items:
     challenge_kind: alternative
     best_answer: >-
       I would derive an idempotency key from the payment, store it with a unique
-      index, and let the second insert fail on the constraint. I would compare that
-      choice with the credible alternative against the requirement in the follow-up, cost, and failure
-      risk, then switch only if evidence makes the alternative safer.
+      index, and let the second insert fail on the constraint. I would use payment ID plus request
+      semantics as the idempotency identity, persist status and result atomically, and return a
+      conflict when the same key carries changed input. I would compare a database uniqueness
+      constraint with a provider idempotency key, then verify an ambiguous external effect before
+      replaying a response.
     distractors:
     - text: I would defend the first Background jobs option because offering an alternative
         might make the decision look uncertain.
@@ -585,21 +565,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-03-idempotent-jobs-delayed-3
-      prompt: New evidence about Background jobs says a measured Background jobs comparison
-        shows the alternative has a different Background jobs cost profile; with the
-        Background jobs dependency is slower for Background jobs and the failure is
-        ambiguous rather than explicit, how do you update the Background jobs decision
-        rule?
-      changed_constraint: the Background jobs dependency is slower for Background
-        jobs and the failure is ambiguous rather than explicit
-      new_evidence: a measured Background jobs comparison shows the alternative has
-        a different Background jobs cost profile
-      best_answer: I would keep the facts that remain supported about Background jobs,
-        treat a measured Background jobs comparison shows the alternative has a different
-        Background jobs cost profile as new evidence rather than a result, and state
-        the updated decision rule under the Background jobs dependency is slower for
-        Background jobs and the failure is ambiguous rather than explicit. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        A payment provider times out after possibly charging the customer, and its status endpoint is temporarily unavailable. How should the retry rule change?
+      changed_constraint: >-
+        the external payment effect is unknown after a timeout
+      new_evidence: >-
+        the provider cannot confirm status during the retry window
+      best_answer: >-
+        I would leave the payment pending, retry only with a provider idempotency key or a later status lookup, and route an unresolved result to reconciliation rather than create a second charge.
       distractors:
       - text: I would preserve every part of the original Background jobs answer because
           changing it after review would be inconsistent.
@@ -623,42 +596,33 @@ items:
     goal: Move from the short Background jobs answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Background jobs before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      At-least-once payment work can repeat while an external charge may be non-idempotent; I must bind retries to semantic identity and durable state.
     claim_map:
-      fact: The prompt explicitly tests Background jobs within a Rails context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Background
-        jobs, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Background jobs constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Background jobs: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The job may run twice for one payment and the database can enforce uniqueness.
+      inference: >-
+        A unique database key removes the application read-then-write race, but it cannot by itself reconcile an external provider effect.
+      assumption: >-
+        I am assuming payment identity and request semantics are stable enough to derive one replay key.
+      unknown: >-
+        Provider idempotency support, response storage, changed-input behavior, and timeout reconciliation are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Background jobs
-        benefit: It keeps the Background jobs reasoning close to the stated Rails
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Background jobs workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Background jobs contract and its invariant
-          are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Background jobs
-        benefit: It can make the Background jobs boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Background jobs evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Background jobs option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Rails
-        constraint makes the first assumption unsafe.
+      - option: a durable idempotency record keyed by the command and provider request
+        benefit: I can return the stored result, reject a changed payload, and reconcile an uncertain external effect.
+        cost_or_risk: I must define key scope, retention, provider behavior, and cleanup; a local unique index alone cannot prevent an external duplicate.
+        valid_when: Use it when retries can cross processes or trigger a charge, email, or other non-transactional effect.
+      - option: a retry-only job with no durable command record
+        benefit: It is quick for a purely local, naturally repeatable update.
+        cost_or_risk: A timeout after an external effect leaves the retry unable to distinguish success from absence.
+        valid_when: Use it only when the operation is demonstrably idempotent inside the same durable boundary.
+      decision_rule: I require the durable record and provider idempotency or reconciliation for external effects; I accept retry-only execution only after proving repeatability.
     failure_probe:
       kind: failure_mode
-      prompt: 'Background jobs: if a caller retries Background jobs at the worst moment,
-        what failure mode appears first, and how would you protect Background jobs?'
+      prompt: >-
+        What if the provider accepted the first charge before the worker crashed and the second request carries a changed amount?
     evidence_check:
       basis: Check the Background jobs claim against system-design-estudos/decision-contrasts/05-idempotency-key-vs-unique-index.md
         and the exact interview context; record whether each part is fact, inference,
@@ -670,12 +634,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Background jobs
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Your job runs twice for the same", update Background
-        jobs when Background jobs evidence—a Background jobs trace or Background jobs
-        test—contradicts the Background jobs constraint in case "Your job runs twice
-        for the same"; ask a stakeholder about Background jobs before revising.
+      rationale: >-
+        I am confident that an application pre-check is racy; confidence in exactly-once external effect requires provider and reconciliation evidence.
+      update_trigger: >-
+        Update when a duplicate-key test, provider contract, or timeout trace changes which layer owns replay and reconciliation.
     rubric:
       facts_correct: Names the verified Background jobs facts without smuggling in
         a result, scale, or capability that the prompt does not establish.
@@ -707,9 +669,10 @@ items:
       explicit.
     challenge_kind: failure
     best_answer: >-
-      Mass assignment. If the failure in the follow-up appears, I would name the user
-      or system consequence, contain it with a bounded mitigation, and verify recovery with a
-      focused test or metric.
+      I would reject admin or role fields unless the caller is authorized to set them, and assert
+      that a lower-privileged request leaves those fields unchanged. I would cover both create and
+      update paths because input filtering is not authorization, then verify the policy and
+      controller tests together.
     distractors:
     - text: I would describe the Security failure as impossible because the happy
         path already passed its test.
@@ -724,10 +687,10 @@ items:
       and a negative authorization test.
     goal: Compress the Security answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: Mass assignment. Without it, a request could set any attribute the
-    model exposes, so someone could submit an admin flag alongside their profile fields
-    and escalate their own privileges. Permitting an explicit list means unexpected
-    keys are ignored rather than trusted.
+  best_answer: I would call this mass assignment. Without strong parameters, a request
+    could set any attribute the model exposes, so someone could submit an admin flag
+    alongside profile fields and escalate privileges. I would permit an explicit list
+    and test that unexpected keys are ignored rather than trusted.
   distractors:
   - text: It protects against invalid data being saved to the database by making sure
       that only the correct parameters are permitted through to the model layer during
@@ -789,20 +752,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-04-strong-parameters-delayed-4
-      prompt: 'Security gets a new constraint: new Security evidence contradicts the
-        Security assumption that made the first option attractive. After a Security
-        test exposes a boundary case that the Security examples did not cover, which
-        Security assumption is no longer safe?'
-      changed_constraint: new Security evidence contradicts the Security assumption
-        that made the first option attractive
-      new_evidence: a Security test exposes a boundary case that the Security examples
-        did not cover
-      best_answer: I would keep the facts that remain supported about Security, treat
-        a Security test exposes a boundary case that the Security examples did not
-        cover as new evidence rather than a result, and state the updated decision
-        rule under new Security evidence contradicts the Security assumption that
-        made the first option attractive. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        A nested update permits a role field that a viewer can change. Which boundary failed and how would you verify the repair?
+      changed_constraint: >-
+        field filtering is allowing a privileged mutation that authorization should deny
+      new_evidence: >-
+        a negative request test changes the role under a viewer credential
+      best_answer: >-
+        I would remove the role field from the permitted viewer path, enforce authorization separately, and test create and update requests so the model remains unchanged for a viewer.
       distractors:
       - text: I would preserve every part of the original Security answer because
           changing it after review would be inconsistent.
@@ -825,41 +782,33 @@ items:
     goal: Move from the short Security answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Security before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      An input boundary controls which model attributes a request may assign, while authorization controls who may change privileged fields; I must keep those responsibilities distinct.
     claim_map:
-      fact: The prompt explicitly tests Security within a Rails context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Security,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Security constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Security: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Strong parameters address mass assignment by requiring an explicit permitted field list.
+      inference: >-
+        Rejecting a role field prevents accidental assignment, but it does not replace an authorization policy.
+      assumption: >-
+        I am assuming the attacker can submit a role or admin attribute through the request path.
+      unknown: >-
+        The permitted keys, caller role, update path, and policy enforcement point are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Security
-        benefit: It keeps the Security reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Security workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Security contract and its invariant are
-          the facts that matter most.
-      - option: a broader cache or framework-level workaround for Security
-        benefit: It can make the Security boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Security evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Security option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Rails constraint
-        makes the first assumption unsafe.
+      - option: explicit strong-parameter permits at the controller boundary
+        benefit: I make the accepted input fields visible and reject unexpected mass assignment before the model changes.
+        cost_or_risk: New fields require an intentional permit change, and nested input needs explicit maintenance.
+        valid_when: Use it for request payloads whose writable fields are part of the endpoint contract.
+      - option: broad parameter acceptance followed by model or policy checks
+        benefit: It reduces controller edits during a fast prototype.
+        cost_or_risk: It widens the mutation surface and makes a missing authorization or field check harder to see.
+        valid_when: Use it only with a narrowly bounded internal payload and a separate, tested allowlist.
+      decision_rule: I keep the explicit permit list at the request boundary; I choose the broader path only when an equivalent allowlist is enforced and tested elsewhere.
     failure_probe:
       kind: counterexample
-      prompt: 'Security: where would a tiny Security counterexample expose a false
-        assumption, and what would you change about Security?'
+      prompt: >-
+        Which negative request should prove that a viewer cannot mutate a role field even when the key is present?
     evidence_check:
       basis: Check the Security claim against system-design-estudos/areas/09-backend-principles/cards/backend-security.md
         and the exact interview context; record whether each part is fact, inference,
@@ -870,12 +819,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Security question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What is strong parameters actually protecting you",
-        update Security when Security evidence—a Security trace or Security test—contradicts
-        the Security constraint in case "What is strong parameters actually protecting
-        you"; ask a stakeholder about Security before revising.
+      rationale: >-
+        I am highly certain about naming mass assignment, but the complete security claim depends on all create, update, export, and job paths.
+      update_trigger: >-
+        Update when a negative authorization test or an alternate entry point shows a privileged field remains writable.
     rubric:
       facts_correct: Names the verified Security facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -909,8 +856,9 @@ items:
     best_answer: >-
       I would cache the aggregate at the fragment level, keyed on the most recent
       updated_at across the inputs, so a write naturally produces a new key. I would
-      keep the claims that remain supported, identify exactly which premise the new observation changes,
-      and run a focused check before revising the decision.
+      invalidate with a versioned key that includes tenant identity and the relevant write version.
+      I would test a write racing a read and cross-tenant key separation before choosing a TTL; a
+      short TTL alone does not fix incorrect invalidation.
     distractors:
     - text: I would keep the Caching recommendation unchanged because changing position
         would look inconsistent.
@@ -991,21 +939,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-05-caching-strategy-delayed-5
-      prompt: 'Revisit Caching after a stakeholder clarifies a Caching requirement
-        that changes the Caching success condition and two Caching callers from the
-        case "Where would you put a cache in" or Caching tenants now compete for the
-        same Caching boundary: what remains factual about Caching, what becomes provisional,
-        and why?'
-      changed_constraint: two Caching callers from the case "Where would you put a
-        cache in" or Caching tenants now compete for the same Caching boundary
-      new_evidence: a stakeholder clarifies a Caching requirement that changes the
-        Caching success condition
-      best_answer: I would keep the facts that remain supported about Caching, treat
-        a stakeholder clarifies a Caching requirement that changes the Caching success
-        condition as new evidence rather than a result, and state the updated decision
-        rule under two Caching callers from the case "Where would you put a cache
-        in" or Caching tenants now compete for the same Caching boundary. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        A cache-key review finds two tenants sharing an aggregate key and seeing stale dashboard data. What must change before keeping the cache?
+      changed_constraint: >-
+        tenant identity and write version must participate in the cache identity
+      new_evidence: >-
+        a key collision returns one tenant's aggregate to another and a concurrent write leaves stale data
+      best_answer: >-
+        I would include tenant and a versioned write token in the key, invalidate on the relevant write, and test tenant separation and read/write races before selecting a TTL.
       distractors:
       - text: I would preserve every part of the original Caching answer because changing
           it after review would be inconsistent.
@@ -1028,41 +969,33 @@ items:
     goal: Move from the short Caching answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Caching before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A read-heavy dashboard aggregates tenant data; I must choose a cache boundary whose identity and invalidation preserve privacy and the allowed staleness.
     claim_map:
-      fact: The prompt explicitly tests Caching within a Rails context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Caching,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Caching constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Caching: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The aggregate is read more often than written and the product must define tolerated staleness.
+      inference: >-
+        A versioned key can make writes produce new cache identities, but only if every relevant input and tenant participates.
+      assumption: >-
+        I am assuming the aggregate inputs expose a reliable version or updated-at signal.
+      unknown: >-
+        Tenant isolation, concurrent read/write behavior, freshness target, and aggregate cost are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Caching
-        benefit: It keeps the Caching reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Caching workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Caching contract and its invariant are
-          the facts that matter most.
-      - option: a broader cache or framework-level workaround for Caching
-        benefit: It can make the Caching boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Caching evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Caching option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Rails constraint
-        makes the first assumption unsafe.
+      - option: a versioned cache key with explicit invalidation on the authoritative write
+        benefit: I keep stale data bounded by the version or write event and can explain which change invalidates the value.
+        cost_or_risk: Every write path must update the version or publish invalidation, and multi-tenant key scope must be correct.
+        valid_when: Use it when freshness matters and the authoritative write boundary is known.
+      - option: a short TTL cache with no write-time invalidation
+        benefit: It is simpler when bounded staleness is acceptable and writes are spread across many paths.
+        cost_or_risk: Readers can see stale values for the full TTL, and a hot write can leave contradictory views.
+        valid_when: Use it when the product explicitly permits that staleness window and metrics cover hit rate and age.
+      decision_rule: I choose explicit invalidation when freshness is a contract; I choose TTL when the allowed staleness window is measured and documented.
     failure_probe:
       kind: edge_case
-      prompt: 'Caching: which Caching boundary deserves the first test, and what observation
-        about Caching would overturn the premise?'
+      prompt: >-
+        What write or tenant-boundary test would demonstrate that a cached aggregate is stale or belongs to the wrong caller?
     evidence_check:
       basis: Check the Caching claim against system-design-estudos/areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1073,12 +1006,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Caching question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Where would you put a cache in", update Caching when
-        Caching evidence—a Caching trace or Caching test—contradicts the Caching constraint
-        in case "Where would you put a cache in"; ask a stakeholder about Caching
-        before revising.
+      rationale: >-
+        I am confident that cache correctness needs identity and freshness evidence; the best placement and TTL remain workload questions.
+      update_trigger: >-
+        Update when a key-collision test, freshness trace, or product staleness target contradicts versioned invalidation.
     rubric:
       facts_correct: Names the verified Caching facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -1110,10 +1041,10 @@ items:
       while keeping the evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Rack receives the request, the router selects a controller action, and the controller authenticates,
-      validates input, and chooses the use case. I would label the follow-up premise as
-      an assumption, ask the smallest question that could disprove it, and protect the edge
-      case before committing to the recommendation.
+      I would authenticate and validate at the request boundary, keep record-owned invariants in the
+      model, and coordinate multiple records or gateways in a service transaction. The controller
+      maps that service result to an HTTP response. I would verify authorization on every entry
+      point and avoid creating a service merely because one class is large.
     distractors:
     - text: I would repeat my original Request lifecycle and service boundaries answer
         with more confidence because the interviewer probably assumes the usual case.
@@ -1128,10 +1059,10 @@ items:
       persistence, and observable outcome.
     goal: Compress the Request lifecycle and service boundaries answer into its decision,
       premise, trade-off, and verification step.
-  best_answer: Rack receives the request, the router selects a controller action,
-    and the controller authenticates, validates input, and chooses the use case. Record-owned
-    invariants stay in the model; orchestration across records or gateways belongs
-    in a service, which returns a result the controller turns into the HTTP response.
+  best_answer: I would trace the request from Rack to the router, controller, model or
+    service, and response. I would authenticate and validate at the boundary, keep
+    record-owned invariants in the model, and put cross-record or gateway orchestration
+    in a service whose result the controller turns into the HTTP response.
   distractors:
   - text: I put business logic in service objects and keep models thin, because fat
       models become hard to maintain and service objects are easier to test in isolation
@@ -1203,27 +1134,14 @@ items:
       did you locate the reasoning error before changing the implementation?
     delayed_variant:
       id: rails-06-service-objects-delayed-6
-      prompt: The Request lifecycle and service boundaries review adds a trace of
-        Request lifecycle and service boundaries isolates a different Request lifecycle
-        and service boundaries bottleneck than the one you named while the Request
-        lifecycle and service boundaries workload for Request lifecycle and service
-        boundaries no longer fits the original resource bound; which conclusion about
-        Request lifecycle and service boundaries would you narrow before proposing
-        a repair?
-      changed_constraint: the Request lifecycle and service boundaries workload for
-        Request lifecycle and service boundaries no longer fits the original resource
-        bound
-      new_evidence: a trace of Request lifecycle and service boundaries isolates a
-        different Request lifecycle and service boundaries bottleneck than the one
-        you named
-      best_answer: I would keep the facts that remain supported about Request lifecycle
-        and service boundaries, treat a trace of Request lifecycle and service boundaries
-        isolates a different Request lifecycle and service boundaries bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under the Request lifecycle and service boundaries workload
-        for Request lifecycle and service boundaries no longer fits the original resource
-        bound. I would then name one focused check before treating the revised answer
-        as settled.
+      prompt: >-
+        A background job calls the service directly and bypasses the controller authorization check. Where should the boundary move?
+      changed_constraint: >-
+        authorization must hold for every service entry point, including jobs
+      new_evidence: >-
+        a job can invoke the service without the controller policy
+      best_answer: >-
+        I would put authorization at the service boundary or an explicit policy used by every caller, keep record invariants in the model, and test both controller and job entry points.
       distractors:
       - text: I would preserve every part of the original Request lifecycle and service
           boundaries answer because changing it after review would be inconsistent.
@@ -1248,38 +1166,29 @@ items:
     goal: Move from the short Request lifecycle and service boundaries answer to a
       deep, evidence-led defence without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Request lifecycle and service boundaries before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      A Rails request crosses Rack, routing, controller, model, service, and response boundaries; I must place authorization, invariants, and cross-record coordination where every caller observes them.
     claim_map:
-      fact: The prompt explicitly tests Request lifecycle and service boundaries within
-        a Rails context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Request lifecycle
-        and service boundaries, but that does not prove one implementation wins under
-        every workload or audience.
-      assumption: An unstated assumption is that the Request lifecycle and service
-        boundaries constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for Request lifecycle and service boundaries: the scale,
-        failure tolerance, ownership boundary, and evidence threshold that would change
-        the decision.'
+      fact: >-
+        Rack and the router select a controller action before model or service work returns an HTTP response.
+      inference: >-
+        Record invariants fit the model, while multi-record or gateway orchestration fits a service only when its boundary is real.
+      assumption: >-
+        I am assuming the service has callers beyond one controller and that authorization cannot live only in the controller.
+      unknown: >-
+        Job callers, policy ownership, transaction scope, and the service result contract are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Request lifecycle
-        and service boundaries would be a false equivalence because the prompt does
-        not establish that both choices satisfy the same contract.
-      hard_constraint: The hard Request lifecycle and service boundaries constraint
-        is the required guarantee stated by the interviewer; no missing measurement
-        licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Request lifecycle and service
-        boundaries; first clarify the constraint or collect the evidence that would
-        make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating a service object, controller callback, and domain command as interchangeable abstractions would be a false equivalence: the boundary must preserve request, authorization, and domain behavior together.
+      hard_constraint: >-
+        The hard constraint is to keep the real request lifecycle and domain invariant observable while locating orchestration where its callers can test it.
+      decision_rule: >-
+        Trace the caller, invariant, and response first; choose a service boundary only when it isolates a coherent workflow, and keep simpler orchestration local when it does not.
     failure_probe:
       kind: failure_mode
-      prompt: 'Request lifecycle and service boundaries: when the first Request lifecycle
-        and service boundaries recovery path fails, which consequence reaches the
-        user, and what bounded mitigation follows for Request lifecycle and service
-        boundaries?'
+      prompt: >-
+        Which non-controller caller could bypass authorization or transaction ownership if the service boundary is drawn incorrectly?
     evidence_check:
       basis: Check the Request lifecycle and service boundaries claim against system-design-estudos/areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1291,15 +1200,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Request lifecycle
-        and service boundaries question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "Walk me through a Rails request, then", update Request
-        lifecycle and service boundaries when Request lifecycle and service boundaries
-        evidence—a Request lifecycle and service boundaries trace or Request lifecycle
-        and service boundaries test—contradicts the Request lifecycle and service
-        boundaries constraint in case "Walk me through a Rails request, then"; ask
-        a stakeholder about Request lifecycle and service boundaries before revising.
+      rationale: >-
+        I am confident in tracing the request chain; the class boundary is provisional until callers, invariants, and transaction scope are inspected.
+      update_trigger: >-
+        Update when a job path, policy test, or transaction trace shows the proposed service boundary leaves a caller unprotected.
     rubric:
       facts_correct: Names the verified Request lifecycle and service boundaries facts
         without smuggling in a result, scale, or capability that the prompt does not
@@ -1333,10 +1237,11 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      Green dashboards usually mean the aggregate is fine, so I would look for the
-      population my metrics hide. I would treat the follow-up observation as evidence, not as
-      proof of impact; I would inspect the smallest relevant trace or test and state
-      what remains uncertain before changing the decision.
+      I would add a checkout completion or failure signal with a support-safe request ID, then
+      correlate it with the server trace. I would segment by the affected tenant, client, or
+      app version instead of relying on the global average. I would verify that the event is
+      actually emitted on the failing path and redact sensitive fields, because missing
+      telemetry can make a broken checkout look healthy.
     distractors:
     - text: I would cite my experience with Observability as enough proof and move
         on without naming an observation.
@@ -1413,21 +1318,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-07-observability-delayed-7
-      prompt: For Observability, new evidence is a code inspection of Observability
-        confirms the Observability mechanism but not its impact and the constraint
-        is a stakeholder asks for a stronger Observability guarantee than the first
-        Observability answer promised. What alternative now deserves consideration
-        for Observability?
-      changed_constraint: a stakeholder asks for a stronger Observability guarantee
-        than the first Observability answer promised
-      new_evidence: a code inspection of Observability confirms the Observability
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Observability,
-        treat a code inspection of Observability confirms the Observability mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Observability guarantee
-        than the first Observability answer promised. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        An aggregate checkout dashboard is green, but one tenant reports failures. Which signal would you add and how would you verify it?
+      changed_constraint: >-
+        aggregate metrics are hiding a tenant or client-specific failure
+      new_evidence: >-
+        a correlated request trace shows failures concentrated in one tenant and client version
+      best_answer: >-
+        I would add correlation IDs and tenant/client dimensions with a trace for the failing request, verify redaction and emission on that path, and compare the slice with the aggregate before changing the alert.
       distractors:
       - text: I would preserve every part of the original Observability answer because
           changing it after review would be inconsistent.
@@ -1450,41 +1348,33 @@ items:
     goal: Move from the short Observability answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Observability before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      An aggregate dashboard can hide a customer-specific failure; I must connect one affected request to tenant, region, client version, and a redacted trace.
     claim_map:
-      fact: The prompt explicitly tests Observability within a Rails context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Observability,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Observability constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Observability: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The customer reports checkout failure while aggregate dashboards remain green.
+      inference: >-
+        The failure may be concentrated in a population omitted by aggregate dimensions rather than absent from the system.
+      assumption: >-
+        I am assuming a correlation ID and safe dimensions exist or can be added at the request boundary.
+      unknown: >-
+        The affected tenant, client version, region, trace coverage, and sensitive fields are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Observability
-        benefit: It keeps the Observability reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Observability workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Observability contract and its invariant
-          are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Observability
-        benefit: It can make the Observability boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Observability evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Observability option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Rails
-        constraint makes the first assumption unsafe.
+      - option: structured events carrying request, job, tenant, and correlation identifiers
+        benefit: I can connect a user-visible failure to the job and downstream call without parsing prose logs.
+        cost_or_risk: I must control cardinality and redact sensitive fields; inconsistent event names reduce queryability.
+        valid_when: Use it when tracing a request across asynchronous or service boundaries is part of diagnosis.
+      - option: sampled logs plus aggregate latency and error metrics
+        benefit: It costs less and gives a useful fleet-level signal for a simple synchronous endpoint.
+        cost_or_risk: Sampling may omit the failing trace, and aggregates cannot reconstruct one request's path.
+        valid_when: Use it when the failure can be localized from low-cardinality metrics and logs.
+      decision_rule: I add correlation-rich events when cross-boundary diagnosis is required; I keep sampled logs and metrics for a bounded synchronous path with proven coverage.
     failure_probe:
       kind: counterexample
-      prompt: 'Observability: what stakeholder reply about Observability would invalidate
-        the recommendation, and which Observability premise would you revisit?'
+      prompt: >-
+        What request-level signal would distinguish a tenant-specific failure from an aggregate metric blind spot?
     evidence_check:
       basis: Check the Observability claim against system-design-estudos/areas/09-backend-principles/cards/logging-monitoring-observability.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1496,12 +1386,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Observability question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "A customer says checkout is broken but", update Observability
-        when Observability evidence—a Observability trace or Observability test—contradicts
-        the Observability constraint in case "A customer says checkout is broken but";
-        ask a stakeholder about Observability before revising.
+      rationale: >-
+        I am confident that the green aggregate is insufficient; the useful dimensions and alert threshold need evidence from the affected request.
+      update_trigger: >-
+        Update when a correlated trace, redaction check, or slice metric shows a different population or a broader failure.
     rubric:
       facts_correct: Names the verified Observability facts without smuggling in a
         result, scale, or capability that the prompt does not establish.
@@ -1533,9 +1421,9 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      I would not rename in place. I would compare that choice with the credible
-      alternative against the requirement in the follow-up, cost, and failure risk, then switch only
-      if evidence makes the alternative safer.
+      I would add the new column, dual-write it, backfill in batches, switch reads after parity
+      checks, and remove the old column in a later deploy. I would verify old and new application
+      versions during the overlap and test rollback before enforcing a new constraint.
     distractors:
     - text: I would defend the first Migrations option because offering an alternative
         might make the decision look uncertain.
@@ -1612,21 +1500,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-08-migration-safety-delayed-8
-      prompt: A second pass on Migrations finds a measured Migrations comparison shows
-        the alternative has a different Migrations cost profile; with the Migrations
-        dependency is slower for Migrations and the failure is ambiguous rather than
-        explicit, which Migrations test would you run before keeping the original
-        rule?
-      changed_constraint: the Migrations dependency is slower for Migrations and the
-        failure is ambiguous rather than explicit
-      new_evidence: a measured Migrations comparison shows the alternative has a different
-        Migrations cost profile
-      best_answer: I would keep the facts that remain supported about Migrations,
-        treat a measured Migrations comparison shows the alternative has a different
-        Migrations cost profile as new evidence rather than a result, and state the
-        updated decision rule under the Migrations dependency is slower for Migrations
-        and the failure is ambiguous rather than explicit. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        During an expand-and-contract migration, an old worker writes only the legacy column and leaves the new column null. What step prevents the final constraint from failing?
+      changed_constraint: >-
+        old and new writers must coexist without creating null new values
+      new_evidence: >-
+        backfill inspection finds rows written by the old worker without the new value
+      best_answer: >-
+        I would keep the new column nullable, deploy dual-write or a compatibility default, backfill and observe missing values, then enforce the constraint only after old-writer coverage is gone.
       distractors:
       - text: I would preserve every part of the original Migrations answer because
           changing it after review would be inconsistent.
@@ -1649,41 +1530,33 @@ items:
     goal: Move from the short Migrations answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Migrations before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A continuously deployed app must span old and new schema shapes across a large table; I must order expand, dual-write, backfill, read cutover, and contract steps.
     claim_map:
-      fact: The prompt explicitly tests Migrations within a Rails context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Migrations,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Migrations constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Migrations: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A large table and old/new application versions coexist during deployment.
+      inference: >-
+        Expand-and-contract limits compatibility risk, while a one-step rename can break running readers or writers.
+      assumption: >-
+        I am assuming the new representation can coexist long enough to backfill and verify parity.
+      unknown: >-
+        Write volume, lock behavior, rollback path, and old-worker lifetime are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Migrations
-        benefit: It keeps the Migrations reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Migrations workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Migrations contract and its invariant are
-          the facts that matter most.
-      - option: a broader cache or framework-level workaround for Migrations
-        benefit: It can make the Migrations boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Migrations evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Migrations option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Rails constraint
-        makes the first assumption unsafe.
+      - option: an expand-and-contract migration with dual compatibility
+        benefit: I can deploy old and new application versions while backfilling and validating before removal.
+        cost_or_risk: It requires multiple deploys, dual-read or dual-write decisions, and cleanup tracking.
+        valid_when: Use it when the table is large or rolling deploys leave old workers running.
+      - option: one blocking schema change during a maintenance window
+        benefit: It is simpler and can finish quickly on a small table with no concurrent writers.
+        cost_or_risk: Locks or rewrite time can block traffic and make rollback harder.
+        valid_when: Use it only when lock duration, table size, and downtime are measured and accepted.
+      decision_rule: I use expand-and-contract when compatibility or lock risk matters; I choose a single change only when the measured maintenance window is safe.
     failure_probe:
       kind: edge_case
-      prompt: 'Migrations: where does the Migrations premise need a boundary check,
-        and which result would make you reframe Migrations?'
+      prompt: >-
+        Which old writer or rollback path would fail if the new column became mandatory before compatibility ended?
     evidence_check:
       basis: Check the Migrations claim against system-design-estudos/areas/11-operational-playbooks/playbooks/database-migration-and-backfill.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1695,12 +1568,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Migrations question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How would you rename a column on", update Migrations
-        when Migrations evidence—a Migrations trace or Migrations test—contradicts
-        the Migrations constraint in case "How would you rename a column on"; ask
-        a stakeholder about Migrations before revising.
+      rationale: >-
+        I am confident in the migration sequence, but its batch size and cutover timing require lock, lag, and parity evidence.
+      update_trigger: >-
+        Update when a backfill, lock, or old-version test shows the overlap cannot satisfy the stated availability contract.
     rubric:
       facts_correct: Names the verified Migrations facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -1731,10 +1602,10 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      A scope always returns a relation, even when the condition is nil, so it
-      stays chainable. If the failure in the follow-up appears, I would name the user
-      or system consequence, contain it with a bounded mitigation, and verify recovery with a
-      focused test or metric.
+      I would use a scope when callers need composable relations and nil-safe filtering. I would
+      use a class method only when its arguments and return type are explicit; a method that returns
+      nil breaks a chain. I would test nil, chained conditions, and generated SQL before choosing
+      the abstraction.
     distractors:
     - text: I would describe the Active Record failure as impossible because the happy
         path already passed its test.
@@ -1749,10 +1620,10 @@ items:
       and the caller's expectation.
     goal: Compress the Active Record answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: A scope always returns a relation, even when the condition is nil,
-    so it stays chainable. A class method can accidentally return nil and break the
-    chain, which is why conditional filters are safer as scopes or need an explicit
-    relation fallback.
+  best_answer: >-
+    I would prefer a scope when the filter must remain chainable: a scope returns a
+    relation even when its condition is nil. I would use a class method only with an
+    explicit relation fallback, because returning nil would break the caller's chain.
   distractors:
   - text: They are basically the same thing under the hood, and it is mostly a matter
       of style and team preference which one you choose to use in any given situation.
@@ -1811,21 +1682,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-09-active-record-scopes-delayed-9
-      prompt: 'Active record: the later Active Record review says a Active Record
-        test exposes a boundary case that the Active Record examples did not cover.
-        Under new Active Record evidence contradicts the Active Record assumption
-        that made the first option attractive, which part of Active Record survives
-        and which Active Record claim changes?'
-      changed_constraint: new Active Record evidence contradicts the Active Record
-        assumption that made the first option attractive
-      new_evidence: a Active Record test exposes a boundary case that the Active Record
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Active Record,
-        treat a Active Record test exposes a boundary case that the Active Record
-        examples did not cover as new evidence rather than a result, and state the
-        updated decision rule under new Active Record evidence contradicts the Active
-        Record assumption that made the first option attractive. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: >-
+        A class method returns nil for a nil filter and breaks a chained relation, while the scope preserves the relation. What would you keep and test?
+      changed_constraint: >-
+        the caller requires a composable relation even when an optional filter is absent
+      new_evidence: >-
+        a chained query fails only when the filter argument is nil
+      best_answer: >-
+        I would use a nil-safe scope or an explicit relation fallback, then test nil, chained conditions, and generated SQL so the return contract is visible to callers.
       distractors:
       - text: I would preserve every part of the original Active Record answer because
           changing it after review would be inconsistent.
@@ -1848,42 +1712,33 @@ items:
     goal: Move from the short Active Record answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Active Record before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A filter must remain a composable Active Record relation when an optional condition is absent; I must distinguish scope return behavior from class-method conventions.
     claim_map:
-      fact: The prompt explicitly tests Active Record within a Rails context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Active Record,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Active Record constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Active Record: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Scopes are intended to return relations and can be chained.
+      inference: >-
+        A class method can match the behavior when it always returns a relation, but nil breaks downstream composition.
+      assumption: >-
+        I am assuming callers chain additional filters and pass nil for an optional argument.
+      unknown: >-
+        Nil behavior, generated SQL, argument validation, and caller chaining are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Active Record
-        benefit: It keeps the Active Record reasoning close to the stated Rails constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Active Record workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Active Record contract and its invariant
-          are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Active Record
-        benefit: It can make the Active Record boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Active Record evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Active Record option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Rails
-        constraint makes the first assumption unsafe.
+      - option: a relation-returning scope with a defined empty or nil-input behavior
+        benefit: I keep chaining, composition, and SQL inspection predictable for callers.
+        cost_or_risk: I must document whether an absent filter means no filter or no rows, especially for authorization.
+        valid_when: Use it when callers need to compose the query and the boundary can state that behavior precisely.
+      - option: a class method that branches and returns a relation or an application result
+        benefit: It can express a workflow with validation or a deliberately non-query outcome.
+        cost_or_risk: Mixed return types break chaining and make callers handle hidden branches.
+        valid_when: Use it when the operation is more than a composable relation and its result type is explicit.
+      decision_rule: I keep a scope relation-only for composable filtering; I use a class method when validation or a non-query result is part of the contract.
     failure_probe:
       kind: failure_mode
-      prompt: 'Active record: if the Active Record decision fails under plausible
-        load or a difficult turn, what consequence appears first, and how would you
-        contain Active Record?'
+      prompt: >-
+        What nil and chained-query case would expose a class method that returns nil instead of a relation?
     evidence_check:
       basis: Check the Active Record claim against system-design-estudos/interview/story-bank/03-ruby-rails-senior-question-bank.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1895,12 +1750,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Active Record question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What is the difference between a scope", update Active
-        Record when Active Record evidence—a Active Record trace or Active Record
-        test—contradicts the Active Record constraint in case "What is the difference
-        between a scope"; ask a stakeholder about Active Record before revising.
+      rationale: >-
+        I am confident about the chainability criterion; the implementation choice depends on the actual argument and SQL contract.
+      update_trigger: >-
+        Update when a nil test, relation inspection, or caller path shows the chosen method violates composability.
     rubric:
       facts_correct: Names the verified Active Record facts without smuggling in a
         result, scale, or capability that the prompt does not establish.
@@ -1931,9 +1784,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Checkout failed for about a fifth of users after a deploy. I would keep
-      the claims that remain supported, identify exactly which premise the new observation changes, and
-      run a focused check before revising the decision.
+      I would state the first signal and affected customers, roll back or contain the failing
+      change, and verify recovery from the error rate and a representative request. I would then
+      separate incident-time facts from the later query-plan hypothesis and add a regression check
+      only after logs and plan evidence support the cause.
     distractors:
     - text: I would keep the Incident response recommendation unchanged because changing
         position would look inconsistent.
@@ -1948,10 +1802,10 @@ items:
       corrective action.'
     goal: Compress the Incident response answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Checkout failed for about a fifth of users after a deploy. We rolled
-    back first, then confirmed recovery from the error rate rather than intuition.
-    The cause was a query that lost its index after a column change, so we added a
-    query-plan check to the pipeline.
+  best_answer: I would say that checkout failed for about a fifth of users after a
+    deploy. I rolled back first, confirmed recovery from the error rate, traced the
+    cause to a query that lost its index after a column change, and added a query-plan
+    check to the pipeline.
   distractors:
   - text: Someone on the team deployed a change without testing it properly and it
       broke checkout, so we had to roll it back and afterwards we talked about being
@@ -2010,23 +1864,14 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: rails-10-incident-narrative-delayed-10
-      prompt: 'Review note for Incident response: a stakeholder clarifies a Incident
-        response requirement that changes the Incident response success condition.
-        Given two Incident response callers from the case "Walk me through an outage
-        you were" or Incident response tenants now compete for the same Incident response
-        boundary, what would you now defend, retract, and verify about Incident response?'
-      changed_constraint: two Incident response callers from the case "Walk me through
-        an outage you were" or Incident response tenants now compete for the same
-        Incident response boundary
-      new_evidence: a stakeholder clarifies a Incident response requirement that changes
-        the Incident response success condition
-      best_answer: I would keep the facts that remain supported about Incident response,
-        treat a stakeholder clarifies a Incident response requirement that changes
-        the Incident response success condition as new evidence rather than a result,
-        and state the updated decision rule under two Incident response callers from
-        the case "Walk me through an outage you were" or Incident response tenants
-        now compete for the same Incident response boundary. I would then name one
-        focused check before treating the revised answer as settled.
+      prompt: >-
+        A rollback restores the error rate, but the planned query-plan check shows no index loss. How would you revise the incident account?
+      changed_constraint: >-
+        the rollback is evidence of containment but not proof of the suspected root cause
+      new_evidence: >-
+        the query-plan check contradicts the initial index-loss hypothesis
+      best_answer: >-
+        I would keep the observed impact and rollback, retract the unverified cause, and collect deploy diff, trace, and query-plan evidence before adding a durable corrective check.
       distractors:
       - text: I would preserve every part of the original Incident response answer
           because changing it after review would be inconsistent.
@@ -2050,44 +1895,33 @@ items:
     goal: Move from the short Incident response answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Incident response before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      An outage account must separate initial signal, customer impact, containment, verified recovery, and later causal evidence; I must not turn a plausible query cause into a fact.
     claim_map:
-      fact: The prompt explicitly tests Incident response within a Rails context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Incident
-        response, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Incident response constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Incident response: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The interview asks for what was known first, impact contained, and follow-up prevention.
+      inference: >-
+        A rollback can establish containment while logs and query plans are needed to establish root cause.
+      assumption: >-
+        I am assuming the error-rate recovery and the later index hypothesis refer to the same deploy and path.
+      unknown: >-
+        Initial signal, affected population, rollback timing, query plan, and durable regression check are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Incident response
-        benefit: It keeps the Incident response reasoning close to the stated Rails
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Incident response workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Incident response contract and its invariant
-          are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Incident response
-        benefit: It can make the Incident response boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Incident response evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Incident response option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Rails
-        constraint makes the first assumption unsafe.
+      - option: a timestamped incident timeline tied to observations and decisions
+        benefit: I can separate fact from inference, show when containment changed, and identify what evidence is still missing.
+        cost_or_risk: It takes disciplined log and deploy correlation and may expose uncertainty that stakeholders find uncomfortable.
+        valid_when: Use it when the team needs a shared reconstruction and follow-up actions.
+      - option: a concise prescriptive summary focused on the fix
+        benefit: It is faster for a small, already understood incident with no disputed sequence.
+        cost_or_risk: It can hide the trigger, delay, and evidence boundary, making recurrence harder to prevent.
+        valid_when: Use it only after the timeline is established and the audience needs a short decision record.
+      decision_rule: I build the evidence timeline first; I compress it only after the trigger, containment, and verification are supported.
     failure_probe:
       kind: counterexample
-      prompt: 'Incident response: which adversarial Incident response example could
-        disprove the recommendation, and what evidence about Incident response would
-        you request?'
+      prompt: >-
+        Which artifact would falsify the suspected query cause while leaving the rollback and customer impact factual?
     evidence_check:
       basis: Check the Incident response claim against system-design-estudos/areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2099,13 +1933,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Incident response
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Walk me through an outage you were", update Incident
-        response when Incident response evidence—a Incident response trace or Incident
-        response test—contradicts the Incident response constraint in case "Walk me
-        through an outage you were"; ask a stakeholder about Incident response before
-        revising.
+      rationale: >-
+        I am confident in the incident sequence as a reasoning structure, but the cause remains low certainty until artifacts connect it to the failure.
+      update_trigger: >-
+        Update when deploy diff, trace, query plan, or recovery data changes the causal account; preserve observed impact separately.
     rubric:
       facts_correct: Names the verified Incident response facts without smuggling
         in a result, scale, or capability that the prompt does not establish.
@@ -2137,9 +1968,10 @@ items:
       boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      The response shape is a contract, so I cannot remove it unilaterally. I would
-      label the follow-up premise as an assumption, ask the smallest question that could disprove
-      it, and protect the edge case before committing to the recommendation.
+      I would publish a deprecation date and migration path, measure field usage by client and
+      version, and contact the remaining consumers. I would remove the field only after usage and
+      contract tests show that no supported client depends on it; otherwise I would keep the field
+      through a versioned transition.
     distractors:
     - text: I would repeat my original API design answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -2214,20 +2046,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: rails-11-api-versioning-delayed-11
-      prompt: New evidence about API design says a trace of API design isolates a
-        different API design bottleneck than the one you named; with the API design
-        workload for API design no longer fits the original resource bound, how do
-        you update the API design decision rule?
-      changed_constraint: the API design workload for API design no longer fits the
-        original resource bound
-      new_evidence: a trace of API design isolates a different API design bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about API design,
-        treat a trace of API design isolates a different API design bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under the API design workload for API design no longer fits
-        the original resource bound. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        Usage logs still show external clients requesting a field marked for removal. What changes in your deprecation decision?
+      changed_constraint: >-
+        supported clients still depend on the response field
+      new_evidence: >-
+        field usage remains nonzero across named client versions
+      best_answer: >-
+        I would keep the field through a documented compatibility window, contact the remaining consumers, and remove it only after usage and contract tests reach the agreed zero-use condition.
       distractors:
       - text: I would preserve every part of the original API design answer because
           changing it after review would be inconsistent.
@@ -2250,31 +2076,29 @@ items:
     goal: Move from the short API design answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame API design before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      An external client contract constrains removal of a response field; I must pair deprecation communication with usage evidence and a versioned migration path.
     claim_map:
-      fact: The prompt explicitly tests API design within a Rails context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend API design,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the API design constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for API design: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Consumers outside the team depend on the response shape.
+      inference: >-
+        A field can be removed only after supported usage falls to the agreed threshold and a compatible version exists.
+      assumption: >-
+        I am assuming usage telemetry identifies client and version without exposing sensitive payloads.
+      unknown: >-
+        Remaining consumers, deprecation window, client upgrade path, and zero-use threshold are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about API design would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard API design constraint is the required guarantee stated
-        by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for API design; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: >-
+        Treating URL, header, and media-type versioning as interchangeable style choices would be a false equivalence: each changes client discovery, routing, and deprecation behavior.
+      hard_constraint: >-
+        The hard constraint is preserving existing client behavior while making the compatibility window and removal signal observable.
+      decision_rule: >-
+        Inventory clients and their upgrade path first; choose the version marker and sunset policy that those clients can actually adopt, then verify old and new contracts in parallel.
     failure_probe:
       kind: edge_case
-      prompt: 'Api design: which empty or extreme API design case would expose the
-        hidden assumption, and what would you measure about API design?'
+      prompt: >-
+        Which usage or contract-test result would let me retire the field without breaking a supported client?
     evidence_check:
       basis: Check the API design claim against system-design-estudos/areas/12-engineering-practice/cards/api-versioning-deprecation-and-contract-tests.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2286,12 +2110,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the API design question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "A client depends on a field you", update API design
-        when API design evidence—a API design trace or API design test—contradicts
-        the API design constraint in case "A client depends on a field you"; ask a
-        stakeholder about API design before revising.
+      rationale: >-
+        I am confident that unilateral removal is unsafe; the date and version boundary require consumer and usage evidence.
+      update_trigger: >-
+        Update when usage, client contact, or contract tests show a remaining dependency or a safe removal window.
     rubric:
       facts_correct: Names the verified API design facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -2323,9 +2145,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      I would name the specific risk rather than resisting the date. I would treat
-      the follow-up observation as evidence, not as proof of impact; I would inspect the
-      smallest relevant trace or test and state what remains uncertain before changing the decision.
+      I would put the untested production-volume migration behind a feature flag for internal
+      users, define a rollback condition, and state which test would authorize a wider slice. That
+      gives product a reversible Friday milestone while preserving the evidence needed before public
+      exposure.
     distractors:
     - text: I would cite my experience with Stakeholder negotiation as enough proof
         and move on without naming an observation.
@@ -2405,22 +2228,14 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: rails-12-pushing-back-on-scope-delayed-12
-      prompt: 'Stakeholder negotiation gets a new constraint: a stakeholder asks for
-        a stronger Stakeholder negotiation guarantee than the first Stakeholder negotiation
-        answer promised. After a code inspection of Stakeholder negotiation confirms
-        the Stakeholder negotiation mechanism but not its impact, which Stakeholder
-        negotiation assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Stakeholder negotiation
-        guarantee than the first Stakeholder negotiation answer promised
-      new_evidence: a code inspection of Stakeholder negotiation confirms the Stakeholder
-        negotiation mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Stakeholder
-        negotiation, treat a code inspection of Stakeholder negotiation confirms the
-        Stakeholder negotiation mechanism but not its impact as new evidence rather
-        than a result, and state the updated decision rule under a stakeholder asks
-        for a stronger Stakeholder negotiation guarantee than the first Stakeholder
-        negotiation answer promised. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A staging backfill fails at production-like volume two days before Friday. What reversible slice and evidence would you offer?
+      changed_constraint: >-
+        production-volume migration safety is still unverified
+      new_evidence: >-
+        the staging backfill exceeds the error or latency limit at representative volume
+      best_answer: >-
+        I would keep Friday behind an internal feature flag, define a rollback threshold, and offer a smaller slice only after a bounded backfill test supplies the evidence for wider exposure.
       distractors:
       - text: I would preserve every part of the original Stakeholder negotiation
           answer because changing it after review would be inconsistent.
@@ -2443,44 +2258,33 @@ items:
     goal: Move from the short Stakeholder negotiation answer to a deep, evidence-led
       defence without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Stakeholder negotiation before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      A Friday request conflicts with an untested production-volume risk; I must turn the concern into a reversible slice, a rollback condition, and evidence for expansion.
     claim_map:
-      fact: The prompt explicitly tests Stakeholder negotiation within a Rails context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Stakeholder
-        negotiation, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Stakeholder negotiation constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Stakeholder negotiation: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Product wants a date while the engineer believes the release is unsafe.
+      inference: >-
+        A feature flag or internal cohort can preserve delivery progress while constraining exposure.
+      assumption: >-
+        I am assuming product can accept a smaller audience and an explicit rollback condition.
+      unknown: >-
+        Production volume, user impact, rollback speed, and acceptance threshold are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a measured Rails boundary change for Stakeholder negotiation
-        benefit: It keeps the Stakeholder negotiation reasoning close to the stated
-          Rails constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Stakeholder negotiation workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Stakeholder negotiation contract and its
-          invariant are the facts that matter most.
-      - option: a broader cache or framework-level workaround for Stakeholder negotiation
-        benefit: It can make the Stakeholder negotiation boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Stakeholder negotiation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Stakeholder negotiation option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        Rails constraint makes the first assumption unsafe.
+      - option: a narrow slice with an explicit acceptance metric and follow-up boundary
+        benefit: I can deliver a reviewable result while measuring whether the proposed change solves the real problem.
+        cost_or_risk: Some requested edge cases remain deferred and need a visible follow-up owner.
+        valid_when: Use it when the deadline is fixed and the smallest safe outcome is clear.
+      - option: accept the full scope before defining the success measure
+        benefit: It may satisfy every request in one delivery if capacity and requirements are stable.
+        cost_or_risk: Unknown work expands the risk of partial delivery and makes trade-offs invisible.
+        valid_when: Use it only when dependencies, acceptance criteria, and capacity are already confirmed.
+      decision_rule: I propose the smallest safe slice with a measurable acceptance check; I accept the full scope only when evidence shows it can be delivered without hiding risk.
     failure_probe:
       kind: failure_mode
-      prompt: 'Stakeholder negotiation: when the Stakeholder negotiation constraint
-        tightens during rollout, what breaks first in Stakeholder negotiation, and
-        how do you observe it?'
+      prompt: >-
+        What bounded test and rollback threshold would make the internal Friday slice safe to widen?
     evidence_check:
       basis: Check the Stakeholder negotiation claim against system-design-estudos/areas/12-engineering-practice/cards/progressive-delivery-and-feature-flags.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2492,13 +2296,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Stakeholder negotiation
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Product wants this shipped Friday and you", update
-        Stakeholder negotiation when Stakeholder negotiation evidence—a Stakeholder
-        negotiation trace or Stakeholder negotiation test—contradicts the Stakeholder
-        negotiation constraint in case "Product wants this shipped Friday and you";
-        ask a stakeholder about Stakeholder negotiation before revising.
+      rationale: >-
+        I am confident that a conditional slice is more useful than an unbounded refusal; its limits need volume and error evidence.
+      update_trigger: >-
+        Update when a staging or volume test changes the rollback threshold, cohort, or Friday scope.
     rubric:
       facts_correct: Names the verified Stakeholder negotiation facts without smuggling
         in a result, scale, or capability that the prompt does not establish.

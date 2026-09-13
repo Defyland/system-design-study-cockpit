@@ -53,49 +53,50 @@ target:
 cards:
 - id: ruby-card-mechanism-first
   front: What makes a Ruby answer sound senior in English?
-  back: Name the mechanism, not the vibe. "Method lookup walks the singleton class
-    first" beats "Ruby is flexible".
+  back: >-
+    I name the mechanism, not the vibe: "method lookup walks the singleton class first"
+    tells the interviewer what I will trace, while "Ruby is flexible" does not.
   box: 1
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
     note: Surface area chapter used for Ruby interview vocabulary.
   critical_thinking:
-    cue: What makes a Ruby answer sound senior in English? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this Ruby card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: What makes a Ruby answer sound senior in English? Name the runtime mechanism,
+      its consequence, and the condition that would make another explanation win.
+    check: Can you compare two mechanisms, name the failure a vague claim would hide,
+      and say which trace or documentation would update your answer?
 - id: ruby-card-gvl
   front: How do you describe the GVL without overclaiming?
-  back: Threads help with IO-bound work; the GVL prevents parallel execution of Ruby
-    bytecode, so CPU-bound work needs processes or Ractors.
+  back: I use threads for IO-bound work because waits can overlap; I treat the GVL as
+    a reason to choose processes or Ractors for CPU-bound parallelism, then verify the
+    runtime and workload before promising a speedup.
   box: 2
   source:
     repo: system-design-estudos
     path: areas/09-backend-principles/cards/concurrency-parallelism.md
     note: Concurrency card distinguishing concurrency from parallelism.
   critical_thinking:
-    cue: How do you describe the GVL without overclaiming? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this Ruby card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: How do you describe the GVL without overclaiming? Separate the runtime fact
+      from the workload assumption and name the evidence needed for a speedup claim.
+    check: Can you compare threads with processes or Ractors, name the IO-versus-CPU
+      failure mode, and say which benchmark would update your recommendation?
 - id: ruby-card-enumerable
   front: How should you justify an enumerable choice out loud?
-  back: 'By the pass count and what is allocated: "each_with_object avoids building
-    an intermediate array on every iteration".'
+  back: >-
+    I explain Enumerable choices by pass count and allocation: each_with_object can avoid
+    an intermediate array when I mutate the accumulator, but I still measure the path that
+    matters.
   box: 1
   source:
     repo: original
     path: english-arcade/ruby/enumerable-justification
     note: Distilled from the enumerable items authored in this pack.
   critical_thinking:
-    cue: How should you justify an enumerable choice out loud? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this Ruby card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: How should you justify an enumerable choice out loud? Name the pass count,
+      allocation behavior, and the condition that makes a lazy or explicit loop better.
+    check: Can you compare two Enumerable methods, name the allocation or laziness failure,
+      and state what measurement would change your choice?
 items:
 - id: ruby-01-blocks-vs-procs
   version: 1.4.0
@@ -114,9 +115,10 @@ items:
       keeping the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Two things matter in practice. I would keep the claims that remain supported, identify
-      exactly which premise the new observation changes, and run a focused check before revising
-      the decision.
+      I would choose a lambda when the callback needs a predictable arity and return
+      boundary, and I would choose a proc only when its looser contract is useful. I would
+      test wrong-arity calls and an early return from the enclosing method before defending
+      that choice.
     distractors:
     - text: I would keep the Blocks, procs and lambdas recommendation unchanged because
         changing position would look inconsistent.
@@ -131,10 +133,11 @@ items:
       behavior, and return semantics.'
     goal: Compress the Blocks, procs and lambdas answer into its decision, premise,
       trade-off, and verification step.
-  best_answer: Two things matter in practice. A lambda checks its arity and a proc
-    does not, and return inside a lambda returns from the lambda while return inside
-    a proc returns from the enclosing method. That second one is what causes surprising
-    early exits in callback code.
+  best_answer: >-
+    I distinguish the two behaviors that matter in practice: a lambda checks its arity
+    while a proc does not, and return inside a lambda exits the lambda while return inside
+    a proc exits the enclosing method. I would test that return path before using a proc
+    as a callback, because it can cause a surprising early exit.
   distractors:
   - text: Lambdas are stricter and procs are more flexible, so generally you would
       use a lambda when you want stricter behaviour and a proc when you want something
@@ -195,23 +198,20 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-01-blocks-vs-procs-delayed-1
-      prompt: 'Blocks, procs and lambdas: the later Blocks, procs and lambdas review
-        says a measured Blocks, procs and lambdas comparison shows the alternative
-        has a different Blocks, procs and lambdas cost profile. Under the Blocks,
-        procs and lambdas workload for Blocks, procs and lambdas no longer fits the
-        original resource bound, which part of Blocks, procs and lambdas survives
-        and which Blocks, procs and lambdas claim changes?'
-      changed_constraint: the Blocks, procs and lambdas workload for Blocks, procs
-        and lambdas no longer fits the original resource bound
-      new_evidence: a measured Blocks, procs and lambdas comparison shows the alternative
-        has a different Blocks, procs and lambdas cost profile
-      best_answer: I would keep the facts that remain supported about Blocks, procs
-        and lambdas, treat a measured Blocks, procs and lambdas comparison shows the
-        alternative has a different Blocks, procs and lambdas cost profile as new
-        evidence rather than a result, and state the updated decision rule under the
-        Blocks, procs and lambdas workload for Blocks, procs and lambdas no longer
-        fits the original resource bound. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        A callback benchmark shows the lambda and proc have different costs, while a caller depends
+        on the proc return behavior. Which semantic claim survives, and what would you test before
+        changing the callback?
+      changed_constraint: >-
+        the callback must keep its return contract while meeting the observed cost budget
+      new_evidence: >-
+        a benchmark separates the callable costs and a caller trace shows the enclosing method
+        return matters
+      best_answer: >-
+        I would keep the arity and return-semantics distinction, but I would not trade away the
+        caller contract for a small benchmark difference. I would test both callable forms at the
+        real call site, including the early-return path, then choose the cheaper form only if its
+        control flow remains explicit.
       distractors:
       - text: I would preserve every part of the original Blocks, procs and lambdas
           answer because changing it after review would be inconsistent.
@@ -229,73 +229,62 @@ items:
     path: english-arcade/ruby/blocks-vs-procs
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Blocks, procs and lambdas: inspect Blocks, procs and lambdas evidence
-      next; which edge case for Blocks, procs and lambdas would alter the trade-off?'
-    goal: Move from the short Blocks, procs and lambdas answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: >-
+      A caller depends on callback return behavior: trace a proc and a lambda at the call site, then explain which arity or non-local-return edge changes the contract?
+    goal: >-
+      Make the callback choice explicit by testing arity and non-local return at its real call site.
   critical_thinking:
-    problem_frame: 'Frame Blocks, procs and lambdas before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      The actor is the callback caller. It needs a predictable argument and return contract; the Ruby constraint is that Proc and lambda have different arity and non-local-return behavior; the unknown is whether this caller intentionally relies on a non-local return.
     claim_map:
-      fact: The prompt explicitly tests Blocks, procs and lambdas within a Ruby context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Blocks, procs
-        and lambdas, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Blocks, procs and lambdas constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Blocks, procs and lambdas: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        I know two relevant semantic differences: a lambda enforces its parameter count more strictly, while a Proc return can leave the method that created it.
+      inference: >-
+        A callback with a normal return boundary and fixed parameters is safer to express as a lambda because the caller can reason about where control flow ends.
+      assumption: >-
+        I am assuming the callback contract does not deliberately use a Proc to return from its enclosing method; I would confirm that at the call site.
+      unknown: >-
+        The snippet does not show whether callers depend on loose argument handling, a non-local return, or a particular Ruby version's edge behavior.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Blocks, procs and
-        lambdas would be a false equivalence because the prompt does not establish
-        that both choices satisfy the same contract.
-      hard_constraint: The hard Blocks, procs and lambdas constraint is the required
-        guarantee stated by the interviewer; no missing measurement licenses a stronger
-        comparison.
-      decision_rule: Do not manufacture a trade-off for Blocks, procs and lambdas;
-        first clarify the constraint or collect the evidence that would make two options
-        genuinely comparable.
+      rejected_alternative: >-
+        This is a semantic contract question, so choosing a callable by general flexibility would obscure the actual arity and return behavior that the caller must preserve.
+      hard_constraint: >-
+        The hard constraint is the callback's required argument and return contract, including whether a return must leave the enclosing method.
+      decision_rule: >-
+        I would choose a lambda for a predictable callback contract; I would choose a Proc only when the enclosing-method return or looser invocation semantics are explicit and tested.
     failure_probe:
-      kind: counterexample
-      prompt: 'Blocks, procs and lambdas: what minimum input for Blocks, procs and
-        lambdas would break the Blocks, procs and lambdas recommendation, and how
-        would you revise the Blocks, procs and lambdas claim?'
+      kind: edge_case
+      prompt: >-
+        Which wrong-arity or non-local-return case would show the callback contract is wrong, and what test would you run?
     evidence_check:
-      basis: Check the Blocks, procs and lambdas claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the prompt's callback contract against the Ruby callable semantics and a tiny call-site test that records arity failure and the point at which return resumes.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Blocks, procs and lambdas,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        The exercise establishes language behavior, not the production callback's actual callers, failure rate, or performance budget.
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Blocks, procs and
-        lambdas question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "What is the practical difference between a", update
-        Blocks, procs and lambdas when Blocks, procs and lambdas evidence—a Blocks,
-        procs and lambdas trace or Blocks, procs and lambdas test—contradicts the
-        Blocks, procs and lambdas constraint in case "What is the practical difference
-        between a"; ask a stakeholder about Blocks, procs and lambdas before revising.
+      rationale: >-
+        Certainty is high for the arity and return distinction because the prompt asks about Ruby semantics; it is lower for which callable wins until the call-site contract is known.
+      update_trigger: >-
+        I would update the recommendation if a call-site trace shows intentional non-local return or if a wrong-arity case is part of the required API.
     rubric:
-      facts_correct: Names the verified Blocks, procs and lambdas facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Blocks, procs and lambdas premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Blocks, procs and lambdas options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Blocks, procs and lambdas choice to a benefit,
-        a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Blocks, procs
-        and lambdas by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Blocks, procs and lambdas recommendation.
+      facts_correct: >-
+        Names lambda arity checking and the different return boundaries accurately.
+      assumptions_explicit: >-
+        States whether the caller permits a non-local Proc return and asks for the missing call-site contract.
+      alternatives_considered: >-
+        Explains why this is a semantic contract choice and when Proc remains valid.
+      tradeoff_quality: >-
+        Connects lambda predictability and Proc flexibility to the exact callback behavior that costs safety.
+      follow_up_adaptation: >-
+        Chooses from the new parameter and return requirements, then proposes tests for both failure modes.
+      certainty_calibration: >-
+        Keeps language facts high-certainty while marking the unseen caller contract as conditional.
+
+
 - id: ruby-02-method-lookup
   version: 1.4.0
   target: ruby
@@ -313,9 +302,10 @@ items:
       boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Ruby walks the ancestors chain in order. I would label the follow-up premise as
-      an assumption, ask the smallest question that could disprove it, and protect the edge
-      case before committing to the recommendation.
+      I would expect the prepended module to run before the class's inherited method, then
+      verify the actual receiver. I would inspect object.singleton_class.ancestors and call
+      the method with a small trace so the lookup order, rather than my memory, supports
+      the answer.
     distractors:
     - text: I would repeat my original Object model answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -330,10 +320,11 @@ items:
       singleton class, modules, and superclass.
     goal: Compress the Object model answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Ruby walks the ancestors chain in order. It starts with the singleton
-    class, then any prepended modules, then the class itself, then included modules
-    in reverse inclusion order, and then repeats that up the superclass chain until
-    it hits method_missing.
+  best_answer: >-
+    I trace Ruby's ancestor chain from the singleton class through prepended modules, the
+    class, included modules in reverse inclusion order, and then the superclass chain until
+    method_missing. I use that order to explain which definition wins instead of calling
+    the result a Ruby quirk.
   distractors:
   - text: It looks in the class first, and then if it does not find the method there
       it goes up to the parent class, and it keeps going up until it reaches Object
@@ -395,20 +386,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-02-method-lookup-delayed-2
-      prompt: 'Review note for Object model: a Object model test exposes a boundary
-        case that the Object model examples did not cover. Given a stakeholder asks
-        for a stronger Object model guarantee than the first Object model answer promised,
-        what would you now defend, retract, and verify about Object model?'
-      changed_constraint: a stakeholder asks for a stronger Object model guarantee
-        than the first Object model answer promised
-      new_evidence: a Object model test exposes a boundary case that the Object model
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Object model,
-        treat a Object model test exposes a boundary case that the Object model examples
-        did not cover as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Object model guarantee
-        than the first Object model answer promised. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A test places a singleton method beside a prepended module method and finds an order your
+        explanation did not cover. What lookup claim would you defend, retract, and verify?
+      changed_constraint: >-
+        the explanation must account for singleton methods and prepend in the actual receiver order
+      new_evidence: >-
+        an ancestor trace includes both the singleton class and a prepended module before the
+        inherited method
+      best_answer: >-
+        I would keep the rule that lookup follows the receiver ancestors, but I would retract any
+        simplified class-first explanation. I would print the receiver ancestors and call the
+        competing methods in a tiny test, then update the explanation from that trace.
       distractors:
       - text: I would preserve every part of the original Object model answer because
           changing it after review would be inconsistent.
@@ -426,77 +415,62 @@ items:
     path: english-arcade/ruby/method-lookup
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Deep dive on Object model: compare Object model options with one measurement;
-      which failure around Object model would make Object model switch?'
-    goal: Move from the short Object model answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      A singleton method, prepended module, and inherited method collide: print the receiver's ancestor chain and name the winner at each lookup stop?
+    goal: >-
+      Turn the ancestor-chain explanation into a trace of the actual singleton, prepend, include, and superclass collision.
   critical_thinking:
-    problem_frame: 'Frame Object model before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the receiver object and its method lookup chain. The required outcome is an accurate winner for a method name; the constraint is Ruby's singleton-class, prepend, class, include, and superclass order; the unknown is which modules and singleton methods this receiver actually has.
     claim_map:
-      fact: The prompt explicitly tests Object model within a Ruby context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Object model,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Object model constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Object model: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Ruby starts lookup at the receiver's singleton class, then follows prepended modules, the class, included modules, and superclass ancestors before method_missing.
+      inference: >-
+        Inspecting object.singleton_class.ancestors is the shortest way to explain a collision because it reveals the concrete chain rather than relying on a class-first shortcut.
+      assumption: >-
+        I am assuming the receiver is the object described by the question and that no method_missing implementation changes the final observable behavior.
+      unknown: >-
+        The prompt does not list the receiver's singleton methods, prepend order, included modules, or the competing implementation's source location.
     comparison:
-      applicable: true
-      alternatives:
-      - option: the narrow Ruby construct in the contract for Object model
-        benefit: It keeps the Object model reasoning close to the stated Ruby constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Object model workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Object model contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Object model
-        benefit: It can make the Object model boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Object model evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Object model option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Ruby
-        constraint makes the first assumption unsafe.
+      applicable: false
+      rejected_alternative: >-
+        A debate about whether prepend or include is generally better would answer a design question that the prompt does not ask; the contract is to trace the receiver that already exists.
+      hard_constraint: >-
+        The hard constraint is the runtime ancestor chain for this receiver, which determines the method before preference or style enters the discussion.
+      decision_rule: >-
+        I would print singleton_class.ancestors and trace the competing definitions; I would change the explanation only when that concrete order contradicts my remembered shortcut.
     failure_probe:
-      kind: edge_case
-      prompt: 'Object model: what Object model limit should you probe before trusting
-        the answer, and how would Object model behave there?'
+      kind: failure_mode
+      prompt: >-
+        Which receiver setup would expose a missing lookup stop, and how would you trace it?
     evidence_check:
-      basis: Check the Object model claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Compare the method-lookup claim with the actual receiver's ancestors and a tiny trace that labels each candidate definition.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Object model, but it
-        cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        A toy trace verifies this receiver and method name only; it does not prove that another object's reopened classes have the same chain.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Object model question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "When you call a method on an", update Object model
-        when Object model evidence—a Object model trace or Object model test—contradicts
-        the Object model constraint in case "When you call a method on an"; ask a
-        stakeholder about Object model before revising.
+      rationale: >-
+        The order rule is stable, but the question omits the receiver's exact modules and singleton methods, so the winning implementation remains conditional.
+      update_trigger: >-
+        I would update the answer when object.singleton_class.ancestors or the trace exposes a prepend, singleton, or method_missing case omitted from the explanation.
     rubric:
-      facts_correct: Names the verified Object model facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Object model premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Object model options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Object model choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Object model
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Object model recommendation.
+      facts_correct: >-
+        Traces the singleton class, prepend, class, include, and superclass chain without claiming a class-first search.
+      assumptions_explicit: >-
+        Names the missing receiver details that could change which definition wins.
+      alternatives_considered: >-
+        Explains why a prepend-versus-include style debate is not a substitute for tracing the existing receiver.
+      tradeoff_quality: >-
+        Connects a concrete ancestor trace to debugging certainty and avoids speculative refactoring advice.
+      follow_up_adaptation: >-
+        Uses the singleton/prepend collision to refine the chain and verify the actual winner.
+      certainty_calibration: >-
+        Separates high confidence in the lookup rule from medium confidence about an underspecified receiver.
+
+
 - id: ruby-03-enumerable-choice
   version: 1.4.0
   target: ruby
@@ -513,10 +487,10 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      Because the accumulator is mutable and I do not want to depend on the
-      block returning it. I would treat the follow-up observation as evidence, not as proof
-      of impact; I would inspect the smallest relevant trace or test and state what
-      remains uncertain before changing the decision.
+      I would switch to a lazy chain when the collection is expensive to realize and the
+      consumer can pull values on demand. If the accumulator must stay immutable, I would
+      use reduce with a new value on each step and test both laziness and the final result
+      instead of assuming each_with_object still fits.
     distractors:
     - text: I would cite my experience with Enumerables as enough proof and move on
         without naming an observation.
@@ -596,20 +570,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-03-enumerable-choice-delayed-3
-      prompt: New evidence about Enumerables says a stakeholder clarifies a Enumerables
-        requirement that changes the Enumerables success condition; with the Enumerables
-        dependency is slower for Enumerables and the failure is ambiguous rather than
-        explicit, how do you update the Enumerables decision rule?
-      changed_constraint: the Enumerables dependency is slower for Enumerables and
-        the failure is ambiguous rather than explicit
-      new_evidence: a stakeholder clarifies a Enumerables requirement that changes
-        the Enumerables success condition
-      best_answer: I would keep the facts that remain supported about Enumerables,
-        treat a stakeholder clarifies a Enumerables requirement that changes the Enumerables
-        success condition as new evidence rather than a result, and state the updated
-        decision rule under the Enumerables dependency is slower for Enumerables and
-        the failure is ambiguous rather than explicit. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A lazy collection must now feed an immutable accumulator, and a benchmark shows the original
+        eager path is slower at the target size. Which Enumerable choice changes, and what would you
+        verify?
+      changed_constraint: >-
+        the pipeline must stay lazy and preserve immutable accumulator semantics at the target size
+      new_evidence: >-
+        the benchmark shows the eager path is slower and the caller requires lazy consumption
+      best_answer: >-
+        I would keep the block-return safety reason for each_with_object, but I would switch the
+        design when laziness and immutability are part of the contract. I would compare a lazy map
+        or each_with_object path with an immutable reduce on the same input, then verify both
+        deferred work and the final value.
       distractors:
       - text: I would preserve every part of the original Enumerables answer because
           changing it after review would be inconsistent.
@@ -627,76 +600,74 @@ items:
     path: english-arcade/ruby/enumerable-choice
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Defend Enumerables after a counterexample: which Enumerables assumption
-      changes, and what evidence keeps the revised Enumerables choice honest?'
-    goal: Move from the short Enumerables answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      The input is lazy and the accumulator is immutable: compare lazy traversal with each_with_object and reduce using deferred work, return contract, and allocation evidence?
+    goal: >-
+      Select an Enumerable form from the lazy consumer, accumulator mutability, and measured allocation path.
   critical_thinking:
-    problem_frame: 'Frame Enumerables before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the collection pipeline and its accumulator. The required outcome is a correct hash with the intended evaluation behavior; the constraints are accumulator mutability, laziness, and input size; the unknown is whether the consumer needs deferred work or an immutable value at every step.
     claim_map:
-      fact: The prompt explicitly tests Enumerables within a Ruby context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Enumerables,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Enumerables constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Enumerables: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        each_with_object yields a stable accumulator without requiring the block to return it, while reduce uses each block result as the next accumulator.
+      inference: >-
+        each_with_object fits a mutable hash-building pass; reduce fits when each step deliberately returns a new immutable accumulator or a different reduction value.
+      assumption: >-
+        I am assuming the collection can be traversed once and that mutation of the local accumulator is acceptable to the caller.
+      unknown: >-
+        The prompt does not establish input size, laziness requirements, accumulator ownership, or whether a branch may accidentally return nil.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Enumerables
-        benefit: It keeps the Enumerables reasoning close to the stated Ruby constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Enumerables workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Enumerables contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Enumerables
-        benefit: It can make the Enumerables boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Enumerables evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Enumerables option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Ruby
-        constraint makes the first assumption unsafe.
+      - option: each_with_object hash build
+        benefit: Builds the hash in one pass without requiring each branch to return the
+          accumulator.
+        cost_or_risk: Relies on a mutable local accumulator and does not by itself preserve
+          laziness.
+        valid_when: Use it for a finite or already-lazy source when a mutable hash is the
+          clearest contract.
+      - option: reduce with immutable accumulator
+        benefit: Makes the value returned by every step the next accumulator, which fits
+          immutable accumulation.
+        cost_or_risk: Every branch must return the right value and an eager reduction can
+          realize more work than the consumer needs.
+        valid_when: Use it when each step intentionally returns a new value or the reduction
+          is not a mutable hash build.
+      decision_rule: I would use each_with_object for one mutable hash-building pass, reduce
+        for deliberate immutable accumulation, and a lazy chain when realizing the collection
+        itself violates the memory or timing budget.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Enumerables: if a caller retries Enumerables at the worst moment, what
-        failure mode appears first, and how would you protect Enumerables?'
+      kind: edge_case
+      prompt: >-
+        Which lazy or conditional input would break this Enumerable choice, and what measurement would settle it?
     evidence_check:
-      basis: Check the Enumerables claim against system-design-estudos/interview/story-bank/03-ruby-rails-senior-question-bank.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the chosen block's return value, intermediate allocations, and deferred evaluation on the exact collection shape described by the prompt.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Enumerables, but it
-        cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        One benchmark cannot establish that an Enumerable idiom is best for all collection sizes or consumers.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Enumerables question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why did you reach for each_with_object rather", update
-        Enumerables when Enumerables evidence—a Enumerables trace or Enumerables test—contradicts
-        the Enumerables constraint in case "Why did you reach for each_with_object
-        rather"; ask a stakeholder about Enumerables before revising.
+      rationale: >-
+        The accumulator semantics are clear, but the best form depends on laziness, mutability, and data size that the snippet does not provide.
+      update_trigger: >-
+        I would revise the choice if an allocation trace shows an intermediate array, a lazy consumer stops early, or a branch returns the wrong accumulator.
     rubric:
-      facts_correct: Names the verified Enumerables facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Enumerables premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Enumerables options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Enumerables choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Enumerables by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Enumerables recommendation.
+      facts_correct: >-
+        Names the accumulator-return difference and does not call each_with_object and reduce equivalent.
+      assumptions_explicit: >-
+        States whether mutation and eager traversal fit the consumer.
+      alternatives_considered: >-
+        Compares each_with_object, reduce, and lazy traversal by the actual accumulator and evaluation contract.
+      tradeoff_quality: >-
+        Links fewer accidental nils or allocations to the cost of mutable state or extra passes.
+      follow_up_adaptation: >-
+        Switches when laziness or immutability becomes a requirement and proposes a matching verification.
+      certainty_calibration: >-
+        Treats Ruby semantics as firm and performance preference as evidence-dependent.
+
+
 - id: ruby-04-memory-allocation
   version: 1.4.0
   target: ruby
@@ -713,10 +684,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      I would measure first, with allocation profiling on a representative request, and look at
-      what is being allocated rather than guessing. I would compare that choice with the
-      credible alternative against the requirement in the follow-up, cost, and failure risk, then switch
-      only if evidence makes the alternative safer.
+      I would profile a representative request and start with the hottest allocation site,
+      such as interpolation or an intermediate array. I would compare allocation counts,
+      retained objects, and latency before and after the refactor, then keep it only if the
+      measured pressure actually falls.
     distractors:
     - text: I would defend the first Memory and performance option because offering
         an alternative might make the decision look uncertain.
@@ -797,22 +768,20 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-04-memory-allocation-delayed-4
-      prompt: 'Memory and performance gets a new constraint: new Memory and performance
-        evidence contradicts the Memory and performance assumption that made the first
-        option attractive. After a trace of Memory and performance isolates a different
-        Memory and performance bottleneck than the one you named, which Memory and
-        performance assumption is no longer safe?'
-      changed_constraint: new Memory and performance evidence contradicts the Memory
-        and performance assumption that made the first option attractive
-      new_evidence: a trace of Memory and performance isolates a different Memory
-        and performance bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about Memory and performance,
-        treat a trace of Memory and performance isolates a different Memory and performance
-        bottleneck than the one you named as new evidence rather than a result, and
-        state the updated decision rule under new Memory and performance evidence
-        contradicts the Memory and performance assumption that made the first option
-        attractive. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        An allocation trace shows an intermediate array, rather than interpolation, dominates the
+        endpoint, and the endpoint has a peak-memory limit. Which performance assumption is no
+        longer safe?
+      changed_constraint: >-
+        the refactor must reduce peak memory while preserving the endpoint latency budget
+      new_evidence: >-
+        the trace identifies an intermediate array as the dominant allocation and shows the memory
+        ceiling is binding
+      best_answer: >-
+        I would keep the measure-first method, but I would retract any focus on string interpolation
+        if the trace points to an intermediate array. I would compare a fused iteration with the
+        original chain, measure peak memory and latency, and keep the change only when it meets the
+        stated ceiling.
       distractors:
       - text: I would preserve every part of the original Memory and performance answer
           because changing it after review would be inconsistent.
@@ -830,80 +799,73 @@ items:
     path: english-arcade/ruby/memory-allocation
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Five more minutes on Memory and performance: which boundary, alternative,
-      and update trigger would you explain for Memory and performance?'
-    goal: Move from the short Memory and performance answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: >-
+      The trace points to an intermediate array instead of interpolation: identify the smallest refactor and the measurements that decide whether it stays?
+    goal: >-
+      Tie the performance refactor to the hottest allocation, retained-memory ceiling, and before/after profile.
   critical_thinking:
-    problem_frame: 'Frame Memory and performance before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      The actor is the endpoint request path under load. The required outcome is lower allocation pressure without changing the response; the constraints are peak memory, latency, and representative traffic; the unknown is which allocation site dominates rather than which idiom looks expensive.
     claim_map:
-      fact: The prompt explicitly tests Memory and performance within a Ruby context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Memory and
-        performance, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Memory and performance constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Memory and performance: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The endpoint allocates heavily, but the prompt does not identify the responsible objects; an allocation profile can distinguish interpolation, intermediate arrays, retained objects, and unrelated work.
+      inference: >-
+        Measuring a representative request before refactoring is more reliable than replacing every map chain or string operation by intuition.
+      assumption: >-
+        I am assuming the trace can reproduce the load shape and that allocation reduction is the limiting objective rather than provider latency or database time.
+      unknown: >-
+        Peak retained objects, allocation count, request mix, and the acceptable latency/memory ceiling remain unknown until profiled.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Memory and performance
-        benefit: It keeps the Memory and performance reasoning close to the stated
-          Ruby constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Memory and performance workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Memory and performance contract and its
-          invariant are the facts that matter most.
-      - option: an explicit object or loop boundary for Memory and performance
-        benefit: It can make the Memory and performance boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Memory and performance evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Memory and performance option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        Ruby constraint makes the first assumption unsafe.
+      - option: allocation profile plus a targeted refactor
+        benefit: Connects the change to the hottest allocation and can lower retained memory
+          with a small reviewable diff.
+        cost_or_risk: Requires a representative trace and may leave other costs untouched.
+        valid_when: Use it when allocation pressure, rather than database or provider time,
+          is the measured bottleneck.
+      - option: broad representation rewrite
+        benefit: Can remove a structural source of allocations when the profile shows the
+          current representation is the root cause.
+        cost_or_risk: Adds behavior and regression risk before the dominant allocation is
+          proven.
+        valid_when: Use it only when targeted changes miss the memory ceiling and a profile
+          justifies the broader change.
+      decision_rule: I would profile first, then keep the smallest change that improves
+        allocation count and peak retention on representative requests without regressing
+        p95 latency.
     failure_probe:
-      kind: counterexample
-      prompt: 'Memory and performance: where would a tiny Memory and performance counterexample
-        expose a false assumption, and what would you change about Memory and performance?'
+      kind: failure_mode
+      prompt: >-
+        What profile result would show the refactor did not reduce pressure, and which metric would you inspect?
     evidence_check:
-      basis: Check the Memory and performance claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Use an allocation profiler and representative request trace to identify the hottest site, then repeat the same measurement after one targeted change.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Memory and performance,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        A sampled endpoint profile cannot prove behavior for traffic mixes or Ruby versions that were not measured.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Memory and performance
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "This endpoint allocates heavily under load. How",
-        update Memory and performance when Memory and performance evidence—a Memory
-        and performance trace or Memory and performance test—contradicts the Memory
-        and performance constraint in case "This endpoint allocates heavily under
-        load. How"; ask a stakeholder about Memory and performance before revising.
+      rationale: >-
+        The measure-first method is strong, but the likely culprit and the benefit of a specific refactor are unknown until the profile is available.
+      update_trigger: >-
+        I would change direction when the trace identifies retained objects or a different allocation site, or when the refactor misses the memory ceiling.
     rubric:
-      facts_correct: Names the verified Memory and performance facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Memory and performance premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Memory and performance options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Memory and performance choice to a benefit, a
-        cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Memory and
-        performance by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Memory and performance recommendation.
+      facts_correct: >-
+        Distinguishes allocation count, retained objects, and latency instead of naming an unmeasured trick.
+      assumptions_explicit: >-
+        States the traffic and memory-budget assumptions behind the profile.
+      alternatives_considered: >-
+        Prefers a targeted allocation fix over a broad rewrite and explains when a representation change would win.
+      tradeoff_quality: >-
+        Connects lower allocations to code complexity and output/latency regression risk.
+      follow_up_adaptation: >-
+        Starts with the hottest measured allocation and updates the plan when the trace contradicts the expected culprit.
+      certainty_calibration: >-
+        Keeps the diagnostic method high-confidence while treating the fix as provisional.
+
+
 - id: ruby-05-gvl-concurrency
   version: 1.4.0
   target: ruby
@@ -921,10 +883,10 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      For this job yes, because the time is spent waiting on IO and the
-      global lock is released during those waits, so other threads can proceed. If the
-      failure in the follow-up appears, I would name the user or system consequence, contain
-      it with a bounded mitigation, and verify recovery with a focused test or metric.
+      I would separate the questions by tracing network wait time, Ruby CPU time, queue
+      wait, and timeout or retry work. If the external service dominates, threads may hide
+      that wait; if Ruby CPU dominates, the GVL is relevant. I would use those spans and a
+      bounded concurrency test before attributing the bottleneck to the GVL.
     distractors:
     - text: I would describe the Concurrency failure as impossible because the happy
         path already passed its test.
@@ -1004,23 +966,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-05-gvl-concurrency-delayed-5
-      prompt: 'Revisit Concurrency after a code inspection of Concurrency confirms
-        the Concurrency mechanism but not its impact and two Concurrency callers from
-        the case "Will adding threads make this job faster?" or Concurrency tenants
-        now compete for the same Concurrency boundary: what remains factual about
-        Concurrency, what becomes provisional, and why?'
-      changed_constraint: two Concurrency callers from the case "Will adding threads
-        make this job faster?" or Concurrency tenants now compete for the same Concurrency
-        boundary
-      new_evidence: a code inspection of Concurrency confirms the Concurrency mechanism
-        but not its impact
-      best_answer: I would keep the facts that remain supported about Concurrency,
-        treat a code inspection of Concurrency confirms the Concurrency mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under two Concurrency callers from the case "Will adding threads
-        make this job faster?" or Concurrency tenants now compete for the same Concurrency
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        A trace shows one caller waits on the provider while another performs CPU-heavy JSON work,
+        and both share the same worker pool. What remains factual about the GVL and what must be
+        measured?
+      changed_constraint: >-
+        the worker pool must handle mixed IO and CPU work without claiming one concurrency strategy
+        fits both callers
+      new_evidence: >-
+        traces separate provider wait time from CPU-heavy JSON work in the same worker pool
+      best_answer: >-
+        I would keep the distinction between IO waits and Ruby CPU execution, but I would narrow any
+        single speedup claim. I would measure queue wait, provider latency, CPU time, and throughput
+        for threads and processes at the same concurrency, then route each workload from those
+        results.
       distractors:
       - text: I would preserve every part of the original Concurrency answer because
           changing it after review would be inconsistent.
@@ -1038,76 +997,72 @@ items:
     path: english-arcade/ruby/gvl-concurrency
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Revisit Concurrency beyond the happy path: what is factual about Concurrency,
-      what is provisional, and which Concurrency test could change it?'
-    goal: Move from the short Concurrency answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      The worker mixes provider wait with CPU-heavy JSON parsing: separate the spans and choose a bounded concurrency model from the measured bottleneck?
+    goal: >-
+      Separate provider wait, Ruby CPU, and retry work before choosing threads, processes, or another bounded model.
   critical_thinking:
-    problem_frame: 'Frame Concurrency before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the worker pool calling a payment provider. The required outcome is higher useful throughput; the constraints are external wait, Ruby CPU time, provider limits, and retry/timeout behavior; the unknown is how much time is actually IO wait versus Ruby CPU.
     claim_map:
-      fact: The prompt explicitly tests Concurrency within a Ruby context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Concurrency,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Concurrency constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Concurrency: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        This job spends most of its time waiting on HTTP, and MRI's GVL does not prevent other threads from progressing while a thread waits on IO; CPU-bound Ruby bytecode remains serialized by the GVL.
+      inference: >-
+        Bounded threads may overlap provider waits, but a thread-count increase cannot create provider capacity or remove CPU-heavy JSON and retry work.
+      assumption: >-
+        I am assuming the provider permits the proposed concurrency and that the HTTP client releases the thread during blocking IO.
+      unknown: >-
+        Provider rate limits, CPU share, queue wait, timeout volume, and the useful concurrency ceiling are not established by the prompt.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Concurrency
-        benefit: It keeps the Concurrency reasoning close to the stated Ruby constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Concurrency workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Concurrency contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Concurrency
-        benefit: It can make the Concurrency boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Concurrency evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Concurrency option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Ruby
-        constraint makes the first assumption unsafe.
+      - option: bounded Ruby threads
+        benefit: Overlap provider waits without requiring process coordination.
+        cost_or_risk: They do not parallelize CPU-heavy Ruby and can hit provider or retry
+          limits.
+        valid_when: Use them when traces show external IO dominates and the provider accepts
+          the concurrency.
+      - option: processes or Ractors
+        benefit: Can isolate or parallelize CPU-heavy work beyond the GVL.
+        cost_or_risk: They add memory, serialization, and coordination cost and do not remove
+          provider latency.
+        valid_when: Use them when measured Ruby CPU dominates and the isolation cost fits
+          the workload.
+      decision_rule: I would use bounded threads when spans show provider wait dominates,
+        and compare processes or Ractors only when CPU work dominates and the measured isolation
+        cost is acceptable.
     failure_probe:
-      kind: edge_case
-      prompt: 'Concurrency: which Concurrency boundary deserves the first test, and
-        what observation about Concurrency would overturn the premise?'
+      kind: counterexample
+      prompt: >-
+        Which trace would show threads are saturating CPU or provider capacity, and how would you change the pool?
     evidence_check:
-      basis: Check the Concurrency claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Use spans and a bounded concurrency benchmark that compares thread and process behavior on the same HTTP and parsing workload.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Concurrency, but it
-        cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        The exercise cannot establish a speedup without the installed Ruby runtime, HTTP client, provider limits, and representative payloads.
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Concurrency question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Will adding threads make this job faster?", update
-        Concurrency when Concurrency evidence—a Concurrency trace or Concurrency test—contradicts
-        the Concurrency constraint in case "Will adding threads make this job faster?";
-        ask a stakeholder about Concurrency before revising.
+      rationale: >-
+        The IO-versus-CPU GVL distinction is well established, but the magnitude of any speedup and safe pool size depend on measurements absent from the prompt.
+      update_trigger: >-
+        I would revise the concurrency recommendation if traces show CPU or provider saturation, or if a controlled benchmark fails to improve throughput.
     rubric:
-      facts_correct: Names the verified Concurrency facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Concurrency premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Concurrency options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Concurrency choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Concurrency by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Concurrency recommendation.
+      facts_correct: >-
+        Separates IO overlap from CPU-bound Ruby execution under the GVL.
+      assumptions_explicit: >-
+        Names provider limits, client behavior, and workload composition as assumptions.
+      alternatives_considered: >-
+        Compares bounded threads with processes or Ractors for the measured IO/CPU split.
+      tradeoff_quality: >-
+        Includes provider saturation, memory, coordination, and retry costs rather than promising speedup.
+      follow_up_adaptation: >-
+        Uses tracing to decide whether the bottleneck is the GVL, provider, queue, or retry path.
+      certainty_calibration: >-
+        States the runtime fact confidently and keeps performance magnitude conditional.
+
+
 - id: ruby-06-error-contracts
   version: 1.4.0
   target: ruby
@@ -1125,10 +1080,10 @@ items:
       evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      I raise when the caller cannot reasonably continue and the condition is genuinely exceptional,
-      such as a broken invariant. I would keep the claims that remain supported, identify
-      exactly which premise the new observation changes, and run a focused check before revising
-      the decision.
+      I would raise for a broken invariant or an unavailable dependency that makes this
+      call unable to continue, and I would return a result object for an expected branch
+      such as a declined payment. I would document the boundary, test both paths, and make
+      the caller's recovery action visible in the contract.
     distractors:
     - text: I would keep the Error handling recommendation unchanged because changing
         position would look inconsistent.
@@ -1209,21 +1164,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-06-error-contracts-delayed-6
-      prompt: The Error handling review adds a measured Error handling comparison
-        shows the alternative has a different Error handling cost profile while the
-        Error handling workload for Error handling no longer fits the original resource
-        bound; which conclusion about Error handling would you narrow before proposing
-        a repair?
-      changed_constraint: the Error handling workload for Error handling no longer
-        fits the original resource bound
-      new_evidence: a measured Error handling comparison shows the alternative has
-        a different Error handling cost profile
-      best_answer: I would keep the facts that remain supported about Error handling,
-        treat a measured Error handling comparison shows the alternative has a different
-        Error handling cost profile as new evidence rather than a result, and state
-        the updated decision rule under the Error handling workload for Error handling
-        no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A measured comparison shows exceptions are cheaper on the rare path, but the workload now
+        has frequent expected declines and a tighter latency budget. Which error-contract conclusion
+        would you narrow?
+      changed_constraint: >-
+        frequent expected declines must remain an explicit caller branch within the latency budget
+      new_evidence: >-
+        the comparison shows a different cost profile and the workload distribution contains
+        frequent expected declines
+      best_answer: >-
+        I would keep the semantic boundary between exceptional failure and an expected decline, even
+        if the measured costs differ. I would model declines as a result the caller can branch on,
+        benchmark the actual frequency, and reserve exceptions for the broken-invariant path.
       distractors:
       - text: I would preserve every part of the original Error handling answer because
           changing it after review would be inconsistent.
@@ -1241,70 +1194,71 @@ items:
     path: english-arcade/ruby/error-contracts
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Use a deep dive on Error handling to name the competing Error handling
-      cost, the first failure signal, and the observation that would update Error
-      handling.
-    goal: Move from the short Error handling answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      Declines become frequent while a broken invariant remains rare: define the result/exception boundary and the caller test that protects it?
+    goal: >-
+      Defend the result-versus-exception boundary with caller recovery behavior for declines and broken invariants.
   critical_thinking:
-    problem_frame: 'Frame Error handling before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the service caller deciding whether to recover or propagate. The required outcome is a stable error contract; the constraint is whether the condition is an expected business branch or a broken invariant/dependency; the unknown is how callers currently branch and observe failures.
     claim_map:
-      fact: The prompt explicitly tests Error handling within a Ruby context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Error handling,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Error handling constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Error handling: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A declined payment is an expected business result, while a broken invariant means this operation cannot safely continue; Ruby can represent those paths as a result object or an exception.
+      inference: >-
+        Returning expected declines makes caller branching visible, while raising an exceptional failure preserves a clear failure boundary when recovery is not local.
+      assumption: >-
+        I am assuming callers can handle a result object and that the service documents which exceptions are part of its contract.
+      unknown: >-
+        The existing callers, failure frequency, retry policy, and observability requirements are not shown.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Error handling would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Error handling constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Error handling; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      applicable: true
+      alternatives:
+      - option: result object for expected declines
+        benefit: Makes a caller branch and recovery action explicit for normal business
+          outcomes.
+        cost_or_risk: Requires a stable result shape and can add branching at every caller.
+        valid_when: Use it when the caller can act on the decline as part of normal flow.
+      - option: exception for broken invariants or unavailable dependencies
+        benefit: Stops a caller from consuming an unsafe result and routes an exceptional
+          path to its boundary.
+        cost_or_risk: Can obscure normal control flow if raised for frequent expected outcomes.
+        valid_when: Use it when the operation cannot safely continue and the caller cannot
+          recover locally.
+      decision_rule: I would return expected, recoverable business outcomes and raise for
+        broken invariants or an unavailable dependency that prevents this call; I would
+        document and test both boundaries.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Error handling: when the first Error handling recovery path fails,
-        which consequence reaches the user, and what bounded mitigation follows for
-        Error handling?'
+      kind: edge_case
+      prompt: >-
+        Which caller behavior would show the exception/result boundary is wrong, and what contract test would catch it?
     evidence_check:
-      basis: Check the Error handling claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Inspect caller branches, service documentation, and tests for decline and invariant failures; compare the contract with the actual recovery action.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Error handling, but
-        it cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        Exception-versus-result cost is secondary here; this exercise does not reveal all callers or their compatibility constraints.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Error handling
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "When would you raise instead of returning", update
-        Error handling when Error handling evidence—a Error handling trace or Error
-        handling test—contradicts the Error handling constraint in case "When would
-        you raise instead of returning"; ask a stakeholder about Error handling before
-        revising.
+      rationale: >-
+        The expected-versus-exceptional boundary is a useful default, but the service's existing callers and compatibility contract are omitted.
+      update_trigger: >-
+        I would revise the boundary when a caller treats a failure as a normal branch, or when an exception cannot carry a safe recovery signal.
     rubric:
-      facts_correct: Names the verified Error handling facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Error handling premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Error handling options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Error handling choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Error handling
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Error handling recommendation.
+      facts_correct: >-
+        Distinguishes expected business declines from broken invariants and dependency failures.
+      assumptions_explicit: >-
+        Names the caller recovery and documentation assumptions.
+      alternatives_considered: >-
+        Explains when a result object or exception preserves the caller's contract and why blanket policies fail.
+      tradeoff_quality: >-
+        Connects visible branching and recovery to the cost of exceptional control flow or hidden invariant damage.
+      follow_up_adaptation: >-
+        Keeps the semantic boundary when benchmark evidence changes but expected declines become frequent.
+      certainty_calibration: >-
+        Treats the boundary as a reasoned default while seeking caller evidence before changing a public contract.
+
+
 - id: ruby-07-metaprogramming-restraint
   version: 1.4.0
   target: ruby
@@ -1322,10 +1276,10 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      I would, but only because the generated names are derived from a constant list
-      that lives right next to it. I would label the follow-up premise as an
-      assumption, ask the smallest question that could disprove it, and protect the edge case
-      before committing to the recommendation.
+      I would compare the generated method names with the readers who must debug them.
+      If the names come from a bounded constant list, I would keep define_method and test
+      the generated surface; if callers need discoverability or custom behavior, I would
+      write explicit methods and preserve the extension point.
     distractors:
     - text: I would repeat my original Metaprogramming answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -1404,21 +1358,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-07-metaprogramming-restraint-delayed-7
-      prompt: For Metaprogramming, new evidence is a Metaprogramming test exposes
-        a boundary case that the Metaprogramming examples did not cover and the constraint
-        is a stakeholder asks for a stronger Metaprogramming guarantee than the first
-        Metaprogramming answer promised. What alternative now deserves consideration
-        for Metaprogramming?
-      changed_constraint: a stakeholder asks for a stronger Metaprogramming guarantee
-        than the first Metaprogramming answer promised
-      new_evidence: a Metaprogramming test exposes a boundary case that the Metaprogramming
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Metaprogramming,
-        treat a Metaprogramming test exposes a boundary case that the Metaprogramming
-        examples did not cover as new evidence rather than a result, and state the
-        updated decision rule under a stakeholder asks for a stronger Metaprogramming
-        guarantee than the first Metaprogramming answer promised. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: >-
+        A generated predicate misses an edge-case name in a test, and the code review now requires
+        static discoverability. Which metaprogramming assumption is no longer safe?
+      changed_constraint: >-
+        generated methods must be statically discoverable and cover the tested name set without
+        hidden behavior
+      new_evidence: >-
+        a boundary test misses a generated name and the review requires readers to find methods by
+        search
+      best_answer: >-
+        I would keep generation only for a bounded, explicit list, but I would retract the claim
+        that the current form is automatically greppable. I would add a test for every generated
+        name and compare explicit methods if static discovery remains poor, then choose the simpler
+        surface.
       distractors:
       - text: I would preserve every part of the original Metaprogramming answer because
           changing it after review would be inconsistent.
@@ -1436,78 +1389,73 @@ items:
     path: english-arcade/ruby/metaprogramming-restraint
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Walk through Metaprogramming under a changed requirement: which Metaprogramming
-      claim survives, which option wins, and why would Metaprogramming need new evidence?'
-    goal: Move from the short Metaprogramming answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      A generated predicate has a missed edge-case name and static discovery is required: compare bounded generation with explicit methods and state the switch condition?
+    goal: >-
+      Decide whether bounded generated predicates remain discoverable after an edge-case name and maintenance review.
   critical_thinking:
-    problem_frame: 'Frame Metaprogramming before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the maintainer of a class with a bounded list of predicate names. The required outcome is a discoverable, correct method surface; the constraints are repetition, debugging, static navigation, and extension behavior; the unknown is whether the name list and generated behavior will remain bounded.
     claim_map:
-      fact: The prompt explicitly tests Metaprogramming within a Ruby context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Metaprogramming,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Metaprogramming constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Metaprogramming: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        define_method can generate similar methods, and the current names come from a constant list beside the generator; generated methods still need tests for their public surface.
+      inference: >-
+        A bounded, searchable list can justify generation, while open-ended names or custom per-method behavior make explicit methods easier to inspect and debug.
+      assumption: >-
+        I am assuming the constant list is the source of truth and that no caller depends on method definitions being statically visible to tooling.
+      unknown: >-
+        Future name growth, per-predicate exceptions, documentation tooling, and the cost of debugging a generated method are not established.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Metaprogramming
-        benefit: It keeps the Metaprogramming reasoning close to the stated Ruby constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Metaprogramming workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Metaprogramming contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Metaprogramming
-        benefit: It can make the Metaprogramming boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Metaprogramming evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Metaprogramming option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Ruby
-        constraint makes the first assumption unsafe.
+      - option: bounded define_method generation
+        benefit: Removes repeated method bodies while a constant name list remains the source
+          of truth.
+        cost_or_risk: Can weaken static navigation and make unique edge behavior harder
+          to debug.
+        valid_when: Use it when every generated name is bounded, searchable, and covered
+          by a surface test.
+      - option: explicit predicate methods
+        benefit: Makes each public name and exceptional behavior visible to readers and
+          tooling.
+        cost_or_risk: Duplicates some code and makes adding a uniform predicate more verbose.
+        valid_when: Use it when names grow, methods diverge, or static discoverability is
+          part of the maintenance contract.
+      decision_rule: I would retain define_method only for a small constant list with generated-surface
+        tests; I would write explicit methods when names, behavior, or tooling need independent
+        discovery.
     failure_probe:
-      kind: counterexample
-      prompt: 'Metaprogramming: what stakeholder reply about Metaprogramming would
-        invalidate the recommendation, and which Metaprogramming premise would you
-        revisit?'
+      kind: failure_mode
+      prompt: >-
+        Which generated name or tooling view would expose a discoverability failure, and what explicit form would you compare?
     evidence_check:
-      basis: Check the Metaprogramming claim against system-design-estudos/areas/12-engineering-practice/cards/architecture-decision-records.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Review the constant list, generated method names, tests, and a failed predicate trace to see whether the code is discoverable at the maintenance boundary.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Metaprogramming, but
-        it cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        A bounded sample does not prove future names or tooling will preserve the same discoverability.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Metaprogramming
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Would you use define_method here, or is", update Metaprogramming
-        when Metaprogramming evidence—a Metaprogramming trace or Metaprogramming test—contradicts
-        the Metaprogramming constraint in case "Would you use define_method here,
-        or is"; ask a stakeholder about Metaprogramming before revising.
+      rationale: >-
+        The bounded-list rule is defensible, but the class's future extension and tooling requirements are missing.
+      update_trigger: >-
+        I would switch to explicit methods when a generated name is missed, a predicate needs unique behavior, or static tooling cannot show the API.
     rubric:
-      facts_correct: Names the verified Metaprogramming facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Metaprogramming premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Metaprogramming options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Metaprogramming choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Metaprogramming
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Metaprogramming recommendation.
+      facts_correct: >-
+        Describes define_method as generated behavior and names bounded names and testing as constraints.
+      assumptions_explicit: >-
+        States who owns the name list and whether static discovery is required.
+      alternatives_considered: >-
+        Compares bounded generation with explicit methods on discoverability and per-method behavior.
+      tradeoff_quality: >-
+        Connects reduced duplication to debugging, tooling, and stack-trace costs.
+      follow_up_adaptation: >-
+        Revises the choice when a generated edge case or discoverability requirement appears.
+      certainty_calibration: >-
+        Keeps the rule conditional on the bounded source list and observed maintenance surface.
+
+
 - id: ruby-08-frozen-strings
   version: 1.4.0
   target: ruby
@@ -1524,10 +1472,10 @@ items:
       evidence boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      It makes string literals in that file frozen, so repeated literals share one object
-      instead of allocating a new string every time the line runs. I would treat
-      the follow-up observation as evidence, not as proof of impact; I would inspect the
-      smallest relevant trace or test and state what remains uncertain before changing the decision.
+      I would make ownership explicit at the boundary: duplicate a caller-owned mutable
+      string when I need to retain it, or document and test that the library only reads a
+      frozen value. I would add a mutation test that fails if the implementation silently
+      changes the caller's object.
     distractors:
     - text: I would cite my experience with Strings and mutation as enough proof and
         move on without naming an observation.
@@ -1542,10 +1490,11 @@ items:
       deliberate way to share constants.
     goal: Compress the Strings and mutation answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: It makes string literals in that file frozen, so repeated literals
-    share one object instead of allocating a new string every time the line runs.
-    In a hot path that removes a lot of short-lived garbage, and it also catches accidental
-    mutation early.
+  best_answer: >-
+    I use frozen_string_literal to make string literals in that file immutable, so
+    accidental mutation fails early. I would measure allocations before claiming a
+    hot-path saving, because sharing or deduplication depends on the Ruby version and the
+    exact literal path.
   distractors:
   - text: It makes the strings in the file immutable so that they cannot be changed
       by accident, which is generally safer and is considered a good practice in most
@@ -1603,22 +1552,20 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-08-frozen-strings-delayed-8
-      prompt: A second pass on Strings and mutation finds a stakeholder clarifies
-        a Strings and mutation requirement that changes the Strings and mutation success
-        condition; with the Strings and mutation dependency is slower for Strings
-        and mutation and the failure is ambiguous rather than explicit, which Strings
-        and mutation test would you run before keeping the original rule?
-      changed_constraint: the Strings and mutation dependency is slower for Strings
-        and mutation and the failure is ambiguous rather than explicit
-      new_evidence: a stakeholder clarifies a Strings and mutation requirement that
-        changes the Strings and mutation success condition
-      best_answer: I would keep the facts that remain supported about Strings and
-        mutation, treat a stakeholder clarifies a Strings and mutation requirement
-        that changes the Strings and mutation success condition as new evidence rather
-        than a result, and state the updated decision rule under the Strings and mutation
-        dependency is slower for Strings and mutation and the failure is ambiguous
-        rather than explicit. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A library caller needs to mutate a string and an allocation trace does not show a meaningful
+        saving from frozen literals. Which frozen-string assumption is no longer safe?
+      changed_constraint: >-
+        the boundary must preserve caller mutation semantics while any allocation claim is supported
+        by measurement
+      new_evidence: >-
+        a caller mutation test conflicts with immutability and the allocation trace shows no
+        material saving
+      best_answer: >-
+        I would keep the early mutation failure as the ownership signal, but I would retract an
+        unconditional allocation benefit. I would duplicate or document ownership at the boundary,
+        run the caller mutation test, and keep the magic comment only when its measured and semantic
+        benefits fit the file.
       distractors:
       - text: I would preserve every part of the original Strings and mutation answer
           because changing it after review would be inconsistent.
@@ -1636,80 +1583,72 @@ items:
     path: english-arcade/ruby/frozen-strings
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Connect Strings and mutation, connect the Strings and mutation implementation
-      choice to its failure mode, measurement, and condition for choosing the alternative.
-    goal: Move from the short Strings and mutation answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: >-
+      A library needs a mutable string and profiling shows no allocation saving: where would you create its owned copy, and which safety benefit still justifies the pragma?
+    goal: >-
+      Place mutable ownership at the library boundary and keep allocation claims tied to the measured Ruby path.
   critical_thinking:
-    problem_frame: 'Frame Strings and mutation before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      The actor is the file and its callers sharing string objects. The required outcome is explicit ownership and safe mutation; the constraints are literal immutability, caller expectations, allocation, and Ruby version; the unknown is whether a downstream library mutates the value.
     claim_map:
-      fact: The prompt explicitly tests Strings and mutation within a Ruby context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Strings and
-        mutation, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Strings and mutation constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Strings and mutation: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        frozen_string_literal makes string literals in the file immutable, so an in-place mutation fails rather than silently changing shared literal state; it does not prove every string is frozen or guarantee a performance saving.
+      inference: >-
+        The pragma is useful as an ownership signal, while a mutable library boundary may require an explicit dup or a documented read-only contract.
+      assumption: >-
+        I am assuming the file's literals are the values at risk and that the caller can accept either a duplicated mutable value or a failed mutation.
+      unknown: >-
+        The library's mutation behavior, Ruby version, allocation profile, and ownership of returned strings are not shown.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Strings and mutation
-        benefit: It keeps the Strings and mutation reasoning close to the stated Ruby
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Strings and mutation workload or
-          requirement changes beyond the prompt.
-        valid_when: Use it when the stated Strings and mutation contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Strings and mutation
-        benefit: It can make the Strings and mutation boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Strings and mutation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Strings and mutation option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        Ruby constraint makes the first assumption unsafe.
+      - option: frozen literals with read-only ownership
+        benefit: Fails accidental mutation early and avoids silently changing shared literal
+          state.
+        cost_or_risk: A mutating consumer must adapt or receive a separate mutable object.
+        valid_when: Use it when callers read the value and the file-level ownership signal
+          is useful.
+      - option: explicit dup at a mutating boundary
+        benefit: Gives the library a mutable object without exposing shared literal ownership.
+        cost_or_risk: Allocates and can hide a still-unclear ownership contract if used
+          everywhere.
+        valid_when: Use it when a real downstream API mutates the value and the allocation
+          fits the measured budget.
+      decision_rule: I would keep the pragma for literal ownership and early failure, then
+        use dup only at a boundary that requires mutation; I would claim allocation benefit
+        only after profiling.
     failure_probe:
-      kind: edge_case
-      prompt: 'Strings and mutation: where does the Strings and mutation premise need
-        a boundary check, and which result would make you reframe Strings and mutation?'
+      kind: counterexample
+      prompt: >-
+        Which mutation test would expose a broken ownership contract, and which allocation measurement would change your use of dup or your performance claim without changing the pragma's semantics?
     evidence_check:
-      basis: Check the Strings and mutation claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the file-level pragma, the library call, and a mutation test on the installed Ruby version; profile allocations separately from semantic behavior.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Strings and mutation,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        The pragma's semantic scope is clear, but this prompt does not provide the library implementation or a hot-path allocation trace.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Strings and mutation
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What does the frozen string literal comment", update
-        Strings and mutation when Strings and mutation evidence—a Strings and mutation
-        trace or Strings and mutation test—contradicts the Strings and mutation constraint
-        in case "What does the frozen string literal comment"; ask a stakeholder about
-        Strings and mutation before revising.
+      rationale: >-
+        The ownership signal is clear, while the performance claim and boundary fix depend on the unseen library and workload.
+      update_trigger: >-
+        I would change the recommendation if the mutation test shows the library owns the value, or if profiling shows duplication violates the memory budget.
     rubric:
-      facts_correct: Names the verified Strings and mutation facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Strings and mutation premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Strings and mutation options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Strings and mutation choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Strings and mutation
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Strings and mutation recommendation.
+      facts_correct: >-
+        States the file-literal scope and early mutation failure without promising deduplication.
+      assumptions_explicit: >-
+        Names the library mutation and object-ownership assumptions.
+      alternatives_considered: >-
+        Compares frozen read-only ownership with an explicit duplicate for mutable callers.
+      tradeoff_quality: >-
+        Connects early failure and safety to duplication cost and measured allocation.
+      follow_up_adaptation: >-
+        Moves the ownership decision to the boundary when a mutating library is introduced.
+      certainty_calibration: >-
+        Keeps semantics firm while making performance conditional on the measured path.
+
+
 - id: ruby-09-testing-boundaries
   version: 1.4.0
   target: ruby
@@ -1727,10 +1666,10 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      I mock at the edges I do not own, so third-party HTTP and clock
-      or random sources, and let everything inside my boundary run for real. I would
-      compare that choice with the credible alternative against the requirement in the follow-up, cost,
-      and failure risk, then switch only if evidence makes the alternative safer.
+      I would mock third-party HTTP and clock or random sources that I do not own, while
+      running the code inside my boundary for real. I would keep a collaborator real when
+      its behavior is part of the confidence I need, and I would test the observable
+      failure that justifies any mock.
     distractors:
     - text: I would defend the first Testing option because offering an alternative
         might make the decision look uncertain.
@@ -1808,20 +1747,21 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: ruby-09-testing-boundaries-delayed-9
-      prompt: 'Testing: the later Testing review says a trace of Testing isolates
-        a different Testing bottleneck than the one you named. Under new Testing evidence
-        contradicts the Testing assumption that made the first option attractive,
-        which part of Testing survives and which Testing claim changes?'
-      changed_constraint: new Testing evidence contradicts the Testing assumption
-        that made the first option attractive
-      new_evidence: a trace of Testing isolates a different Testing bottleneck than
-        the one you named
-      best_answer: I would keep the facts that remain supported about Testing, treat
-        a trace of Testing isolates a different Testing bottleneck than the one you
-        named as new evidence rather than a result, and state the updated decision
-        rule under new Testing evidence contradicts the Testing assumption that made
-        the first option attractive. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A test trace shows the mock hides a retry bug at the HTTP boundary, while a real
+        collaborator makes the suite slow. Which testing claim survives and what seam would you
+        change?
+      changed_constraint: >-
+        the test must expose retry behavior without depending on an unbounded external service or an
+        unacceptably slow suite
+      new_evidence: >-
+        the trace shows the mock omitted a retry path and a real collaborator exceeds the suite time
+        budget
+      best_answer: >-
+        I would keep the boundary rule, but I would narrow the claim that one mock is enough. I
+        would use a deterministic fake or contract fixture that exercises timeout and retry
+        responses, keep the application seam real, and measure suite time before choosing a narrower
+        integration test.
       distractors:
       - text: I would preserve every part of the original Testing answer because changing
           it after review would be inconsistent.
@@ -1839,75 +1779,73 @@ items:
     path: english-arcade/ruby/testing-boundaries
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Testing: inspect Testing evidence next; which edge case for Testing would
-      alter the trade-off?'
-    goal: Move from the short Testing answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      A mock hides an HTTP retry bug while a real collaborator slows the suite: choose a deterministic contract fixture and name the behavior it must expose?
+    goal: >-
+      Choose the narrow external fake and owned integration seam that exposes timeout and retry behavior.
   critical_thinking:
-    problem_frame: 'Frame Testing before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      The actor is the application boundary and its external collaborators. The required outcome is confidence in application behavior; the constraints are ownership, third-party variability, retry/clock nondeterminism, and suite time; the unknown is which collaborator behavior the test must prove.
     claim_map:
-      fact: The prompt explicitly tests Testing within a Ruby context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Testing,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Testing constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Testing: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A mock can control a collaborator outside the application boundary, while mocking an object the application owns can hide the behavior the test should exercise.
+      inference: >-
+        Mocking third-party HTTP or time can make failure paths deterministic, but the application's request, retry, and state transitions should run through their real seam when those are the behavior under test.
+      assumption: >-
+        I am assuming the HTTP provider and clock are outside the team's contract and that a deterministic fake can represent their timeout and retry responses.
+      unknown: >-
+        The actual seam, contract coverage, suite budget, and retry bug hidden by the current mock are not visible in the prompt.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Testing
-        benefit: It keeps the Testing reasoning close to the stated Ruby constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Testing workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Testing contract and its invariant are
-          the facts that matter most.
-      - option: an explicit object or loop boundary for Testing
-        benefit: It can make the Testing boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Testing evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Testing option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Ruby constraint
-        makes the first assumption unsafe.
+      - option: deterministic fake or mock for an unowned provider
+        benefit: Controls timeouts and provider responses so the application failure path
+          is repeatable.
+        cost_or_risk: A broad mock can hide retry or request-shape bugs at the application
+          seam.
+        valid_when: Use it for third-party HTTP, clock, or random sources while keeping
+          owned behavior real.
+      - option: focused integration or contract fixture
+        benefit: Exercises the application seam and catches retry/state behavior a mock
+          may skip.
+        cost_or_risk: Runs more slowly and needs a maintained provider contract.
+        valid_when: Use it when the behavior under test includes request wiring, retries,
+          or owned collaborator interaction.
+      decision_rule: I would mock or fake the third-party HTTP and clock boundary, keep
+        owned collaborators real, and add a contract or integration fixture for the retry
+        behavior a mock could hide.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Testing: if the Testing decision fails under plausible load or a difficult
-        turn, what consequence appears first, and how would you contain Testing?'
+      kind: counterexample
+      prompt: >-
+        Which timeout or retry response would a broad mock hide, and what real seam would you exercise?
     evidence_check:
-      basis: Check the Testing claim against system-design-estudos/areas/09-backend-principles/cards/testing-code-quality.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Compare the test's mocked calls with the observable behavior at the application boundary and run deterministic timeout/retry fixtures.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Testing, but it cannot
-        prove an unmeasured production outcome, personal ownership, or universal rule.
+      limitation: >-
+        The exercise does not reveal every external contract or the suite's acceptable runtime.
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Testing question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How do you decide what to mock", update Testing when
-        Testing evidence—a Testing trace or Testing test—contradicts the Testing constraint
-        in case "How do you decide what to mock"; ask a stakeholder about Testing
-        before revising.
+      rationale: >-
+        The ownership boundary is a reliable test-design principle, but the exact seam and hidden retry failure need inspection.
+      update_trigger: >-
+        I would change the seam when a contract fixture exposes behavior the mock concealed or when real collaborator execution becomes the relevant confidence target.
     rubric:
-      facts_correct: Names the verified Testing facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Testing premise that is still assumed and asks
-        the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Testing options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Testing choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Testing by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Testing recommendation.
+      facts_correct: >-
+        Distinguishes external nondeterminism from owned behavior and names the retry bug a broad mock can hide.
+      assumptions_explicit: >-
+        States which collaborators are outside the contract and what the fake must model.
+      alternatives_considered: >-
+        Compares broad mocks, deterministic fakes, and a focused integration test at the actual boundary.
+      tradeoff_quality: >-
+        Balances suite speed and determinism against confidence in retry and state behavior.
+      follow_up_adaptation: >-
+        Changes the seam when the new trace shows the mock hides an application bug.
+      certainty_calibration: >-
+        Uses high confidence for the boundary rule while leaving the exact test seam evidence-dependent.
+
+
 - id: ruby-10-legacy-refactor
   version: 1.4.0
   target: ruby
@@ -1924,10 +1862,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I inherited a billing calculation with no tests and a lot of branching. If
-      the failure in the follow-up appears, I would name the user or system consequence,
-      contain it with a bounded mitigation, and verify recovery with a focused test or
-      metric.
+      I would capture a real input and expected current output as a characterization test,
+      then change one legacy branch at a time. I would keep the test suite as a safety net,
+      but I would still record which behavior remains uncertain because a captured output
+      preserves behavior without proving that the old rule was correct.
     distractors:
     - text: I would describe the Working with legacy code failure as impossible because
         the happy path already passed its test.
@@ -2007,25 +1945,20 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-10-legacy-refactor-delayed-10
-      prompt: 'Review note for Working with legacy code: a code inspection of Working
-        with legacy code confirms the Working with legacy code mechanism but not its
-        impact. Given two Working with legacy code callers from the case "Tell me
-        about a time you had" or Working with legacy code tenants now compete for
-        the same Working with legacy code boundary, what would you now defend, retract,
-        and verify about Working with legacy code?'
-      changed_constraint: two Working with legacy code callers from the case "Tell
-        me about a time you had" or Working with legacy code tenants now compete for
-        the same Working with legacy code boundary
-      new_evidence: a code inspection of Working with legacy code confirms the Working
-        with legacy code mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Working with
-        legacy code, treat a code inspection of Working with legacy code confirms
-        the Working with legacy code mechanism but not its impact as new evidence
-        rather than a result, and state the updated decision rule under two Working
-        with legacy code callers from the case "Tell me about a time you had" or Working
-        with legacy code tenants now compete for the same Working with legacy code
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        A characterization test captures one billing path, but a second caller depends on an
+        undocumented branch and the legacy behavior conflicts with the new requirement. What would
+        you defend, retract, and verify?
+      changed_constraint: >-
+        the refactor must protect both callers while making the changed billing requirement explicit
+      new_evidence: >-
+        a second caller exposes an undocumented branch and the new requirement conflicts with
+        captured legacy behavior
+      best_answer: >-
+        I would keep the characterization test as evidence of current behavior, but I would retract
+        the idea that preserving it alone proves correctness. I would add the second caller and the
+        new requirement to the contract tests, ask which behavior is authoritative, and refactor
+        only after that decision is recorded.
       distractors:
       - text: I would preserve every part of the original Working with legacy code
           answer because changing it after review would be inconsistent.
@@ -2043,84 +1976,73 @@ items:
     path: english-arcade/ruby/legacy-refactor
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Deep dive on Working with legacy code: compare Working with legacy code
-      options with one measurement; which failure around Working with legacy code
-      would make Working with legacy code switch?'
-    goal: Move from the short Working with legacy code answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: >-
+      A second caller conflicts with the first characterization output and a new billing rule: identify the authoritative contract before extracting a branch?
+    goal: >-
+      Resolve the second caller and new billing requirement before changing the characterization-protected branch.
   critical_thinking:
-    problem_frame: 'Frame Working with legacy code before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      I would name the real caller, branch, and contract owner from my own legacy-change example. Billing is the authored example here, not a verified fact about my experience. The goal is to preserve intended behavior while separating contractual requirements from accidental output.
     claim_map:
-      fact: The prompt explicitly tests Working with legacy code within a Ruby context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Working with
-        legacy code, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Working with legacy code constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Working with legacy code: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A characterization test records current output for a real input, but it does not establish that the old billing rule is correct.
+      inference: >-
+        Capturing current behavior before extracting branches gives a regression signal, while a conflicting new requirement requires an explicit decision about which contract is authoritative.
+      assumption: >-
+        I am assuming the captured input represents a caller that must remain compatible and that its expected output can be reviewed by the behavior owner.
+      unknown: >-
+        The second caller's undocumented branch, edge-case inputs, and approved interpretation of the new requirement are not established.
     comparison:
       applicable: true
       alternatives:
-      - option: the narrow Ruby construct in the contract for Working with legacy
-          code
-        benefit: It keeps the Working with legacy code reasoning close to the stated
-          Ruby constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Working with legacy code workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Working with legacy code contract and its
-          invariant are the facts that matter most.
-      - option: an explicit object or loop boundary for Working with legacy code
-        benefit: It can make the Working with legacy code boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Working with legacy code evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Working with legacy code option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        Ruby constraint makes the first assumption unsafe.
+      - option: characterization tests before extraction
+        benefit: Preserves observed caller behavior while making branch changes reviewable.
+        cost_or_risk: Captures accidental behavior and does not decide whether the old billing
+          rule is correct.
+        valid_when: Use it when callers are unknown and current behavior must be protected
+          before refactoring.
+      - option: rewrite directly from the new requirement
+        benefit: Can remove legacy complexity quickly when the new contract is authoritative
+          and callers are known.
+        cost_or_risk: Can break an undocumented caller and erase evidence needed to resolve
+          conflicts.
+        valid_when: Use it only after the behavior owner resolves which contract supersedes
+          the old result.
+      decision_rule: I would capture representative behavior, add the second caller and
+        new requirement as contract cases, then refactor one branch at a time after the
+        conflict is resolved.
     failure_probe:
-      kind: counterexample
-      prompt: 'Working with legacy code: which adversarial Working with legacy code
-        example could disprove the recommendation, and what evidence about Working
-        with legacy code would you request?'
+      kind: edge_case
+      prompt: >-
+        Which second caller or requirement would invalidate a characterization-only refactor, and how would you resolve it?
     evidence_check:
-      basis: Check the Working with legacy code claim against system-design-estudos/interview/story-bank/01-ruby-rails-backend-story-bank.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Use characterization tests for current outputs and reviewed contract tests for the new rule, with the second caller included before changing branches.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Working with legacy
-        code, but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        A captured result cannot prove business correctness or cover callers that were not found.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Working with legacy
-        code question but does not reveal every workload, stakeholder priority, or
-        outcome.
-      update_trigger: For case "Tell me about a time you had", update Working with
-        legacy code when Working with legacy code evidence—a Working with legacy code
-        trace or Working with legacy code test—contradicts the Working with legacy
-        code constraint in case "Tell me about a time you had"; ask a stakeholder
-        about Working with legacy code before revising.
+      rationale: >-
+        The safety sequence is sound, but the authority between legacy behavior and the new requirement is absent.
+      update_trigger: >-
+        I would revise the implementation when the behavior owner resolves the conflict or a boundary case exposes another caller dependency.
     rubric:
-      facts_correct: Names the verified Working with legacy code facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Working with legacy code premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Working with legacy code options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Working with legacy code choice to a benefit,
-        a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Working with legacy
-        code by changing the claim or evidence boundary rather than repeating the
-        base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Working with legacy code recommendation.
+      facts_correct: >-
+        Separates current behavior evidence from correctness of the old billing rule.
+      assumptions_explicit: >-
+        Names the caller and requirement ownership questions before refactoring.
+      alternatives_considered: >-
+        Compares characterization-first extraction with a rewrite and explains each regression risk.
+      tradeoff_quality: >-
+        Balances compatibility against preserving a potentially wrong legacy result.
+      follow_up_adaptation: >-
+        Adds the second caller and new requirement rather than blindly preserving or replacing the first test.
+      certainty_calibration: >-
+        Treats the sequence as reliable while keeping the business contract unresolved.
+
+
 - id: ruby-11-symbol-vs-string
   version: 1.4.0
   target: ruby
@@ -2138,10 +2060,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Symbols are reused rather than recreated, so the same key does not allocate a
-      new object every time it appears. I would keep the claims that remain supported,
-      identify exactly which premise the new observation changes, and run a focused check before
-      revising the decision.
+      I would keep untrusted or frequently generated keys as strings until I know the
+      cardinality and memory budget. I would compare symbol and string lookup cost under
+      that distribution, then check retained-key counts rather than assuming symbol reuse
+      is free.
     distractors:
     - text: I would keep the Symbols and memory recommendation unchanged because changing
         position would look inconsistent.
@@ -2156,9 +2078,11 @@ items:
       for external input.
     goal: Compress the Symbols and memory answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Symbols are reused rather than recreated, so the same key does not
-    allocate a new object every time it appears. That makes them cheap for fixed identifiers
-    like configuration keys, where the set of names is known and small.
+  best_answer: >-
+    I choose symbols for bounded internal identifiers whose names I control, such as a
+    fixed configuration key set. For untrusted or high-cardinality input I keep strings
+    unless I have measured a reason to do otherwise, because I do not want key growth to
+    become an unbounded memory assumption.
   distractors:
   - text: Because symbols are faster than strings in Ruby, so using them for keys
       makes the code perform better overall, which matters quite a lot in a large
@@ -2219,22 +2143,20 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-11-symbol-vs-string-delayed-11
-      prompt: New evidence about Symbols and memory says a measured Symbols and memory
-        comparison shows the alternative has a different Symbols and memory cost profile;
-        with the Symbols and memory workload for Symbols and memory no longer fits
-        the original resource bound, how do you update the Symbols and memory decision
-        rule?
-      changed_constraint: the Symbols and memory workload for Symbols and memory no
-        longer fits the original resource bound
-      new_evidence: a measured Symbols and memory comparison shows the alternative
-        has a different Symbols and memory cost profile
-      best_answer: I would keep the facts that remain supported about Symbols and
-        memory, treat a measured Symbols and memory comparison shows the alternative
-        has a different Symbols and memory cost profile as new evidence rather than
-        a result, and state the updated decision rule under the Symbols and memory
-        workload for Symbols and memory no longer fits the original resource bound.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        A retained-key profile shows untrusted symbols accumulating, while a benchmark shows strings
+        are slower for a bounded internal key set. Which symbol assumption is no longer safe?
+      changed_constraint: >-
+        internal keys may use the faster representation, but untrusted key cardinality must remain
+        bounded
+      new_evidence: >-
+        the profile shows retained untrusted symbols growing and the benchmark separates the bounded
+        internal case
+      best_answer: >-
+        I would keep symbols for the bounded internal key set, but I would retract any
+        recommendation that applies them to untrusted high-cardinality input. I would switch
+        external keys to strings, cap or reject unexpected names, and verify retained-key counts
+        after the change.
       distractors:
       - text: I would preserve every part of the original Symbols and memory answer
           because changing it after review would be inconsistent.
@@ -2252,72 +2174,71 @@ items:
     path: english-arcade/ruby/symbol-vs-string
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Defend Symbols and memory after a counterexample: which Symbols and memory
-      assumption changes, and what evidence keeps the revised Symbols and memory choice
-      honest?'
-    goal: Move from the short Symbols and memory answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      Retained-key profiling shows untrusted symbols accumulating: switch only the external boundary, preserve bounded internal keys, and state the memory check?
+    goal: >-
+      Keep bounded internal symbols separate from untrusted high-cardinality strings using retained-key evidence.
   critical_thinking:
-    problem_frame: 'Frame Symbols and memory before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      The actor is the hash-key boundary receiving either controlled identifiers or untrusted input. The required outcome is bounded memory with correct lookup; the constraints are key cardinality, ownership, and lookup workload; the unknown is whether names are fixed or attacker/user generated.
     claim_map:
-      fact: The prompt explicitly tests Symbols and memory within a Ruby context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Symbols and
-        memory, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Symbols and memory constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Symbols and memory: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Symbols are useful for a bounded set of internal identifiers, while untrusted high-cardinality keys can make retained key growth an unsafe assumption; strings preserve the external data as data.
+      inference: >-
+        The key's source and cardinality matter more than a blanket symbol-versus-string speed slogan.
+      assumption: >-
+        I am assuming the configuration key set is finite and controlled, while request-derived names may be arbitrary.
+      unknown: >-
+        The actual cardinality, Ruby version, retained-key profile, and memory ceiling are not supplied.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Symbols and memory
-        would be a false equivalence because the prompt does not establish that both
-        choices satisfy the same contract.
-      hard_constraint: The hard Symbols and memory constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Symbols and memory; first
-        clarify the constraint or collect the evidence that would make two options
-        genuinely comparable.
+      applicable: true
+      alternatives:
+      - option: symbols for a bounded internal vocabulary
+        benefit: Keeps controlled configuration identifiers clear and stable.
+        cost_or_risk: Becomes unsafe if names are accepted from an unbounded external source.
+        valid_when: Use it when ownership and cardinality are finite and documented.
+      - option: strings for untrusted or high-cardinality keys
+        benefit: Preserves external data without turning every unique name into retained
+          symbol state.
+        cost_or_risk: May have different lookup/allocation behavior and needs its own memory
+          measurement.
+        valid_when: Use it at request or user input boundaries until cardinality and memory
+          evidence support another choice.
+      decision_rule: I would use symbols for a bounded internal vocabulary and strings for
+        untrusted or high-cardinality input, then measure lookup and retained-key counts
+        before changing that boundary.
     failure_probe:
-      kind: edge_case
-      prompt: 'Symbols and memory: which empty or extreme Symbols and memory case
-        would expose the hidden assumption, and what would you measure about Symbols
-        and memory?'
+      kind: counterexample
+      prompt: >-
+        Which retained-key profile would show symbols are unsafe, and what boundary would you change?
     evidence_check:
-      basis: Check the Symbols and memory claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/05-ruby-on-rails-interview-surface-area.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check key provenance and cardinality, then use a retained-key profile and lookup benchmark on both the internal and external distributions.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Symbols and memory,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        A small benchmark cannot predict memory growth for an unbounded input stream or another Ruby implementation.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Symbols and memory
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why do Ruby developers use symbols for", update Symbols
-        and memory when Symbols and memory evidence—a Symbols and memory trace or
-        Symbols and memory test—contradicts the Symbols and memory constraint in case
-        "Why do Ruby developers use symbols for"; ask a stakeholder about Symbols
-        and memory before revising.
+      rationale: >-
+        The provenance rule is a safe default, but measured cardinality and the runtime determine whether performance changes justify another representation.
+      update_trigger: >-
+        I would revise the choice when retained-key counts exceed the budget or when a bounded internal benchmark shows a meaningful, safe win.
     rubric:
-      facts_correct: Names the verified Symbols and memory facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Symbols and memory premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Symbols and memory options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Symbols and memory choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Symbols and
-        memory by changing the claim or evidence boundary rather than repeating the
-        base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Symbols and memory recommendation.
+      facts_correct: >-
+        Connects symbols to bounded internal identifiers and strings to untrusted/high-cardinality data without claiming universal speed.
+      assumptions_explicit: >-
+        Names key source, cardinality, and memory-budget assumptions.
+      alternatives_considered: >-
+        Compares symbol and string representations on the actual internal and external distributions.
+      tradeoff_quality: >-
+        Weighs lookup convenience against retained-memory growth and identity preservation.
+      follow_up_adaptation: >-
+        Keeps symbols for bounded keys while changing the untrusted boundary when the profile shows accumulation.
+      certainty_calibration: >-
+        Treats provenance as a strong default and performance as measured evidence.
+
+
 - id: ruby-12-admitting-a-gap
   version: 1.4.0
   target: ruby
@@ -2335,9 +2256,10 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      I know the shape rather than the internals. I would label the follow-up premise
-      as an assumption, ask the smallest question that could disprove it, and protect the
-      edge case before committing to the recommendation.
+      I would say that I can verify the current Ractor isolation rule rather than guess.
+      I would check the installed Ruby documentation or a tiny experiment for shareable
+      and unshareable objects, record the version, and state the uncertainty in the
+      interview before claiming more.
     distractors:
     - text: I would repeat my original Handling unknowns answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -2352,10 +2274,11 @@ items:
       detail, and propose a verification step.'
     goal: Compress the Handling unknowns answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: I know the shape rather than the internals. Objects have to be shareable
-    or copied when they cross a Ractor boundary, which is what prevents shared mutable
-    state. I have not shipped one in production, so I would not want to guess at the
-    deeper mechanics.
+  best_answer: >-
+    I know the boundary rather than every internal detail: objects crossing a Ractor
+    boundary must satisfy Ruby's shareability rules or be transferred, which prevents
+    ordinary shared mutable state. I have not shipped one in production, so I would check
+    the installed version before claiming deeper mechanics.
   distractors:
   - text: Ractors use a message-passing model similar to actors, where each one has
       isolated memory and objects are deeply frozen automatically when they are sent
@@ -2417,20 +2340,20 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: ruby-12-admitting-a-gap-delayed-12
-      prompt: 'Handling unknowns gets a new constraint: a stakeholder asks for a stronger
-        Handling unknowns guarantee than the first Handling unknowns answer promised.
-        After a Handling unknowns test exposes a boundary case that the Handling unknowns
-        examples did not cover, which Handling unknowns assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Handling unknowns guarantee
-        than the first Handling unknowns answer promised
-      new_evidence: a Handling unknowns test exposes a boundary case that the Handling
-        unknowns examples did not cover
-      best_answer: I would keep the facts that remain supported about Handling unknowns,
-        treat a Handling unknowns test exposes a boundary case that the Handling unknowns
-        examples did not cover as new evidence rather than a result, and state the
-        updated decision rule under a stakeholder asks for a stronger Handling unknowns
-        guarantee than the first Handling unknowns answer promised. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: >-
+        A version-specific Ractor test contradicts your remembered isolation detail, and the
+        interviewer asks for a firm guarantee. Which claim would you narrow and how would you verify
+        it?
+      changed_constraint: >-
+        the answer must be version-specific and avoid a guarantee until the installed isolation
+        behavior is verified
+      new_evidence: >-
+        a test on the installed Ruby version contradicts the remembered Ractor detail
+      best_answer: >-
+        I would keep the boundary that I should not invent Ractor internals, but I would retract any
+        version-free guarantee. I would record the Ruby version, run the smallest shareability and
+        transfer experiment, and state exactly what the evidence supports before making a
+        recommendation.
       distractors:
       - text: I would preserve every part of the original Handling unknowns answer
           because changing it after review would be inconsistent.
@@ -2448,77 +2371,57 @@ items:
     path: english-arcade/ruby/admitting-a-gap
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Five more minutes on Handling unknowns: which boundary, alternative,
-      and update trigger would you explain for Handling unknowns?'
-    goal: Move from the short Handling unknowns answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      A version-specific Ractor experiment disagrees with memory: record the Ruby version and narrow the object-transfer claim to the tested evidence?
+    goal: >-
+      State the Ractor shareability boundary, then scope the claim to the installed version and tested object.
   critical_thinking:
-    problem_frame: 'Frame Handling unknowns before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      The actor is an interviewer asking about Ractor object transfer. The required outcome is an accurate version-scoped boundary, not a confident internal story; the constraints are shareability and transfer rules; the unknown is the installed Ruby version and the exact object crossing the boundary.
     claim_map:
-      fact: The prompt explicitly tests Handling unknowns within a Ruby context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Handling
-        unknowns, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Handling unknowns constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Handling unknowns: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Objects crossing a Ractor boundary must follow Ruby's shareability or transfer rules, and ordinary shared mutable state is not a safe assumption.
+      inference: >-
+        A versioned documentation check plus a tiny experiment is enough to answer the specific object case without inventing unverified Ractor internals.
+      assumption: >-
+        I am assuming the question concerns the installed Ruby runtime rather than one remembered from another release.
+      unknown: >-
+        The Ruby version, object type, transfer operation, and whether the object is deeply shareable are not given.
     comparison:
-      applicable: true
-      alternatives:
-      - option: the narrow Ruby construct in the contract for Handling unknowns
-        benefit: It keeps the Handling unknowns reasoning close to the stated Ruby
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Handling unknowns workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Handling unknowns contract and its invariant
-          are the facts that matter most.
-      - option: an explicit object or loop boundary for Handling unknowns
-        benefit: It can make the Handling unknowns boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Handling unknowns evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Handling unknowns option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Ruby
-        constraint makes the first assumption unsafe.
+      applicable: false
+      rejected_alternative: >-
+        Comparing Ractors with threads or processes before identifying the version and object would evade the knowledge boundary instead of answering the isolation question.
+      hard_constraint: >-
+        I must not promise a version-free isolation guarantee when the object and runtime have not been verified.
+      decision_rule: >-
+        I would state the shareability boundary, name the unknown version/object, and verify the exact case in the installed documentation or a focused experiment before extending the claim.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Handling unknowns: when the Handling unknowns constraint tightens during
-        rollout, what breaks first in Handling unknowns, and how do you observe it?'
+      kind: counterexample
+      prompt: >-
+        Which version and object experiment would falsify your Ractor claim, and how would you narrow it?
     evidence_check:
-      basis: Check the Handling unknowns claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Record the installed Ruby version, consult its Ractor documentation, and run the smallest shareability/transfer test that matches the interview question.
       source_kind: authored_scenario
-      limitation: This Ruby exercise can test reasoning about Handling unknowns, but
-        it cannot prove an unmeasured production outcome, personal ownership, or universal
-        rule.
+      limitation: >-
+        This exercise verifies a version and object case, not every Ractor implementation detail or production suitability.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Handling unknowns
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How does Ractor isolation actually work at", update
-        Handling unknowns when Handling unknowns evidence—a Handling unknowns trace
-        or Handling unknowns test—contradicts the Handling unknowns constraint in
-        case "How does Ractor isolation actually work at"; ask a stakeholder about
-        Handling unknowns before revising.
+      rationale: >-
+        The need for a shareability boundary is clear, but the exact transfer result is version- and object-dependent and intentionally unverified in the prompt.
+      update_trigger: >-
+        I would update the answer when the installed docs or experiment contradict a remembered rule, recording the version and narrowing the guarantee.
     rubric:
-      facts_correct: Names the verified Handling unknowns facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Handling unknowns premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Handling unknowns options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Handling unknowns choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Handling unknowns
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Handling unknowns recommendation.
+      facts_correct: >-
+        States the shareability/transfer boundary without inventing Ractor internals.
+      assumptions_explicit: >-
+        Names the missing Ruby version and object type.
+      alternatives_considered: >-
+        Explains why a broad threads/processes comparison cannot substitute for the requested versioned fact.
+      tradeoff_quality: >-
+        Connects honesty about the gap to a fast documentation and experiment path.
+      follow_up_adaptation: >-
+        Narrows a version-free guarantee when a test contradicts memory.
+      certainty_calibration: >-
+        Uses medium certainty for the boundary and labels exact mechanics as needing verification.

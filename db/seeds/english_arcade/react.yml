@@ -53,48 +53,47 @@ target:
 cards:
 - id: react-card-effect-purpose
   front: When is useEffect the right tool?
-  back: Only for synchronising with something outside React. Derived values belong
-    in render; event responses belong in handlers.
+  back: I use useEffect only when I need to synchronise with something outside
+    React. I derive values during render and handle event responses in event handlers.
   box: 1
   source:
     repo: original
     path: english-arcade/react/effect-purpose
     note: Authored for this pack; the corpus has no React effects reference.
   critical_thinking:
-    cue: When is useEffect the right tool? Before answering, separate the stated fact
-      from your assumption and name one condition that could change it.
-    check: For this React card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: Is this work deriving a value during render or synchronising with an external
+      system? Name the assumption that could make an effect unnecessary.
+    check: Can I choose render-time derivation or an effect, name the stale-state or
+      cleanup failure, and state the trace that would change my choice?
 - id: react-card-accessibility
   front: How do you justify a semantic element over a div?
-  back: 'By what assistive technology receives: a button gets focus, keyboard activation
-    and a role for free; a div gets none of them.'
+  back: >-
+    I prefer a native button when the control is a button: I get focus, keyboard
+    activation, and the button role without rebuilding them on a div.
   box: 1
   source:
     repo: original
     path: english-arcade/react/accessibility-justification
     note: Authored for this pack; no accessibility card exists in the corpus.
   critical_thinking:
-    cue: How do you justify a semantic element over a div? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this React card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: Is the control an action, navigation, or widget trigger? Name the keyboard,
+      focus, name, and state behavior that my element choice must preserve.
+    check: Can I compare a native element with a custom div, name the user-visible
+      failure, and state the keyboard or screen-reader test that would update the choice?
 - id: react-card-measure-first
   front: How should you open a React performance answer?
-  back: With the measurement, not the fix. Profile, find what re-renders and why,
-    then decide whether memoisation is even relevant.
+  back: I start with a measurement, not the fix. I profile what re-renders and why,
+    then decide whether memoisation is relevant.
   box: 2
   source:
     repo: system-design-estudos
     path: areas/09-backend-principles/cards/scaling-performance.md
     note: Measure-before-change discipline applied to the client.
   critical_thinking:
-    cue: How should you open a React performance answer? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this React card, can you compare two options, name one failure mode,
-      and state what evidence would update the recommendation?
+    cue: What work is actually expensive, and which prop identity or measurement is
+      still unknown? Treat the profile as evidence rather than as a memo slogan.
+    check: Can I compare profiling with memoisation, name the unstable-prop failure,
+      and state the trace that would justify or reject the optimisation?
 items:
 - id: react-01-state-ownership
   version: 1.4.0
@@ -114,9 +113,9 @@ items:
     challenge_kind: assumption
     best_answer: >-
       I would lift the state to their closest common parent and pass it down,
-      since that is the smallest change that keeps one source of truth. I would
-      label the follow-up premise as an assumption, ask the smallest question that could disprove
-      it, and protect the edge case before committing to the recommendation.
+      since that is the smallest change that keeps one source of truth. If both
+      siblings update it, I would keep the update path in that parent and ask
+      whether the value crosses an independent subtree before considering context.
     distractors:
     - text: I would repeat my original State ownership answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -195,21 +194,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-01-state-ownership-delayed-1
-      prompt: 'State ownership: the later State ownership review says a trace of State
-        ownership isolates a different State ownership bottleneck than the one you
-        named. Under the State ownership workload for State ownership no longer fits
-        the original resource bound, which part of State ownership survives and which
-        State ownership claim changes?'
-      changed_constraint: the State ownership workload for State ownership no longer
-        fits the original resource bound
-      new_evidence: a trace of State ownership isolates a different State ownership
-        bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about State ownership,
-        treat a trace of State ownership isolates a different State ownership bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under the State ownership workload for State ownership
-        no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: A third screen now needs the selected account from an unrelated subtree.
+        A trace shows four intermediate components only pass that value through. Which
+        part of your state-ownership recommendation survives, and what changes?
+      changed_constraint: the selected account must cross an unrelated subtree without
+        creating a second source of truth
+      new_evidence: a trace shows four intermediate components pass selectedAccount
+        without reading or updating it
+      best_answer: >-
+        I would keep one source of truth and place its owner where it can serve both siblings
+        and the third screen. Context could expose that same value across the unrelated
+        subtree without passing it through four intermediate components. I would test an
+        update from each consumer and verify that all three show the same selected account
+        before considering a separate store.
       distractors:
       - text: I would preserve every part of the original State ownership answer because
           changing it after review would be inconsistent.
@@ -227,37 +224,52 @@ items:
     path: english-arcade/react/state-ownership
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'State ownership: inspect State ownership evidence next; which edge case
-      for State ownership would alter the trade-off?'
-    goal: Move from the short State ownership answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      If a settings screen reads and updates selectedAccount through four pass-through
+      components, what trace would justify context and when would a store add value?
+    goal: Defend the state boundary with a concrete scale condition, a cost, and a
+      check for duplicated or unclear ownership.
   critical_thinking:
-    problem_frame: 'Frame State ownership before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would first name the two sibling consumers, the shared update path, and the smallest
+      common owner; the unknown is whether a distant branch makes that owner awkward.
     claim_map:
-      fact: The prompt explicitly tests State ownership within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend State ownership,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the State ownership constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for State ownership: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The prompt gives me two sibling components that need and update one value; it does not
+        give me a distant consumer, a store, or a measured prop-drilling problem.
+      inference: >-
+        I infer that the closest common parent is a reasonable first owner because it can keep
+        the siblings on one source of truth; I would revisit that if the value crosses unrelated
+        branches.
+      assumption: >-
+        I am assuming the common parent already owns the relevant interaction and will not
+        become a dumping ground; I would ask whether another subtree must read or edit the
+        value.
+      unknown: >-
+        I still need the number of levels and consumers, update frequency, and ownership of
+        writes before judging context or a store.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about State ownership would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard State ownership constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for State ownership; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      applicable: true
+      alternatives:
+      - option: lift the value to the closest common parent
+        benefit: I keep one source of truth and make both sibling update paths explicit.
+        cost_or_risk: Prop plumbing grows when the value crosses unrelated branches,
+          and the parent may own state it does not otherwise understand.
+        valid_when: Use it for a value shared by nearby siblings or one subtree.
+      - option: use context or an external store for wider ownership
+        benefit: I avoid passing a value through components that neither read nor update
+          it when several distant branches genuinely share it.
+        cost_or_risk: I add a broader subscription and ownership surface, which can hide
+          dependencies or create a second source of truth.
+        valid_when: Use it only when distance or cross-branch ownership justifies the
+          wider boundary and the owner remains clear.
+      decision_rule: Lift first for nearby siblings; choose context or a store only when
+        measured prop distance or cross-branch ownership makes the local boundary costly.
     failure_probe:
       kind: counterexample
-      prompt: 'State ownership: what minimum input for State ownership would break
-        the State ownership recommendation, and how would you revise the State ownership
-        claim?'
+      prompt: If the selected account must be edited by two siblings and read by a
+        distant settings subtree, what evidence would make the parent boundary too
+        costly, and how would you revise ownership?
     evidence_check:
       basis: Check the State ownership claim against system-design-estudos/interview/story-bank/02-react-react-native-story-bank.md
         and the exact interview context; record whether each part is fact, inference,
@@ -268,28 +280,34 @@ items:
         rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the State ownership question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Two sibling components need the same value.", update
-        State ownership when State ownership evidence—a State ownership trace or State
-        ownership test—contradicts the State ownership constraint in case "Two sibling
-        components need the same value."; ask a stakeholder about State ownership
-        before revising.
+      level: medium
+      rationale: >-
+        I am confident that nearby siblings can share a lifted owner, but the boundary should
+        change if a trace shows unrelated branches carrying the value or independent owners
+        needing it.
+      update_trigger: >-
+        I would revise this recommendation after observing four pass-through levels, a distant
+        settings consumer, or duplicated write ownership; I would verify that a wider boundary
+        removes that cost without creating competing sources of truth.
     rubric:
-      facts_correct: Names the verified State ownership facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the State ownership premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible State ownership options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the State ownership choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about State ownership
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the State ownership recommendation.
+      facts_correct: >-
+        States that two nearby siblings can share one lifted owner and keeps any distant-branch
+        condition separate from the facts supplied by the prompt.
+      assumptions_explicit: >-
+        Names the unverified distance and write ownership, then asks whether another subtree
+        reads or edits the value.
+      alternatives_considered: >-
+        Compares a common parent with context or a store in terms of consumer distance,
+        subscriptions, and ownership clarity.
+      tradeoff_quality: >-
+        Connects the local owner to one source of truth and names prop plumbing or broader
+        subscriptions as the relevant costs.
+      follow_up_adaptation: >-
+        When a distant settings subtree appears, changes the boundary recommendation and asks
+        for evidence instead of repeating the local default.
+      certainty_calibration: >-
+        Uses medium confidence for the local default and names the trace or ownership evidence
+        that would justify a broader boundary.
 - id: react-02-effect-misuse
   version: 1.4.0
   target: react
@@ -307,9 +325,10 @@ items:
       explicit.
     challenge_kind: evidence
     best_answer: >-
-      Because it is derived data, not synchronisation. I would treat the follow-up observation as
-      evidence, not as proof of impact; I would inspect the smallest relevant trace or
-      test and state what remains uncertain before changing the decision.
+      Because it is derived data, not synchronisation. I would compute the filtered
+      list during render, and I would use an effect only if the work synchronised with
+      something outside React. I would verify that a source update cannot leave the
+      list and its source out of step for one render.
     distractors:
     - text: I would cite my experience with Effects as enough proof and move on without
         naming an observation.
@@ -387,20 +406,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-02-effect-misuse-delayed-2
-      prompt: 'Review note for Effects: a code inspection of Effects confirms the
-        Effects mechanism but not its impact. Given a stakeholder asks for a stronger
-        Effects guarantee than the first Effects answer promised, what would you now
-        defend, retract, and verify about Effects?'
-      changed_constraint: a stakeholder asks for a stronger Effects guarantee than
-        the first Effects answer promised
-      new_evidence: a code inspection of Effects confirms the Effects mechanism but
-        not its impact
-      best_answer: I would keep the facts that remain supported about Effects, treat
-        a code inspection of Effects confirms the Effects mechanism but not its impact
-        as new evidence rather than a result, and state the updated decision rule
-        under a stakeholder asks for a stronger Effects guarantee than the first Effects
-        answer promised. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: A new requirement adds a websocket subscription, while a render trace
+        shows the filtered list lags its source by one render. Which part of your
+        effects recommendation survives, and what changes?
+      changed_constraint: the screen must subscribe to a websocket while keeping its
+        filtered list deterministic on every render
+      new_evidence: a render trace shows effect-written filtered state is one render
+        behind the source list after the query changes
+      best_answer: >-
+        I would keep filtering in render so the list uses the current source immediately. I
+        would put the websocket subscription in an effect and return cleanup that disconnects
+        the old subscription. I would test a source change and a subscription change
+        separately: the first must not display a stale list, and the second must not leave
+        duplicate listeners.
       distractors:
       - text: I would preserve every part of the original Effects answer because changing
           it after review would be inconsistent.
@@ -415,46 +433,52 @@ items:
     path: english-arcade/react/effect-misuse
     note: Authored for this pack; corpus has no React effects reference.
   extension:
-    prompt: 'Deep dive on Effects: compare Effects options with one measurement; which
-      failure around Effects would make Effects switch?'
-    goal: Move from the short Effects answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      If filtering costs 18ms but websocket cleanup is separate, which timing would I profile
+      and which teardown or reconnect test would I run?
+    goal: Distinguish render-time derivation from external synchronisation and name
+      the failure check that would change the implementation.
   critical_thinking:
-    problem_frame: 'Frame Effects before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would separate the pure filtered-list calculation from the websocket boundary; the
+      question is whether render must stay current and whether any external subscription needs
+      cleanup.
     claim_map:
-      fact: The prompt explicitly tests Effects within a React context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Effects,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Effects constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Effects: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The described code stores the filtered array in state and recomputes it in an effect;
+        the context also gives a one-render lag and a separate websocket requirement.
+      inference: >-
+        I infer that render-time derivation keeps the source and filtered list aligned, while an
+        effect belongs to the websocket boundary.
+      assumption: >-
+        I am assuming filtering is a pure calculation rather than an external write; I would ask
+        whether the list calculation or subscription has a measured cost.
+      unknown: >-
+        I still need the list size, calculation profile, websocket cleanup and reconnect
+        behavior, and whether requests can race.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Effects
-        benefit: It keeps the Effects reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Effects workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Effects contract and its invariant are
-          the facts that matter most.
-      - option: a wider state or memoisation layer for Effects
-        benefit: It can make the Effects boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Effects evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Effects option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant React constraint
-        makes the first assumption unsafe.
+      - option: derive the filtered list during render
+        benefit: It keeps the list and source in step without an extra state-setting
+          render or a stale intermediate value.
+        cost_or_risk: Repeated filtering can matter if the list or calculation is large,
+          so I would measure before adding memoisation.
+        valid_when: Use it when filtering is a pure calculation over current props or
+          state and does not synchronise with an external system.
+      - option: synchronise an external subscription in an effect
+        benefit: It gives a websocket, request, or non-React widget an explicit setup
+          and cleanup boundary.
+        cost_or_risk: It introduces cleanup and race handling, and it is the wrong tool
+          for values that can be derived during render.
+        valid_when: Use it only when work must stay in sync with something outside React.
+      decision_rule: Derive the filtered list during render; choose an effect only for
+        the external subscription or other non-React synchronisation, with cleanup and
+        a race test.
     failure_probe:
       kind: edge_case
-      prompt: 'Effects: what Effects limit should you probe before trusting the answer,
-        and how would Effects behave there?'
+      prompt: If filtering becomes expensive and the screen also owns a websocket
+        subscription, which work stays in render and which work needs effect cleanup?
     evidence_check:
       basis: Check the Effects claim against original/english-arcade/react/effect-misuse
         and the exact interview context; record whether each part is fact, inference,
@@ -465,25 +489,33 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Effects question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why would you avoid computing this filtered", update
-        Effects when Effects evidence—a Effects trace or Effects test—contradicts
-        the Effects constraint in case "Why would you avoid computing this filtered";
-        ask a stakeholder about Effects before revising.
+      rationale: >-
+        I am confident that a filtered value can stay derived during render, but calculation
+        cost and the websocket lifecycle determine whether memoisation or effect cleanup is
+        needed.
+      update_trigger: >-
+        I would update the recommendation if a profile shows filtering dominates render time or
+        a subscription test exposes duplicate listeners; I would keep the two measurements
+        separate.
     rubric:
-      facts_correct: Names the verified Effects facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Effects premise that is still assumed and asks
-        the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Effects options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Effects choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Effects by changing
-        the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Effects recommendation.
+      facts_correct: >-
+        Identifies the stored filtered state, the one-render lag, and the websocket as separate
+        facts rather than treating every effect as one kind of work.
+      assumptions_explicit: >-
+        States that filtering is pure and asks whether it has measured cost or whether an
+        external system must be synchronised.
+      alternatives_considered: >-
+        Compares render-time derivation with an effect-managed subscription and explains why the
+        latter needs cleanup and race handling.
+      tradeoff_quality: >-
+        Links current render consistency to the cost of recalculation and links the websocket to
+        listener cleanup instead of inventing a performance result.
+      follow_up_adaptation: >-
+        Keeps filtering in render when the websocket is added, then adds only the subscription
+        lifecycle and its duplicate-listener test.
+      certainty_calibration: >-
+        Uses medium confidence and names a render profile plus a subscription cleanup test as
+        the evidence that could change the recommendation.
 - id: react-03-key-prop
   version: 1.4.0
   target: react
@@ -500,10 +532,10 @@ items:
       evidence boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      React matches elements by key, so if the list reorders, the index still points
-      at position rather than identity. I would compare that choice with the credible alternative
-      against the requirement in the follow-up, cost, and failure risk, then switch only if
-      evidence makes the alternative safer.
+      I would explain that an index key follows a position, so an inserted or
+      reordered row can inherit the previous row's state. I would use a stable ID
+      from the data and reproduce an insertion with a checked row to verify that state
+      stays attached to the item rather than to the slot.
     distractors:
     - text: I would defend the first Reconciliation option because offering an alternative
         might make the decision look uncertain.
@@ -518,10 +550,10 @@ items:
       the stable key rule.
     goal: Compress the Reconciliation answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: React matches elements by key, so if the list reorders, the index still
-    points at position rather than identity. The visible symptom is component state
-    attaching to the wrong row, like a checked checkbox following the position instead
-    of the item.
+  best_answer: >-
+    I think of a key as the item's identity. If I use an index and the list reorders,
+    the index still points at a position, so component state can attach to the wrong
+    row. I would expect a checked checkbox to follow the slot instead of the item.
   distractors:
   - text: It causes performance problems because React cannot efficiently determine
       which items have changed, so it ends up re-rendering more of the list than it
@@ -579,21 +611,17 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-03-key-prop-delayed-3
-      prompt: New evidence about Reconciliation says a measured Reconciliation comparison
-        shows the alternative has a different Reconciliation cost profile; with the
-        Reconciliation dependency is slower for Reconciliation and the failure is
-        ambiguous rather than explicit, how do you update the Reconciliation decision
-        rule?
-      changed_constraint: the Reconciliation dependency is slower for Reconciliation
-        and the failure is ambiguous rather than explicit
-      new_evidence: a measured Reconciliation comparison shows the alternative has
-        a different Reconciliation cost profile
-      best_answer: I would keep the facts that remain supported about Reconciliation,
-        treat a measured Reconciliation comparison shows the alternative has a different
-        Reconciliation cost profile as new evidence rather than a result, and state
-        the updated decision rule under the Reconciliation dependency is slower for
-        Reconciliation and the failure is ambiguous rather than explicit. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: Stable IDs come from the server, but an offline draft row has no ID.
+        Inserting that draft above a checked row moves the checked state to the draft
+        when index keys are used. What changes in your key decision?
+      changed_constraint: rows may be inserted offline before the server assigns an ID
+      new_evidence: a reproduction moves checkbox state to the inserted draft when
+        the list uses index keys
+      best_answer: >-
+        I would preserve item identity by generating a client ID for the draft and
+        retaining it through synchronisation. I would reproduce insertion, deletion,
+        and reordering with that ID; a rendering-cost comparison would be a separate
+        measurement and would not justify using an index as the key.
       distractors:
       - text: I would preserve every part of the original Reconciliation answer because
           changing it after review would be inconsistent.
@@ -608,46 +636,50 @@ items:
     path: english-arcade/react/key-prop
     note: Authored for this pack; corpus has no reconciliation reference.
   extension:
-    prompt: 'Defend Reconciliation after a counterexample: which Reconciliation assumption
-      changes, and what evidence keeps the revised Reconciliation choice honest?'
-    goal: Move from the short Reconciliation answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      How would I generate a temporary draft ID and test checked state after inserting,
+      deleting, and reconciling with a server ID?
+    goal: Connect key choice to an observable state bug and a repeatable reproduction
+      instead of treating the rule as a lint preference.
   critical_thinking:
-    problem_frame: 'Frame Reconciliation before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would anchor each row's local state to item identity, then test insertion above an
+      edited row; the unknown is whether list order can change and whether drafts have stable
+      IDs.
     claim_map:
-      fact: The prompt explicitly tests Reconciliation within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Reconciliation,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Reconciliation constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Reconciliation: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The prompt asks about index keys and supplies insertion or reordering as the observable
+        change; the delayed case adds an offline draft above a checked row.
+      inference: >-
+        I infer that stable item identity should keep the checked state with its row, provided a
+        draft ID survives synchronisation.
+      assumption: >-
+        I am assuming rows can receive a temporary unique ID before the server ID exists; I
+        would ask whether the list is ever truly static.
+      unknown: >-
+        I still need the ID merge rules, row-local state, and the actual insertion, deletion,
+        and reordering behavior.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Reconciliation
-        benefit: It keeps the Reconciliation reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Reconciliation workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Reconciliation contract and its invariant
-          are the facts that matter most.
-      - option: a wider state or memoisation layer for Reconciliation
-        benefit: It can make the Reconciliation boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Reconciliation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Reconciliation option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant React
-        constraint makes the first assumption unsafe.
+      - option: use a stable server ID or client-generated draft ID
+        benefit: It keeps component state attached to the item through insertion,
+          deletion, reordering, and later synchronisation.
+        cost_or_risk: I need to create and preserve a client ID for an offline draft,
+          then reconcile it with the server ID without changing identity mid-edit.
+        valid_when: Use it whenever rows can change order or carry local state.
+      - option: use the array index as the key
+        benefit: It is easy when a list is truly static and never inserts, deletes,
+          or reorders rows.
+        cost_or_risk: A positional key can move checkbox or input state to another item
+          as soon as the list changes.
+        valid_when: Use it only when the static-list constraint is explicit and tested.
+      decision_rule: Keep item identity stable whenever the list changes; accept an
+        index only for a demonstrably static list with no item-level state.
     failure_probe:
       kind: failure_mode
-      prompt: 'Reconciliation: if a caller retries Reconciliation at the worst moment,
-        what failure mode appears first, and how would you protect Reconciliation?'
+      prompt: If an offline draft is inserted above a checked row, which state should
+        stay with the item, and what key reproduction would prove it?
     evidence_check:
       basis: Check the Reconciliation claim against original/english-arcade/react/key-prop
         and the exact interview context; record whether each part is fact, inference,
@@ -659,26 +691,33 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Reconciliation
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What actually goes wrong when you use", update Reconciliation
-        when Reconciliation evidence—a Reconciliation trace or Reconciliation test—contradicts
-        the Reconciliation constraint in case "What actually goes wrong when you use";
-        ask a stakeholder about Reconciliation before revising.
+      rationale: >-
+        I am confident that a positional key can move local state to another row after
+        insertion, but the identity design must account for offline drafts and server
+        reconciliation.
+      update_trigger: >-
+        I would revise the key choice only if a reproduction proves the list is static or if
+        draft identity cannot survive synchronisation; I would test insertion, deletion, and
+        reordering with the same item identity.
     rubric:
-      facts_correct: Names the verified Reconciliation facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Reconciliation premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Reconciliation options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Reconciliation choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Reconciliation
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Reconciliation recommendation.
+      facts_correct: >-
+        Names the positional-key failure after insertion or reordering and includes the offline
+        draft scenario without claiming an unmeasured production symptom.
+      assumptions_explicit: >-
+        States the temporary-ID assumption and asks whether rows can change order or remain
+        static.
+      alternatives_considered: >-
+        Compares stable server or client IDs with an index key, including the strict static-list
+        condition required by the latter.
+      tradeoff_quality: >-
+        Connects stable identity to preserving row state and names temporary-ID reconciliation
+        as its implementation cost.
+      follow_up_adaptation: >-
+        Changes the key plan when an offline draft is inserted above a checked row and specifies
+        the reproduction that would prove the state stayed with the item.
+      certainty_calibration: >-
+        Uses medium confidence for changing lists and names static-list evidence or failed ID
+        reconciliation as the update signal.
 - id: react-04-data-fetching
   version: 1.4.0
   target: react
@@ -695,11 +734,11 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I would make the effect cancel its own work on cleanup, either with an
-      abort signal or an ignore flag, so a late response cannot write into a
-      component that has moved on. If the failure in the follow-up appears, I would
-      name the user or system consequence, contain it with a bounded mitigation, and verify
-      recovery with a focused test or metric.
+      I would abort the supported request or mark its response as obsolete during cleanup. On
+      unmount, I would stop this request from writing component state; I would update loading,
+      success, or error only for the still-active request. I would test responses arriving in
+      reverse order and a response arriving after unmount, because an ignore flag prevents
+      stale state writes without cancelling the server's work.
     distractors:
     - text: I would describe the Data fetching failure as impossible because the happy
         path already passed its test.
@@ -776,20 +815,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-04-data-fetching-delayed-4
-      prompt: 'Data fetching gets a new constraint: new Data fetching evidence contradicts
-        the Data fetching assumption that made the first option attractive. After
-        a Data fetching test exposes a boundary case that the Data fetching examples
-        did not cover, which Data fetching assumption is no longer safe?'
-      changed_constraint: new Data fetching evidence contradicts the Data fetching
-        assumption that made the first option attractive
-      new_evidence: a Data fetching test exposes a boundary case that the Data fetching
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Data fetching,
-        treat a Data fetching test exposes a boundary case that the Data fetching
-        examples did not cover as new evidence rather than a result, and state the
-        updated decision rule under new Data fetching evidence contradicts the Data
-        fetching assumption that made the first option attractive. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: The client aborts a request when the user navigates away, but an
+        integration test shows the server still writes a charge after the abort.
+        Which part of your stale-response recommendation changes?
+      changed_constraint: the request can trigger a non-idempotent server effect that
+        continues after the client aborts
+      new_evidence: an integration test shows a charge is written after the browser
+        aborts the request
+      best_answer: >-
+        I would keep the stale-response guard, but the recorded charge proves that browser
+        abort is not server-side cancellation. I would use a stable idempotency key for
+        retries and check the existing payment status before trying again after an uncertain
+        result. I would test navigation, timeout, and a repeated request separately, verifying
+        both the visible client state and the provider's charge record.
       distractors:
       - text: I would preserve every part of the original Data fetching answer because
           changing it after review would be inconsistent.
@@ -804,46 +842,51 @@ items:
     path: english-arcade/react/data-fetching-race
     note: Authored for this pack; corpus has no client data-fetching card.
   extension:
-    prompt: 'Five more minutes on Data fetching: which boundary, alternative, and
-      update trigger would you explain for Data fetching?'
-    goal: Move from the short Data fetching answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      If a provider can charge after browser abort, which client guarantee remains and which
+      idempotency or status check gates a retry?
+    goal: Explain client cleanup, server effects, and the focused race test that would
+      update the recommendation.
   critical_thinking:
-    problem_frame: 'Frame Data fetching before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would protect the active screen from late responses while distinguishing browser
+      cancellation from a server-side write; the unknown is whether the operation can be
+      retried safely.
     claim_map:
-      fact: The prompt explicitly tests Data fetching within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Data fetching,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Data fetching constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Data fetching: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The scenario includes navigation during a request and out-of-order responses; the
+        delayed case adds a server charge that may continue after browser abort.
+      inference: >-
+        I infer that cleanup or request identity can protect current client state, but neither
+        one proves that the server stopped a write.
+      assumption: >-
+        I am assuming the client can identify the active request and that the server exposes
+        enough idempotency or status to make a retry safe.
+      unknown: >-
+        I still need the server cancellation contract, retry identity, provider replay behavior,
+        and whether the operation is read-only or mutating.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Data fetching
-        benefit: It keeps the Data fetching reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Data fetching workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Data fetching contract and its invariant
-          are the facts that matter most.
-      - option: a wider state or memoisation layer for Data fetching
-        benefit: It can make the Data fetching boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Data fetching evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Data fetching option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant React
-        constraint makes the first assumption unsafe.
+      - option: abort the request and ignore stale results during cleanup
+        benefit: It releases client work and prevents an older response from updating
+          the current screen after navigation or a new request.
+        cost_or_risk: Aborting the browser request may not undo a server-side write,
+          so it cannot replace idempotency for a non-idempotent operation.
+        valid_when: Use it for client-owned fetch work while treating the server effect
+          as a separate contract.
+      - option: guard results with a request identity and make the server operation idempotent
+        benefit: It protects state when cancellation is incomplete and makes a repeated
+          request safe to process.
+        cost_or_risk: It requires durable request identity and server-side design work,
+          and it does not remove the need for client loading and error state.
+        valid_when: Use it when the request can continue after abort or may be retried.
+      decision_rule: Keep cleanup-based stale-result protection, and add request identity
+        plus server idempotency whenever the operation can outlive the browser request.
     failure_probe:
       kind: counterexample
-      prompt: 'Data fetching: where would a tiny Data fetching counterexample expose
-        a false assumption, and what would you change about Data fetching?'
+      prompt: If aborting a request does not stop a server-side write, which client
+        guarantee survives and what idempotency check would you add?
     evidence_check:
       basis: Check the Data fetching claim against original/english-arcade/react/data-fetching-race
         and the exact interview context; record whether each part is fact, inference,
@@ -855,26 +898,32 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Data fetching question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How do you handle a request that", update Data fetching
-        when Data fetching evidence—a Data fetching trace or Data fetching test—contradicts
-        the Data fetching constraint in case "How do you handle a request that"; ask
-        a stakeholder about Data fetching before revising.
+      rationale: >-
+        I am confident that stale client results need protection, but the server write and retry
+        policy decide whether abort alone is a safe guarantee.
+      update_trigger: >-
+        I would add an idempotency key and status check after an integration test shows a charge
+        continues after abort; I would separately verify late-response handling and
+        duplicate-write behavior.
     rubric:
-      facts_correct: Names the verified Data fetching facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Data fetching premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Data fetching options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Data fetching choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Data fetching
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Data fetching recommendation.
+      facts_correct: >-
+        Separates navigation and out-of-order response facts from the delayed server-side charge
+        instead of claiming that browser abort cancels the operation.
+      assumptions_explicit: >-
+        Names the active-request and retry-safety assumptions and asks whether the server
+        exposes cancellation, idempotency, or status.
+      alternatives_considered: >-
+        Compares cleanup with stale-result guards against server idempotency and request
+        identity, preserving both when a mutation can outlive the browser.
+      tradeoff_quality: >-
+        Connects client cleanup to screen correctness and idempotency to duplicate-write risk,
+        with the server contract as the condition.
+      follow_up_adaptation: >-
+        When abort does not stop the server write, keeps stale-result protection but adds
+        idempotency and a status check before retrying.
+      certainty_calibration: >-
+        Uses medium confidence and names an integration trace plus a duplicate-write test as
+        evidence that would change the client-only recommendation.
 - id: react-05-accessibility
   version: 1.4.0
   target: react
@@ -892,10 +941,10 @@ items:
       evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      A button gets keyboard activation, focus order and the right role for free, whereas
-      a div gets none of them. I would keep the claims that remain supported,
-      identify exactly which premise the new observation changes, and run a focused check before
-      revising the decision.
+      I would keep a native button for a button action because it supplies focus,
+      keyboard activation, and the button role. I would test keyboard activation
+      and screen-reader output on the real control; I would use a link instead if
+      the action actually navigates.
     distractors:
     - text: I would keep the Accessibility recommendation unchanged because changing
         position would look inconsistent.
@@ -973,23 +1022,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-05-accessibility-delayed-5
-      prompt: 'Revisit Accessibility after a stakeholder clarifies a Accessibility
-        requirement that changes the Accessibility success condition and two Accessibility
-        callers from the case "Why does it matter whether this clickable" or Accessibility
-        tenants now compete for the same Accessibility boundary: what remains factual
-        about Accessibility, what becomes provisional, and why?'
-      changed_constraint: two Accessibility callers from the case "Why does it matter
-        whether this clickable" or Accessibility tenants now compete for the same
-        Accessibility boundary
-      new_evidence: a stakeholder clarifies a Accessibility requirement that changes
-        the Accessibility success condition
-      best_answer: I would keep the facts that remain supported about Accessibility,
-        treat a stakeholder clarifies a Accessibility requirement that changes the
-        Accessibility success condition as new evidence rather than a result, and
-        state the updated decision rule under two Accessibility callers from the case
-        "Why does it matter whether this clickable" or Accessibility tenants now compete
-        for the same Accessibility boundary. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: The control opens a menu rather than navigating, and an accessibility
+        test shows that the current div cannot receive focus or keyboard activation.
+        What remains factual, and what would you change?
+      changed_constraint: the menu trigger must support keyboard and screen-reader
+        interaction while preserving its accessible name and expanded state
+      new_evidence: a keyboard and screen-reader test shows the div cannot focus or
+        activate and exposes no useful control role
+      best_answer: >-
+        I would replace the div with a named native button because this action opens a menu. I
+        would expose its expanded state and menu relationship, move focus into the menu when
+        it opens, and return focus to the trigger when it closes. I would test Enter and Space
+        to open it, menu keyboard navigation, Escape, and the screen reader's announcement of
+        the state.
       distractors:
       - text: I would preserve every part of the original Accessibility answer because
           changing it after review would be inconsistent.
@@ -1004,46 +1049,52 @@ items:
     path: english-arcade/react/accessibility-semantics
     note: Authored for this pack; corpus has no accessibility reference.
   extension:
-    prompt: 'Revisit Accessibility beyond the happy path: what is factual about Accessibility,
-      what is provisional, and which Accessibility test could change it?'
-    goal: Move from the short Accessibility answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      For a menu trigger, which name, expanded state, focus, and Escape behavior would I test
+      before choosing a native button or custom widget?
+    goal: Tie the semantic choice to observable interaction behavior, a user need,
+      and a concrete accessibility check.
   critical_thinking:
-    problem_frame: 'Frame Accessibility before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would name the user action, its keyboard and focus contract, and the failure a
+      noninteractive div creates; the unknown is whether the control opens a menu or performs
+      a simple action.
     claim_map:
-      fact: The prompt explicitly tests Accessibility within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Accessibility,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Accessibility constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Accessibility: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The prompt describes a clickable div with onClick; the delayed case adds a menu trigger
+        that must work from keyboard and assistive technology.
+      inference: >-
+        I infer that a native button supplies the default action semantics, while a menu trigger
+        also needs an expanded state, relationship, and focus behavior.
+      assumption: >-
+        I am assuming this control initiates an action or opens a menu rather than serving as a
+        purely visual container; I would ask for its accessible name and state contract.
+      unknown: >-
+        I still need the menu focus order, Escape and outside-click behavior, screen-reader
+        announcement, and supported browser or assistive-technology set.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Accessibility
-        benefit: It keeps the Accessibility reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Accessibility workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Accessibility contract and its invariant
-          are the facts that matter most.
-      - option: a wider state or memoisation layer for Accessibility
-        benefit: It can make the Accessibility boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Accessibility evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Accessibility option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant React
-        constraint makes the first assumption unsafe.
+      - option: use the native button or link that matches the action
+        benefit: I get the platform's focus, keyboard behavior, and semantic role
+          without rebuilding them.
+        cost_or_risk: The native element may need styling or an explicit accessible
+          name and state, which I must test in the real interaction.
+        valid_when: Use a button for an action and a link for navigation.
+      - option: make a div behave like a control with ARIA and key handlers
+        benefit: It can preserve an existing visual wrapper when a valid native element
+          cannot express the interaction.
+        cost_or_risk: I must recreate focus, keyboard activation, role, name, and state;
+          omissions leave keyboard or screen-reader users without the control.
+        valid_when: Use it only when a semantic element cannot represent the actual
+          widget and accessibility behavior is explicitly tested.
+      decision_rule: Start with the native control that matches the action; keep a
+        custom div only when a real widget requirement justifies it and tests cover
+        focus, keyboard, name, and state.
     failure_probe:
       kind: edge_case
-      prompt: 'Accessibility: which Accessibility boundary deserves the first test,
-        and what observation about Accessibility would overturn the premise?'
+      prompt: If the control opens a menu rather than navigating, which keyboard,
+        name, and expanded-state test would overturn a div-based implementation?
     evidence_check:
       basis: Check the Accessibility claim against original/english-arcade/react/accessibility-semantics
         and the exact interview context; record whether each part is fact, inference,
@@ -1054,27 +1105,34 @@ items:
         rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Accessibility question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why does it matter whether this clickable", update
-        Accessibility when Accessibility evidence—a Accessibility trace or Accessibility
-        test—contradicts the Accessibility constraint in case "Why does it matter
-        whether this clickable"; ask a stakeholder about Accessibility before revising.
+      level: medium
+      rationale: >-
+        I am confident that a clickable div leaves keyboard and semantic behavior unspecified,
+        but the correct focus pattern depends on whether the control opens a menu and what
+        interaction contract it has.
+      update_trigger: >-
+        I would revise the implementation after keyboard and screen-reader tests reveal a
+        missing name, state, or focus return; I would preserve the native button default unless
+        the interaction contract requires a tested custom widget.
     rubric:
-      facts_correct: Names the verified Accessibility facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Accessibility premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Accessibility options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Accessibility choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Accessibility
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Accessibility recommendation.
+      facts_correct: >-
+        Identifies the noninteractive div and the added menu-trigger requirement, then
+        distinguishes the supplied behavior from the accessibility checks still needed.
+      assumptions_explicit: >-
+        States whether the control is an action or menu trigger and asks for its name, state,
+        and focus contract.
+      alternatives_considered: >-
+        Compares a native button with a custom widget only when the menu behavior requires it,
+        including the semantic and keyboard costs.
+      tradeoff_quality: >-
+        Connects native semantics to reliable keyboard behavior and names custom focus
+        management as the cost of a richer menu interaction.
+      follow_up_adaptation: >-
+        For the menu scenario, adds expanded state, focus movement, and Escape or return
+        behavior instead of stopping at replacing the div.
+      certainty_calibration: >-
+        Uses medium confidence for the native-button default and names keyboard, screen-reader,
+        and focus tests as the evidence that could change it.
 - id: react-06-memoisation
   version: 1.4.0
   target: react
@@ -1092,10 +1150,10 @@ items:
       boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Not as written: the parent creates a new object every render, so the shallow
-      comparison always fails. I would label the follow-up premise as an assumption, ask the
-      smallest question that could disprove it, and protect the edge case before committing to
-      the recommendation.
+      I would profile the component and confirm that its render work is expensive
+      enough to matter. Because the parent creates a new object each render, I would
+      either pass stable primitives or stabilise that object; I would keep memo only
+      if the profile showed a useful skip.
     distractors:
     - text: I would repeat my original Performance answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -1169,20 +1227,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-06-memoisation-delayed-6
-      prompt: The Performance review adds a trace of Performance isolates a different
-        Performance bottleneck than the one you named while the Performance workload
-        for Performance no longer fits the original resource bound; which conclusion
-        about Performance would you narrow before proposing a repair?
-      changed_constraint: the Performance workload for Performance no longer fits
-        the original resource bound
-      new_evidence: a trace of Performance isolates a different Performance bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Performance,
-        treat a trace of Performance isolates a different Performance bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under the Performance workload for Performance no longer fits
-        the original resource bound. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: A React DevTools profile shows the child render takes 0.3 ms, while
+        data preparation takes 18 ms and the parent still passes a fresh object.
+        Which part of the memo recommendation would you narrow?
+      changed_constraint: memo must produce a measurable skip without hiding that data
+        preparation dominates the update
+      new_evidence: the profile attributes 18 ms to data preparation and 0.3 ms to
+        the child render, while the object prop changes identity every render
+      best_answer: >-
+        I would investigate the 18 ms data preparation first because it dominates the 0.3 ms
+        child render. I would inspect repeated calculations or an unnecessary data
+        transformation and measure a focused change. Stabilising the prop is still required
+        for memo to skip this child, but I would not add memo unless the resulting render
+        saving justified its comparison and maintenance cost.
       distractors:
       - text: I would preserve every part of the original Performance answer because
           changing it after review would be inconsistent.
@@ -1200,36 +1257,50 @@ items:
     path: english-arcade/react/memoisation
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Use a deep dive on Performance to name the competing Performance cost,
-      the first failure signal, and the observation that would update Performance.
-    goal: Move from the short Performance answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      If the child costs 0.3ms and preparation costs 18ms, what prop or data-preparation trace
+      would make memoisation worthwhile?
+    goal: Make the memo decision conditional on render cost and prop stability rather
+      than on a performance slogan.
   critical_thinking:
-    problem_frame: 'Frame Performance before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would separate the measured preparation cost from child render cost and inspect prop
+      identity; the unknown is whether stable props can make memoisation help this screen.
     claim_map:
-      fact: The prompt explicitly tests Performance within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Performance,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Performance constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Performance: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The scenario supplies a fresh inline object on each parent render; the delayed profile
+        measures 18ms of data preparation and a 0.3ms child render.
+      inference: >-
+        I infer that the fresh object defeats shallow memoisation, while the larger preparation
+        cost may deserve attention before optimising the child.
+      assumption: >-
+        I am assuming the profile represents the user-visible path and that the child receives
+        no other changing prop; I would ask how often the parent renders.
+      unknown: >-
+        I still need parent update frequency, prop identity for every input, preparation
+        ownership, and a target latency or interaction budget.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Performance would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Performance constraint is the required guarantee stated
-        by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Performance; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      applicable: true
+      alternatives:
+      - option: profile first and leave the component un-memoised
+        benefit: I avoid memo overhead and keep the implementation simple when the
+          render is cheap or another path dominates the trace.
+        cost_or_risk: I may keep avoidable render work if a stable-prop child is both
+          expensive and frequently re-rendered.
+        valid_when: Use it when the profile does not show a meaningful child-render
+          cost or the props are unstable.
+      - option: stabilise props and memoise the expensive child
+        benefit: I can skip repeated child work when the comparator sees unchanged props.
+        cost_or_risk: I add comparison and prop-stability complexity, and it can mask
+          the real bottleneck if the child is cheap.
+        valid_when: Use it when profiling shows expensive child work and stable props
+          make a skip measurable.
+      decision_rule: Measure first; keep memo only when stable props and a useful skip
+        are visible in the trace.
     failure_probe:
       kind: failure_mode
-      prompt: 'Performance: when the first Performance recovery path fails, which
-        consequence reaches the user, and what bounded mitigation follows for Performance?'
+      prompt: If a profile shows the child render is cheap but data preparation is
+        expensive, which memo claim would you retract and what would you measure next?
     evidence_check:
       basis: Check the Performance claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1241,26 +1312,33 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Performance question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Would wrapping this component in memo help?", update
-        Performance when Performance evidence—a Performance trace or Performance test—contradicts
-        the Performance constraint in case "Would wrapping this component in memo
-        help?"; ask a stakeholder about Performance before revising.
+      rationale: >-
+        I am confident that a fresh object prevents a shallow memo boundary from skipping the
+        child, but the profile does not yet prove that memoising the 0.3ms render is the
+        highest-value change.
+      update_trigger: >-
+        I would change the optimisation after a profile ties repeated child renders to the
+        interaction budget and a stable-prop test shows a meaningful skip; otherwise I would
+        investigate the 18ms preparation first.
     rubric:
-      facts_correct: Names the verified Performance facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Performance premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Performance options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Performance choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Performance
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Performance recommendation.
+      facts_correct: >-
+        Reports the fresh object and the separate 18ms preparation and 0.3ms child costs without
+        turning them into a universal memoisation rule.
+      assumptions_explicit: >-
+        Names the profile-representativeness and changing-prop assumptions and asks how often
+        the parent renders.
+      alternatives_considered: >-
+        Compares stabilising props, improving data preparation, and memoising the child
+        according to the measured bottleneck.
+      tradeoff_quality: >-
+        Connects memoisation to skipped child work and names dependency complexity and an
+        unchanged preparation cost as risks.
+      follow_up_adaptation: >-
+        When the profile gives a cheap child and expensive preparation, moves the recommendation
+        toward the measured preparation path instead of claiming memo is automatically useful.
+      certainty_calibration: >-
+        Uses medium confidence and names a parent-render profile plus a stable-prop replay as
+        evidence that would justify the optimisation.
 - id: react-07-controlled-inputs
   version: 1.4.0
   target: react
@@ -1278,10 +1356,10 @@ items:
       explicit.
     challenge_kind: evidence
     best_answer: >-
-      Controlled, because I need to react to each keystroke for the suggestions. I would
-      treat the follow-up observation as evidence, not as proof of impact; I would inspect
-      the smallest relevant trace or test and state what remains uncertain before changing the
-      decision.
+      I would keep the input controlled because suggestions need each keystroke.
+      I would keep the DOM as the source of truth when validation and value reads
+      happen only on submit; I would check focus, validation timing, and render cost
+      before choosing.
     distractors:
     - text: I would cite my experience with Forms as enough proof and move on without
         naming an observation.
@@ -1358,20 +1436,19 @@ items:
       before changing the implementation?
     delayed_variant:
       id: react-07-controlled-inputs-delayed-7
-      prompt: For Forms, new evidence is a code inspection of Forms confirms the Forms
-        mechanism but not its impact and the constraint is a stakeholder asks for
-        a stronger Forms guarantee than the first Forms answer promised. What alternative
-        now deserves consideration for Forms?
-      changed_constraint: a stakeholder asks for a stronger Forms guarantee than the
-        first Forms answer promised
-      new_evidence: a code inspection of Forms confirms the Forms mechanism but not
-        its impact
-      best_answer: I would keep the facts that remain supported about Forms, treat
-        a code inspection of Forms confirms the Forms mechanism but not its impact
-        as new evidence rather than a result, and state the updated decision rule
-        under a stakeholder asks for a stronger Forms guarantee than the first Forms
-        answer promised. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: The search field must validate on every keystroke, but the form now has
+        two hundred fields. A profile shows the whole form rerenders on each keypress.
+        Which alternative deserves consideration?
+      changed_constraint: suggestions and validation need each keystroke while typing
+        must remain responsive in a two-hundred-field form
+      new_evidence: a profile shows the entire form rerenders for every search-field
+        keystroke
+      best_answer: >-
+        I would keep the search field controlled because its suggestions and validation need
+        each keystroke. I would move that state close to the search field so typing does not
+        update all two hundred fields. Other fields could remain uncontrolled if they need
+        only submit-time reads. I would profile typing again and verify that validation and
+        keyboard focus still work.
       distractors:
       - text: I would preserve every part of the original Forms answer because changing
           it after review would be inconsistent.
@@ -1389,46 +1466,52 @@ items:
     path: english-arcade/react/controlled-inputs
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Walk through Forms under a changed requirement: which Forms claim survives,
-      which option wins, and why would Forms need new evidence?'
-    goal: Move from the short Forms answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      With 200 fields and per-key suggestions, which state boundary, focus check, and
+      validation metric would decide local control versus broader form state?
+    goal: Defend the source-of-truth decision with user behavior, render cost, and
+      a condition for switching.
   critical_thinking:
-    problem_frame: 'Frame Forms before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would identify which input needs per-keystroke feedback, which state must be
+      submitted, and how 200 fields affect latency; the unknown is validation and focus
+      timing.
     claim_map:
-      fact: The prompt explicitly tests Forms within a React context; treat that named
-        boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Forms, but
-        that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Forms constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Forms: the scale, failure tolerance, ownership boundary,
-        and evidence threshold that would change the decision.'
+      fact: >-
+        The prompt requires suggestions on each keystroke; the delayed profile reports 200
+        fields rerendering on every keypress.
+      inference: >-
+        I infer that the search input needs a controlled local boundary, while unrelated form
+        fields do not automatically need to rerender with it.
+      assumption: >-
+        I am assuming suggestions and validation must reflect each keystroke; I would ask
+        whether submit-time fields need the same immediate source of truth.
+      unknown: >-
+        I still need the validation schedule, focus and composition behavior, form-library
+        boundary, and measured input latency.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Forms
-        benefit: It keeps the Forms reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Forms workload or requirement changes
-          beyond the prompt.
-        valid_when: Use it when the stated Forms contract and its invariant are the
-          facts that matter most.
-      - option: a wider state or memoisation layer for Forms
-        benefit: It can make the Forms boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Forms evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Forms option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant React constraint
-        makes the first assumption unsafe.
+      - option: keep the input controlled and isolate its rerenders
+        benefit: I can validate, suggest, and coordinate focus on every keystroke
+          while limiting the work to the field or its immediate boundary.
+        cost_or_risk: I pay for state updates and must profile the form so a controlled
+          field does not rerender hundreds of unrelated inputs.
+        valid_when: Use it when behavior depends on each keystroke, as with suggestions
+          or immediate validation.
+      - option: keep the DOM as the source of truth and read on submit
+        benefit: It reduces state updates when the form only needs values at submission.
+        cost_or_risk: I cannot drive per-keystroke suggestions or validation from React
+          state without adding another synchronization path.
+        valid_when: Use it when submit-time reads, native validation, and focus behavior
+          are sufficient.
+      decision_rule: Choose controlled state for per-keystroke behavior, then isolate
+        its render boundary; choose uncontrolled input when submit-time reads are the
+        actual requirement.
     failure_probe:
       kind: counterexample
-      prompt: 'Forms: what stakeholder reply about Forms would invalidate the recommendation,
-        and which Forms premise would you revisit?'
+      prompt: If suggestions need every keystroke but two hundred fields rerender each
+        time, which boundary would you change and how would you test focus and validation?
     evidence_check:
       basis: Check the Forms claim against system-design-estudos/interview/story-bank/02-react-react-native-story-bank.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1439,25 +1522,31 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Forms question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Would you make this input controlled or", update Forms
-        when Forms evidence—a Forms trace or Forms test—contradicts the Forms constraint
-        in case "Would you make this input controlled or"; ask a stakeholder about
-        Forms before revising.
+      rationale: >-
+        I am confident that per-keystroke suggestions need current input state, but the
+        200-field profile leaves the right form boundary and validation timing open.
+      update_trigger: >-
+        I would move state or defer work after an input-latency trace shows the local boundary
+        is insufficient; I would verify IME, focus, validation, and submit behavior separately.
     rubric:
-      facts_correct: Names the verified Forms facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Forms premise that is still assumed and asks
-        the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Forms options, or explains the
-        hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Forms choice to a benefit, a cost or risk, and
-        the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Forms by changing
-        the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Forms recommendation.
+      facts_correct: >-
+        Names the per-keystroke suggestion requirement and the 200-field rerender observation
+        without assuming every field needs controlled state.
+      assumptions_explicit: >-
+        States the immediate-feedback assumption and asks which fields require current state
+        before submit.
+      alternatives_considered: >-
+        Compares a locally controlled search boundary with broader controlled or uncontrolled
+        form state using validation, focus, and latency requirements.
+      tradeoff_quality: >-
+        Connects local control to responsive suggestions and names duplicated state or form
+        integration cost as the alternative risk.
+      follow_up_adaptation: >-
+        When the profile shows 200 fields rerendering, isolates the search state and changes the
+        rendering boundary instead of abandoning controlled behavior.
+      certainty_calibration: >-
+        Uses medium confidence and names input-latency, focus, composition, and submit tests as
+        evidence that would change the boundary.
 - id: react-08-error-boundaries
   version: 1.4.0
   target: react
@@ -1474,10 +1563,10 @@ items:
       evidence boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      Around each widget rather than at the root, so one failing chart does not
-      blank the whole dashboard. I would compare that choice with the credible alternative against
-      the requirement in the follow-up, cost, and failure risk, then switch only if evidence
-      makes the alternative safer.
+      I would place a boundary around each independently recoverable widget and give
+      it a retry or empty state. I would keep a root boundary as a last-resort
+      fallback, then test that one broken widget leaves the other dashboard actions
+      usable.
     distractors:
     - text: I would defend the first Error handling option because offering an alternative
         might make the decision look uncertain.
@@ -1551,21 +1640,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-08-error-boundaries-delayed-8
-      prompt: A second pass on Error handling finds a measured Error handling comparison
-        shows the alternative has a different Error handling cost profile; with the
-        Error handling dependency is slower for Error handling and the failure is
-        ambiguous rather than explicit, which Error handling test would you run before
-        keeping the original rule?
-      changed_constraint: the Error handling dependency is slower for Error handling
-        and the failure is ambiguous rather than explicit
-      new_evidence: a measured Error handling comparison shows the alternative has
-        a different Error handling cost profile
-      best_answer: I would keep the facts that remain supported about Error handling,
-        treat a measured Error handling comparison shows the alternative has a different
-        Error handling cost profile as new evidence rather than a result, and state
-        the updated decision rule under the Error handling dependency is slower for
-        Error handling and the failure is ambiguous rather than explicit. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: A chart can fail locally, but an expired auth token now needs a shared
+        redirect. A test shows the local widget boundary hides that route-level error.
+        How would you revise the placement rule?
+      changed_constraint: chart failures should stay local while token expiry needs
+        shared recovery state and a route-level redirect
+      new_evidence: a local boundary masks the auth failure and prevents the route
+        recovery path from running
+      best_answer: >-
+        I would retain a local boundary for a chart's render failure and handle expired
+        authentication in the shared route or session layer so it can redirect. I would not
+        let a widget's generic fallback consume that authentication outcome. I would test
+        chart failure and token expiry separately; asynchronous request failures also need
+        explicit handling because a render error boundary does not catch every rejected
+        request.
       distractors:
       - text: I would preserve every part of the original Error handling answer because
           changing it after review would be inconsistent.
@@ -1583,46 +1671,51 @@ items:
     path: english-arcade/react/error-boundaries
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Connect Error handling, connect the Error handling implementation choice
-      to its failure mode, measurement, and condition for choosing the alternative.
-    goal: Move from the short Error handling answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      If a chart throws during render and token expiry arrives from an async request, which
+      boundary handles each and what sibling or recovery test proves it?
+    goal: Connect error-boundary placement to recovery scope, user capability, and a
+      failure test.
   critical_thinking:
-    problem_frame: 'Frame Error handling before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would map a local widget failure separately from an expired-session redirect; the
+      unknown is where each error is surfaced and what the user can still do.
     claim_map:
-      fact: The prompt explicitly tests Error handling within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Error handling,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Error handling constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Error handling: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The dashboard has independent widgets; the scenario distinguishes a chart render failure
+        from an expired-auth redirect, and the delayed case warns that a local boundary can mask
+        auth.
+      inference: >-
+        I infer that a chart boundary can preserve the rest of the dashboard, while session
+        failures need a shared route or session recovery path.
+      assumption: >-
+        I am assuming auth failure reaches the route or session layer before a generic widget
+        fallback; I would ask how async request errors are surfaced.
+      unknown: >-
+        I still need the error transport, recovery action, sibling behavior, and whether the
+        failure happens during render or asynchronously.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Error handling
-        benefit: It keeps the Error handling reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Error handling workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Error handling contract and its invariant
-          are the facts that matter most.
-      - option: a wider state or memoisation layer for Error handling
-        benefit: It can make the Error handling boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Error handling evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Error handling option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant React
-        constraint makes the first assumption unsafe.
+      - option: place a boundary around each independently recoverable widget
+        benefit: A broken chart can show a retry or empty state while sibling dashboard
+          actions remain usable.
+        cost_or_risk: A local fallback cannot coordinate recovery that needs shared auth,
+          route, or session state.
+        valid_when: Use it when the widget owns an isolated failure and recovery path.
+      - option: place a wider route or root boundary for shared recovery
+        benefit: It can redirect or restore shared state when a route-level failure
+          affects several widgets.
+        cost_or_risk: It increases the blast radius and can blank healthy widgets if I
+          use it for every failure.
+        valid_when: Use it when recovery must coordinate the route or a shared session.
+      decision_rule: Keep widget failures local and widen the boundary only when the
+        failure or recovery state is shared; test both the broken widget and a sibling
+        action.
     failure_probe:
       kind: edge_case
-      prompt: 'Error handling: where does the Error handling premise need a boundary
-        check, and which result would make you reframe Error handling?'
+      prompt: If token expiry needs a shared redirect while a chart can fail locally,
+        which boundary should contain each failure and what recovery test proves it?
     evidence_check:
       basis: Check the Error handling claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1634,26 +1727,32 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Error handling
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Where would you put error boundaries in", update Error
-        handling when Error handling evidence—a Error handling trace or Error handling
-        test—contradicts the Error handling constraint in case "Where would you put
-        error boundaries in"; ask a stakeholder about Error handling before revising.
+      rationale: >-
+        I am confident that local and shared failures need different recovery scopes, but the
+        async error path and authentication ownership determine where the boundary can act.
+      update_trigger: >-
+        I would move the boundary after a failure trace shows an auth error being swallowed
+        locally or an async rejection bypassing it; I would test chart recovery and session
+        recovery as separate paths.
     rubric:
-      facts_correct: Names the verified Error handling facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Error handling premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Error handling options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Error handling choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Error handling
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Error handling recommendation.
+      facts_correct: >-
+        Distinguishes an independent chart render failure from expired authentication and keeps
+        async error handling as an open implementation fact.
+      assumptions_explicit: >-
+        States where auth is expected to surface and asks whether the failure occurs during
+        render or in an async request.
+      alternatives_considered: >-
+        Compares a widget-local fallback with a route or session boundary according to recovery
+        scope and sibling availability.
+      tradeoff_quality: >-
+        Connects local isolation to continued dashboard use and names a swallowed auth redirect
+        or inconsistent recovery as the wider-boundary risk.
+      follow_up_adaptation: >-
+        When the local boundary masks auth, preserves the chart fallback but routes session
+        recovery through the shared auth owner.
+      certainty_calibration: >-
+        Uses medium confidence and names an error trace plus chart and session recovery tests as
+        evidence that would change placement.
 - id: react-09-list-virtualisation
   version: 1.4.0
   target: react
@@ -1670,9 +1769,9 @@ items:
       evidence boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I would virtualise so only the visible rows are in the DOM. If the
-      failure in the follow-up appears, I would name the user or system consequence, contain
-      it with a bounded mitigation, and verify recovery with a focused test or metric.
+      I would measure render and interaction cost before virtualising, then check
+      focus as rows mount and unmount. I would preserve a non-virtualised or paginated
+      path when printing, browser find, or full text selection is a requirement.
     distractors:
     - text: I would describe the Rendering large lists failure as impossible because
         the happy path already passed its test.
@@ -1748,23 +1847,19 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: react-09-list-virtualisation-delayed-9
-      prompt: 'Rendering large lists: the later Rendering large lists review says
-        a Rendering large lists test exposes a boundary case that the Rendering large
-        lists examples did not cover. Under new Rendering large lists evidence contradicts
-        the Rendering large lists assumption that made the first option attractive,
-        which part of Rendering large lists survives and which Rendering large lists
-        claim changes?'
-      changed_constraint: new Rendering large lists evidence contradicts the Rendering
-        large lists assumption that made the first option attractive
-      new_evidence: a Rendering large lists test exposes a boundary case that the
-        Rendering large lists examples did not cover
-      best_answer: I would keep the facts that remain supported about Rendering large
-        lists, treat a Rendering large lists test exposes a boundary case that the
-        Rendering large lists examples did not cover as new evidence rather than a
-        result, and state the updated decision rule under new Rendering large lists
-        evidence contradicts the Rendering large lists assumption that made the first
-        option attractive. I would then name one focused check before treating the
-        revised answer as settled.
+      prompt: Virtualisation improves scroll time, but keyboard focus is lost when
+        the focused row unmounts and print output omits off-screen rows. Which part of
+        your list-performance recommendation survives?
+      changed_constraint: users must keyboard-navigate and print the full table while
+        the list still needs a measured rendering improvement
+      new_evidence: a keyboard test loses focus on row unmount and print output omits
+        rows outside the viewport
+      best_answer: >-
+        I would keep the measured scrolling improvement as evidence, but treat lost focus and
+        incomplete printing as unmet requirements. I would preserve the focused row or manage
+        focus as rows unmount, and provide a print view containing the full data. If that
+        interaction cost is too high, I would use pagination with a separate complete print or
+        export path, then test both keyboard navigation and output completeness.
       distractors:
       - text: I would preserve every part of the original Rendering large lists answer
           because changing it after review would be inconsistent.
@@ -1779,49 +1874,52 @@ items:
     path: english-arcade/react/list-virtualisation
     note: Authored for this pack; corpus has no client rendering card.
   extension:
-    prompt: 'Rendering large lists: inspect Rendering large lists evidence next; which
-      edge case for Rendering large lists would alter the trade-off?'
-    goal: Move from the short Rendering large lists answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: >-
+      If virtualisation fixes scroll but omits off-screen print rows, which focus or print
+      requirement would make pagination safer?
+    goal: Defend the performance benefit alongside focus, find, selection, print, and
+      a product condition.
   critical_thinking:
-    problem_frame: 'Frame Rendering large lists before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      I would weigh the measured cost of 10,000 mounted rows against focus, find, selection,
+      and printing; the unknown is which interactions are contractual.
     claim_map:
-      fact: The prompt explicitly tests Rendering large lists within a React context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Rendering
-        large lists, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Rendering large lists constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Rendering large lists: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The table contains 10,000 rows; the delayed evidence says virtualisation improves
+        mounted work but loses keyboard focus and omits rows from print output.
+      inference: >-
+        I infer that virtualisation is justified only if its measured speed gain survives the
+        required interaction checks or the product provides a separate full-content path.
+      assumption: >-
+        I am assuming the render cost comes from mounted rows and that focus and print are real
+        user requirements; I would ask whether export can replace browser printing.
+      unknown: >-
+        I still need the row-height and focus model, browser-find and selection requirements,
+        print or export contract, and measured latency target.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Rendering large lists
-        benefit: It keeps the Rendering large lists reasoning close to the stated
-          React constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Rendering large lists workload or
-          requirement changes beyond the prompt.
-        valid_when: Use it when the stated Rendering large lists contract and its
-          invariant are the facts that matter most.
-      - option: a wider state or memoisation layer for Rendering large lists
-        benefit: It can make the Rendering large lists boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Rendering large lists evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Rendering large lists option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        React constraint makes the first assumption unsafe.
+      - option: virtualise the visible rows
+        benefit: I reduce DOM and render work for a table whose measured cost comes
+          from keeping thousands of rows mounted.
+        cost_or_risk: Focus, browser find, full selection, and printing can break when
+          off-screen rows are not mounted.
+        valid_when: Use it when the measured render cost matters and the product can
+          preserve or replace those interactions.
+      - option: paginate or keep the full table mounted
+        benefit: I preserve keyboard focus, find, selection, and print semantics with
+          a simpler rendering model.
+        cost_or_risk: I may retain too much render work or add page navigation that
+          changes how users inspect the dataset.
+        valid_when: Use it when those interactions are required or virtualisation fails
+          their tests.
+      decision_rule: Measure the render and interaction costs first; virtualise only
+        when the speed gain survives focus and print tests, otherwise paginate or keep
+        the required rows available.
     failure_probe:
       kind: failure_mode
-      prompt: 'Rendering large lists: if the Rendering large lists decision fails
-        under plausible load or a difficult turn, what consequence appears first,
-        and how would you contain Rendering large lists?'
+      prompt: If virtualisation loses keyboard focus and omits rows from print output,
+        which interaction requirement would make pagination the safer choice?
     evidence_check:
       basis: Check the Rendering large lists claim against original/english-arcade/react/list-virtualisation
         and the exact interview context; record whether each part is fact, inference,
@@ -1832,28 +1930,33 @@ items:
         or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Rendering large lists
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "The table slows down at ten thousand", update Rendering
-        large lists when Rendering large lists evidence—a Rendering large lists trace
-        or Rendering large lists test—contradicts the Rendering large lists constraint
-        in case "The table slows down at ten thousand"; ask a stakeholder about Rendering
-        large lists before revising.
+      level: medium
+      rationale: >-
+        I am confident that many mounted rows can create measurable render work, but the table
+        should be virtualised only after its focus, find, selection, and print contract is
+        explicit.
+      update_trigger: >-
+        I would choose pagination or a full-content print path after an interaction test fails;
+        I would compare the measured scroll gain with the cost of preserving those behaviors.
     rubric:
-      facts_correct: Names the verified Rendering large lists facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Rendering large lists premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Rendering large lists options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Rendering large lists choice to a benefit, a
-        cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Rendering large
-        lists by changing the claim or evidence boundary rather than repeating the
-        base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Rendering large lists recommendation.
+      facts_correct: >-
+        Names the 10,000-row scale and the delayed focus and print failures without claiming
+        that virtualisation always wins.
+      assumptions_explicit: >-
+        States the mounted-row cost and interaction requirements that still need confirmation,
+        including whether export can replace print.
+      alternatives_considered: >-
+        Compares virtualisation, pagination, and a full-content export or print path against
+        both render cost and interaction fidelity.
+      tradeoff_quality: >-
+        Connects virtualisation to mounted-work reduction and names focus, find, selection, and
+        print preservation as concrete costs.
+      follow_up_adaptation: >-
+        When focus and print fail, changes the recommendation toward pagination or a separate
+        full-content path and names the required interaction test.
+      certainty_calibration: >-
+        Uses medium confidence and names profiling plus focus, find, selection, and print tests
+        as evidence that would update the choice.
 - id: react-10-code-review-tone
   version: 1.4.0
   target: react
@@ -1872,10 +1975,10 @@ items:
       testing while keeping the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      I would ask about the boundary before prescribing a refactor: what user behaviour belongs
-      here, and what can be passed in or extracted? I would keep the claims
-      that remain supported, identify exactly which premise the new observation changes, and run a
-      focused check before revising the decision.
+      I would describe the coupling I observed, ask which behavior the component owns,
+      and propose a loading, success, and failure test. I would separate that behavior
+      contract from my preference about component size and let the colleague choose an
+      incremental extraction.
     distractors:
     - text: I would keep the Component architecture and behaviour-focused testing
         recommendation unchanged because changing position would look inconsistent.
@@ -1961,32 +2064,19 @@ items:
       answer failed, did you locate the reasoning error before changing the implementation?
     delayed_variant:
       id: react-10-code-review-tone-delayed-10
-      prompt: 'Review note for Component architecture and behaviour-focused testing:
-        a stakeholder clarifies a Component architecture and behaviour-focused testing
-        requirement that changes the Component architecture and behaviour-focused
-        testing success condition. Given two Component architecture and behaviour-focused
-        testing callers from the case "Describe how you would raise a design" or Component
-        architecture and behaviour-focused testing tenants now compete for the same
-        Component architecture and behaviour-focused testing boundary, what would
-        you now defend, retract, and verify about Component architecture and behaviour-focused
-        testing?'
-      changed_constraint: two Component architecture and behaviour-focused testing
-        callers from the case "Describe how you would raise a design" or Component
-        architecture and behaviour-focused testing tenants now compete for the same
-        Component architecture and behaviour-focused testing boundary
-      new_evidence: a stakeholder clarifies a Component architecture and behaviour-focused
-        testing requirement that changes the Component architecture and behaviour-focused
-        testing success condition
-      best_answer: I would keep the facts that remain supported about Component architecture
-        and behaviour-focused testing, treat a stakeholder clarifies a Component architecture
-        and behaviour-focused testing requirement that changes the Component architecture
-        and behaviour-focused testing success condition as new evidence rather than
-        a result, and state the updated decision rule under two Component architecture
-        and behaviour-focused testing callers from the case "Describe how you would
-        raise a design" or Component architecture and behaviour-focused testing tenants
-        now compete for the same Component architecture and behaviour-focused testing
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: A proposed extraction would serve a second caller with a different
+        loading and failure state, while the existing behavior test covers only the
+        original caller. What would you defend and verify before extracting?
+      changed_constraint: two callers must keep distinct loading and failure behavior
+        while sharing the underlying component capability
+      new_evidence: a second caller needs a different fallback and the current test
+        does not exercise that caller
+      best_answer: >-
+        I would retain the original caller's behavior test and add coverage for the second
+        caller's different loading and failure states before extracting. I would share only
+        the behavior they actually have in common and keep caller-specific state handling
+        explicit. If the extraction needs unrelated flags for each caller, I would reconsider
+        its boundary rather than force reuse.
       distractors:
       - text: I would preserve every part of the original Component architecture and
           behaviour-focused testing answer because changing it after review would
@@ -2006,61 +2096,53 @@ items:
     path: english-arcade/react/code-review-tone
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Deep dive on Component architecture and behaviour-focused testing: compare
-      Component architecture and behaviour-focused testing options with one measurement;
-      which failure around Component architecture and behaviour-focused testing would
-      make Component architecture and behaviour-focused testing switch?'
-    goal: Move from the short Component architecture and behaviour-focused testing
-      answer to a deep, evidence-led defence without inventing an outcome.
+    prompt: >-
+      If a second caller has a different loading and failure UI, which shared behavior can I
+      extract and what two-caller test must pass?
+    goal: Make the review specific, collaborative, and verifiable without dictating an
+      internal component shape.
   critical_thinking:
-    problem_frame: 'Frame Component architecture and behaviour-focused testing before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would review observable loading, success, and failure behavior across callers; the
+      unknown is whether the second caller shares a contract or only resembles the first.
     claim_map:
-      fact: The prompt explicitly tests Component architecture and behaviour-focused
-        testing within a React context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend Component
-        architecture and behaviour-focused testing, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the Component architecture and behaviour-focused
-        testing constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for Component architecture and behaviour-focused testing:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        One component currently owns state, fetch, and render; the delayed scenario gives a
+        second caller with different loading and failure behavior.
+      inference: >-
+        I infer that the useful review target is a behavior contract and its tests, not a
+        preferred component shape.
+      assumption: >-
+        I am assuming both callers share enough capability to discuss an extraction; I would ask
+        which states and recovery actions must remain caller-specific.
+      unknown: >-
+        I still need the exact loading, success, and failure differences, ownership of the
+        fetch, and the user-visible behavior each caller promises.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Component architecture and
-          behaviour-focused testing
-        benefit: It keeps the Component architecture and behaviour-focused testing
-          reasoning close to the stated React constraint and makes the evidence boundary
-          visible.
-        cost_or_risk: It can be too narrow if the Component architecture and behaviour-focused
-          testing workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Component architecture and behaviour-focused
-          testing contract and its invariant are the facts that matter most.
-      - option: a wider state or memoisation layer for Component architecture and
-          behaviour-focused testing
-        benefit: It can make the Component architecture and behaviour-focused testing
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Component architecture and behaviour-focused testing evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Component architecture and behaviour-focused
-        testing option when its stated contract holds; choose the alternative only
-        when evidence shows that the relevant React constraint makes the first assumption
-        unsafe.
+      - option: extract a capability behind a behavior contract and focused test
+        benefit: I can reduce coupling while preserving loading, success, and failure
+          behavior for each caller.
+        cost_or_risk: I add an interface and must verify that the extraction does not
+          hide caller-specific states or duplicate behavior.
+        valid_when: Use it when two callers share a clear capability and the contract
+          can be tested through user-visible states.
+      - option: keep the component boundary and improve its internal separation
+        benefit: I avoid an abstraction whose shared contract is still unclear and can
+          make the existing states explicit first.
+        cost_or_risk: A large owner may keep coupling and make future changes harder if
+          the same capability continues to spread.
+        valid_when: Use it when there is one caller or the proposed extraction is still
+          driven by style rather than behavior.
+      decision_rule: Tie the review to caller-visible behavior and tests; extract when
+        the shared capability is clear, otherwise clarify the boundary before prescribing
+        a structural refactor.
     failure_probe:
       kind: counterexample
-      prompt: 'Component architecture and behaviour-focused testing: which adversarial
-        Component architecture and behaviour-focused testing example could disprove
-        the recommendation, and what evidence about Component architecture and behaviour-focused
-        testing would you request?'
+      prompt: If a second caller needs a different loading and failure state, which
+        behavior contract would disprove the proposed extraction, and what test would
+        you request?
     evidence_check:
       basis: Check the Component architecture and behaviour-focused testing claim
         against system-design-estudos/areas/09-backend-principles/cards/testing-code-quality.md
@@ -2073,35 +2155,33 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Component architecture
-        and behaviour-focused testing question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "Describe how you would raise a design", update Component
-        architecture and behaviour-focused testing when Component architecture and
-        behaviour-focused testing evidence—a Component architecture and behaviour-focused
-        testing trace or Component architecture and behaviour-focused testing test—contradicts
-        the Component architecture and behaviour-focused testing constraint in case
-        "Describe how you would raise a design"; ask a stakeholder about Component
-        architecture and behaviour-focused testing before revising.
+      rationale: >-
+        I am confident that a review should distinguish behavior from style, but the second
+        caller’s state contract determines whether extraction reduces coupling or hides
+        differences.
+      update_trigger: >-
+        I would narrow or abandon the extraction after a caller-specific test shows incompatible
+        loading or failure behavior; I would preserve the shared capability only behind an
+        explicit contract.
     rubric:
-      facts_correct: Names the verified Component architecture and behaviour-focused
-        testing facts without smuggling in a result, scale, or capability that the
-        prompt does not establish.
-      assumptions_explicit: Labels the Component architecture and behaviour-focused
-        testing premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible Component architecture and behaviour-focused
-        testing options, or explains the hard constraint that makes comparison a false
-        equivalence.
-      tradeoff_quality: Connects the Component architecture and behaviour-focused
-        testing choice to a benefit, a cost or risk, and the condition under which
-        another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Component
-        architecture and behaviour-focused testing by changing the claim or evidence
-        boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Component architecture and behaviour-focused testing
-        recommendation.
+      facts_correct: >-
+        States who owns state, fetch, and render and includes the second caller’s different
+        loading or failure behavior without inventing a defect.
+      assumptions_explicit: >-
+        Names the shared-capability assumption and asks which states or recovery actions must
+        remain caller-specific.
+      alternatives_considered: >-
+        Compares a behavior-contract extraction with clarifying the existing component boundary
+        when the callers do not yet share enough behavior.
+      tradeoff_quality: >-
+        Connects extraction to reduced coupling and names hidden caller-specific states and
+        interface cost as risks.
+      follow_up_adaptation: >-
+        When the second caller differs, changes the extraction claim or contract and requests a
+        two-caller behavior test instead of repeating a style preference.
+      certainty_calibration: >-
+        Uses medium confidence and names caller-specific loading and failure tests as evidence
+        that would update the review.
 - id: react-11-hydration
   version: 1.4.0
   target: react
@@ -2109,8 +2189,8 @@ items:
   difficulty: 3
   interview_stage: deep_dive
   prompt: What causes a hydration mismatch, in your experience?
-  context: A server-rendering question. The interviewer wants a concrete cause you
-    have actually hit, since the generic answer is easy to recite and tells them nothing.
+  context: A server-rendering question. The interviewer wants a concrete reproducible
+    cause, since the generic answer is easy to recite and tells them nothing.
   follow_up:
     prompt: Which value differs between server and client, and how would you make
       the initial render deterministic without hiding a real data bug?
@@ -2118,9 +2198,10 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Usually something that differs between server and client at render time. I would label
-      the follow-up premise as an assumption, ask the smallest question that could disprove it,
-      and protect the edge case before committing to the recommendation.
+      I would identify the differing value, make the first render use the same
+      serialised input on both sides, and move browser-only work behind a client
+      boundary or effect. I would verify the server markup and client inputs match
+      before hiding a real data mismatch.
     distractors:
     - text: I would repeat my original Server rendering answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -2135,10 +2216,11 @@ items:
       and the boundary for client-only work.
     goal: Compress the Server rendering answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Usually something that differs between server and client at render
-    time. The one I hit most is dates formatted in local time, because the server
-    and the browser are in different timezones, so the markup differs and React discards
-    it.
+  best_answer: >-
+    I would look first for a value that differs between server and client at render
+    time, such as a date formatted in local time. I would make the initial input
+    deterministic or defer client-only work, then verify the mismatch with the server
+    HTML and client render rather than claim a personal production example.
   distractors:
   - text: It happens when the HTML rendered on the server does not match what React
       renders on the client, so React has to discard the server markup and re-render
@@ -2197,20 +2279,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-11-hydration-delayed-11
-      prompt: New evidence about Server rendering says a trace of Server rendering
-        isolates a different Server rendering bottleneck than the one you named; with
-        the Server rendering workload for Server rendering no longer fits the original
-        resource bound, how do you update the Server rendering decision rule?
-      changed_constraint: the Server rendering workload for Server rendering no longer
-        fits the original resource bound
-      new_evidence: a trace of Server rendering isolates a different Server rendering
-        bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about Server rendering,
-        treat a trace of Server rendering isolates a different Server rendering bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under the Server rendering workload for Server rendering
-        no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: The server formats a date with en-US, while the browser uses the user's
+        locale; passing the request locale through serialized data removes the mismatch.
+        How would you update the hydration decision rule?
+      changed_constraint: the first render must use a request-derived locale so server
+        markup and client input agree
+      new_evidence: a reproduction shows different locale formatting in server HTML
+        and the first client render, and the serialized locale removes it
+      best_answer: >-
+        I would pass the request locale through the serialized data and use it for both the
+        server render and the browser's first render. The reproduction already shows that this
+        removes the mismatch. I would test more than one locale with the same date input and
+        formatting options, preserving the deterministic first-render rule without hiding a
+        remaining mismatch or claiming an unrelated performance improvement.
       distractors:
       - text: I would preserve every part of the original Server rendering answer
           because changing it after review would be inconsistent.
@@ -2225,38 +2306,43 @@ items:
     path: english-arcade/react/hydration-mismatch
     note: Authored for this pack; corpus has no server-rendering card.
   extension:
-    prompt: 'Defend Server rendering after a counterexample: which Server rendering
-      assumption changes, and what evidence keeps the revised Server rendering choice
-      honest?'
-    goal: Move from the short Server rendering answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      For a locale mismatch, which serialised input and server/client snapshot would
+      distinguish a data mismatch from a browser-only branch?
+    goal: Explain hydration as an input-consistency problem with a reproducible check
+      and a safe client-only boundary.
   critical_thinking:
-    problem_frame: 'Frame Server rendering before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      I would find the value that differs in the server and first client render and make that
+      input deterministic; the unknown is whether the mismatch is data formatting or a
+      browser-only branch.
     claim_map:
-      fact: The prompt explicitly tests Server rendering within a React context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Server rendering,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Server rendering constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Server rendering: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The scenario gives an en-US server locale and a user browser locale for the same date;
+        the delayed evidence says serialising the request locale removes the mismatch.
+      inference: >-
+        I infer that hydration requires compatible first-render inputs, so I should serialise a
+        shared locale or defer a genuinely browser-only value rather than claim a performance
+        fix.
+      assumption: >-
+        I am assuming the date is rendered in the initial tree and that the request locale is
+        available and trustworthy; I would ask about timezone and fallback behavior.
+      unknown: >-
+        I still need the timezone, locale fallback, other browser-only branches, and evidence
+        that the mismatch reproduces on both server and client snapshots.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Server rendering
-        would be a false equivalence because the prompt does not establish that both
-        choices satisfy the same contract.
-      hard_constraint: The hard Server rendering constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Server rendering; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: The hydration prompt asks me to identify a mismatch cause;
+        it does not establish that deterministic serialization and client-only deferral
+        satisfy the same initial-render contract.
+      hard_constraint: The first server and client render must receive compatible inputs;
+        the missing cause determines whether I serialize a value or defer a branch.
+      decision_rule: Diagnose the differing input first; choose deterministic data for
+        shared content and defer only a branch that truly depends on the browser.
     failure_probe:
       kind: edge_case
-      prompt: 'Server rendering: which empty or extreme Server rendering case would
-        expose the hidden assumption, and what would you measure about Server rendering?'
+      prompt: If the server and browser format the same date with different locales,
+        what input would you serialize and what server/client evidence would you compare?
     evidence_check:
       basis: Check the Server rendering claim against original/english-arcade/react/hydration-mismatch
         and the exact interview context; record whether each part is fact, inference,
@@ -2268,27 +2354,33 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Server rendering
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What causes a hydration mismatch, in your", update
-        Server rendering when Server rendering evidence—a Server rendering trace or
-        Server rendering test—contradicts the Server rendering constraint in case
-        "What causes a hydration mismatch, in your"; ask a stakeholder about Server
-        rendering before revising.
+      rationale: >-
+        I am confident that different first-render date inputs can cause a hydration mismatch,
+        but the correct repair depends on whether the cause is locale data or a browser-only
+        branch.
+      update_trigger: >-
+        I would change the repair after a server/client snapshot or locale test identifies
+        another differing input; I would keep the first render deterministic and defer only the
+        branch proven to need the browser.
     rubric:
-      facts_correct: Names the verified Server rendering facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Server rendering premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Server rendering options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Server rendering choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Server rendering
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Server rendering recommendation.
+      facts_correct: >-
+        Names the server and browser locale difference and the serialised-locale observation
+        without claiming an unrelated performance improvement.
+      assumptions_explicit: >-
+        States that the date is part of the first render and asks for timezone, locale fallback,
+        and browser-only branches.
+      alternatives_considered: >-
+        Compares serialising a deterministic shared input with deferring a truly browser-only
+        branch, based on the mismatch evidence.
+      tradeoff_quality: >-
+        Connects deterministic first-render data to hydration correctness and names delayed
+        content or fallback complexity as the cost of a client-only branch.
+      follow_up_adaptation: >-
+        When the locale mismatch is reproduced, serialises the request locale and tests both
+        server and client snapshots instead of broadening the claim.
+      certainty_calibration: >-
+        Uses medium confidence and names locale, timezone, and server/client snapshot tests as
+        evidence that would update the repair.
 - id: react-12-scope-negotiation
   version: 1.4.0
   target: react
@@ -2306,10 +2398,10 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      A day for the happy path, and probably another for the states that are
-      not in the design yet, empty, loading and error. I would treat the follow-up
-      observation as evidence, not as proof of impact; I would inspect the smallest relevant
-      trace or test and state what remains uncertain before changing the decision.
+      I would state the assumptions behind the estimate: design completeness, data
+      shape, validation, and integration boundaries. If those remain uncertain, I
+      would offer a small checkpoint that proves the riskiest state before committing
+      to the full date.
     distractors:
     - text: I would cite my experience with Estimation as enough proof and move on
         without naming an observation.
@@ -2324,9 +2416,11 @@ items:
       rather than one unsupported number.
     goal: Compress the Estimation answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: A day for the happy path, and probably another for the states that
-    are not in the design yet, empty, loading and error. If those are already specified,
-    it is closer to a day and a half. Which of those do you already have?
+  best_answer: >-
+    I would estimate a day for the happy path and probably another day for states
+    missing from the design, such as empty, loading, and error. If those states are
+    already specified, I would call it closer to a day and a half. I would ask which
+    states and integration constraints are already defined.
   distractors:
   - text: It is quite hard to say without knowing more about the requirements, since
       it really depends on a lot of factors like the design and the data and the edge
@@ -2383,20 +2477,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: react-12-scope-negotiation-delayed-12
-      prompt: 'Estimation gets a new constraint: a stakeholder asks for a stronger
-        Estimation guarantee than the first Estimation answer promised. After a code
-        inspection of Estimation confirms the Estimation mechanism but not its impact,
-        which Estimation assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Estimation guarantee than
-        the first Estimation answer promised
-      new_evidence: a code inspection of Estimation confirms the Estimation mechanism
-        but not its impact
-      best_answer: I would keep the facts that remain supported about Estimation,
-        treat a code inspection of Estimation confirms the Estimation mechanism but
-        not its impact as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Estimation guarantee
-        than the first Estimation answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: The design now includes empty, loading, and error states, while a code
+        inspection finds authentication and analytics integration absent from the
+        design. Which part of your estimate is no longer safe?
+      changed_constraint: the estimate must include three UI states and unknown auth
+        and analytics integration work
+      new_evidence: the existing component has auth and analytics integration points
+        that the design does not specify
+      best_answer: >-
+        I would retain the now-specified UI states but withdraw the earlier time estimate
+        until I understand authentication and analytics integration. I would identify the
+        existing contracts, verify one authenticated request and one required analytics event,
+        then update the range and dependencies. If those integrations cannot fit the deadline,
+        I would agree on a smaller deliverable rather than silently omit them.
       distractors:
       - text: I would preserve every part of the original Estimation answer because
           changing it after review would be inconsistent.
@@ -2414,46 +2507,52 @@ items:
     path: english-arcade/react/scope-negotiation
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Five more minutes on Estimation: which boundary, alternative, and update
-      trigger would you explain for Estimation?'
-    goal: Move from the short Estimation answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      If auth and analytics contracts are unspecified, which smallest authenticated or
+      telemetry checkpoint moves the estimate before I commit to a date?
+    goal: Turn a time estimate into a conditional plan with explicit assumptions, risk,
+      and a next measurement.
   critical_thinking:
-    problem_frame: 'Frame Estimation before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I would decompose the estimate into states and integration boundaries before giving a
+      date; the unknown is whether auth and analytics are required for the requested
+      milestone.
     claim_map:
-      fact: The prompt explicitly tests Estimation within a React context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Estimation,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Estimation constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Estimation: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The estimate covers a component with stated work but omits auth and analytics
+        integration; the delayed case asks for a checkpoint before committing to one number.
+      inference: >-
+        I infer that a conditional range with a discovery checkpoint is safer than a fixed date
+        while those boundaries and states remain unspecified.
+      assumption: >-
+        I am assuming auth and analytics are part of the requested definition of done; I would
+        ask which existing interfaces and acceptance checks already exist.
+      unknown: >-
+        I still need the auth and analytics contracts, API or instrumentation ownership, missing
+        loading or failure states, and acceptance criteria for the milestone.
     comparison:
       applicable: true
       alternatives:
-      - option: the smallest React ownership boundary for Estimation
-        benefit: It keeps the Estimation reasoning close to the stated React constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Estimation workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Estimation contract and its invariant are
-          the facts that matter most.
-      - option: a wider state or memoisation layer for Estimation
-        benefit: It can make the Estimation boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Estimation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Estimation option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant React constraint
-        makes the first assumption unsafe.
+      - option: give a conditional range with a small discovery checkpoint
+        benefit: I make scope and uncertainty visible while producing evidence about
+          the riskiest integration before committing to a date.
+        cost_or_risk: The range may be less convenient for planning, and the checkpoint
+          costs time before the full implementation begins.
+        valid_when: Use it when states, data shape, or integration boundaries remain
+          unspecified.
+      - option: give a single fixed date from the stated happy path
+        benefit: It is easy to communicate when scope, states, and integrations are
+          already defined and stable.
+        cost_or_risk: It hides missing work and can turn an assumption into a false
+          commitment when the design is incomplete.
+        valid_when: Use it only after the relevant states and integration constraints
+          have been checked.
+      decision_rule: Start with a decomposed range and checkpoint when uncertainty is
+        material; offer a fixed date only when the scope and boundary evidence support it.
     failure_probe:
       kind: failure_mode
-      prompt: 'Estimation: when the Estimation constraint tightens during rollout,
-        what breaks first in Estimation, and how do you observe it?'
+      prompt: If auth and analytics integration are absent from the design, which part
+        of the estimate becomes unsafe, and what checkpoint would reduce that uncertainty?
     evidence_check:
       basis: Check the Estimation claim against system-design-estudos/areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2465,22 +2564,30 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Estimation question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How long would this component take you", update Estimation
-        when Estimation evidence—a Estimation trace or Estimation test—contradicts
-        the Estimation constraint in case "How long would this component take you";
-        ask a stakeholder about Estimation before revising.
+      rationale: >-
+        I am confident that missing integrations make a single estimate fragile, but the
+        milestone can become estimable once the required states and boundary checks are
+        explicit.
+      update_trigger: >-
+        I would narrow the range after an auth or analytics checkpoint resolves its contract and
+        after missing-state tests are listed; I would revise the date when that evidence changes
+        the remaining work.
     rubric:
-      facts_correct: Names the verified Estimation facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Estimation premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Estimation options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Estimation choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Estimation by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Estimation recommendation.
+      facts_correct: >-
+        Names the stated component work and the absent auth and analytics boundaries without
+        pretending that the omitted integrations have known scope.
+      assumptions_explicit: >-
+        States whether those integrations are part of done and asks which interfaces, states,
+        and acceptance checks already exist.
+      alternatives_considered: >-
+        Compares a conditional range with a discovery checkpoint against a fixed date that is
+        supported only after scope and integration evidence are available.
+      tradeoff_quality: >-
+        Connects the range to visible uncertainty and names planning convenience and checkpoint
+        cost as the fixed-date or discovery tradeoffs.
+      follow_up_adaptation: >-
+        When auth and analytics are absent, changes the estimate into a checkpointed range
+        instead of repeating a happy-path number.
+      certainty_calibration: >-
+        Uses medium confidence and names integration contracts, missing-state tests, and
+        acceptance criteria as evidence that would update the date.

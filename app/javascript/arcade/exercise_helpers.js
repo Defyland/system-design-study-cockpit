@@ -26,7 +26,9 @@ export function learningMarkup(learning = {}) {
   const versions = learning.answer_versions || {}
   const short = versions.short ? `<details class="arena-pt-help"><summary>Short recruiter answer</summary><p>${escape(versions.short)}</p></details>` : ""
   const deep = versions.deep ? `<details class="arena-pt-help"><summary>Engineering deep dive</summary><p>${escape(versions.deep)}</p></details>` : ""
-  return columns.length || help || short || deep ? `<aside class="arena-learning-card" aria-label="English coaching"><div class="arena-learning-grid">${columns.join("")}</div>${short}${deep}${help}</aside>` : ""
+  const questions = Array.isArray(learning.reasoning_questions) ? learning.reasoning_questions : []
+  const reasoning = questions.length ? `<section class="arena-reasoning" aria-label="How I think through this"><h3>How I think through this</h3>${questions.map(({ question, answer }) => `<details class="arena-pt-help"><summary>${escape(question)}</summary><p>${escape(answer)}</p></details>`).join("")}</section>` : ""
+  return columns.length || help || short || deep || reasoning ? `<aside class="arena-learning-card" aria-label="English coaching">${reasoning}<div class="arena-learning-grid">${columns.join("")}</div>${short}${deep}${help}</aside>` : ""
 }
 
 export function selectedButton(root) {
@@ -39,7 +41,11 @@ export function addSubmit(root, ctx, label = "Confirm") {
   const submit = button(label)
   submit.dataset.arenaSubmit = "true"
   submit.addEventListener("click", () => ctx.submit())
-  actions.append(submit)
+  const status = document.createElement("span")
+  status.className = "arena-submit-status"
+  status.dataset.arenaSubmitStatus = "true"
+  status.setAttribute("role", "status")
+  actions.append(submit, status)
   root.append(actions)
 }
 

@@ -40,7 +40,7 @@ export default class extends Controller {
     const rows = Array.isArray(progress.top_confusions_30d) ? progress.top_confusions_30d : []
     if (rows.length === 0) {
       const empty = document.createElement("li")
-      empty.textContent = "No recorded confusions yet."
+      empty.textContent = "No selections recorded for these axes yet."
       list.append(empty)
       return
     }

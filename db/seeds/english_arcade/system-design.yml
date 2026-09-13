@@ -64,12 +64,12 @@ templates:
   - Establish what cannot duplicate, be lost, or leak.
   - Estimate peak volume out loud before choosing components.
   - State the request or event path and name the source of truth.
-  - Name two or three real bottlenecks.
+  - Identify likely bottlenecks and the measurements needed to test them.
   - Give the version now and the version at ten times the load.
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
-    note: The checklist this delivery order follows, step for step.
+    note: Delivery order adapted from the checklist with explicit measurement before a bottleneck claim.
 - id: sd-incident
   label: Senior production answer template
   applies_to: deep_dive
@@ -88,47 +88,55 @@ templates:
 cards:
 - id: system_design-card-requirements-first
   front: What are the first two questions in any system design round?
-  back: What is the main product action, and what must not duplicate, be lost or leak.
-    Components come after those answers.
+  back: >-
+    I start with the main product action and the things that must not duplicate, disappear, or
+    leak. I choose components only after those invariants and abuse cases are explicit.
   box: 1
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
     note: Opening questions from the interview checklist.
   critical_thinking:
-    cue: What are the first two questions in any system design round? Before answering,
-      separate the stated fact from your assumption and name one condition that could
-      change it.
-    check: For this system design card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: >-
+      What must you establish before naming components? State the product action, the
+      non-duplication or loss invariant, and the abuse case that could change the design.
+    check: >-
+      Can you compare two first-release scopes, name a failure caused by an unstated requirement,
+      and say which product evidence would change your architecture?
 - id: system_design-card-source-of-truth
   front: Why name the source of truth early?
-  back: Because every consistency, cache and failure answer depends on it. Without
-    it, later answers contradict each other.
+  back: >-
+    I name the source of truth first because consistency, caching, and recovery all depend on
+    it. If I cannot say which record wins, later answers will contradict one another.
   box: 2
   source:
     repo: system-design-estudos
     path: chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
     note: Write-path reasoning anchored on the authoritative store.
   critical_thinking:
-    cue: Why name the source of truth early? Before answering, separate the stated
-      fact from your assumption and name one condition that could change it.
-    check: For this system design card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: >-
+      Why name a source of truth before cache or consistency details? Identify the authoritative
+      write, the derived view, and the reconciliation evidence.
+    check: >-
+      Can you compare a database with a derived cache or index, name the stale-read failure, and
+      state which write or repair event would update your choice?
 - id: system_design-card-ten-x
   front: How do you close a system design answer?
-  back: With the version now and the version at ten times the load, plus the limit
-    that would force you to evolve it.
+  back: >-
+    I compare the current workload with the version at ten times the load, then name the limit
+    that forces an architectural change. More instances do not remove every shared bottleneck.
   box: 2
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
     note: Now-versus-10x framing from the checklist.
   critical_thinking:
-    cue: How do you close a system design answer? Before answering, separate the stated
-      fact from your assumption and name one condition that could change it.
-    check: For this system design card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: >-
+      What should a ten-times answer contain? Separate the measured boundary that scales from the
+      shared limit that would force a new design.
+    check: >-
+      Can you compare replication with partitioning or asynchronous work, name the first
+      saturation metric, and state what load evidence would force evolution?
 items:
 - id: system_design-01-requirements-first
   version: 1.4.0
@@ -148,10 +156,10 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      Before components, I would clarify the dominant action and whether custom aliases require a
-      strong uniqueness guarantee. If the failure in the follow-up appears, I would name the
-      user or system consequence, contain it with a bounded mitigation, and verify recovery with
-      a focused test or metric.
+      I would keep the first release to the redirect action, ownership and authorization,
+      uniqueness, abuse controls, and an auditable disable path. I would defer analytics or custom
+      features until the product owner confirms they change the launch invariant, because each
+      adds storage and failure modes.
     distractors:
     - text: I would describe the Requirements failure as impossible because the happy
         path already passed its test.
@@ -242,21 +250,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-01-requirements-first-delayed-1
-      prompt: 'Requirements: the later Requirements review says a stakeholder clarifies
-        a Requirements requirement that changes the Requirements success condition.
-        Under the Requirements workload for Requirements no longer fits the original
-        resource bound, which part of Requirements survives and which Requirements
-        claim changes?'
-      changed_constraint: the Requirements workload for Requirements no longer fits
-        the original resource bound
-      new_evidence: a stakeholder clarifies a Requirements requirement that changes
-        the Requirements success condition
-      best_answer: I would keep the facts that remain supported about Requirements,
-        treat a stakeholder clarifies a Requirements requirement that changes the
-        Requirements success condition as new evidence rather than a result, and state
-        the updated decision rule under the Requirements workload for Requirements
-        no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        The owner now requires custom aliases with strong uniqueness and asks for bulk creation with
+        abuse controls. Which first-release requirement survives, and which component claim must you
+        defer?
+      changed_constraint: >-
+        custom alias uniqueness and bulk creation must be authorized, rate-limited, and auditable
+      new_evidence: >-
+        the product owner makes strong alias uniqueness and bulk abuse control launch requirements
+      best_answer: >-
+        I would keep redirect correctness, ownership, and the ability to disable a link. I
+        would now make custom-alias uniqueness and bounded, authorized bulk creation explicit
+        first-release requirements. I would test competing alias requests and bulk rate limits
+        before selecting capacity or queueing components. Analytics can remain separate unless
+        the owner also requires it.
       distractors:
       - text: I would preserve every part of the original Requirements answer because
           changing it after review would be inconsistent.
@@ -274,66 +281,72 @@ items:
     path: real-world-cases/05-product-scenarios/bitly-url-shortener/README.md
     note: URL shortener case referenced for scoping, not copied.
   extension:
-    prompt: 'Requirements: inspect Requirements evidence next; which edge case for
-      Requirements would alter the trade-off?'
-    goal: Move from the short Requirements answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      If link creation is cheap but malicious redirects cause harm, which authorization, rate-limit,
+      and disable controls would I prioritize?
+    goal: >-
+      Move from the short Requirements answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Requirements before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to define the URL-shortener release contract before choosing storage or distribution:
+      redirect behavior, link ownership, alias rules, and abuse handling.
     claim_map:
-      fact: The prompt explicitly tests Requirements within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Requirements,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Requirements constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Requirements: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The interviewer requests a URL-shortening service without traffic figures or a complete
+        release specification.
+      inference: Creation, redirection, and disabling links may need different access and availability
+        rules.
+      assumption: >-
+        I am assuming analytics can wait; I need the product owner to confirm the launch requirements.
+      unknown: >-
+        Alias rules, retention, permitted destinations, traffic shape, and acceptable redirect latency
+        are not yet specified.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Requirements would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Requirements constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Requirements; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: Selecting a distributed cache and multiple databases before agreeing
+        on link behavior.
+      hard_constraint: >-
+        The first release must implement the agreed ownership and abuse policy; attractive infrastructure
+        cannot substitute for that contract.
+      decision_rule: >-
+        I would settle the redirect, ownership, uniqueness, and abuse requirements first, then choose
+        components against the resulting workload.
     failure_probe:
-      kind: counterexample
-      prompt: 'Requirements: what minimum input for Requirements would break the Requirements
-        recommendation, and how would you revise the Requirements claim?'
+      kind: edge_case
+      prompt: >-
+        If two users request the same custom alias and one later loses access, which create, redirect,
+        and disable behaviors must remain correct?
     evidence_check:
-      basis: Check the Requirements claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Requirements claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Requirements,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Requirements, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Requirements question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Design a URL shortener for us. Where", update Requirements
-        when Requirements evidence—a Requirements trace or Requirements test—contradicts
-        the Requirements constraint in case "Design a URL shortener for us. Where";
-        ask a stakeholder about Requirements before revising.
+      level: medium
+      rationale: >-
+        The missing product requirements justify asking questions; they do not establish a particular
+        storage topology.
+      update_trigger: >-
+        A mandatory alias policy, bulk-creation requirement, or measured redirect load would change
+        the release boundary and component needs.
     rubric:
-      facts_correct: Names the verified Requirements facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Requirements premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Requirements options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Requirements choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Requirements by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Requirements recommendation.
+      facts_correct: Separates the requested URL-shortener behavior from features the candidate
+        introduced.
+      assumptions_explicit: Asks whether analytics, custom aliases, and link expiry are release
+        requirements.
+      alternatives_considered: Rejects premature component selection until ownership and redirect
+        rules are known.
+      tradeoff_quality: Explains how an added feature increases write, storage, or moderation responsibilities.
+      follow_up_adaptation: Adds alias conflicts and bulk abuse controls when those requirements
+        become mandatory.
+      certainty_calibration: >-
+        Keeps medium certainty about the design until the release contract and workload are supplied.
+
 - id: system_design-02-volume-estimation
   version: 1.4.0
   target: system_design
@@ -351,9 +364,10 @@ items:
       boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Let me work it through. I would keep the claims that remain supported, identify
-      exactly which premise the new observation changes, and run a focused check before revising
-      the decision.
+      I would ask for active users, actions per user, payload size, retention, and peak-to-average
+      ratio, then show the arithmetic and label the peak multiplier as an assumption. I would
+      validate it against product analytics and revise capacity from observed traffic rather than
+      treating sixty thousand per second as a fact.
     distractors:
     - text: I would keep the Estimation recommendation unchanged because changing
         position would look inconsistent.
@@ -433,20 +447,21 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-02-volume-estimation-delayed-2
-      prompt: 'Review note for Estimation: a trace of Estimation isolates a different
-        Estimation bottleneck than the one you named. Given a stakeholder asks for
-        a stronger Estimation guarantee than the first Estimation answer promised,
-        what would you now defend, retract, and verify about Estimation?'
-      changed_constraint: a stakeholder asks for a stronger Estimation guarantee than
-        the first Estimation answer promised
-      new_evidence: a trace of Estimation isolates a different Estimation bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Estimation,
-        treat a trace of Estimation isolates a different Estimation bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Estimation guarantee
-        than the first Estimation answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        Analytics show the peak-to-average ratio is twelve rather than five, while retention is
+        shorter than assumed. Which capacity claim changes and what would you recompute?
+      changed_constraint: >-
+        capacity must cover the observed peak multiplier and the revised payload and retention
+        profile
+      new_evidence: >-
+        product analytics measure a twelve-times peak and a shorter retention window than the
+        initial estimate
+      best_answer: >-
+        I would replace the assumed fivefold peak with the measured twelvefold ratio. With the
+        same billion daily events, that is roughly 140,000 events per second at peak rather
+        than 60,000. Shorter retention reduces retained event storage, not that peak arrival
+        rate. I would recompute bytes from event size and retention, then verify throughput
+        and bandwidth with a representative burst.
       distractors:
       - text: I would preserve every part of the original Estimation answer because
           changing it after review would be inconsistent.
@@ -464,77 +479,77 @@ items:
     path: areas/12-engineering-practice/cards/capacity-planning-and-headroom.md
     note: Capacity planning and headroom reasoning.
   extension:
-    prompt: 'Deep dive on Estimation: compare Estimation options with one measurement;
-      which failure around Estimation would make Estimation switch?'
-    goal: Move from the short Estimation answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      How would I explain why shorter retention reduces stored bytes without reducing the measured
+      peak request rate?
+    goal: >-
+      Move from the short Estimation answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Estimation before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need an order-of-magnitude capacity estimate from daily users, activity, payloads, retention,
+      and burstiness, with units and assumptions visible.
     claim_map:
-      fact: The prompt explicitly tests Estimation within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Estimation,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Estimation constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Estimation: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The scenario supplies one hundred million daily active users; it does not supply their event
+        frequency.
+      inference: >-
+        Daily events divided by seconds per day estimate an average, which cannot by itself describe
+        burst capacity.
+      assumption: >-
+        I am assuming ten actions per user and a fivefold peak until product analytics provides
+        better figures.
+      unknown: >-
+        Event size, read/write mix, regional concentration, retention, and observed peak duration
+        remain unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Estimation
-        benefit: It keeps the Estimation reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Estimation workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Estimation contract and its invariant are
-          the facts that matter most.
-      - option: a component-first alternative with different failure costs for Estimation
-        benefit: It can make the Estimation boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Estimation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Estimation option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant system design
-        constraint makes the first assumption unsafe.
+      - option: Provision from observed peaks with explicit headroom
+        benefit: Matches the known workload and makes the capacity margin reviewable.
+        cost_or_risk: Historical observations may miss a launch spike or a change in usage.
+        valid_when: Representative peak data and an agreed overload response are available.
+      - option: Use a conservative provisional peak multiplier
+        benefit: Supports an early estimate before reliable traffic measurements exist.
+        cost_or_risk: The multiplier may overprovision or underestimate correlated bursts.
+        valid_when: I label the multiplier and plan to replace it with measured demand.
+      decision_rule: >-
+        I would show average and peak separately, use measured bursts when available, and label
+        any provisional multiplier instead of presenting it as observed demand.
     failure_probe:
       kind: edge_case
-      prompt: 'Estimation: what Estimation limit should you probe before trusting
-        the answer, and how would Estimation behave there?'
+      prompt: >-
+        If the same daily volume arrives in a short regional burst, which throughput, bandwidth,
+        and queue estimates become unsafe?
     evidence_check:
-      basis: Check the Estimation claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Estimation claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Estimation,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Estimation, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Estimation question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Roughly what kind of load are we", update Estimation
-        when Estimation evidence—a Estimation trace or Estimation test—contradicts
-        the Estimation constraint in case "Roughly what kind of load are we"; ask
-        a stakeholder about Estimation before revising.
+      rationale: >-
+        The unit arithmetic is checkable, while event frequency and burst assumptions still control
+        the capacity conclusion.
+      update_trigger: >-
+        Measured twelvefold peaks or shorter retention require separate recomputation of throughput
+        and stored bytes.
     rubric:
-      facts_correct: Names the verified Estimation facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Estimation premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Estimation options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Estimation choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Estimation
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Estimation recommendation.
+      facts_correct: Shows users times actions and converts daily totals into events per second.
+      assumptions_explicit: Labels event frequency and peak multiplier rather than treating them
+        as supplied facts.
+      alternatives_considered: Distinguishes measured peak provisioning from a provisional sizing
+        assumption.
+      tradeoff_quality: Connects headroom to overload risk and cost instead of arbitrary precision.
+      follow_up_adaptation: Recomputes the peak from twelvefold demand and storage from the new
+        retention period.
+      certainty_calibration: >-
+        Uses medium certainty for capacity until traffic shape and payload measurements are available.
+
 - id: system_design-03-source-of-truth
   version: 1.4.0
   target: system_design
@@ -553,9 +568,10 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      The database. I would label the follow-up premise as an assumption, ask the smallest
-      question that could disprove it, and protect the edge case before committing to the
-      recommendation.
+      I would make the committed database write authoritative, let caches and indexes carry
+      versions or timestamps, and expose stale reads through a version check or metric. I would
+      reconcile derived views from the database and test a replica lag or cache miss before
+      claiming freshness.
     distractors:
     - text: I would repeat my original Source of truth answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -632,21 +648,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-03-source-of-truth-delayed-3
-      prompt: New evidence about Source of truth says a code inspection of Source
-        of truth confirms the Source of truth mechanism but not its impact; with the
-        Source of truth dependency is slower for Source of truth and the failure is
-        ambiguous rather than explicit, how do you update the Source of truth decision
-        rule?
-      changed_constraint: the Source of truth dependency is slower for Source of truth
-        and the failure is ambiguous rather than explicit
-      new_evidence: a code inspection of Source of truth confirms the Source of truth
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Source of truth,
-        treat a code inspection of Source of truth confirms the Source of truth mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under the Source of truth dependency is slower for Source of
-        truth and the failure is ambiguous rather than explicit. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: >-
+        A code inspection confirms the database write path, but replica lag makes a cache-backed
+        balance stale during checkout. Which source-of-truth claim survives?
+      changed_constraint: >-
+        checkout must read an authoritative balance or reject a stale version before charging
+      new_evidence: >-
+        a trace shows replica lag lets a cache-backed balance reach checkout after the database
+        write
+      best_answer: >-
+        I would keep the database as the write authority, but I would retract any claim that every
+        derived read is safe for checkout. I would route the balance check to an authoritative
+        version, reject stale reads, and measure lag and reconciliation before widening cache use.
       distractors:
       - text: I would preserve every part of the original Source of truth answer because
           changing it after review would be inconsistent.
@@ -664,80 +677,68 @@ items:
     path: decision-contrasts/04-search-index-vs-relational-querying.md
     note: Index versus relational querying contrast.
   extension:
-    prompt: 'Defend Source of truth after a counterexample: which Source of truth
-      assumption changes, and what evidence keeps the revised Source of truth choice
-      honest?'
-    goal: Move from the short Source of truth answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      How would I verify a projection rebuild without allowing it to overwrite a newer committed
+      business value?
+    goal: >-
+      Move from the short Source of truth answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Source of truth before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need an explicit authority and freshness contract when database rows, cache entries, and
+      search documents disagree.
     claim_map:
-      fact: The prompt explicitly tests Source of truth within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Source of
-        truth, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Source of truth constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Source of truth: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The proposed design stores overlapping information in a database, cache, and search
+        index.
+      inference: Rebuildable copies need a defined upstream authority and a way to identify stale
+        versions.
+      assumption: I am assuming the database owns accepted mutations and the other stores are projections.
+      unknown: >-
+        The acknowledgement durability requirement and permissible staleness for each read are unspecified.
     comparison:
-      applicable: true
-      alternatives:
-      - option: a requirement-led architecture choice for Source of truth
-        benefit: It keeps the Source of truth reasoning close to the stated system
-          design constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Source of truth workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Source of truth contract and its invariant
-          are the facts that matter most.
-      - option: a component-first alternative with different failure costs for Source
-          of truth
-        benefit: It can make the Source of truth boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Source of truth evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Source of truth option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant system
-        design constraint makes the first assumption unsafe.
+      applicable: false
+      rejected_alternative: Letting whichever copy responds fastest overwrite the other two during
+        a disagreement.
+      hard_constraint: >-
+        A derived projection cannot redefine an accepted business value merely because its response
+        is faster.
+      decision_rule: >-
+        I would declare the committed record authoritative, rebuild projections from it, and require
+        an appropriate authoritative read for decisions that cannot tolerate lag.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Source of truth: if a caller retries Source of truth at the worst moment,
-        what failure mode appears first, and how would you protect Source of truth?'
+      kind: counterexample
+      prompt: >-
+        If search has a newer-looking timestamp but lacks the latest committed revision, what establishes
+        the correct value for checkout?
     evidence_check:
-      basis: Check the Source of truth claim against system-design-estudos/chapters/chapter-09-search-indexing-and-permission-aware-retrieval.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Source of truth claim against system-design-estudos/chapters/chapter-09-search-indexing-and-permission-aware-retrieval.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Source of truth,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Source of truth, but it cannot prove
+        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Source of truth
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "You have the same data in three", update Source of
-        truth when Source of truth evidence—a Source of truth trace or Source of truth
-        test—contradicts the Source of truth constraint in case "You have the same
-        data in three"; ask a stakeholder about Source of truth before revising.
+      rationale: >-
+        A single write authority follows from this proposed design; the safest read path still depends
+        on the business freshness requirement.
+      update_trigger: >-
+        A stale checkout value or an explicitly different write authority would change the read
+        routing and reconciliation contract.
     rubric:
-      facts_correct: Names the verified Source of truth facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Source of truth premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Source of truth options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Source of truth choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Source of truth
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Source of truth recommendation.
+      facts_correct: Names which store accepts business changes and which stores hold projections.
+      assumptions_explicit: States the assumed write authority and asks about acknowledgement durability.
+      alternatives_considered: Rejects fastest-response-wins reconciliation because response time
+        is not authority.
+      tradeoff_quality: Explains the latency benefit of derived reads alongside their freshness
+        cost.
+      follow_up_adaptation: >-
+        Keeps checkout decisions off a stale projection while preserving the declared write authority.
+      certainty_calibration: Uses medium certainty about routing until each read's permissible lag
+        is established.
+
 - id: system_design-04-write-path
   version: 1.4.0
   target: system_design
@@ -756,9 +757,10 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      The client sends POST /payments with an idempotency key. I would treat the follow-up
-      observation as evidence, not as proof of impact; I would inspect the smallest relevant
-      trace or test and state what remains uncertain before changing the decision.
+      I would store the idempotency key, request fingerprint, status, and response with the
+      payment state in the database transaction. A retry with the same fingerprint replays that
+      record; a different fingerprint conflicts. I would keep the external charge idempotent or
+      reconcile its unknown outcome before allowing another charge.
     distractors:
     - text: I would cite my experience with Write path as enough proof and move on
         without naming an observation.
@@ -773,11 +775,13 @@ items:
       call, and reconciliation.
     goal: Compress the Write path answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: The client sends POST /payments with an idempotency key. The first
-    request records that key and charge in one transaction, returns 201 with the payment
-    representation, and stores the status and body for replay. A duplicate key returns
-    the original status and body rather than charging again; a reused key with different
-    input is rejected as a contract error.
+  best_answer: >-
+    I would require POST /payments to carry an idempotency key and atomically store a request
+    fingerprint with a local payment intent. Reusing the key with different input is a
+    contract error. I would send a stable key to the provider and persist its outcome before
+    replaying a completed result. A 201 can represent the created payment resource with a
+    pending status; I would never present that local commit as proof that the external charge
+    completed.
   distractors:
   - text: The service checks whether a payment already exists for that order, and
       if it does it returns the existing one rather than creating a duplicate charge
@@ -850,20 +854,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-04-write-path-delayed-4
-      prompt: 'Write path gets a new constraint: new Write path evidence contradicts
-        the Write path assumption that made the first option attractive. After a measured
-        Write path comparison shows the alternative has a different Write path cost
-        profile, which Write path assumption is no longer safe?'
-      changed_constraint: new Write path evidence contradicts the Write path assumption
-        that made the first option attractive
-      new_evidence: a measured Write path comparison shows the alternative has a different
-        Write path cost profile
-      best_answer: I would keep the facts that remain supported about Write path,
-        treat a measured Write path comparison shows the alternative has a different
-        Write path cost profile as new evidence rather than a result, and state the
-        updated decision rule under new Write path evidence contradicts the Write
-        path assumption that made the first option attractive. I would then name one
-        focused check before treating the revised answer as settled.
+      prompt: >-
+        A provider timeout leaves the charge outcome unknown, and a retry arrives with the same key
+        but a different request body. Which idempotency claim is no longer safe?
+      changed_constraint: >-
+        the payment API must distinguish an unknown external outcome from a changed request and
+        prevent a second charge
+      new_evidence: >-
+        the provider timed out after accepting or possibly accepting the charge and the retry
+        fingerprint differs
+      best_answer: >-
+        I would keep same-fingerprint replay, but I would retract any automatic retry or assumption
+        that a timeout means no charge occurred. I would reject the changed fingerprint, reconcile
+        the provider outcome by idempotency key, and store an explicit unknown state before allowing
+        a new business action.
       distractors:
       - text: I would preserve every part of the original Write path answer because
           changing it after review would be inconsistent.
@@ -881,77 +885,81 @@ items:
     path: real-world-cases/03-async-workflows-and-payments/stripe-idempotent-payments/README.md
     note: Payment idempotency case referenced by path, not copied.
   extension:
-    prompt: 'Five more minutes on Write path: which boundary, alternative, and update
-      trigger would you explain for Write path?'
-    goal: Move from the short Write path answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      How would I test a crash after provider acceptance but before the local result is saved, while
+      preserving the same payment intent?
+    goal: >-
+      Move from the short Write path answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Write path before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need duplicate payment requests to refer to one business operation while separating database
+      atomicity from the provider's external effect.
     claim_map:
-      fact: The prompt explicitly tests Write path within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Write path,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Write path constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Write path: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Clients may retry or double-submit, so more than one HTTP request can represent the same
+        payment intent.
+      inference: >-
+        A provider timeout can leave the charge outcome unresolved even when no successful response
+        reaches the caller.
+      assumption: >-
+        I am assuming a stable operation key and a provider lookup or deduplication contract are
+        available.
+      unknown: >-
+        Provider key retention, replayable error behavior, and recovery after a crash still need
+        definition.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Write path
-        benefit: It keeps the Write path reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Write path workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Write path contract and its invariant are
-          the facts that matter most.
-      - option: a component-first alternative with different failure costs for Write
-          path
-        benefit: It can make the Write path boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Write path evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Write path option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant system design
-        constraint makes the first assumption unsafe.
+      - option: Persist intent, then execute through a recoverable worker
+        benefit: Keeps the local acceptance boundary short and makes pending work visible.
+        cost_or_risk: Adds queue ownership, status polling, and a reconciliation path for uncertain
+          effects.
+        valid_when: The product can represent a pending payment and durable dispatch is available.
+      - option: Call the provider within the request's bounded lifetime
+        benefit: Can return a completed provider outcome directly when it arrives promptly.
+        cost_or_risk: Timeouts still require a durable intent, stable provider key, and later reconciliation.
+        valid_when: Latency permits the call and the API explicitly represents unresolved outcomes.
+      decision_rule: >-
+        I would preserve request identity and reject changed input in either design; I would choose
+        synchronous or asynchronous execution from latency and pending-state requirements.
     failure_probe:
-      kind: counterexample
-      prompt: 'Write path: where would a tiny Write path counterexample expose a false
-        assumption, and what would you change about Write path?'
+      kind: failure_mode
+      prompt: >-
+        If the provider accepts a charge and the process crashes before recording the result, what
+        stops a retry from submitting a new charge?
     evidence_check:
-      basis: Check the Write path claim against system-design-estudos/chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Write path claim against system-design-estudos/chapters/chapter-03-idempotent-writes-under-ambiguous-failure.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Write path,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Write path, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Write path question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Walk me through what happens when a", update Write
-        path when Write path evidence—a Write path trace or Write path test—contradicts
-        the Write path constraint in case "Walk me through what happens when a"; ask
-        a stakeholder about Write path before revising.
+      rationale: >-
+        Duplicate safety needs both local replay control and the provider contract; a local transaction
+        alone cannot prove the external result.
+      update_trigger: >-
+        A provider without stable replay keys, an expired key, or a changed request fingerprint
+        changes the permitted recovery action.
     rubric:
-      facts_correct: Names the verified Write path facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Write path premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Write path options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Write path choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Write path by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Write path recommendation.
+      facts_correct: Separates a durable local intent from the external payment effect and its observed
+        result.
+      assumptions_explicit: States assumptions about provider idempotency, retention, and status
+        lookup.
+      alternatives_considered: >-
+        Compares synchronous completion with recoverable asynchronous work without dropping replay
+        safety.
+      tradeoff_quality: Explains pending-state complexity versus request latency and timeout exposure.
+      follow_up_adaptation: >-
+        Rejects changed input and reconciles an ambiguous charge instead of treating timeout as
+        failure.
+      certainty_calibration: Uses medium certainty until provider replay and crash-recovery behavior
+        are demonstrated.
+
 - id: system_design-05-read-path-caching
   version: 1.4.0
   target: system_design
@@ -970,10 +978,10 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      If the cache disappears, every request hits the database at once: a thundering herd
-      it was never sized for. I would compare that choice with the credible alternative
-      against the requirement in the follow-up, cost, and failure risk, then switch only if
-      evidence makes the alternative safer.
+      I would admit only bounded origin work after a cache loss, coalesce identical misses, and
+      shed or rate-limit lower-priority requests. I would protect the database with a concurrency
+      limit and watch origin latency, connection use, and error rate before restoring broad cache
+      fills.
     distractors:
     - text: I would defend the first Read path option because offering an alternative
         might make the decision look uncertain.
@@ -988,9 +996,12 @@ items:
       trade-off you accept.
     goal: Compress the Read path answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: 'If the cache disappears, every request hits the database at once:
-    a thundering herd it was never sized for. I would use request coalescing so one
-    lookup per key reaches the origin, and keep headroom for the rest.'
+  best_answer: >-
+    If cache misses or failures fall straight through to the database, peak demand can
+    overwhelm the origin. I would coalesce identical lookups, bound total origin concurrency,
+    and define which excess requests can wait, receive a stale value, or fail explicitly.
+    Coalescing one key does not protect me from many distinct misses, and stale serving only
+    works if a suitable copy is still available.
   distractors:
   - text: The requests would fall back to the database, which would be slower but
       the system would keep working, and then the cache would warm up again once it
@@ -1050,22 +1061,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-05-read-path-caching-delayed-5
-      prompt: 'Revisit Read path after a Read path test exposes a boundary case that
-        the Read path examples did not cover and two Read path callers from the case
-        "Your cache node just died at peak" or Read path tenants now compete for the
-        same Read path boundary: what remains factual about Read path, what becomes
-        provisional, and why?'
-      changed_constraint: two Read path callers from the case "Your cache node just
-        died at peak" or Read path tenants now compete for the same Read path boundary
-      new_evidence: a Read path test exposes a boundary case that the Read path examples
-        did not cover
-      best_answer: I would keep the facts that remain supported about Read path, treat
-        a Read path test exposes a boundary case that the Read path examples did not
-        cover as new evidence rather than a result, and state the updated decision
-        rule under two Read path callers from the case "Your cache node just died
-        at peak" or Read path tenants now compete for the same Read path boundary.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        A cache-loss test shows request coalescing still overloads the database because many
+        distinct keys miss at once. Which read-path protection is incomplete?
+      changed_constraint: >-
+        origin work must remain bounded across both identical and distinct cache misses
+      new_evidence: >-
+        a cache outage produces a broad miss storm whose keys do not coalesce
+      best_answer: >-
+        I would keep coalescing identical keys, but I would retract it as a complete cache-loss
+        protection. I would add an origin concurrency budget, admission or stale serving for
+        distinct misses, and verify database latency and connection saturation under a broad miss
+        storm.
       distractors:
       - text: I would preserve every part of the original Read path answer because
           changing it after review would be inconsistent.
@@ -1083,78 +1090,75 @@ items:
     path: decision-contrasts/01-read-replica-vs-cache-aside.md
     note: Replica versus cache-aside contrast.
   extension:
-    prompt: 'Revisit Read path beyond the happy path: what is factual about Read path,
-      what is provisional, and which Read path test could change it?'
-    goal: Move from the short Read path answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      If no stale copy survives the cache outage, which requests would I prioritize, reject, or
+      delay to protect the origin?
+    goal: >-
+      Move from the short Read path answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Read path before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to keep durable storage within its capacity when a cache failure exposes peak read
+      demand.
     claim_map:
-      fact: The prompt explicitly tests Read path within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Read path,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Read path constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Read path: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The cache has failed during a peak-traffic interval; the origin's spare capacity is not
+        specified.
+      inference: >-
+        Coalescing repeated requests for one key does not bound simultaneous misses for different
+        keys.
+      assumption: >-
+        I am assuming some reads may be delayed, rejected, or served stale under an explicit product
+        policy.
+      unknown: The origin concurrency budget, key diversity, and permitted stale-read window are
+        unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Read path
-        benefit: It keeps the Read path reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Read path workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Read path contract and its invariant are
-          the facts that matter most.
-      - option: a component-first alternative with different failure costs for Read
-          path
-        benefit: It can make the Read path boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Read path evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Read path option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant system design
-        constraint makes the first assumption unsafe.
+      - option: Bound origin concurrency and reject excess misses
+        benefit: Protects database resources even when every miss uses a different key.
+        cost_or_risk: Some requests receive an explicit failure or retry instruction during overload.
+        valid_when: Freshness is required and demand can exceed the database's safe concurrency.
+      - option: Serve bounded stale values for eligible reads
+        benefit: Reduces origin demand while preserving a degraded read experience.
+        cost_or_risk: Requires a retained stale copy and a clear limit on acceptable outdated data.
+        valid_when: The product permits staleness and an accessible stale value actually exists.
+      decision_rule: >-
+        I would always bound origin work, then serve stale data only for eligible reads with an
+        available copy; otherwise I would reject or delay excess demand.
     failure_probe:
-      kind: edge_case
-      prompt: 'Read path: which Read path boundary deserves the first test, and what
-        observation about Read path would overturn the premise?'
+      kind: failure_mode
+      prompt: >-
+        If every incoming request misses a different key and the cache node is unavailable, which
+        mechanism actually caps database work?
     evidence_check:
-      basis: Check the Read path claim against system-design-estudos/areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Read path claim against system-design-estudos/areas/11-operational-playbooks/playbooks/cache-hot-key-and-origin-protection.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Read path,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Read path, but it cannot prove an unmeasured
+        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Read path question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Your cache node just died at peak", update Read path
-        when Read path evidence—a Read path trace or Read path test—contradicts the
-        Read path constraint in case "Your cache node just died at peak"; ask a stakeholder
-        about Read path before revising.
+      level: medium
+      rationale: >-
+        The overload mechanism is plausible, but safe concurrency and stale-serving eligibility
+        require workload and product evidence.
+      update_trigger: >-
+        A broad-miss test that saturates connections requires a lower admission budget or a different
+        degraded response.
     rubric:
-      facts_correct: Names the verified Read path facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Read path premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Read path options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Read path choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Read path
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Read path recommendation.
+      facts_correct: Distinguishes identical-key coalescing from a global limit on origin requests.
+      assumptions_explicit: Checks whether stale values remain accessible and whether the product
+        permits their use.
+      alternatives_considered: Compares explicit rejection with eligible stale serving under the
+        same capacity limit.
+      tradeoff_quality: Connects availability and freshness costs to protection of the durable database.
+      follow_up_adaptation: Adds admission control when distinct misses defeat coalescing alone.
+      certainty_calibration: >-
+        Uses medium certainty and validates the budget with origin latency and connection saturation.
+
 - id: system_design-06-failure-modes
   version: 1.4.0
   target: system_design
@@ -1173,10 +1177,11 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      First the impact: checkout is the critical path, so I protect order acceptance even
-      if capture is delayed. If the failure in the follow-up appears, I would name
-      the user or system consequence, contain it with a bounded mitigation, and verify recovery
-      with a focused test or metric.
+      I would correlate checkout failures and pending payment age with provider errors, queue
+      depth, and duplicate-charge signals. I would use the original provider idempotency key
+      or a status query to reconcile uncertain outcomes. Before changing retries, I would
+      confirm the budget and whether pending orders are allowed, then test that a later
+      successful response cannot trigger a second capture.
     distractors:
     - text: I would describe the Failure modes failure as impossible because the happy
         path already passed its test.
@@ -1191,9 +1196,12 @@ items:
       reconciliation of uncertain state.
     goal: Compress the Failure modes answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: 'First the impact: checkout is the critical path, so I protect order
-    acceptance even if capture is delayed. I would read provider errors and queue
-    depth, then stop aggressive retries because they amplify load on a failing dependency.'
+  best_answer: >-
+    I would establish the customer impact and which payment outcomes remain unknown, then stop
+    retries that amplify the provider failure. If the product permits it, I would preserve an
+    order intent as explicitly pending; otherwise I would refuse new attempts clearly. I would
+    never mark an order paid or resubmit an uncertain charge merely because a request timed
+    out.
   distractors:
   - text: I would investigate the root cause of the timeouts by looking at the logs
       and traces to understand exactly why the provider is failing to respond within
@@ -1252,20 +1260,20 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-06-failure-modes-delayed-6
-      prompt: The Failure modes review adds a stakeholder clarifies a Failure modes
-        requirement that changes the Failure modes success condition while the Failure
-        modes workload for Failure modes no longer fits the original resource bound;
-        which conclusion about Failure modes would you narrow before proposing a repair?
-      changed_constraint: the Failure modes workload for Failure modes no longer fits
-        the original resource bound
-      new_evidence: a stakeholder clarifies a Failure modes requirement that changes
-        the Failure modes success condition
-      best_answer: I would keep the facts that remain supported about Failure modes,
-        treat a stakeholder clarifies a Failure modes requirement that changes the
-        Failure modes success condition as new evidence rather than a result, and
-        state the updated decision rule under the Failure modes workload for Failure
-        modes no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        Provider errors are ambiguous and the queue now exceeds its retry budget while checkout
+        acceptance remains critical. Which failure-mode conclusion would you narrow?
+      changed_constraint: >-
+        checkout must remain available without unbounded retries or duplicate capture during
+        ambiguous provider outcomes
+      new_evidence: >-
+        provider responses are ambiguous and retry queue depth exceeds the defined budget
+      best_answer: >-
+        I would stop the exhausted retry loop and park uncertain outcomes for reconciliation
+        using their original operation identities. I would keep order acceptance only as an
+        explicitly pending state under the agreed product policy, and show that status to the
+        customer. I would verify duplicate-capture protection and queue-drain capacity before
+        resuming bounded retries.
       distractors:
       - text: I would preserve every part of the original Failure modes answer because
           changing it after review would be inconsistent.
@@ -1283,68 +1291,82 @@ items:
     path: chapters/chapter-05-durable-workflows-retries-and-compensation.md
     note: Retry and compensation behaviour under failure.
   extension:
-    prompt: Use a deep dive on Failure modes to name the competing Failure modes cost,
-      the first failure signal, and the observation that would update Failure modes.
-    goal: Move from the short Failure modes answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      What would I tell a customer whose payment is unresolved, and which evidence lets me safely
+      change that status?
+    goal: >-
+      Move from the short Failure modes answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Failure modes before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to contain payment-provider timeouts without duplicating charges or misrepresenting
+      an unconfirmed order as paid.
     claim_map:
-      fact: The prompt explicitly tests Failure modes within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Failure modes,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Failure modes constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Failure modes: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The provider is timing out during live checkout; successful and failed charge outcomes may
+        be indistinguishable to the caller.
+      inference: >-
+        Unbounded retries can increase dependency load while multiplying unresolved payment attempts.
+      assumption: >-
+        I am assuming the product may accept an order intent in a clearly pending state; that policy
+        needs confirmation.
+      unknown: >-
+        Affected customers, provider status, duplicate risk, retry budget, and pending-order policy
+        are not yet established.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Failure modes would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Failure modes constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Failure modes; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      applicable: true
+      alternatives:
+      - option: Accept an explicitly pending order intent
+        benefit: Preserves a recoverable customer intent while payment confirmation is delayed.
+        cost_or_risk: Needs inventory policy, clear customer messaging, expiry, and reconciliation
+          ownership.
+        valid_when: The business permits unpaid pending orders and can avoid fulfilling them as
+          paid.
+      - option: Temporarily refuse new payment attempts
+        benefit: Limits new uncertainty when safe pending-state handling is unavailable.
+        cost_or_risk: Customers cannot complete checkout during the affected interval.
+        valid_when: Payment confirmation is mandatory before acceptance or recovery capacity is
+          exhausted.
+      decision_rule: >-
+        I would establish impact and payment safety first, then preserve a pending intent only under
+        an agreed policy; otherwise I would fail explicitly and protect recovery capacity.
     failure_probe:
       kind: failure_mode
-      prompt: 'Failure modes: when the first Failure modes recovery path fails, which
-        consequence reaches the user, and what bounded mitigation follows for Failure
-        modes?'
+      prompt: >-
+        If a customer retries after a timeout while the original charge later succeeds, which state
+        and key prevent duplicate capture?
     evidence_check:
-      basis: Check the Failure modes claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Failure modes claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Failure modes,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Failure modes, but it cannot prove
+        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Failure modes question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "The payment provider is timing out in", update Failure
-        modes when Failure modes evidence—a Failure modes trace or Failure modes test—contradicts
-        the Failure modes constraint in case "The payment provider is timing out in";
-        ask a stakeholder about Failure modes before revising.
+      rationale: >-
+        Timeouts establish uncertainty, not a failed charge; the acceptable degraded checkout behavior
+        is a product decision.
+      update_trigger: >-
+        Confirmed duplicate charges, an exhausted queue budget, or a prohibition on unpaid orders
+        changes the containment choice.
     rubric:
-      facts_correct: Names the verified Failure modes facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Failure modes premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Failure modes options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Failure modes choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Failure modes
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Failure modes recommendation.
+      facts_correct: Reports customer impact and distinguishes confirmed, failed, and unresolved
+        payments.
+      assumptions_explicit: >-
+        Confirms whether pending orders are allowed instead of promising order acceptance universally.
+      alternatives_considered: Compares pending acceptance with explicit refusal under the same
+        payment-safety constraints.
+      tradeoff_quality: Explains conversion loss versus inventory, messaging, and reconciliation
+        responsibilities.
+      follow_up_adaptation: Caps retry amplification and parks uncertain outcomes when the queue
+        budget is exhausted.
+      certainty_calibration: >-
+        Uses medium certainty until provider status and customer-impact signals establish the next
+        action.
+
 - id: system_design-07-tradeoff-defence
   version: 1.4.0
   target: system_design
@@ -1363,9 +1385,10 @@ items:
       boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      For today's volume the simpler option would genuinely be fine, and I would probably
-      ship it. I would keep the claims that remain supported, identify exactly which premise
-      the new observation changes, and run a focused check before revising the decision.
+      I would compare the backbone cost with the number of consumers, delivery guarantees, replay
+      needs, and current traffic. I would choose the simpler point-to-point design while those
+      constraints stay small, then move when measured integration count or failure isolation makes
+      the operational cost of simplicity larger.
     distractors:
     - text: I would keep the Trade-offs recommendation unchanged because changing
         position would look inconsistent.
@@ -1380,10 +1403,12 @@ items:
       that could change your mind.
     goal: Compress the Trade-offs answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: For today's volume the simpler option would genuinely be fine, and
-    I would probably ship it. I would move to the backbone when we have more than
-    two consumers of the same events, because that is when point-to-point integrations
-    start multiplying faster than the team can maintain them.
+  best_answer: >-
+    I would ship the simpler design while it meets the current delivery and recovery contract.
+    I would justify an event backbone through a concrete need such as independent consumer
+    recovery or retained replay, then weigh that against broker operations, duplicate
+    handling, and schema coordination. More consumers can increase integration cost, but I
+    would not use a fixed consumer count as the decision rule.
   distractors:
   - text: Because the simpler solution would not scale as the system grows, and it
       is better to build the right architecture from the start rather than have to
@@ -1441,20 +1466,19 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-07-tradeoff-defence-delayed-7
-      prompt: For Trade-offs, new evidence is a trace of Trade-offs isolates a different
-        Trade-offs bottleneck than the one you named and the constraint is a stakeholder
-        asks for a stronger Trade-offs guarantee than the first Trade-offs answer
-        promised. What alternative now deserves consideration for Trade-offs?
-      changed_constraint: a stakeholder asks for a stronger Trade-offs guarantee than
-        the first Trade-offs answer promised
-      new_evidence: a trace of Trade-offs isolates a different Trade-offs bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Trade-offs,
-        treat a trace of Trade-offs isolates a different Trade-offs bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Trade-offs guarantee
-        than the first Trade-offs answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        A second consumer and replay requirement appear, but measured traffic remains small. Which
+        simplicity claim survives and what cost now justifies a backbone?
+      changed_constraint: >-
+        the design must support independent consumers and replay without multiplying point-to-point
+        recovery work
+      new_evidence: >-
+        the system now has multiple consumers and replay needs even though current traffic is modest
+      best_answer: >-
+        I would keep traffic volume as a reason to avoid unnecessary scale, but I would retract it
+        as the only decision rule. Independent consumers and replay now justify measuring a backbone
+        for ownership and recovery cost, and I would compare that operational benefit with the new
+        infrastructure burden.
       distractors:
       - text: I would preserve every part of the original Trade-offs answer because
           changing it after review would be inconsistent.
@@ -1472,77 +1496,78 @@ items:
     path: chapters/chapter-04-event-backbone-partitions-and-consumer-scale.md
     note: Consumer scale reasoning behind the threshold.
   extension:
-    prompt: 'Walk through Trade-offs under a changed requirement: which Trade-offs
-      claim survives, which option wins, and why would Trade-offs need new evidence?'
-    goal: Move from the short Trade-offs answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      If traffic stays low but replay becomes mandatory, how would I compare durable direct dispatch
+      with a broker?
+    goal: >-
+      Move from the short Trade-offs answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Trade-offs before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to justify an event backbone by delivery, replay, ownership, or recovery needs rather
+      than its name or a fixed consumer-count threshold.
     claim_map:
-      fact: The prompt explicitly tests Trade-offs within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Trade-offs,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Trade-offs constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Trade-offs: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The candidate proposed an event backbone and the interviewer asks whether a simpler design
+        would suffice.
+      inference: >-
+        Additional consumers can increase integration coordination, but their count alone does not
+        establish broker value.
+      assumption: >-
+        I am assuming current demand can fit the simpler design until delivery or recovery requirements
+        show otherwise.
+      unknown: >-
+        Replay retention, independent failure handling, ordering needs, and operational ownership
+        are unspecified.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Trade-offs
-        benefit: It keeps the Trade-offs reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Trade-offs workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Trade-offs contract and its invariant are
-          the facts that matter most.
-      - option: a component-first alternative with different failure costs for Trade-offs
-        benefit: It can make the Trade-offs boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Trade-offs evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Trade-offs option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant system design
-        constraint makes the first assumption unsafe.
+      - option: Keep direct integration with explicit retry ownership
+        benefit: Has fewer running components and can be easier for a small team to operate.
+        cost_or_risk: Producer and consumer recovery may remain coupled as independent integrations
+          grow.
+        valid_when: The delivery contract is simple and measured coordination cost remains manageable.
+      - option: Introduce a durable event backbone with owned consumers
+        benefit: Supports independent consumption and replay under an explicit event contract.
+        cost_or_risk: >-
+          Adds broker operations, lag monitoring, schema evolution, and duplicate-handling responsibilities.
+        valid_when: Replay or independent recovery repays those costs and someone owns the infrastructure.
+      decision_rule: >-
+        I would use the simpler path while it meets delivery and recovery needs, then introduce
+        a backbone only when a concrete requirement justifies its operational burden.
     failure_probe:
       kind: counterexample
-      prompt: 'Trade-offs: what stakeholder reply about Trade-offs would invalidate
-        the recommendation, and which Trade-offs premise would you revisit?'
+      prompt: >-
+        With only two consumers but a mandatory replay window, what can the direct design recover
+        and at what maintenance cost?
     evidence_check:
-      basis: Check the Trade-offs claim against system-design-estudos/decision-contrasts/06-queue-vs-event-backbone.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Trade-offs claim against system-design-estudos/decision-contrasts/06-queue-vs-event-backbone.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Trade-offs,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Trade-offs, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Trade-offs question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why not just use a simpler solution", update Trade-offs
-        when Trade-offs evidence—a Trade-offs trace or Trade-offs test—contradicts
-        the Trade-offs constraint in case "Why not just use a simpler solution"; ask
-        a stakeholder about Trade-offs before revising.
+      rationale: >-
+        Current simplicity is a provisional fit; replay and recovery requirements matter more than
+        an arbitrary number of consumers.
+      update_trigger: >-
+        A mandatory replay window, independent outage recovery, or measured integration-maintenance
+        cost can justify a different boundary even at low traffic.
     rubric:
-      facts_correct: Names the verified Trade-offs facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Trade-offs premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Trade-offs options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Trade-offs choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Trade-offs
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Trade-offs recommendation.
+      facts_correct: Names the delivery or recovery requirement that the proposed backbone serves.
+      assumptions_explicit: Asks about replay, ordering, retention, and infrastructure ownership.
+      alternatives_considered: Compares direct integration with a durable backbone without a fixed
+        consumer-count rule.
+      tradeoff_quality: Balances independent recovery against broker operations and event-contract
+        maintenance.
+      follow_up_adaptation: Reconsiders a low-volume direct design when replay becomes mandatory.
+      certainty_calibration: Uses medium certainty until the operational requirement and ownership
+        are explicit.
+
 - id: system_design-08-rails-mapping
   version: 1.4.0
   target: system_design
@@ -1560,11 +1585,10 @@ items:
       boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      As a Rails application it is a controller that validates and enqueues, a job
-      that talks to the provider, and Postgres as the source of truth with the
-      idempotency key as a unique index. I would label the follow-up premise as an
-      assumption, ask the smallest question that could disprove it, and protect the edge case
-      before committing to the recommendation.
+      I would keep request validation and response shaping in the controller, the payment
+      transaction in a service or model boundary, and provider work in a job. I would make the
+      unique idempotency index and retry policy explicit so the controller does not coordinate
+      asynchronous state.
     distractors:
     - text: I would repeat my original Rails mapping answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -1641,21 +1665,22 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-08-rails-mapping-delayed-8
-      prompt: A second pass on Rails mapping finds a code inspection of Rails mapping
-        confirms the Rails mapping mechanism but not its impact; with the Rails mapping
-        dependency is slower for Rails mapping and the failure is ambiguous rather
-        than explicit, which Rails mapping test would you run before keeping the original
-        rule?
-      changed_constraint: the Rails mapping dependency is slower for Rails mapping
-        and the failure is ambiguous rather than explicit
-      new_evidence: a code inspection of Rails mapping confirms the Rails mapping
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Rails mapping,
-        treat a code inspection of Rails mapping confirms the Rails mapping mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under the Rails mapping dependency is slower for Rails mapping
-        and the failure is ambiguous rather than explicit. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A code inspection confirms the Rails controller and job boundaries, but provider retries
+        show duplicate effects and the connection pool saturates. Which mapping assumption is no
+        longer safe?
+      changed_constraint: >-
+        the Rails path must preserve idempotency under retry and stay within a measured
+        connection-pool budget
+      new_evidence: >-
+        retry traces show duplicate provider effects and pool metrics show saturation at the job
+        concurrency
+      best_answer: >-
+        I would keep the controller, durable payment state, and job responsibilities separate,
+        but the duplicate effects show that a local unique index is not sufficient. I would
+        verify a stable provider idempotency key and reconcile uncertain outcomes before
+        retrying. I would also limit worker concurrency to the measured database pool budget
+        and test duplicate delivery, crash recovery, and pool exhaustion separately.
       distractors:
       - text: I would preserve every part of the original Rails mapping answer because
           changing it after review would be inconsistent.
@@ -1673,78 +1698,78 @@ items:
     path: real-world-cases/01-platforms-and-apps/github-rails-and-mysql-at-scale/README.md
     note: Rails at scale case referenced by path, not copied.
   extension:
-    prompt: Connect Rails mapping, connect the Rails mapping implementation choice
-      to its failure mode, measurement, and condition for choosing the alternative.
-    goal: Move from the short Rails mapping answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      Which crash test would distinguish a durable payment intent from a reliably dispatched provider
+      operation in this Rails design?
+    goal: >-
+      Move from the short Rails mapping answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Rails mapping before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to map the API, durable state, dispatch, and provider effect into Rails boundaries
+      without mistaking framework structure for payment safety.
     claim_map:
-      fact: The prompt explicitly tests Rails mapping within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Rails mapping,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Rails mapping constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Rails mapping: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The interviewer asks for an implementable Rails version of the proposed payment design.
+      inference: >-
+        A controller, job, and database can separate responsibilities while still leaving a commit-to-enqueue
+        or provider-retry gap.
+      assumption: I am assuming a database-backed payment intent and an explicitly recoverable dispatch
+        path.
+      unknown: >-
+        Queue storage, transaction coupling, worker concurrency, pool capacity, and provider retry
+        guarantees remain unspecified.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Rails mapping
-        benefit: It keeps the Rails mapping reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Rails mapping workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Rails mapping contract and its invariant
-          are the facts that matter most.
-      - option: a component-first alternative with different failure costs for Rails
-          mapping
-        benefit: It can make the Rails mapping boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Rails mapping evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Rails mapping option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant system
-        design constraint makes the first assumption unsafe.
+      - option: Commit intent and dispatch metadata in one database boundary
+        benefit: Makes accepted work discoverable after a crash and supports recovery of undispatched
+          intent.
+        cost_or_risk: Requires a worker or relay plus monitoring for delayed dispatch and duplicate
+          delivery.
+        valid_when: The transaction can persist the payment intent and its dispatch record atomically.
+      - option: Enqueue after commit with a reconciliation mechanism
+        benefit: Keeps the request transaction separate from later queue interaction.
+        cost_or_risk: A failure between commit and enqueue still needs detection and recovery.
+        valid_when: The queue is separate and missing dispatch can be reliably found and repaired.
+      decision_rule: >-
+        I would keep HTTP shaping, durable state, and provider work explicit; I would select dispatch
+        from the actual queue transaction model and prove crash recovery.
     failure_probe:
-      kind: edge_case
-      prompt: 'Rails mapping: where does the Rails mapping premise need a boundary
-        check, and which result would make you reframe Rails mapping?'
+      kind: failure_mode
+      prompt: >-
+        If the process exits after saving payment intent but before enqueue succeeds, how does the
+        Rails system find the undispatched operation?
     evidence_check:
-      basis: Check the Rails mapping claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Rails mapping claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Rails mapping,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Rails mapping, but it cannot prove
+        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Rails mapping question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How would this design actually look in", update Rails
-        mapping when Rails mapping evidence—a Rails mapping trace or Rails mapping
-        test—contradicts the Rails mapping constraint in case "How would this design
-        actually look in"; ask a stakeholder about Rails mapping before revising.
+      rationale: >-
+        The responsibility split is useful, but duplicate safety and durability depend on the concrete
+        database, queue, and provider contracts.
+      update_trigger: >-
+        An enqueue gap, duplicate provider effect, or exhausted connection pool requires a change
+        to recovery or concurrency rather than a new controller abstraction.
     rubric:
-      facts_correct: Names the verified Rails mapping facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Rails mapping premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Rails mapping options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Rails mapping choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Rails mapping
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Rails mapping recommendation.
+      facts_correct: >-
+        Distinguishes HTTP response handling, durable payment state, dispatch, and external execution.
+      assumptions_explicit: Asks whether queue writes share the transaction and whether provider
+        retries are idempotent.
+      alternatives_considered: Compares atomic dispatch records with after-commit enqueue plus reconciliation.
+      tradeoff_quality: Explains recovery ownership and pool pressure alongside short request transactions.
+      follow_up_adaptation: >-
+        Adds provider replay protection and bounds workers when duplicate effects and pool saturation
+        appear.
+      certainty_calibration: >-
+        Uses medium certainty until crash, duplicate-delivery, and pool-exhaustion behavior are
+        tested.
+
 - id: system_design-09-consistency-choice
   version: 1.4.0
   target: system_design
@@ -1762,9 +1787,10 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      It depends on the field. I would treat the follow-up observation as evidence, not
-      as proof of impact; I would inspect the smallest relevant trace or test and
-      state what remains uncertain before changing the decision.
+      I would protect the no-overspending invariant at the debit or reservation boundary,
+      including concurrent requests. For displays, I would agree on a permitted lag and avoid
+      presenting an old value as freshly confirmed. I would test both concurrent debits and
+      delayed projections because they expose different correctness failures.
     distractors:
     - text: I would cite my experience with Consistency as enough proof and move on
         without naming an observation.
@@ -1779,9 +1805,12 @@ items:
       the user can understand.
     goal: Compress the Consistency answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: It depends on the field. A view count can lag a few seconds without
-    harm; a balance cannot, because a stale number could let someone overdraw. I would
-    require strong consistency for money and accept eventual consistency elsewhere.
+  best_answer: >-
+    I would separate display freshness from the spending decision. A view count may tolerate a
+    stated delay, and even a balance display may be labeled with its freshness if the product
+    allows it. A debit must enforce available funds atomically at the authoritative boundary;
+    a fresh read alone cannot prevent two concurrent requests from overspending. I would agree
+    on each field's freshness promise before choosing its read path.
   distractors:
   - text: Yes, eventual consistency is fine for most user-facing features since the
       delay is usually small enough that users will not notice it in practice.
@@ -1840,21 +1869,21 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-09-consistency-choice-delayed-9
-      prompt: 'Consistency: the later Consistency review says a measured Consistency
-        comparison shows the alternative has a different Consistency cost profile.
-        Under new Consistency evidence contradicts the Consistency assumption that
-        made the first option attractive, which part of Consistency survives and which
-        Consistency claim changes?'
-      changed_constraint: new Consistency evidence contradicts the Consistency assumption
-        that made the first option attractive
-      new_evidence: a measured Consistency comparison shows the alternative has a
-        different Consistency cost profile
-      best_answer: I would keep the facts that remain supported about Consistency,
-        treat a measured Consistency comparison shows the alternative has a different
-        Consistency cost profile as new evidence rather than a result, and state the
-        updated decision rule under new Consistency evidence contradicts the Consistency
-        assumption that made the first option attractive. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A product owner now requires a view count to update within one second, while balance reads
+        still cannot tolerate stale data. Which consistency claim changes?
+      changed_constraint: >-
+        the design must meet a one-second view freshness target while preserving strong balance
+        invariants
+      new_evidence: >-
+        the owner adds a measured freshness target for views without relaxing the balance
+        requirement
+      best_answer: >-
+        I would enforce the new one-second propagation bound for view counts and keep balance
+        reads on the authoritative path required by this scenario. I would measure end-to-end
+        propagation and define what the interface does when it exceeds that bound. Financial
+        mutations still need their atomic funds check; faster display updates do not replace
+        it.
       distractors:
       - text: I would preserve every part of the original Consistency answer because
           changing it after review would be inconsistent.
@@ -1872,77 +1901,82 @@ items:
     path: areas/06-foundations-distribuidas/topics/cap-theorem.md
     note: CAP trade-offs behind the per-field decision.
   extension:
-    prompt: 'Consistency: inspect Consistency evidence next; which edge case for Consistency
-      would alter the trade-off?'
-    goal: Move from the short Consistency answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      How would I demonstrate that fresh balance reads alone do not prevent a race between two debit
+      requests?
+    goal: >-
+      Move from the short Consistency answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Consistency before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need separate consistency contracts for a displayed count, a displayed balance, and a financial
+      mutation that must enforce the available-funds invariant.
     claim_map:
-      fact: The prompt explicitly tests Consistency within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Consistency,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Consistency constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Consistency: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The screen combines content counts and a balance, but the prompt does not define every freshness
+        or spending rule.
+      inference: >-
+        Display freshness and mutation safety are different concerns; two unchecked debits may race
+        despite both callers reading recent values.
+      assumption: >-
+        I am assuming the money operation must reject spending beyond available funds and view counts
+        may tolerate a bounded delay.
+      unknown: >-
+        The display's freshness promise, atomic debit mechanism, and acceptable count propagation
+        delay remain unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Consistency
-        benefit: It keeps the Consistency reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Consistency workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Consistency contract and its invariant
-          are the facts that matter most.
-      - option: a component-first alternative with different failure costs for Consistency
-        benefit: It can make the Consistency boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Consistency evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Consistency option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant system
-        design constraint makes the first assumption unsafe.
+      - option: Use an authoritative atomic boundary for spending decisions
+        benefit: Protects the funds invariant while competing mutations are evaluated.
+        cost_or_risk: Can reduce availability or increase latency when the authoritative boundary
+          is unavailable.
+        valid_when: The operation must prevent overspending despite concurrent requests.
+      - option: Use a bounded-staleness projection for eligible display fields
+        benefit: Improves read scalability when delayed display data is acceptable.
+        cost_or_risk: Needs freshness labeling and cannot authorize spending from an unchecked stale
+          value.
+        valid_when: The product explicitly permits the displayed field to lag within a stated bound.
+      decision_rule: >-
+        I would enforce financial mutations atomically at their authority and choose each display's
+        freshness separately; I would not treat all fields or all money reads as one contract.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Consistency: if the Consistency decision fails under plausible load
-        or a difficult turn, what consequence appears first, and how would you contain
-        Consistency?'
+      kind: counterexample
+      prompt: >-
+        If two requests each read the same available balance before either writes, what prevents
+        their combined debit from exceeding it?
     evidence_check:
-      basis: Check the Consistency claim against system-design-estudos/areas/06-foundations-distribuidas/topics/consistency-models.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Consistency claim against system-design-estudos/areas/06-foundations-distribuidas/topics/consistency-models.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Consistency,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Consistency, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Consistency question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Can this part of the system tolerate", update Consistency
-        when Consistency evidence—a Consistency trace or Consistency test—contradicts
-        the Consistency constraint in case "Can this part of the system tolerate";
-        ask a stakeholder about Consistency before revising.
+      level: medium
+      rationale: >-
+        The funds invariant is clear only after the business rule is stated; the appropriate display
+        freshness remains conditional.
+      update_trigger: >-
+        A one-second count freshness requirement or a demonstrated concurrent-debit race changes
+        the relevant projection or mutation contract.
     rubric:
-      facts_correct: Names the verified Consistency facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Consistency premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Consistency options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Consistency choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Consistency by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Consistency recommendation.
+      facts_correct: Distinguishes stale display data from authorization and concurrent mutation
+        correctness.
+      assumptions_explicit: States the assumed funds rule and asks for freshness limits per displayed
+        field.
+      alternatives_considered: >-
+        Compares authoritative mutation with eligible projected display without treating them as
+        interchangeable.
+      tradeoff_quality: Explains freshness, availability, and latency costs at the relevant operation
+        boundary.
+      follow_up_adaptation: Measures count propagation against one second while preserving the financial
+        invariant.
+      certainty_calibration: Uses medium certainty until mutation isolation and display freshness
+        requirements are known.
+
 - id: system_design-10-bottleneck-naming
   version: 1.4.0
   target: system_design
@@ -1960,9 +1994,10 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      The database write path, most likely. I would compare that choice with the credible
-      alternative against the requirement in the follow-up, cost, and failure risk, then switch only
-      if evidence makes the alternative safer.
+      I would measure primary write saturation, replica lag, cache hit rate, fanout queue depth,
+      and work per post. That evidence tells me whether the database or fanout saturates first; I
+      would scale or partition the measured resource instead of defending the most familiar
+      bottleneck.
     distractors:
     - text: I would defend the first Bottlenecks option because offering an alternative
         might make the decision look uncertain.
@@ -1977,10 +2012,11 @@ items:
       with its trade-off.
     goal: Compress the Bottlenecks answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: The database write path, most likely. Reads scale out with replicas
-    and cache, but every write still lands on one primary, so that is the first hard
-    ceiling. After that it would be the fanout job, because its work grows with followers
-    per post rather than with posts.
+  best_answer: >-
+    I would inspect the database write path first. Reads can scale with replicas and cache, but
+    every write still lands on one primary, so that is the first hard ceiling to measure. I
+    would then check the fanout job, whose work grows with followers per post rather than posts,
+    and validate both claims with saturation metrics.
   distractors:
   - text: It would depend on the traffic patterns and how the load is distributed,
       so I would want to monitor the system and see where the bottlenecks appear in
@@ -2041,23 +2077,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: system_design-10-bottleneck-naming-delayed-10
-      prompt: 'Review note for Bottlenecks: a Bottlenecks test exposes a boundary
-        case that the Bottlenecks examples did not cover. Given two Bottlenecks callers
-        from the case "Where does this design break first as" or Bottlenecks tenants
-        now compete for the same Bottlenecks boundary, what would you now defend,
-        retract, and verify about Bottlenecks?'
-      changed_constraint: two Bottlenecks callers from the case "Where does this design
-        break first as" or Bottlenecks tenants now compete for the same Bottlenecks
-        boundary
-      new_evidence: a Bottlenecks test exposes a boundary case that the Bottlenecks
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Bottlenecks,
-        treat a Bottlenecks test exposes a boundary case that the Bottlenecks examples
-        did not cover as new evidence rather than a result, and state the updated
-        decision rule under two Bottlenecks callers from the case "Where does this
-        design break first as" or Bottlenecks tenants now compete for the same Bottlenecks
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        Metrics show fanout queue depth saturates before primary writes, and posts with many
+        followers dominate work. Which bottleneck claim changes?
+      changed_constraint: >-
+        the design must isolate follower fanout work before it delays ordinary writes or reads
+      new_evidence: >-
+        queue metrics show fanout saturation and work scales with followers per post before primary
+        write saturation
+      best_answer: >-
+        I would keep the primary write path as a possible later ceiling, but I would retract it as
+        the first bottleneck for this workload. I would isolate and batch fanout, measure queue age
+        and work per follower, and then revisit primary capacity with the updated traffic.
       distractors:
       - text: I would preserve every part of the original Bottlenecks answer because
           changing it after review would be inconsistent.
@@ -2075,77 +2106,75 @@ items:
     path: decision-contrasts/11-fanout-on-write-vs-fanout-on-read.md
     note: Fanout-on-write versus fanout-on-read contrast.
   extension:
-    prompt: 'Deep dive on Bottlenecks: compare Bottlenecks options with one measurement;
-      which failure around Bottlenecks would make Bottlenecks switch?'
-    goal: Move from the short Bottlenecks answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: >-
+      After improving fanout, which measurements would tell me whether primary writes have become
+      the next bottleneck?
+    goal: >-
+      Move from the short Bottlenecks answer to a deep, evidence-led defence without inventing an
+      outcome.
   critical_thinking:
-    problem_frame: 'Frame Bottlenecks before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      I need to identify the first saturated resource from workload evidence rather than defend
+      the bottleneck I named on the whiteboard.
     claim_map:
-      fact: The prompt explicitly tests Bottlenecks within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Bottlenecks,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Bottlenecks constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Bottlenecks: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The design has a primary write path and fanout work whose demand depends on followers per
+        post.
+      inference: A few high-fanout posts may create more queued work than the average posting rate
+        suggests.
+      assumption: >-
+        I am assuming the proposed topology sends accepted writes to one primary and processes fanout
+        asynchronously.
+      unknown: >-
+        Write utilization, queue age, follower distribution, service times, and user latency budgets
+        are not supplied.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Bottlenecks
-        benefit: It keeps the Bottlenecks reasoning close to the stated system design
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Bottlenecks workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Bottlenecks contract and its invariant
-          are the facts that matter most.
-      - option: a component-first alternative with different failure costs for Bottlenecks
-        benefit: It can make the Bottlenecks boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Bottlenecks evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Bottlenecks option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant system
-        design constraint makes the first assumption unsafe.
+      - option: Increase or partition the measured write capacity
+        benefit: Addresses a saturated primary when writes are the limiting resource.
+        cost_or_risk: Adds migration and coordination costs and may leave fanout latency unchanged.
+        valid_when: Write utilization and latency establish the primary as the current bottleneck.
+      - option: Bound and isolate high-fanout processing
+        benefit: Targets queue age and noisy posts when follower work dominates.
+        cost_or_risk: Requires fairness, batching, and explicit delivery-latency expectations.
+        valid_when: Fanout queue evidence reaches its limit before database writes do.
+      decision_rule: >-
+        I would compare saturation and queue age under the same workload, then change the limiting
+        path and check whether the bottleneck moved.
     failure_probe:
-      kind: counterexample
-      prompt: 'Bottlenecks: which adversarial Bottlenecks example could disprove the
-        recommendation, and what evidence about Bottlenecks would you request?'
+      kind: edge_case
+      prompt: >-
+        If posting rate stays flat but a few accounts gain many followers, which queue or resource
+        can fail without a rise in average writes?
     evidence_check:
-      basis: Check the Bottlenecks claim against system-design-estudos/chapters/chapter-14-feed-ranking-and-fanout-trade-offs.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Bottlenecks claim against system-design-estudos/chapters/chapter-14-feed-ranking-and-fanout-trade-offs.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Bottlenecks,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Bottlenecks, but it cannot prove an
+        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Bottlenecks question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Where does this design break first as", update Bottlenecks
-        when Bottlenecks evidence—a Bottlenecks trace or Bottlenecks test—contradicts
-        the Bottlenecks constraint in case "Where does this design break first as";
-        ask a stakeholder about Bottlenecks before revising.
+      rationale: >-
+        The proposed topology suggests candidates for saturation, but measurements are required
+        to rank them.
+      update_trigger: >-
+        Fanout queue age rising while primary writes retain headroom overturns the primary-first
+        diagnosis.
     rubric:
-      facts_correct: Names the verified Bottlenecks facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Bottlenecks premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Bottlenecks options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Bottlenecks choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Bottlenecks
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Bottlenecks recommendation.
+      facts_correct: Connects fanout demand to followers per post rather than post count alone.
+      assumptions_explicit: States the topology and workload distribution assumed by the bottleneck
+        claim.
+      alternatives_considered: Compares write capacity and fanout isolation using their observed
+        saturation signals.
+      tradeoff_quality: Explains migration or fairness costs instead of adding capacity everywhere.
+      follow_up_adaptation: Prioritizes fanout when its queue saturates ahead of the primary.
+      certainty_calibration: Uses medium certainty until representative load identifies the first
+        limiting resource.
+
 - id: system_design-11-scope-control
   version: 1.4.0
   target: system_design
@@ -2164,10 +2193,10 @@ items:
       evidence boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I would spend ten minutes on the data model and access patterns, where most
-      risk sits, then keep five for failure modes. If the failure in the follow-up
-      appears, I would name the user or system consequence, contain it with a bounded
-      mitigation, and verify recovery with a focused test or metric.
+      I would time-box the data model and access paths, state the failure risks I cannot cover,
+      and ask the interviewer which decision matters next. I would cut ranking or secondary
+      features before hand-waving storage, because an explicit unmade decision is safer than an
+      invented guarantee.
     distractors:
     - text: I would describe the Managing the round failure as impossible because
         the happy path already passed its test.
@@ -2184,7 +2213,7 @@ items:
       and verification step.
   best_answer: 'I would spend ten minutes on the data model and access patterns, where
     most risk sits, then keep five for failure modes. I would leave ranking undiscussed
-    before storage hand-waved: storage decisions are harder to reverse.'
+    rather than hand-wave storage, because storage decisions are harder to reverse.'
   distractors:
   - text: Let us cover storage then, I can walk through the schema and the database
       choice and then we can see how much time is left for the other topics afterwards.
@@ -2241,22 +2270,19 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: system_design-11-scope-control-delayed-11
-      prompt: New evidence about Managing the round says a stakeholder clarifies a
-        Managing the round requirement that changes the Managing the round success
-        condition; with the Managing the round workload for Managing the round no
-        longer fits the original resource bound, how do you update the Managing the
-        round decision rule?
-      changed_constraint: the Managing the round workload for Managing the round no
-        longer fits the original resource bound
-      new_evidence: a stakeholder clarifies a Managing the round requirement that
-        changes the Managing the round success condition
-      best_answer: I would keep the facts that remain supported about Managing the
-        round, treat a stakeholder clarifies a Managing the round requirement that
-        changes the Managing the round success condition as new evidence rather than
-        a result, and state the updated decision rule under the Managing the round
-        workload for Managing the round no longer fits the original resource bound.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        The interviewer requires a storage decision in five minutes and says ranking can wait. Which
+        scope plan changes and what risk do you state?
+      changed_constraint: >-
+        the round must produce a reversible storage decision and an explicit failure risk within the
+        remaining time
+      new_evidence: >-
+        the interviewer prioritizes storage and removes ranking from the required answer
+      best_answer: >-
+        I would keep the habit of protecting high-risk decisions, but I would change the time
+        allocation to make the storage trade-off explicit now. I would state the chosen model,
+        access pattern, migration risk, and one unverified failure mode, then leave ranking out as
+        requested.
       distractors:
       - text: I would preserve every part of the original Managing the round answer
           because changing it after review would be inconsistent.
@@ -2274,72 +2300,76 @@ items:
     path: areas/01-metodo-e-entrevistas/examples/interview-walkthrough-marketplace-search.md
     note: Worked walkthrough showing time allocation in practice.
   extension:
-    prompt: 'Defend Managing the round after a counterexample: which Managing the
-      round assumption changes, and what evidence keeps the revised Managing the round
-      choice honest?'
-    goal: Move from the short Managing the round answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      What is the shortest storage explanation I could give that still exposes an invariant, access
+      pattern, and unresolved failure risk?
+    goal: >-
+      Move from the short Managing the round answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Managing the round before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      I need to use the remaining interview time to make the storage decision assessable while naming
+      what remains unresolved.
     claim_map:
-      fact: The prompt explicitly tests Managing the round within a system design
-        context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Managing
-        the round, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Managing the round constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Managing the round: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: Fifteen minutes remain and storage has not yet been discussed.
+      inference: >-
+        Missing access patterns or invariants can invalidate a storage choice more directly than
+        omitted ranking detail.
+      assumption: >-
+        I am assuming storage carries the largest unresolved risk; I should check the interviewer's
+        priority.
+      unknown: >-
+        The required storage decision, existing guarantees, and time needed for failure discussion
+        are unclear.
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Managing the round
-        would be a false equivalence because the prompt does not establish that both
-        choices satisfy the same contract.
-      hard_constraint: The hard Managing the round constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Managing the round; first
-        clarify the constraint or collect the evidence that would make two options
-        genuinely comparable.
+      applicable: true
+      alternatives:
+      - option: Time-box the data model and its highest-risk access path
+        benefit: Makes the central storage decision concrete within the remaining discussion.
+        cost_or_risk: Leaves some secondary features or detailed failure analysis for an explicit
+          follow-up.
+        valid_when: Storage correctness is the main unresolved design risk the interviewer wants
+          addressed.
+      - option: Let the interviewer select one unresolved decision
+        benefit: Aligns the limited time with the assessment's actual priority.
+        cost_or_risk: Requires a concise menu of risks and may leave a different important topic
+          unexplored.
+        valid_when: The interviewer has not confirmed which remaining decision matters most.
+      decision_rule: >-
+        I would propose a short storage agenda, confirm its priority, and state omitted risks rather
+        than filling gaps with an unsupported guarantee.
     failure_probe:
       kind: edge_case
-      prompt: 'Managing the round: which empty or extreme Managing the round case
-        would expose the hidden assumption, and what would you measure about Managing
-        the round?'
+      prompt: >-
+        If the interviewer cuts storage discussion to five minutes, which invariant and access path
+        must still be explicit before I name the store?
     evidence_check:
-      basis: Check the Managing the round claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Managing the round claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/03-system-design-delivery-framework.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Managing the
-        round, but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Managing the round, but it cannot prove
+        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Managing the round
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "We have fifteen minutes left and we", update Managing
-        the round when Managing the round evidence—a Managing the round trace or Managing
-        the round test—contradicts the Managing the round constraint in case "We have
-        fifteen minutes left and we"; ask a stakeholder about Managing the round before
-        revising.
+      rationale: >-
+        A time box is observable, but the best allocation depends on the unresolved risk and the
+        interviewer's priority.
+      update_trigger: >-
+        An explicit request for a storage choice in five minutes changes the agenda and forces secondary
+        features out of scope.
     rubric:
-      facts_correct: Names the verified Managing the round facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Managing the round premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Managing the round options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Managing the round choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Managing the round
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Managing the round recommendation.
+      facts_correct: Acknowledges the remaining minutes and identifies the unresolved storage decision.
+      assumptions_explicit: Checks whether storage is the interviewer's highest-priority risk.
+      alternatives_considered: Compares a proposed storage time box with explicit priority selection.
+      tradeoff_quality: Names what will remain unexamined when time is spent on the storage boundary.
+      follow_up_adaptation: Uses the five-minute constraint to state model, access path, and unverified
+        failure risk.
+      certainty_calibration: Keeps medium certainty about unexamined design details instead of inventing
+        completeness.
+
 - id: system_design-12-ten-x-version
   version: 1.4.0
   target: system_design
@@ -2348,9 +2378,9 @@ items:
   interview_stage: architecture_review
   template: sd-delivery
   prompt: What would you change if this had ten times the traffic?
-  context: The closing question of most design rounds. The interviewer wants a staged
-    evolution rather than a redesign, since redesigning signals the first version
-    was not thought through.
+  context: >-
+    The closing question asks for an evolution justified by the larger workload, including any
+    data-model or partition change that the evidence requires.
   follow_up:
     prompt: Which ten-times assumption changes the architecture rather than merely
       adding more instances, and how would you stage that change?
@@ -2358,9 +2388,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Not the shape, mostly the boundaries. I would keep the claims that remain supported,
-      identify exactly which premise the new observation changes, and run a focused check before
-      revising the decision.
+      I would identify which ten-times assumption breaks first: tenant write concentration, fanout
+      work, or regional reads. I would stage the change by measuring that boundary, partitioning
+      or queueing only the saturated path, and preserving the data model until evidence shows it
+      is the limit.
     distractors:
     - text: I would keep the Scaling narrative recommendation unchanged because changing
         position would look inconsistent.
@@ -2375,10 +2406,12 @@ items:
       migration step, and validation signal.
     goal: Compress the Scaling narrative answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Not the shape, mostly the boundaries. I would partition the write path
-    by tenant so no single primary carries everything, move fanout from the request
-    to a consumer group, and add regional read capacity. The data model stays, which
-    is deliberate, because that is the expensive thing to change.
+  best_answer: >-
+    I would first test the tenfold workload and identify whether writes, fanout, or regional
+    reads reach their limit. I would scale or partition only the constrained path, choosing a
+    key that preserves the relevant business invariants. Tenant partitioning can isolate
+    competing tenants, but it does not divide one oversized tenant by itself. I would retain
+    the data model while it still fits and stage any necessary migration with a rollback path.
   distractors:
   - text: I would need to redesign several parts of the system to handle that scale,
       probably moving to a distributed database and splitting the application into
@@ -2436,21 +2469,21 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: system_design-12-ten-x-version-delayed-12
-      prompt: 'Scaling narrative gets a new constraint: a stakeholder asks for a stronger
-        Scaling narrative guarantee than the first Scaling narrative answer promised.
-        After a trace of Scaling narrative isolates a different Scaling narrative
-        bottleneck than the one you named, which Scaling narrative assumption is no
-        longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Scaling narrative guarantee
-        than the first Scaling narrative answer promised
-      new_evidence: a trace of Scaling narrative isolates a different Scaling narrative
-        bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about Scaling narrative,
-        treat a trace of Scaling narrative isolates a different Scaling narrative
-        bottleneck than the one you named as new evidence rather than a result, and
-        state the updated decision rule under a stakeholder asks for a stronger Scaling
-        narrative guarantee than the first Scaling narrative answer promised. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        At ten times load, tenant concentration saturates one primary and fanout queue age grows,
+        while regional reads remain healthy. Which scaling assumption is no longer safe?
+      changed_constraint: >-
+        the ten-times plan must address tenant-hot writes and fanout backlog before adding read
+        capacity
+      new_evidence: >-
+        load testing shows tenant concentration and fanout queue age growing while regional reads
+        remain within budget
+      best_answer: >-
+        I would prioritize write concentration and fanout queue age because regional reads
+        still have headroom. I would isolate competing tenants and check whether the hottest
+        tenant needs subdivision using an invariant-safe key; routing that whole tenant to
+        another primary does not increase its single-primary capacity. I would bound fanout
+        consumers and verify queue age and write latency before adding regional reads.
       distractors:
       - text: I would preserve every part of the original Scaling narrative answer
           because changing it after review would be inconsistent.
@@ -2468,77 +2501,76 @@ items:
     path: areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
     note: Now-versus-10x closing framing from the checklist.
   extension:
-    prompt: 'Five more minutes on Scaling narrative: which boundary, alternative,
-      and update trigger would you explain for Scaling narrative?'
-    goal: Move from the short Scaling narrative answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: >-
+      Which invariant could make a proposed hot-tenant partition key unsafe, even if it improves
+      throughput?
+    goal: >-
+      Move from the short Scaling narrative answer to a deep, evidence-led defence without inventing
+      an outcome.
   critical_thinking:
-    problem_frame: 'Frame Scaling narrative before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      I need a staged tenfold-capacity plan that follows measured tenant skew, fanout demand, and
+      regional reads while preserving required data invariants.
     claim_map:
-      fact: The prompt explicitly tests Scaling narrative within a system design context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Scaling narrative,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Scaling narrative constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Scaling narrative: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The interviewer proposes ten times the traffic without specifying whether the workload mix
+        or tenant distribution also changes.
+      inference: Adding read replicas cannot repair a saturated write path or a growing fanout queue.
+      assumption: >-
+        I am assuming the existing data model remains adequate until a measured invariant or access
+        pattern requires revision.
+      unknown: >-
+        The hot-tenant distribution, per-tenant write volume, partition key, and cross-partition
+        operations are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a requirement-led architecture choice for Scaling narrative
-        benefit: It keeps the Scaling narrative reasoning close to the stated system
-          design constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Scaling narrative workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Scaling narrative contract and its invariant
-          are the facts that matter most.
-      - option: a component-first alternative with different failure costs for Scaling
-          narrative
-        benefit: It can make the Scaling narrative boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Scaling narrative evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Scaling narrative option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant system
-        design constraint makes the first assumption unsafe.
+      - option: Scale the current boundary within its measured capacity
+        benefit: Avoids an early partition migration and retains the existing consistency model.
+        cost_or_risk: Has finite headroom and may not address concentrated tenant demand.
+        valid_when: Representative load shows the current boundary can meet the revised service
+          target.
+      - option: Partition the saturated write domain and bound fanout work
+        benefit: Can isolate competing tenants and distribute eligible work beyond one resource.
+        cost_or_risk: >-
+          Adds migration, routing, and cross-partition correctness costs; one hot tenant may need
+          finer subdivision.
+        valid_when: Measured saturation persists and a partition key preserves the required business
+          invariants.
+      decision_rule: >-
+        I would measure the changed load, exhaust appropriate local capacity, and partition only
+        the limiting domain with a safe key and a reversible migration plan.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Scaling narrative: when the Scaling narrative constraint tightens during
-        rollout, what breaks first in Scaling narrative, and how do you observe it?'
+      kind: counterexample
+      prompt: >-
+        If a single tenant alone exceeds one primary's capacity, why would partitioning only by
+        tenant fail to solve that tenant's write pressure?
     evidence_check:
-      basis: Check the Scaling narrative claim against system-design-estudos/chapters/chapter-02-pod-isolation-and-tenant-routing.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      basis: >-
+        Check the Scaling narrative claim against system-design-estudos/chapters/chapter-02-pod-isolation-and-tenant-routing.md
+        and the exact interview context; record whether each part is fact, inference, or hypothesis.
       source_kind: authored_scenario
-      limitation: This system design exercise can test reasoning about Scaling narrative,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: >-
+        This system design exercise can test reasoning about Scaling narrative, but it cannot prove
+        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Scaling narrative
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What would you change if this had", update Scaling
-        narrative when Scaling narrative evidence—a Scaling narrative trace or Scaling
-        narrative test—contradicts the Scaling narrative constraint in case "What
-        would you change if this had"; ask a stakeholder about Scaling narrative before
-        revising.
+      rationale: >-
+        Tenfold traffic defines a load target, not a predetermined topology; skew and invariants
+        determine the safe scaling boundary.
+      update_trigger: >-
+        A dominant tenant and rising fanout age with healthy regional reads require write and fanout
+        work before more read replicas.
     rubric:
-      facts_correct: Names the verified Scaling narrative facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Scaling narrative premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Scaling narrative options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Scaling narrative choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Scaling narrative
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Scaling narrative recommendation.
+      facts_correct: Separates write concentration, fanout work, and regional read demand.
+      assumptions_explicit: Asks whether tenfold traffic changes tenant skew, payloads, or access
+        patterns.
+      alternatives_considered: Compares local capacity expansion with partitioning only the saturated
+        domain.
+      tradeoff_quality: Explains partition-key, migration, and cross-partition correctness costs.
+      follow_up_adaptation: >-
+        Treats hot-tenant subdivision and bounded fanout as conditional responses to the measured
+        failure.
+      certainty_calibration: Uses medium certainty until a load test validates the chosen scaling
+        boundary.

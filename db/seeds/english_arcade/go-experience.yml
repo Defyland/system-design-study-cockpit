@@ -53,8 +53,8 @@ target:
 cards:
 - id: go_experience-card-1
   front: What does the template's in-memory idempotency actually guarantee?
-  back: A mutex and replay record can return the same semantic request within one
-    instance; they do not make it durable, coordinate instances, or protect an external
+  back: I would say a mutex and replay record can return the same semantic request within
+    one instance; they do not make it durable, coordinate instances, or protect an external
     side effect.
   box: 1
   source:
@@ -70,9 +70,9 @@ cards:
       failure mode, and state what evidence would update the recommendation?
 - id: go_experience-card-2
   front: What remains unknown after a PixRail SPI timeout or crash?
-  back: A local claim selects an owner, but SPI may already have accepted the transfer;
-    safe recovery needs provider idempotency or query and reconciliation rather than
-    blind resubmission.
+  back: I would say a local claim selects an owner, but SPI may already have accepted the
+    transfer; I would use provider idempotency or query and reconciliation rather than blind
+    resubmission.
   box: 2
   source:
     repo: backend-challenges
@@ -87,8 +87,8 @@ cards:
       failure mode, and state what evidence would update the recommendation?
 - id: go_experience-card-3
   front: Why is a bounded TraceBridge queue preferable to hidden growth?
-  back: It makes saturation visible through rejection, but a stalled retry or failed
-    final flush is not a durable DLQ or replay guarantee.
+  back: I would say a bounded TraceBridge queue makes saturation visible through rejection,
+    but a stalled retry or failed final flush is not a durable DLQ or replay guarantee.
   box: 3
   source:
     repo: backend-challenges
@@ -112,13 +112,13 @@ items:
     presenting process memory as durable persistence?
   context: The interviewer is testing semantic replay, atomicity inside one process,
     and the migration boundary needed before multiple instances can coordinate.
-  best_answer: The template models idempotency inside one memory store guarded by
-    a mutex. A replay key combines tenant and idempotency key; a semantic hash covers
-    tenant, kind, and reference. The same request returns the original task, while
-    a changed body conflicts. That is useful HTTP behavior for one process, not durable
-    coordination. A PostgreSQL migration would atomically persist the unique replay
-    key and request fingerprint with task creation, preserving replay and conflict
-    semantics. It would still need an explicit design for cross-process failure recovery.
+  best_answer: >-
+    I read the template as a mutex-protected in-memory store: it combines tenant and idempotency
+    key for replay identity, hashes tenant, kind, and reference, returns the original task for a
+    matching request, and conflicts when the same key carries a changed body. For multiple
+    processes, I would move the unique replay key and fingerprint into the same PostgreSQL
+    transaction as task creation, then design recovery for a process that fails between the database
+    write and its reply.
   distractors:
   - text: I would keep a replay map without a mutex because duplicate requests are
       universally presumed serial. The key alone proves the body is unchanged, so
@@ -196,9 +196,10 @@ items:
       question.
     challenge_kind: failure
     best_answer: >-
-      The template models idempotency inside one memory store guarded by a mutex. If the
-      failure in the follow-up appears, I would name the user or system consequence, contain
-      it with a bounded mitigation, and verify recovery with a focused test or metric.
+      I would persist tenant, idempotency key, and body digest beside task creation in one PostgreSQL
+      transaction, replay a matching row, and conflict on changed input. I would put external work
+      behind an outbox and reconcile a request that times out after commit, because a mutex protects
+      only one process.
     distractors:
     - text: I would describe the Backend Service Template memory idempotency failure
         as impossible because the happy path already passed its test.
@@ -248,28 +249,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-01-backend-service-template-memory-idempotency-delayed-1
-      prompt: 'Backend service template memory idempotency: the later Backend Service
-        Template memory idempotency review says a stakeholder clarifies a Backend
-        Service Template memory idempotency requirement that changes the Backend Service
-        Template memory idempotency success condition. Under the Backend Service Template
-        memory idempotency workload for Backend Service Template memory idempotency
-        no longer fits the original resource bound, which part of Backend Service
-        Template memory idempotency survives and which Backend Service Template memory
-        idempotency claim changes?'
-      changed_constraint: the Backend Service Template memory idempotency workload
-        for Backend Service Template memory idempotency no longer fits the original
-        resource bound
-      new_evidence: a stakeholder clarifies a Backend Service Template memory idempotency
-        requirement that changes the Backend Service Template memory idempotency success
-        condition
-      best_answer: I would keep the facts that remain supported about Backend Service
-        Template memory idempotency, treat a stakeholder clarifies a Backend Service
-        Template memory idempotency requirement that changes the Backend Service Template
-        memory idempotency success condition as new evidence rather than a result,
-        and state the updated decision rule under the Backend Service Template memory
-        idempotency workload for Backend Service Template memory idempotency no longer
-        fits the original resource bound. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        The template's memory store passes same-process tests, but two instances create duplicate tasks. What durable boundary is missing?
+      changed_constraint: >-
+        replay identity and task creation must be atomic across instances
+      new_evidence: >-
+        a two-instance test creates duplicate tasks despite matching in-memory keys
+      best_answer: >-
+        I would persist tenant, idempotency key, and body digest beside task creation in one PostgreSQL transaction, replay matching rows, conflict on changed input, and use an outbox or reconciliation path for external work.
       distractors:
       - text: I would preserve every part of the original Backend Service Template
           memory idempotency answer because changing it after review would be inconsistent.
@@ -285,39 +272,29 @@ items:
       in PostgreSQL.
     goal: Include a request fingerprint, task insert, conflict path, and crash boundary.
   critical_thinking:
-    problem_frame: 'Frame Backend Service Template memory idempotency before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      The template's in-memory mutex protects one process, while durable replay must survive multiple instances and a crash after task creation.
     claim_map:
-      fact: The prompt explicitly tests Backend Service Template memory idempotency
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend Backend Service
-        Template memory idempotency, but that does not prove one implementation wins
-        under every workload or audience.
-      assumption: An unstated assumption is that the Backend Service Template memory
-        idempotency constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for Backend Service Template memory idempotency: the
-        scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The memory store combines tenant and idempotency key and hashes request semantics.
+      inference: >-
+        Matching replay and changed-input conflict are useful HTTP behavior but not cross-instance durability.
+      assumption: >-
+        I am assuming PostgreSQL can own the unique replay record and task insert in one transaction.
+      unknown: >-
+        Crash recovery, external effects, instance count, and migration compatibility are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Backend Service Template
-        memory idempotency would be a false equivalence because the prompt does not
-        establish that both choices satisfy the same contract.
-      hard_constraint: The hard Backend Service Template memory idempotency constraint
-        is the required guarantee stated by the interviewer; no missing measurement
-        licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Backend Service Template memory
-        idempotency; first clarify the constraint or collect the evidence that would
-        make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating process memory, a durable replay record, and an external effect ledger as one interchangeable idempotency mechanism would be a false equivalence: they survive different failures and cover different boundaries.
+      hard_constraint: >-
+        The hard constraint is matching replay and changed-input conflict across instances without claiming that process memory survives restart or coordinates an external effect.
+      decision_rule: >-
+        State the local template behavior first, then choose a durable transaction and provider reconciliation boundary from the deployment and side-effect contract.
     failure_probe:
       kind: counterexample
-      prompt: 'Backend service template memory idempotency: what minimum input for
-        Backend Service Template memory idempotency would break the Backend Service
-        Template memory idempotency recommendation, and how would you revise the Backend
-        Service Template memory idempotency claim?'
+      prompt: >-
+        What two-instance or crash test would show the in-memory store cannot preserve replay identity?
     evidence_check:
       basis: Check the Backend Service Template memory idempotency claim against backend-challenges/backend-service-template/internal/store/memory.go
         and the exact interview context; record whether each part is fact, inference,
@@ -329,16 +306,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the Backend Service Template
-        memory idempotency question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you model idempotent task creation", update
-        Backend Service Template memory idempotency when Backend Service Template
-        memory idempotency evidence—a Backend Service Template memory idempotency
-        trace or Backend Service Template memory idempotency test—contradicts the
-        Backend Service Template memory idempotency constraint in case "How would
-        you model idempotent task creation"; ask a stakeholder about Backend Service
-        Template memory idempotency before revising.
+      rationale: >-
+        I am confident about the single-process boundary; the PostgreSQL migration and recovery contract require persistence evidence.
+      update_trigger: >-
+        Update when multi-instance tests or a provider effect changes the atomic transaction and reconciliation design.
     rubric:
       facts_correct: Names the verified Backend Service Template memory idempotency
         facts without smuggling in a result, scale, or capability that the prompt
@@ -367,13 +338,12 @@ items:
     without confusing an in-memory sandbox with a durable distributed guarantee?
   context: The interviewer is probing owner, replay, conflict, and waiter states,
     plus the crash window between a side effect and a cached completion.
-  best_answer: BankPort's middleware derives a partner, route, and idempotency key,
-    then compares a method, route, and body fingerprint. The first request owns the
-    record; matching requests wait on a ready channel or replay a cacheable response,
-    while a changed request conflicts. TTL bounds entries; cancellation unblocks waiting
-    callers. This is per-process coordination, not cross-instance durability. A crash
-    after a side effect but before Complete needs a database transaction and outbox
-    or reconciliation boundary, not a stronger claim about the memory store.
+  best_answer: I would derive partner, route, and idempotency key, then bind the record
+    to the method, route, and body fingerprint. I would let one request own processing,
+    have matching callers wait or replay a cacheable response, and reject a changed
+    body. TTL and cancellation bound the in-memory case; for multiple instances or a
+    crash after an external effect, I would persist the record and use an outbox or
+    reconciliation path rather than claim that memory coordination is durable.
   distractors:
   - text: I would cache every response immediately under the idempotency key and let
       each instance decide independently. A changed body can reuse the owner response
@@ -456,8 +426,10 @@ items:
     challenge_kind: new_evidence
     best_answer: >-
       BankPort's middleware derives a partner, route, and idempotency key, then compares a method, route,
-      and body fingerprint. I would keep the claims that remain supported, identify exactly which
-      premise the new observation changes, and run a focused check before revising the decision.
+      and body fingerprint. I would move that identity and owner/wait/replay state into durable
+      storage, add an outbox for external effects, and distinguish conflict, in-progress, and
+      completed states. After a crash following provider acceptance, I would query or reconcile
+      before retrying rather than trust process memory.
     distractors:
     - text: I would keep the BankPort concurrent idempotency middleware recommendation
         unchanged because changing position would look inconsistent.
@@ -503,27 +475,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-02-bankport-concurrent-idempotency-middleware-delayed-2
-      prompt: 'Review note for BankPort concurrent idempotency middleware: a trace
-        of BankPort concurrent idempotency middleware isolates a different BankPort
-        concurrent idempotency middleware bottleneck than the one you named. Given
-        a stakeholder asks for a stronger BankPort concurrent idempotency middleware
-        guarantee than the first BankPort concurrent idempotency middleware answer
-        promised, what would you now defend, retract, and verify about BankPort concurrent
-        idempotency middleware?'
-      changed_constraint: a stakeholder asks for a stronger BankPort concurrent idempotency
-        middleware guarantee than the first BankPort concurrent idempotency middleware
-        answer promised
-      new_evidence: a trace of BankPort concurrent idempotency middleware isolates
-        a different BankPort concurrent idempotency middleware bottleneck than the
-        one you named
-      best_answer: I would keep the facts that remain supported about BankPort concurrent
-        idempotency middleware, treat a trace of BankPort concurrent idempotency middleware
-        isolates a different BankPort concurrent idempotency middleware bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under a stakeholder asks for a stronger BankPort concurrent
-        idempotency middleware guarantee than the first BankPort concurrent idempotency
-        middleware answer promised. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A provider accepts a command and the process crashes before Complete. How should BankPort recover?
+      changed_constraint: >-
+        durable owner and external-effect state must survive the process crash
+      new_evidence: >-
+        the process restarts with no memory record even though the provider may have accepted the command
+      best_answer: >-
+        I would store owner, in-progress, completed, and conflict states durably, use a provider idempotency key or status query, and reconcile the outbox before retrying.
       distractors:
       - text: I would preserve every part of the original BankPort concurrent idempotency
           middleware answer because changing it after review would be inconsistent.
@@ -539,51 +498,33 @@ items:
       before Complete.
     goal: Preserve fingerprint conflict behavior while making reconciliation observable.
   critical_thinking:
-    problem_frame: 'Frame BankPort concurrent idempotency middleware before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      BankPort's owner/wait/replay state is local memory while provider effects may be remote; I must separate concurrency coordination from durable recovery.
     claim_map:
-      fact: The prompt explicitly tests BankPort concurrent idempotency middleware
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend BankPort
-        concurrent idempotency middleware, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the BankPort concurrent idempotency
-        middleware constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for BankPort concurrent idempotency middleware: the
-        scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The middleware derives request identity and coordinates matching callers in one process.
+      inference: >-
+        A durable record and outbox or reconciliation path are needed after a crash following an external action.
+      assumption: >-
+        I am assuming the partner/provider supports a stable idempotency identity or status lookup.
+      unknown: >-
+        Cross-instance ownership, provider acknowledgment, TTL recovery, and response durability are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for BankPort concurrent idempotency middleware
-        benefit: It keeps the BankPort concurrent idempotency middleware reasoning
-          close to the stated Go project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the BankPort concurrent idempotency
-          middleware workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated BankPort concurrent idempotency middleware
-          contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for BankPort
-          concurrent idempotency middleware
-        benefit: It can make the BankPort concurrent idempotency middleware boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the BankPort concurrent idempotency middleware evidence has not
-          established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first BankPort concurrent idempotency middleware option
-        when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: an in-process owner/wait/replay map for one service instance
+        benefit: I can make same-process duplicate requests wait or replay with low latency and a small implementation.
+        cost_or_risk: It disappears on restart and cannot coordinate another instance or an external provider effect.
+        valid_when: Use it for a bounded sandbox or single-process exercise whose limits are explicit.
+      - option: a durable idempotency record with provider idempotency or reconciliation
+        benefit: I can recover across instances and crashes while preserving changed-body conflict behavior.
+        cost_or_risk: I add schema, retention, lease, and uncertain-effect recovery work.
+        valid_when: Use it when requests can cross processes or trigger a financial side effect.
+      decision_rule: I keep memory coordination only within its stated sandbox boundary; I move identity and recovery to durable storage before claiming distributed safety.
     failure_probe:
       kind: edge_case
-      prompt: 'Bankport concurrent idempotency middleware: what BankPort concurrent
-        idempotency middleware limit should you probe before trusting the answer,
-        and how would BankPort concurrent idempotency middleware behave there?'
+      prompt: >-
+        What crash-after-provider-acceptance test would distinguish safe replay from a duplicate command?
     evidence_check:
       basis: Check the BankPort concurrent idempotency middleware claim against backend-challenges/bankport-go-gin-partner-api/internal/httpapi/middleware/idempotency.go
         and the exact interview context; record whether each part is fact, inference,
@@ -595,16 +536,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the BankPort concurrent
-        idempotency middleware question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you coordinate concurrent idempotent financial",
-        update BankPort concurrent idempotency middleware when BankPort concurrent
-        idempotency middleware evidence—a BankPort concurrent idempotency middleware
-        trace or BankPort concurrent idempotency middleware test—contradicts the BankPort
-        concurrent idempotency middleware constraint in case "How would you coordinate
-        concurrent idempotent financial"; ask a stakeholder about BankPort concurrent
-        idempotency middleware before revising.
+      rationale: >-
+        I am confident in describing local owner/wait/replay behavior; durability and provider safety remain low-certainty.
+      update_trigger: >-
+        Update when provider idempotency, status, or crash-recovery evidence changes the durable protocol.
     rubric:
       facts_correct: Names the verified BankPort concurrent idempotency middleware
         facts without smuggling in a result, scale, or capability that the prompt
@@ -633,13 +568,12 @@ items:
     delivery begin?
   context: The interviewer wants the commit boundary separated from broker delivery,
     especially the duplicate window after a publisher crash.
-  best_answer: FulfillHub commits the order, line items, tenant-scoped idempotency
-    record, outbox event, and audit entry in one PostgreSQL transaction. Later transitions
-    lock and validate state before adding their own event and audit entry. This removes
-    the committed-order-without-event gap, but not duplicates—a relay may publish
-    and crash before marking delivery. Inbox idempotency, leases, DLQ visibility,
-    and reconciliation are separate controls for that boundary. The local Compose
-    profile is not deployed performance evidence.
+  best_answer: I would commit the order, line items, tenant-scoped idempotency record,
+    outbox event, and audit entry in one PostgreSQL transaction. I would lock and
+    validate later state transitions, while accepting that a relay can publish and
+    crash before marking delivery. I would use inbox idempotency, leases, DLQ visibility,
+    and reconciliation to contain duplicates, and I would treat the local Compose
+    profile as a development signal rather than deployed performance evidence.
   distractors:
   - text: Once the database transaction commits, I would mark the message delivered
       before contacting the broker. That makes duplicate delivery impossible, so workers
@@ -723,9 +657,10 @@ items:
     challenge_kind: assumption
     best_answer: >-
       FulfillHub commits the order, line items, tenant-scoped idempotency record, outbox event, and audit entry
-      in one PostgreSQL transaction. I would label the follow-up premise as an assumption, ask
-      the smallest question that could disprove it, and protect the edge case before committing
-      to the recommendation.
+      in one PostgreSQL transaction. After publish-before-marking, I would expect a duplicate, so I
+      would give the event a stable inbox identity, use a lease with expiry, and reconcile stuck or
+      repeated deliveries. The transaction closes the committed-order gap; it does not make the
+      relay exactly once.
     distractors:
     - text: I would repeat my original FulfillHub local transaction and asynchronous
         delivery answer with more confidence because the interviewer probably assumes
@@ -780,28 +715,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-03-fulfillhub-local-transaction-and-outbox-delivery-delayed-3
-      prompt: New evidence about FulfillHub local transaction and asynchronous delivery
-        says a code inspection of FulfillHub local transaction and asynchronous delivery
-        confirms the FulfillHub local transaction and asynchronous delivery mechanism
-        but not its impact; with the FulfillHub local transaction and asynchronous
-        delivery dependency is slower for FulfillHub local transaction and asynchronous
-        delivery and the failure is ambiguous rather than explicit, how do you update
-        the FulfillHub local transaction and asynchronous delivery decision rule?
-      changed_constraint: the FulfillHub local transaction and asynchronous delivery
-        dependency is slower for FulfillHub local transaction and asynchronous delivery
-        and the failure is ambiguous rather than explicit
-      new_evidence: a code inspection of FulfillHub local transaction and asynchronous
-        delivery confirms the FulfillHub local transaction and asynchronous delivery
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about FulfillHub local
-        transaction and asynchronous delivery, treat a code inspection of FulfillHub
-        local transaction and asynchronous delivery confirms the FulfillHub local
-        transaction and asynchronous delivery mechanism but not its impact as new
-        evidence rather than a result, and state the updated decision rule under the
-        FulfillHub local transaction and asynchronous delivery dependency is slower
-        for FulfillHub local transaction and asynchronous delivery and the failure
-        is ambiguous rather than explicit. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        The relay publishes an outbox event, crashes before marking it, and republishes after lease expiry. Which duplicate control is required?
+      changed_constraint: >-
+        delivery is at least once after the local transaction commits
+      new_evidence: >-
+        the same event identity is delivered twice after a publish-before-marking crash
+      best_answer: >-
+        I would use a stable inbox identity and idempotent consumer, lease expiry, and reconciliation; the transaction closes the order/event gap but cannot guarantee exactly once.
       distractors:
       - text: I would preserve every part of the original FulfillHub local transaction
           and asynchronous delivery answer because changing it after review would
@@ -819,54 +740,33 @@ items:
     goal: Connect duplicate handling to visible reconciliation rather than to an exactly-once
       claim.
   critical_thinking:
-    problem_frame: 'Frame FulfillHub local transaction and asynchronous delivery before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      FulfillHub atomically commits domain state and outbox intent, then relies on at-least-once relay delivery; I must keep duplicate recovery explicit.
     claim_map:
-      fact: The prompt explicitly tests FulfillHub local transaction and asynchronous
-        delivery within a Go project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend FulfillHub
-        local transaction and asynchronous delivery, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the FulfillHub local transaction
-        and asynchronous delivery constraint is the dominant one; label it and ask
-        whether the interviewer confirms it.
-      unknown: 'Still unknown for FulfillHub local transaction and asynchronous delivery:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The order, idempotency record, outbox, and audit row commit together.
+      inference: >-
+        The local commit and later publication are separate lifecycle stages, so repeated delivery must be safe for the consumer.
+      assumption: >-
+        I am assuming consumers can persist an inbox identity and reconcile a stuck lease.
+      unknown: >-
+        Broker behavior, consumer store, lease duration, and duplicate side-effect handling are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for FulfillHub local transaction and asynchronous
-          delivery
-        benefit: It keeps the FulfillHub local transaction and asynchronous delivery
-          reasoning close to the stated Go project deep dive constraint and makes
-          the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the FulfillHub local transaction and
-          asynchronous delivery workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated FulfillHub local transaction and asynchronous
-          delivery contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for FulfillHub
-          local transaction and asynchronous delivery
-        benefit: It can make the FulfillHub local transaction and asynchronous delivery
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the FulfillHub local transaction and asynchronous delivery evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first FulfillHub local transaction and asynchronous
-        delivery option when its stated contract holds; choose the alternative only
-        when evidence shows that the relevant Go project deep dive constraint makes
-        the first assumption unsafe.
+      - option: commit domain state and outbox intent together, then relay with inbox deduplication
+        benefit: I close the local write-to-publish gap and make duplicate delivery recoverable.
+        cost_or_risk: I operate relay leases, inbox identity, DLQ visibility, and reconciliation; the provider effect remains a separate boundary.
+        valid_when: Use it when an event must survive a transaction commit and publication may be delayed.
+      - option: publish directly from the request transaction or callback
+        benefit: It can look simpler for a local prototype with no durable delivery requirement.
+        cost_or_risk: A process crash between the domain commit and publish, or after publish before marking, creates loss or duplicate windows.
+        valid_when: Use it only when the delivery contract tolerates that window and evidence supports it.
+      decision_rule: I use an outbox plus duplicate-safe relay when delivery matters; I keep direct publication only inside an explicitly bounded prototype.
     failure_probe:
       kind: failure_mode
-      prompt: 'Fulfillhub local transaction and asynchronous delivery: if a caller
-        retries FulfillHub local transaction and asynchronous delivery at the worst
-        moment, what failure mode appears first, and how would you protect FulfillHub
-        local transaction and asynchronous delivery?'
+      prompt: >-
+        What publish-before-marking trace would show a second delivery and how would the inbox contain it?
     evidence_check:
       basis: Check the FulfillHub local transaction and asynchronous delivery claim
         against backend-challenges/fulfillhub-go-commerce-platform/README.md and the
@@ -878,17 +778,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the FulfillHub local transaction
-        and asynchronous delivery question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "Where does FulfillHub's local transaction end, and",
-        update FulfillHub local transaction and asynchronous delivery when FulfillHub
-        local transaction and asynchronous delivery evidence—a FulfillHub local transaction
-        and asynchronous delivery trace or FulfillHub local transaction and asynchronous
-        delivery test—contradicts the FulfillHub local transaction and asynchronous
-        delivery constraint in case "Where does FulfillHub's local transaction end,
-        and"; ask a stakeholder about FulfillHub local transaction and asynchronous
-        delivery before revising.
+      rationale: >-
+        I am confident in the local transaction boundary; exactly-once external delivery is not established.
+      update_trigger: >-
+        Update when consumer tests, lease races, or broker evidence changes the duplicate-recovery claim.
     rubric:
       facts_correct: Names the verified FulfillHub local transaction and asynchronous
         delivery facts without smuggling in a result, scale, or capability that the
@@ -918,12 +811,13 @@ items:
     append-only file?
   context: The interviewer is testing whether you can distinguish fsync policy, a
     partial trailing write, and corruption in the middle of a replay log.
-  best_answer: 'GoCacheLab serializes AOF appends with a mutex and writes length-plus-CRC
-    records. Policies expose the trade-off: never skips append-time fsync, everysec
-    leaves a loss window, always adds sync latency, and Close performs a final sync.
-    Replay counts applied, corrupt, and partial records, ignoring an incomplete tail;
-    that is not proof that all recovery is safe. A damaged middle record needs an
-    operator decision about quarantine, restore, and possibly snapshot or AOF compaction.'
+  best_answer: >-
+    I would distinguish the AOF policy before discussing recovery: appendfsync never
+    does not fsync on each append and leaves durability to OS flushing, everysec
+    accepts a bounded recent-write loss window for lower latency, and always adds
+    sync latency. I would treat a partial final record as a possible
+    interrupted write, but quarantine a CRC failure in the middle, restore or snapshot
+    from a known point, and verify replay rather than silently skipping corruption.
   distractors:
   - text: I would use always fsync because it eliminates every loss and corruption
       concern. Once each write returns, replay can trust the entire log and silently
@@ -1004,9 +898,10 @@ items:
     goal: Distinguish automated tail handling from an operator-led integrity decision.
     challenge_kind: evidence
     best_answer: >-
-      GoCacheLab serializes AOF appends with a mutex and writes length-plus-CRC records. I would treat
-      the follow-up observation as evidence, not as proof of impact; I would inspect the
-      smallest relevant trace or test and state what remains uncertain before changing the decision.
+      I would treat a CRC failure in the middle as corruption requiring quarantine or restore and an
+      operator decision, while an incomplete final record may be a crash-truncated tail that policy
+      permits replay to ignore. I would test restore, snapshot, compaction, and each fsync policy
+      separately rather than treat CRC validation as a complete recovery guarantee.
     distractors:
     - text: I would cite my experience with GoCacheLab AOF durability and recovery
         trade-offs as enough proof and move on without naming an observation.
@@ -1058,28 +953,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-04-gocachelab-aof-durability-and-recovery-delayed-4
-      prompt: 'Gocachelab aof durability and recovery trade-offs gets a new constraint:
-        new GoCacheLab AOF durability and recovery trade-offs evidence contradicts
-        the GoCacheLab AOF durability and recovery trade-offs assumption that made
-        the first option attractive. After a measured GoCacheLab AOF durability and
-        recovery trade-offs comparison shows the alternative has a different GoCacheLab
-        AOF durability and recovery trade-offs cost profile, which GoCacheLab AOF
-        durability and recovery trade-offs assumption is no longer safe?'
-      changed_constraint: new GoCacheLab AOF durability and recovery trade-offs evidence
-        contradicts the GoCacheLab AOF durability and recovery trade-offs assumption
-        that made the first option attractive
-      new_evidence: a measured GoCacheLab AOF durability and recovery trade-offs comparison
-        shows the alternative has a different GoCacheLab AOF durability and recovery
-        trade-offs cost profile
-      best_answer: I would keep the facts that remain supported about GoCacheLab AOF
-        durability and recovery trade-offs, treat a measured GoCacheLab AOF durability
-        and recovery trade-offs comparison shows the alternative has a different GoCacheLab
-        AOF durability and recovery trade-offs cost profile as new evidence rather
-        than a result, and state the updated decision rule under new GoCacheLab AOF
-        durability and recovery trade-offs evidence contradicts the GoCacheLab AOF
-        durability and recovery trade-offs assumption that made the first option attractive.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        Replay finds a CRC failure in the middle of the AOF and a truncated final record. Which recovery decisions differ?
+      changed_constraint: >-
+        middle corruption needs operator integrity handling while a partial tail may be crash truncation
+      new_evidence: >-
+        replay classifies one damaged middle record separately from an incomplete final record
+      best_answer: >-
+        I would quarantine or restore for middle corruption, allow tail truncation only under an explicit policy, and test snapshot, compaction, fsync, and restore paths separately.
       distractors:
       - text: I would preserve every part of the original GoCacheLab AOF durability
           and recovery trade-offs answer because changing it after review would be
@@ -1097,54 +978,33 @@ items:
     goal: Turn the durability policy into observable failure handling without inventing
       replication.
   critical_thinking:
-    problem_frame: 'Frame GoCacheLab AOF durability and recovery trade-offs before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      GoCacheLab exposes fsync policies and CRC records; I must distinguish a corrupt middle record from a crash-truncated tail.
     claim_map:
-      fact: The prompt explicitly tests GoCacheLab AOF durability and recovery trade-offs
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend GoCacheLab
-        AOF durability and recovery trade-offs, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the GoCacheLab AOF durability and
-        recovery trade-offs constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for GoCacheLab AOF durability and recovery trade-offs:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The AOF has length-plus-CRC records and configurable synchronization policy.
+      inference: >-
+        A partial final record may be safely ignored by policy, while middle corruption needs quarantine or restore.
+      assumption: >-
+        I am assuming the operator has a snapshot or trusted restore source for middle corruption.
+      unknown: >-
+        Fsync loss window, snapshot freshness, compaction behavior, and operator policy are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for GoCacheLab AOF durability and recovery
-          trade-offs
-        benefit: It keeps the GoCacheLab AOF durability and recovery trade-offs reasoning
-          close to the stated Go project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the GoCacheLab AOF durability and recovery
-          trade-offs workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated GoCacheLab AOF durability and recovery
-          trade-offs contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for GoCacheLab
-          AOF durability and recovery trade-offs
-        benefit: It can make the GoCacheLab AOF durability and recovery trade-offs
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the GoCacheLab AOF durability and recovery trade-offs evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first GoCacheLab AOF durability and recovery trade-offs
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: every-write fsync with CRC validation and replay recovery
+        benefit: I minimize the append loss window and can reject a corrupt middle record instead of silently applying bad state.
+        cost_or_risk: Sync cost reduces write throughput, and recovery still needs a policy for a partial final record.
+        valid_when: Use it when durability dominates write latency and the disk boundary is trusted.
+      - option: every-second or periodic fsync with a bounded loss window
+        benefit: I improve write throughput while making the possible loss window explicit.
+        cost_or_risk: A crash can lose acknowledged tail records, and the bound depends on scheduler and storage behavior.
+        valid_when: Use it when the stated RPO accepts that window and restart verification is measured.
+      decision_rule: I choose the fsync policy from the accepted loss window and latency budget; I keep CRC and replay checks regardless of policy.
     failure_probe:
       kind: counterexample
-      prompt: 'Gocachelab aof durability and recovery trade-offs: where would a tiny
-        GoCacheLab AOF durability and recovery trade-offs counterexample expose a
-        false assumption, and what would you change about GoCacheLab AOF durability
-        and recovery trade-offs?'
+      prompt: >-
+        What replay result would distinguish truncation at EOF from corruption that invalidates later records?
     evidence_check:
       basis: Check the GoCacheLab AOF durability and recovery trade-offs claim against
         backend-challenges/gocachelab-redis-like-store/README.md and the exact interview
@@ -1156,16 +1016,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the GoCacheLab AOF durability
-        and recovery trade-offs question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you explain the durability and", update
-        GoCacheLab AOF durability and recovery trade-offs when GoCacheLab AOF durability
-        and recovery trade-offs evidence—a GoCacheLab AOF durability and recovery
-        trade-offs trace or GoCacheLab AOF durability and recovery trade-offs test—contradicts
-        the GoCacheLab AOF durability and recovery trade-offs constraint in case "How
-        would you explain the durability and"; ask a stakeholder about GoCacheLab
-        AOF durability and recovery trade-offs before revising.
+      rationale: >-
+        I am confident in separating integrity failure from a partial tail; durability still depends on fsync and restore evidence.
+      update_trigger: >-
+        Update when replay, restore, or compaction tests change the allowed quarantine and tail policy.
     rubric:
       facts_correct: Names the verified GoCacheLab AOF durability and recovery trade-offs
         facts without smuggling in a result, scale, or capability that the prompt
@@ -1194,13 +1048,12 @@ items:
     repeated Kubernetes events?
   context: The interviewer is probing a stale rollout, a deleted managed resource,
     and the difference between desired state, observed status, and a one-shot deployment.
-  best_answer: KubePulse evaluates a GoService policy before touching workload resources,
-    records the policy ConfigMap, and patches violating status before returning. When
-    policy passes, CreateOrPatch converges the Deployment and Service, then rollout
-    health compares observed generation with updated and available replicas. An unhealthy
-    rollout requeues; unchanged status avoids needless patches. This is level-triggered
-    reconciliation, not a one-shot deploy. The service metric lists GoServices each
-    reconcile, so it may need measurement or another collection path at larger counts.
+  best_answer: I would evaluate policy before mutating workload resources and record a
+    violating status before returning. When policy passes, I would use CreateOrPatch,
+    owner references, and observed-versus-available generation checks so a repeated
+    reconcile converges after a deletion or conflict. I would requeue an unhealthy
+    rollout, skip unchanged status writes, and benchmark the per-reconcile GoService
+    list before choosing a cached or narrower metric path at larger counts.
   distractors:
   - text: After policy passes once, I would skip it on later reconciliations because
       the Deployment already represents desired state. Status can be patched on every
@@ -1288,10 +1141,10 @@ items:
       cost boundary.
     challenge_kind: alternative
     best_answer: >-
-      KubePulse evaluates a GoService policy before touching workload resources, records the policy ConfigMap, and
-      patches violating status before returning. I would compare that choice with the credible alternative
-      against the requirement in the follow-up, cost, and failure risk, then switch only if
-      evidence makes the alternative safer.
+      I would use owner references and idempotent apply, requeue a conflict or a missing Deployment,
+      and inspect generation/status evidence on the next reconcile. I would skip unchanged status
+      patches and benchmark the GoService list; if representative counts show cost, I would replace
+      it with a narrower metric or cache rather than weaken policy-before-mutation.
     distractors:
     - text: I would defend the first KubePulse policy before mutation and reconciliation
         option because offering an alternative might make the decision look uncertain.
@@ -1343,32 +1196,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-05-kubepulse-policy-and-level-triggered-reconciliation-delayed-5
-      prompt: 'Revisit KubePulse policy before mutation and reconciliation after a
-        KubePulse policy before mutation and reconciliation test exposes a boundary
-        case that the KubePulse policy before mutation and reconciliation examples
-        did not cover and two KubePulse policy before mutation and reconciliation
-        callers from the case "How does KubePulse apply policy before mutation" or
-        KubePulse policy before mutation and reconciliation tenants now compete for
-        the same KubePulse policy before mutation and reconciliation boundary: what
-        remains factual about KubePulse policy before mutation and reconciliation,
-        what becomes provisional, and why?'
-      changed_constraint: two KubePulse policy before mutation and reconciliation
-        callers from the case "How does KubePulse apply policy before mutation" or
-        KubePulse policy before mutation and reconciliation tenants now compete for
-        the same KubePulse policy before mutation and reconciliation boundary
-      new_evidence: a KubePulse policy before mutation and reconciliation test exposes
-        a boundary case that the KubePulse policy before mutation and reconciliation
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about KubePulse policy
-        before mutation and reconciliation, treat a KubePulse policy before mutation
-        and reconciliation test exposes a boundary case that the KubePulse policy
-        before mutation and reconciliation examples did not cover as new evidence
-        rather than a result, and state the updated decision rule under two KubePulse
-        policy before mutation and reconciliation callers from the case "How does
-        KubePulse apply policy before mutation" or KubePulse policy before mutation
-        and reconciliation tenants now compete for the same KubePulse policy before
-        mutation and reconciliation boundary. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        A status patch conflicts with a newer generation and the Deployment disappears on the next reconcile. How should KubePulse converge?
+      changed_constraint: >-
+        reconciliation must be idempotent, generation-aware, and safe to requeue
+      new_evidence: >-
+        generation conflict and a missing child resource appear in successive reconcile observations
+      best_answer: >-
+        I would requeue conflicts, use owner references and idempotent CreateOrPatch, observe the newer generation and status, and skip unchanged patches while measuring list cost.
       distractors:
       - text: I would preserve every part of the original KubePulse policy before
           mutation and reconciliation answer because changing it after review would
@@ -1386,54 +1221,33 @@ items:
       and requeue assertions for each.
     goal: Turn reconciliation claims into observable convergence and cost checks.
   critical_thinking:
-    problem_frame: 'Frame KubePulse policy before mutation and reconciliation before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      KubePulse evaluates policy before mutation and converges desired resources repeatedly; I must handle generation conflicts and deleted children without treating one observation as final.
     claim_map:
-      fact: The prompt explicitly tests KubePulse policy before mutation and reconciliation
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend KubePulse
-        policy before mutation and reconciliation, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the KubePulse policy before mutation
-        and reconciliation constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for KubePulse policy before mutation and reconciliation:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        Policy status and workload resources are reconciled from observed state.
+      inference: >-
+        Owner references, idempotent apply, requeue, and generation checks let later reconciles converge.
+      assumption: >-
+        I am assuming the controller can requeue conflicts and observe the newer generation.
+      unknown: >-
+        API conflict behavior, owner-reference scope, list cost, and status patch rate are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for KubePulse policy before mutation and
-          reconciliation
-        benefit: It keeps the KubePulse policy before mutation and reconciliation
-          reasoning close to the stated Go project deep dive constraint and makes
-          the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the KubePulse policy before mutation
-          and reconciliation workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated KubePulse policy before mutation and reconciliation
-          contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for KubePulse
-          policy before mutation and reconciliation
-        benefit: It can make the KubePulse policy before mutation and reconciliation
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the KubePulse policy before mutation and reconciliation evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first KubePulse policy before mutation and reconciliation
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: direct API reads on each reconcile with explicit generation and owner checks
+        benefit: I observe current state directly and make policy-before-mutation ordering easy to audit.
+        cost_or_risk: Reconcile latency and API load grow with event volume, and transient reads need bounded retry.
+        valid_when: Use it while object counts and reconcile frequency fit the measured API budget.
+      - option: an informer or cached observation path with the same policy and generation gates
+        benefit: I reduce repeated API reads and can converge quickly under bursts of events.
+        cost_or_risk: Cache staleness and resync behavior become part of correctness, so a stale observation cannot authorize unsafe mutation.
+        valid_when: Use it when profiling shows API reads dominate and cache freshness is bounded and tested.
+      decision_rule: I start with direct reads and explicit gates; I add caching only when measurements justify it without weakening policy or convergence checks.
     failure_probe:
       kind: edge_case
-      prompt: 'Kubepulse policy before mutation and reconciliation: which KubePulse
-        policy before mutation and reconciliation boundary deserves the first test,
-        and what observation about KubePulse policy before mutation and reconciliation
-        would overturn the premise?'
+      prompt: >-
+        What generation or missing-child observation would require requeue rather than marking the service terminal?
     evidence_check:
       basis: Check the KubePulse policy before mutation and reconciliation claim against
         backend-challenges/kubepulse-go-operator/README.md and the exact interview
@@ -1445,17 +1259,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the KubePulse policy before
-        mutation and reconciliation question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How does KubePulse apply policy before mutation",
-        update KubePulse policy before mutation and reconciliation when KubePulse
-        policy before mutation and reconciliation evidence—a KubePulse policy before
-        mutation and reconciliation trace or KubePulse policy before mutation and
-        reconciliation test—contradicts the KubePulse policy before mutation and reconciliation
-        constraint in case "How does KubePulse apply policy before mutation"; ask
-        a stakeholder about KubePulse policy before mutation and reconciliation before
-        revising.
+      rationale: >-
+        I am confident in level-triggered convergence as the model; cluster scale and conflict rate need measurement.
+      update_trigger: >-
+        Update when generation, requeue, or list benchmarks show a different convergence or collection boundary.
     rubric:
       facts_correct: Names the verified KubePulse policy before mutation and reconciliation
         facts without smuggling in a result, scale, or capability that the prompt
@@ -1485,13 +1292,12 @@ items:
     outbox lease or a local benchmark proves?
   context: The interviewer is testing idempotency, override auditability, the publish-crash
     window, and whether you can interpret an adverse SQLite result honestly.
-  best_answer: PixGuard stores a screening, scoped idempotency key, audit entry, and
-    outbox event inside one PostgreSQL transaction; an override uses the same decision-plus-audit-plus-event
-    boundary. The relay claims eligible rows with FOR UPDATE SKIP LOCKED, expiry,
-    retry, and dead-letter states. That protects local facts, but not a publish-then-crash
-    duplicate after the lease expires. Consumers need stable event identity and reconciliation.
-    A local SQLite baseline misses p95, so it cannot describe PostgreSQL capacity,
-    fraud accuracy, or financial loss.
+  best_answer: I would store the screening, scoped idempotency key, audit entry, and
+    outbox event in one PostgreSQL transaction, including the override decision. I would
+    claim eligible rows with FOR UPDATE SKIP LOCKED, lease expiry, retries, and a
+    dead-letter state, then give consumers stable event identity and reconciliation for
+    a publish-then-crash duplicate. I would use a PostgreSQL benchmark for p95 and
+    throughput; a local SQLite baseline cannot establish capacity, fraud accuracy, or loss.
   distractors:
   - text: Because the transaction commits all rows, I would mark an event published
       before sending it and rely on lease expiry to prevent duplicates. SQLite load
@@ -1576,9 +1382,10 @@ items:
     challenge_kind: failure
     best_answer: >-
       PixGuard stores a screening, scoped idempotency key, audit entry, and outbox event inside one
-      PostgreSQL transaction; an override uses the same decision-plus-audit-plus-event boundary. If the failure in the
-      follow-up appears, I would name the user or system consequence, contain it with a
-      bounded mitigation, and verify recovery with a focused test or metric.
+      PostgreSQL transaction; an override uses the same decision-plus-audit-plus-event boundary. I
+      would give consumers a stable event identity and reconcile a publish-before-marking duplicate;
+      a separate PostgreSQL benchmark should measure representative p95, lock contention, and
+      failure cases rather than reuse the SQLite baseline.
     distractors:
     - text: I would describe the PixGuard atomic screening and outbox lease recovery
         failure as impossible because the happy path already passed its test.
@@ -1632,27 +1439,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-06-pixguard-atomic-screening-and-outbox-leases-delayed-6
-      prompt: The PixGuard atomic screening and outbox lease recovery review adds
-        a stakeholder clarifies a PixGuard atomic screening and outbox lease recovery
-        requirement that changes the PixGuard atomic screening and outbox lease recovery
-        success condition while the PixGuard atomic screening and outbox lease recovery
-        workload for PixGuard atomic screening and outbox lease recovery no longer
-        fits the original resource bound; which conclusion about PixGuard atomic screening
-        and outbox lease recovery would you narrow before proposing a repair?
-      changed_constraint: the PixGuard atomic screening and outbox lease recovery
-        workload for PixGuard atomic screening and outbox lease recovery no longer
-        fits the original resource bound
-      new_evidence: a stakeholder clarifies a PixGuard atomic screening and outbox
-        lease recovery requirement that changes the PixGuard atomic screening and
-        outbox lease recovery success condition
-      best_answer: I would keep the facts that remain supported about PixGuard atomic
-        screening and outbox lease recovery, treat a stakeholder clarifies a PixGuard
-        atomic screening and outbox lease recovery requirement that changes the PixGuard
-        atomic screening and outbox lease recovery success condition as new evidence
-        rather than a result, and state the updated decision rule under the PixGuard
-        atomic screening and outbox lease recovery workload for PixGuard atomic screening
-        and outbox lease recovery no longer fits the original resource bound. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        A relay lease expires after publish and the event is delivered again. What identity and benchmark separate the duplicate case from the SQLite baseline?
+      changed_constraint: >-
+        consumer deduplication and PostgreSQL capacity are separate concerns
+      new_evidence: >-
+        stable event identity contains the duplicate while SQLite misses representative PostgreSQL p95 and lock behavior
+      best_answer: >-
+        I would deduplicate by stable event identity and reconcile screening state, then run a PostgreSQL benchmark for p95, lock contention, and failure cases instead of extrapolating SQLite.
       distractors:
       - text: I would preserve every part of the original PixGuard atomic screening
           and outbox lease recovery answer because changing it after review would
@@ -1671,39 +1465,29 @@ items:
     goal: Make atomicity, duplicate recovery, and performance scope independently
       testable.
   critical_thinking:
-    problem_frame: 'Frame PixGuard atomic screening and outbox lease recovery before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      PixGuard commits screening, audit, idempotency, and outbox state locally, while relay leases permit duplicate publication; I must separate local atomicity from consumer recovery and capacity.
     claim_map:
-      fact: The prompt explicitly tests PixGuard atomic screening and outbox lease
-        recovery within a Go project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend PixGuard
-        atomic screening and outbox lease recovery, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the PixGuard atomic screening and
-        outbox lease recovery constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for PixGuard atomic screening and outbox lease recovery:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The decision, audit, and event are stored in one PostgreSQL transaction.
+      inference: >-
+        A stable event identity and reconciliation contain a publish-before-marking duplicate; SQLite timing cannot describe PostgreSQL capacity.
+      assumption: >-
+        I am assuming consumers can deduplicate and the PostgreSQL schema reflects production-like contention.
+      unknown: >-
+        Provider outcome, consumer inbox, lock contention, p95, and failure retry behavior are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about PixGuard atomic screening
-        and outbox lease recovery would be a false equivalence because the prompt
-        does not establish that both choices satisfy the same contract.
-      hard_constraint: The hard PixGuard atomic screening and outbox lease recovery
-        constraint is the required guarantee stated by the interviewer; no missing
-        measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for PixGuard atomic screening
-        and outbox lease recovery; first clarify the constraint or collect the evidence
-        that would make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating a local screening transaction and an outbox lease as interchangeable proof of atomic fraud prevention would be a false equivalence: the lease governs delivery, while an external decision may still be uncertain.
+      hard_constraint: >-
+        The hard constraint is preserving the local screening invariant and exposing, rather than hiding, the boundary where the external provider can be delayed or ambiguous.
+      decision_rule: >-
+        Verify the local transaction and lease behavior separately, then add provider idempotency or reconciliation before making any end-to-end atomicity claim.
     failure_probe:
       kind: failure_mode
-      prompt: 'Pixguard atomic screening and outbox lease recovery: when the first
-        PixGuard atomic screening and outbox lease recovery recovery path fails, which
-        consequence reaches the user, and what bounded mitigation follows for PixGuard
-        atomic screening and outbox lease recovery?'
+      prompt: >-
+        What duplicate event and PostgreSQL contention test would change the local atomicity or capacity claim?
     evidence_check:
       basis: Check the PixGuard atomic screening and outbox lease recovery claim against
         backend-challenges/pixguard-go-antifraud-platform/README.md and the exact
@@ -1715,16 +1499,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the PixGuard atomic screening
-        and outbox lease recovery question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you make a fraud screening", update PixGuard
-        atomic screening and outbox lease recovery when PixGuard atomic screening
-        and outbox lease recovery evidence—a PixGuard atomic screening and outbox
-        lease recovery trace or PixGuard atomic screening and outbox lease recovery
-        test—contradicts the PixGuard atomic screening and outbox lease recovery constraint
-        in case "How would you make a fraud screening"; ask a stakeholder about PixGuard
-        atomic screening and outbox lease recovery before revising.
+      rationale: >-
+        I am confident in the transaction facts; publish delivery and benchmark conclusions remain evidence-bounded.
+      update_trigger: >-
+        Update when consumer reconciliation or a matched PostgreSQL benchmark changes the failure or capacity decision.
     rubric:
       facts_correct: Names the verified PixGuard atomic screening and outbox lease
         recovery facts without smuggling in a result, scale, or capability that the
@@ -1755,12 +1533,12 @@ items:
   context: The interviewer is probing a provider timeout or crash after acceptance,
     role-scoped access, and the boundary between callback verification and replay
     prevention.
-  best_answer: PixRail claims an accepted transfer with a token and TTL before calling
-    SPI; matching fingerprints replay. The call has a timeout, releases on error,
-    then records the SPI message, events, and audit with that token. Role-scoped endpoints
-    plus HMAC and timestamp checks protect callbacks, not every replay. If SPI accepts
-    before a crash, lease expiry can duplicate the call. Provider idempotency or a
-    query and reconciliation path determines retry versus manual review.
+  best_answer: I would claim an accepted transfer with a token and TTL before calling
+    SPI, and replay only a matching fingerprint. I would record the provider message,
+    events, and audit under that token, while treating callback HMAC and timestamps as
+    callback controls rather than proof against every replay. If SPI may have accepted
+    before a crash, I would query or reconcile when the provider supports it; otherwise
+    I would require provider idempotency or manual review before retrying.
   distractors:
   - text: I would call SPI before writing or claiming anything because a timeout means
       SPI did nothing. Once callback has an HMAC, any replay is impossible, so timestamp
@@ -1845,8 +1623,9 @@ items:
     challenge_kind: new_evidence
     best_answer: >-
       PixRail claims an accepted transfer with a token and TTL before calling SPI; matching
-      fingerprints replay. I would keep the claims that remain supported, identify exactly which premise
-      the new observation changes, and run a focused check before revising the decision.
+      fingerprints replay. If the provider may have accepted the transfer, I would query or reconcile
+      first, retry only with provider idempotency evidence, and otherwise leave it pending for manual
+      review. I would verify callback identity separately from the local claim token.
     distractors:
     - text: I would keep the PixRail claim-before-side-effect SPI submission recommendation
         unchanged because changing position would look inconsistent.
@@ -1898,27 +1677,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-07-pixrail-claim-before-spi-side-effect-delayed-7
-      prompt: For PixRail claim-before-side-effect SPI submission, new evidence is
-        a trace of PixRail claim-before-side-effect SPI submission isolates a different
-        PixRail claim-before-side-effect SPI submission bottleneck than the one you
-        named and the constraint is a stakeholder asks for a stronger PixRail claim-before-side-effect
-        SPI submission guarantee than the first PixRail claim-before-side-effect SPI
-        submission answer promised. What alternative now deserves consideration for
-        PixRail claim-before-side-effect SPI submission?
-      changed_constraint: a stakeholder asks for a stronger PixRail claim-before-side-effect
-        SPI submission guarantee than the first PixRail claim-before-side-effect SPI
-        submission answer promised
-      new_evidence: a trace of PixRail claim-before-side-effect SPI submission isolates
-        a different PixRail claim-before-side-effect SPI submission bottleneck than
-        the one you named
-      best_answer: I would keep the facts that remain supported about PixRail claim-before-side-effect
-        SPI submission, treat a trace of PixRail claim-before-side-effect SPI submission
-        isolates a different PixRail claim-before-side-effect SPI submission bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under a stakeholder asks for a stronger PixRail claim-before-side-effect
-        SPI submission guarantee than the first PixRail claim-before-side-effect SPI
-        submission answer promised. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        SPI may have accepted a transfer before the process died. When is retry safe?
+      changed_constraint: >-
+        a local claim token cannot prove the remote provider effect
+      new_evidence: >-
+        SPI offers idempotency or a status query for the transfer identity
+      best_answer: >-
+        I would query or reconcile first, retry with provider idempotency evidence, and leave the transfer pending for manual review when neither exists; I would keep callback authentication separate from effect certainty.
       distractors:
       - text: I would preserve every part of the original PixRail claim-before-side-effect
           SPI submission answer because changing it after review would be inconsistent.
@@ -1935,53 +1701,33 @@ items:
       or review outcome for each.
     goal: Turn uncertain payment effects into explicit observable states.
   critical_thinking:
-    problem_frame: 'Frame PixRail claim-before-side-effect SPI submission before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      PixRail claims local ownership before an SPI call, but a timeout leaves the provider effect unknown; I must choose query, idempotency, or manual review.
     claim_map:
-      fact: The prompt explicitly tests PixRail claim-before-side-effect SPI submission
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend PixRail claim-before-side-effect
-        SPI submission, but that does not prove one implementation wins under every
-        workload or audience.
-      assumption: An unstated assumption is that the PixRail claim-before-side-effect
-        SPI submission constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for PixRail claim-before-side-effect SPI submission:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        A token and fingerprint coordinate local submission work and matching retries.
+      inference: >-
+        Local claim expiry cannot prove that SPI did not accept a transfer.
+      assumption: >-
+        I am assuming provider status or idempotency can identify the same transfer.
+      unknown: >-
+        Provider contract, callback identity, timeout timing, and manual-review policy are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for PixRail claim-before-side-effect SPI
-          submission
-        benefit: It keeps the PixRail claim-before-side-effect SPI submission reasoning
-          close to the stated Go project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the PixRail claim-before-side-effect
-          SPI submission workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated PixRail claim-before-side-effect SPI submission
-          contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for PixRail
-          claim-before-side-effect SPI submission
-        benefit: It can make the PixRail claim-before-side-effect SPI submission boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the PixRail claim-before-side-effect SPI submission evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first PixRail claim-before-side-effect SPI submission
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: claim locally, then query or reconcile an uncertain SPI result before retrying
+        benefit: I avoid blind duplicate transfers and make the provider-unknown state visible.
+        cost_or_risk: I need provider status queries, timeout handling, and a pending or manual-review state.
+        valid_when: Use it when SPI exposes a stable message or status lookup.
+      - option: claim locally and retry with a provider idempotency key
+        benefit: I can make a safe retry when SPI honors the same key and fingerprint.
+        cost_or_risk: A local token alone is insufficient, and provider support or retention becomes a dependency.
+        valid_when: Use it when SPI documents durable idempotency for the side effect.
+      decision_rule: I retry only after a provider status lookup or documented duplicate-safe key; without that evidence, I leave the transfer pending for an operator.
     failure_probe:
       kind: counterexample
-      prompt: 'Pixrail claim-before-side-effect spi submission: what stakeholder reply
-        about PixRail claim-before-side-effect SPI submission would invalidate the
-        recommendation, and which PixRail claim-before-side-effect SPI submission
-        premise would you revisit?'
+      prompt: >-
+        What provider evidence would make retry safe after a crash before RecordSPISubmission?
     evidence_check:
       basis: Check the PixRail claim-before-side-effect SPI submission claim against
         backend-challenges/pixrail-go-payment-switch/README.md and the exact interview
@@ -1993,16 +1739,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the PixRail claim-before-side-effect
-        SPI submission question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "How would you submit a PixRail transfer", update PixRail
-        claim-before-side-effect SPI submission when PixRail claim-before-side-effect
-        SPI submission evidence—a PixRail claim-before-side-effect SPI submission
-        trace or PixRail claim-before-side-effect SPI submission test—contradicts
-        the PixRail claim-before-side-effect SPI submission constraint in case "How
-        would you submit a PixRail transfer"; ask a stakeholder about PixRail claim-before-side-effect
-        SPI submission before revising.
+      rationale: >-
+        I am confident in calling the local claim a coordination mechanism; remote exactly-once behavior is unproven.
+      update_trigger: >-
+        Update when SPI idempotency, query, or reconciliation evidence changes the retry/manual-review choice.
     rubric:
       facts_correct: Names the verified PixRail claim-before-side-effect SPI submission
         facts without smuggling in a result, scale, or capability that the prompt
@@ -2031,13 +1771,12 @@ items:
     it stop being the right approach?
   context: The interviewer wants the heap memory benefit distinguished from full-dataset
     scan cost, plus an evidence-based path toward ANN.
-  best_answer: Rinha Go vectorizes a request, scans every reference, and holds only
-    k=5 candidates in a max-heap by squared Euclidean distance before sorting them.
-    The service counts fraud labels and applies its threshold. With fixed small k,
-    that is roughly O(N*(d + log k)) time and O(N*d) reference-set memory; the heap
-    saves neighbor memory, not scan work. This public challenge study uses official-derived
-    examples, not proof of a full three-million-vector run, latency, memory, score,
-    or submission.
+  best_answer: >-
+    I would explain that the study vectorizes a request, scans every reference, and keeps k=5
+    candidates in a max-heap before sorting them. With fixed k, I would describe roughly
+    O(N*(d + log k)) time and O(N*d) reference-set memory: the heap saves neighbor memory but
+    not scan work. I would keep the claim bounded to the cited examples and require a full-corpus
+    benchmark before claiming latency, memory, score, or submission readiness.
   distractors:
   - text: I would choose the Go version because a max-heap means the algorithm no
       longer visits every reference. With k fixed at five, it becomes constant-time
@@ -2121,9 +1860,9 @@ items:
     challenge_kind: assumption
     best_answer: >-
       Rinha Go vectorizes a request, scans every reference, and holds only k=5 candidates in
-      a max-heap by squared Euclidean distance before sorting them. I would label the follow-up
-      premise as an assumption, ask the smallest question that could disprove it, and protect
-      the edge case before committing to the recommendation.
+      a max-heap by squared Euclidean distance before sorting them. I would keep exact KNN as the
+      correctness oracle and move to ANN only after a full-corpus p99 or memory breach, with recall,
+      score parity, index build/update, and rollback evidence.
     distractors:
     - text: I would repeat my original Rinha Go exact KNN scaling boundary answer
         with more confidence because the interviewer probably assumes the usual case.
@@ -2175,25 +1914,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-08-rinha-go-exact-knn-scaling-boundary-delayed-8
-      prompt: A second pass on Rinha Go exact KNN scaling boundary finds a code inspection
-        of Rinha Go exact KNN scaling boundary confirms the Rinha Go exact KNN scaling
-        boundary mechanism but not its impact; with the Rinha Go exact KNN scaling
-        boundary dependency is slower for Rinha Go exact KNN scaling boundary and
-        the failure is ambiguous rather than explicit, which Rinha Go exact KNN scaling
-        boundary test would you run before keeping the original rule?
-      changed_constraint: the Rinha Go exact KNN scaling boundary dependency is slower
-        for Rinha Go exact KNN scaling boundary and the failure is ambiguous rather
-        than explicit
-      new_evidence: a code inspection of Rinha Go exact KNN scaling boundary confirms
-        the Rinha Go exact KNN scaling boundary mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Rinha Go exact
-        KNN scaling boundary, treat a code inspection of Rinha Go exact KNN scaling
-        boundary confirms the Rinha Go exact KNN scaling boundary mechanism but not
-        its impact as new evidence rather than a result, and state the updated decision
-        rule under the Rinha Go exact KNN scaling boundary dependency is slower for
-        Rinha Go exact KNN scaling boundary and the failure is ambiguous rather than
-        explicit. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        Exact KNN meets correctness but misses the full-corpus p99 and memory target. What evidence would justify ANN?
+      changed_constraint: >-
+        the approximate index must preserve acceptable recall and correctness while reducing measured resource use
+      new_evidence: >-
+        matched full-corpus runs show a reproducible p99 or memory breach against an exact oracle
+      best_answer: >-
+        I would compare ANN recall, score parity, index build/update cost, memory, p99, and rollback against exact KNN before changing the algorithm.
       distractors:
       - text: I would preserve every part of the original Rinha Go exact KNN scaling
           boundary answer because changing it after review would be inconsistent.
@@ -2209,50 +1937,33 @@ items:
       complexity captured separately.
     goal: Produce a migration decision record rather than a framework comparison.
   critical_thinking:
-    problem_frame: 'Frame Rinha Go exact KNN scaling boundary before proposing a solution:
-      state the actor, required outcome, constraint, and unknown that could invalidate
-      the first recommendation.'
+    problem_frame: >-
+      The study uses exact full scans and a bounded neighbor heap; I must compare correctness, p99, memory, recall, and operations before ANN.
     claim_map:
-      fact: The prompt explicitly tests Rinha Go exact KNN scaling boundary within
-        a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend Rinha Go
-        exact KNN scaling boundary, but that does not prove one implementation wins
-        under every workload or audience.
-      assumption: An unstated assumption is that the Rinha Go exact KNN scaling boundary
-        constraint is the dominant one; label it and ask whether the interviewer confirms
-        it.
-      unknown: 'Still unknown for Rinha Go exact KNN scaling boundary: the scale,
-        failure tolerance, ownership boundary, and evidence threshold that would change
-        the decision.'
+      fact: >-
+        The heap bounds retained candidates but the exact scan still visits every reference.
+      inference: >-
+        ANN is justified only by a matched full-corpus resource breach with acceptable recall and score parity.
+      assumption: >-
+        I am assuming the cited examples do not represent the full corpus or production query distribution.
+      unknown: >-
+        Full-corpus p99, memory, recall, update cost, and rollback path are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for Rinha Go exact KNN scaling boundary
-        benefit: It keeps the Rinha Go exact KNN scaling boundary reasoning close
-          to the stated Go project deep dive constraint and makes the evidence boundary
-          visible.
-        cost_or_risk: It can be too narrow if the Rinha Go exact KNN scaling boundary
-          workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Rinha Go exact KNN scaling boundary contract
-          and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for Rinha
-          Go exact KNN scaling boundary
-        benefit: It can make the Rinha Go exact KNN scaling boundary boundary more
-          explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Rinha Go exact KNN scaling boundary evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Rinha Go exact KNN scaling boundary option when
-        its stated contract holds; choose the alternative only when evidence shows
-        that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: exact full-scan KNN with a bounded top-k heap
+        benefit: I keep distance semantics and recall exact while using O(k) neighbor memory.
+        cost_or_risk: Query work remains proportional to corpus size and the reference set consumes memory.
+        valid_when: Use it while full-corpus p99 and memory fit the measured study envelope.
+      - option: an ANN or vector-index candidate evaluated behind the same scoring contract
+        benefit: I can reduce search work for a larger corpus if recall and latency meet the requirement.
+        cost_or_risk: I add index build, freshness, recall, and operational complexity and cannot infer quality from a roundtrip alone.
+        valid_when: Use it only after a representative full-corpus benchmark shows exact search misses the target.
+      decision_rule: I keep exact search as the correctness baseline and adopt ANN only when measured p99 or memory pressure justifies the recall and operations trade-off.
     failure_probe:
       kind: edge_case
-      prompt: 'Rinha go exact knn scaling boundary: where does the Rinha Go exact
-        KNN scaling boundary premise need a boundary check, and which result would
-        make you reframe Rinha Go exact KNN scaling boundary?'
+      prompt: >-
+        What matched exact-versus-ANN benchmark would make the approximate index worth its operating complexity?
     evidence_check:
       basis: Check the Rinha Go exact KNN scaling boundary claim against backend-challenges/rinha-de-backend-2026-go/README.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2264,15 +1975,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the Rinha Go exact KNN
-        scaling boundary question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "What does the Go Rinha study's exact", update Rinha
-        Go exact KNN scaling boundary when Rinha Go exact KNN scaling boundary evidence—a
-        Rinha Go exact KNN scaling boundary trace or Rinha Go exact KNN scaling boundary
-        test—contradicts the Rinha Go exact KNN scaling boundary constraint in case
-        "What does the Go Rinha study's exact"; ask a stakeholder about Rinha Go exact
-        KNN scaling boundary before revising.
+      rationale: >-
+        I am confident about the exact algorithmic boundary; scaling and ANN suitability remain low-certainty until measured.
+      update_trigger: >-
+        Update when full-corpus benchmark, recall oracle, or index operations cross the agreed trigger.
     rubric:
       facts_correct: Names the verified Rinha Go exact KNN scaling boundary facts
         without smuggling in a result, scale, or capability that the prompt does not
@@ -2299,13 +2005,13 @@ items:
   context: The interviewer is testing import, plan-only behavior, retry ambiguity,
     remote idempotency, and the distinction between redaction, sensitive state, and
     secret safety.
-  best_answer: Terraport treats Terraform state as cached desired and observed data
-    around a fictitious BankPort API. Its httptest acceptance suite covers lifecycle,
-    import, drift, plan-only behavior, timeout, auth, and 429 retry. The client parses
-    endpoints, redacts selected values, and backs off on 429 or 5xx. But a POST can
-    commit before returning 500, so blind retry may duplicate a remote resource. It
-    needs remote idempotency, read or reconcile, or import. Sensitive schema still
-    leaves secrets in state, and regex redaction cannot guarantee zero leakage.
+  best_answer: >-
+    I would treat Terraform state as cached desired and observed data around the fictitious API,
+    and I would use the cited acceptance cases for lifecycle, import, drift, plan-only behavior,
+    timeout, auth, and 429 retry. Because a POST can commit before returning 500, I would query or
+    reconcile, adopt through import, or use remote idempotency before retrying. I would keep state
+    access controlled: a Sensitive schema and regex redaction do not prove that backups or unknown
+    secret shapes are safe.
   distractors:
   - text: I would retry every POST after a 5xx until Terraform reports success because
       the remote service clearly rejected the request. Import is only useful for old
@@ -2391,9 +2097,10 @@ items:
     challenge_kind: evidence
     best_answer: >-
       Terraport treats Terraform state as cached desired and observed data around a fictitious BankPort
-      API. I would treat the follow-up observation as evidence, not as proof of impact;
-      I would inspect the smallest relevant trace or test and state what remains uncertain
-      before changing the decision.
+      API. If create commits before a 500, I would query by remote identity, adopt through import, or
+      retry only with a remote idempotency key; otherwise I would leave the resource pending. I would
+      keep drift and state-secret access controls explicit because Sensitive and regex redaction do
+      not prove zero leakage.
     distractors:
     - text: I would cite my experience with Terraport lifecycle, import, drift, and
         ambiguous retry as enough proof and move on without naming an observation.
@@ -2445,30 +2152,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-09-terraport-lifecycle-import-and-ambiguous-retry-delayed-9
-      prompt: 'Terraport lifecycle, import, drift, and ambiguous retry: the later
-        Terraport lifecycle, import, drift, and ambiguous retry review says a measured
-        Terraport lifecycle, import, drift, and ambiguous retry comparison shows the
-        alternative has a different Terraport lifecycle, import, drift, and ambiguous
-        retry cost profile. Under new Terraport lifecycle, import, drift, and ambiguous
-        retry evidence contradicts the Terraport lifecycle, import, drift, and ambiguous
-        retry assumption that made the first option attractive, which part of Terraport
-        lifecycle, import, drift, and ambiguous retry survives and which Terraport
-        lifecycle, import, drift, and ambiguous retry claim changes?'
-      changed_constraint: new Terraport lifecycle, import, drift, and ambiguous retry
-        evidence contradicts the Terraport lifecycle, import, drift, and ambiguous
-        retry assumption that made the first option attractive
-      new_evidence: a measured Terraport lifecycle, import, drift, and ambiguous retry
-        comparison shows the alternative has a different Terraport lifecycle, import,
-        drift, and ambiguous retry cost profile
-      best_answer: I would keep the facts that remain supported about Terraport lifecycle,
-        import, drift, and ambiguous retry, treat a measured Terraport lifecycle,
-        import, drift, and ambiguous retry comparison shows the alternative has a
-        different Terraport lifecycle, import, drift, and ambiguous retry cost profile
-        as new evidence rather than a result, and state the updated decision rule
-        under new Terraport lifecycle, import, drift, and ambiguous retry evidence
-        contradicts the Terraport lifecycle, import, drift, and ambiguous retry assumption
-        that made the first option attractive. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        The remote create commits but Terraport receives 500. Which evidence decides retry, adopt, or stop?
+      changed_constraint: >-
+        the remote resource may exist even though local apply failed
+      new_evidence: >-
+        a remote read or idempotency key can identify the committed resource
+      best_answer: >-
+        I would query by remote identity or adopt through import, retry only with a remote idempotency key, and leave the operation pending when identity cannot be reconciled; Sensitive state still needs access controls.
       distractors:
       - text: I would preserve every part of the original Terraport lifecycle, import,
           drift, and ambiguous retry answer because changing it after review would
@@ -2487,54 +2178,33 @@ items:
     goal: Make remote ambiguity and secret exposure testable without claiming a live
       platform.
   critical_thinking:
-    problem_frame: 'Frame Terraport lifecycle, import, drift, and ambiguous retry
-      before proposing a solution: state the actor, required outcome, constraint,
-      and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      Terraport coordinates Terraform state with a fictitious remote API; a 500 after create leaves remote truth and local state uncertain.
     claim_map:
-      fact: The prompt explicitly tests Terraport lifecycle, import, drift, and ambiguous
-        retry within a Go project deep dive context; treat that named boundary as
-        the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Terraport
-        lifecycle, import, drift, and ambiguous retry, but that does not prove one
-        implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Terraport lifecycle, import,
-        drift, and ambiguous retry constraint is the dominant one; label it and ask
-        whether the interviewer confirms it.
-      unknown: 'Still unknown for Terraport lifecycle, import, drift, and ambiguous
-        retry: the scale, failure tolerance, ownership boundary, and evidence threshold
-        that would change the decision.'
+      fact: >-
+        Acceptance evidence covers lifecycle, import, drift, plan-only, timeout, auth, and retry cases around a test API.
+      inference: >-
+        A remote create can commit before 500, so read, import, idempotency, and reconciliation matter more than blind retry.
+      assumption: >-
+        I am assuming remote identity or a provider idempotency key can be queried.
+      unknown: >-
+        Remote state, secret storage, redirect behavior, and real-provider semantics are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for Terraport lifecycle, import, drift,
-          and ambiguous retry
-        benefit: It keeps the Terraport lifecycle, import, drift, and ambiguous retry
-          reasoning close to the stated Go project deep dive constraint and makes
-          the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Terraport lifecycle, import, drift,
-          and ambiguous retry workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Terraport lifecycle, import, drift, and
-          ambiguous retry contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for Terraport
-          lifecycle, import, drift, and ambiguous retry
-        benefit: It can make the Terraport lifecycle, import, drift, and ambiguous
-          retry boundary more explicit when the first option's hidden assumption is
-          not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Terraport lifecycle, import, drift, and ambiguous retry evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Terraport lifecycle, import, drift, and ambiguous
-        retry option when its stated contract holds; choose the alternative only when
-        evidence shows that the relevant Go project deep dive constraint makes the
-        first assumption unsafe.
+      - option: query or import remote state before retrying an ambiguous create
+        benefit: I reconcile remote truth and can adopt a resource that was created before a 5xx reached Terraport.
+        cost_or_risk: The API must expose a stable lookup, and the provider may still leave an unresolved state.
+        valid_when: Use it when the remote resource has a durable identity and read path.
+      - option: retry with a remote idempotency key and deterministic request fingerprint
+        benefit: I can make a repeated create converge when the provider honors the key.
+        cost_or_risk: It fails to protect me when the provider ignores or expires the key, and state still needs import or refresh.
+        valid_when: Use it when the provider documents the key's retention and conflict behavior.
+      decision_rule: I reconcile or import by default; I use an idempotency retry only when provider semantics are documented, and I never blindly replay an uncertain create.
     failure_probe:
       kind: failure_mode
-      prompt: 'Terraport lifecycle, import, drift, and ambiguous retry: if the Terraport
-        lifecycle, import, drift, and ambiguous retry decision fails under plausible
-        load or a difficult turn, what consequence appears first, and how would you
-        contain Terraport lifecycle, import, drift, and ambiguous retry?'
+      prompt: >-
+        What remote read or idempotency evidence would distinguish adopt from retry after commit-then-500?
     evidence_check:
       basis: Check the Terraport lifecycle, import, drift, and ambiguous retry claim
         against backend-challenges/terraport-go-terraform-provider/README.md and the
@@ -2546,17 +2216,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the Terraport lifecycle,
-        import, drift, and ambiguous retry question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you handle Terraform lifecycle and", update
-        Terraport lifecycle, import, drift, and ambiguous retry when Terraport lifecycle,
-        import, drift, and ambiguous retry evidence—a Terraport lifecycle, import,
-        drift, and ambiguous retry trace or Terraport lifecycle, import, drift, and
-        ambiguous retry test—contradicts the Terraport lifecycle, import, drift, and
-        ambiguous retry constraint in case "How would you handle Terraform lifecycle
-        and"; ask a stakeholder about Terraport lifecycle, import, drift, and ambiguous
-        retry before revising.
+      rationale: >-
+        I am confident in the ambiguous-create failure mode; production provider and secret guarantees remain unsupported.
+      update_trigger: >-
+        Update when remote reconciliation, state access, or provider contract evidence changes the lifecycle policy.
     rubric:
       facts_correct: Names the verified Terraport lifecycle, import, drift, and ambiguous
         retry facts without smuggling in a result, scale, or capability that the prompt
@@ -2586,13 +2249,12 @@ items:
     should you avoid claiming from a successful roundtrip?
   context: The interviewer is probing tie-breaking, vocabulary compatibility, untrusted
     artifacts, and why reversible bytes are different from tokenizer quality evidence.
-  best_answer: TokenForge starts with 256 byte tokens and a special unknown token.
-    Training counts adjacent pairs, breaks ties by pair ID, and ranks merges; encoding
-    applies them in that order. Decode rebuilds bytes or rejects unknown and special
-    IDs, while Load validates version, model, token, and merge invariants. Exact roundtrip,
-    including invalid UTF-8, proves reversible bytes, not linguistic quality, compression,
-    downstream performance, a trained vocabulary, or a benchmark. Its in-memory sequence
-    can still make large-corpus training memory-heavy.
+  best_answer: >-
+    I would describe TokenForge's guarantee as deterministic byte reversibility: it starts with
+    256 byte tokens, breaks equal pair counts by pair ID, validates model invariants on load, and
+    rebuilds bytes on decode. I would not infer linguistic quality, compression, downstream
+    performance, or benchmark readiness from a roundtrip. I would profile the in-memory sequence
+    on a large corpus and reject incompatible or malformed model data before loading it.
   distractors:
   - text: Once byte roundtrip succeeds, I would describe the tokenizer as linguistically
       accurate and ready for any downstream model. Deterministic pair selection guarantees
@@ -2680,8 +2342,9 @@ items:
     challenge_kind: alternative
     best_answer: >-
       TokenForge starts with 256 byte tokens and a special unknown token. I would compare
-      that choice with the credible alternative against the requirement in the follow-up, cost, and
-      failure risk, then switch only if evidence makes the alternative safer.
+      deterministic pair-ID ordering and invariant validation with a compatibility policy for an
+      untrusted vocabulary. I would profile memory on the larger corpus and evaluate compression or
+      downstream quality separately from byte roundtrip before changing the representation.
     distractors:
     - text: I would defend the first TokenForge deterministic byte-level BPE boundary
         option because offering an alternative might make the decision look uncertain.
@@ -2735,31 +2398,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-10-tokenforge-deterministic-byte-bpe-boundary-delayed-10
-      prompt: 'Review note for TokenForge deterministic byte-level BPE boundary: a
-        TokenForge deterministic byte-level BPE boundary test exposes a boundary case
-        that the TokenForge deterministic byte-level BPE boundary examples did not
-        cover. Given two TokenForge deterministic byte-level BPE boundary callers
-        from the case "What does deterministic byte-level BPE in TokenForge" or TokenForge
-        deterministic byte-level BPE boundary tenants now compete for the same TokenForge
-        deterministic byte-level BPE boundary boundary, what would you now defend,
-        retract, and verify about TokenForge deterministic byte-level BPE boundary?'
-      changed_constraint: two TokenForge deterministic byte-level BPE boundary callers
-        from the case "What does deterministic byte-level BPE in TokenForge" or TokenForge
-        deterministic byte-level BPE boundary tenants now compete for the same TokenForge
-        deterministic byte-level BPE boundary boundary
-      new_evidence: a TokenForge deterministic byte-level BPE boundary test exposes
-        a boundary case that the TokenForge deterministic byte-level BPE boundary
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about TokenForge deterministic
-        byte-level BPE boundary, treat a TokenForge deterministic byte-level BPE boundary
-        test exposes a boundary case that the TokenForge deterministic byte-level
-        BPE boundary examples did not cover as new evidence rather than a result,
-        and state the updated decision rule under two TokenForge deterministic byte-level
-        BPE boundary callers from the case "What does deterministic byte-level BPE
-        in TokenForge" or TokenForge deterministic byte-level BPE boundary tenants
-        now compete for the same TokenForge deterministic byte-level BPE boundary
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        Equal-frequency pairs tie, the vocabulary is untrusted, and memory grows on a larger corpus. Which checks change the recommendation?
+      changed_constraint: >-
+        deterministic ordering, compatibility validation, memory capacity, and quality are separate claims
+      new_evidence: >-
+        tie-break tests pass but profile memory and an incompatible vocabulary fail
+      best_answer: >-
+        I would preserve pair-ID tie-breaking, reject incompatible model invariants, profile memory, and evaluate downstream quality separately from byte roundtrip before changing the representation.
       distractors:
       - text: I would preserve every part of the original TokenForge deterministic
           byte-level BPE boundary answer because changing it after review would be
@@ -2777,54 +2423,33 @@ items:
       or downstream-quality evaluation.
     goal: Test deterministic mechanics, trust boundaries, and empirical claims independently.
   critical_thinking:
-    problem_frame: 'Frame TokenForge deterministic byte-level BPE boundary before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
+    problem_frame: >-
+      TokenForge separates deterministic byte roundtrip from vocabulary compatibility, memory, and model quality; I must keep those evidence classes distinct.
     claim_map:
-      fact: The prompt explicitly tests TokenForge deterministic byte-level BPE boundary
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend TokenForge
-        deterministic byte-level BPE boundary, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the TokenForge deterministic byte-level
-        BPE boundary constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for TokenForge deterministic byte-level BPE boundary:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        Pair ties are deterministic and load validates model/version invariants.
+      inference: >-
+        Successful byte recovery does not establish linguistic quality, compression, or large-corpus capacity.
+      assumption: >-
+        I am assuming untrusted vocabulary data may be malformed or incompatible even when bytes roundtrip.
+      unknown: >-
+        Corpus size, profile memory, quality metric, compatibility policy, and downstream workload are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for TokenForge deterministic byte-level
-          BPE boundary
-        benefit: It keeps the TokenForge deterministic byte-level BPE boundary reasoning
-          close to the stated Go project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the TokenForge deterministic byte-level
-          BPE boundary workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated TokenForge deterministic byte-level BPE
-          boundary contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for TokenForge
-          deterministic byte-level BPE boundary
-        benefit: It can make the TokenForge deterministic byte-level BPE boundary
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the TokenForge deterministic byte-level BPE boundary evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first TokenForge deterministic byte-level BPE boundary
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: the deterministic in-memory byte-level model with invariant validation
+        benefit: I can prove byte roundtrip and deterministic merge selection on the cited study corpus.
+        cost_or_risk: Full scans and in-memory sequences can exceed memory or latency bounds as the corpus grows.
+        valid_when: Use it as the correctness baseline while the corpus and resource envelope fit.
+      - option: a bounded or indexed implementation optimized from a representative corpus profile
+        benefit: I can reduce memory or CPU after identifying the actual sequence and merge bottleneck.
+        cost_or_risk: Optimization can change behavior or hide malformed model data unless the same invariants and roundtrip tests remain.
+        valid_when: Use it only after profiling and compatibility tests identify a measured limit.
+      decision_rule: I preserve deterministic byte roundtrip as the acceptance contract and optimize only the measured resource boundary; I do not infer linguistic quality from it.
     failure_probe:
       kind: counterexample
-      prompt: 'Tokenforge deterministic byte-level bpe boundary: which adversarial
-        TokenForge deterministic byte-level BPE boundary example could disprove the
-        recommendation, and what evidence about TokenForge deterministic byte-level
-        BPE boundary would you request?'
+      prompt: >-
+        What invariant, memory, or quality result would make the current vocabulary policy unsafe?
     evidence_check:
       basis: Check the TokenForge deterministic byte-level BPE boundary claim against
         backend-challenges/tokenforge-go-tokenizer/README.md and the exact interview
@@ -2836,16 +2461,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the TokenForge deterministic
-        byte-level BPE boundary question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "What does deterministic byte-level BPE in TokenForge",
-        update TokenForge deterministic byte-level BPE boundary when TokenForge deterministic
-        byte-level BPE boundary evidence—a TokenForge deterministic byte-level BPE
-        boundary trace or TokenForge deterministic byte-level BPE boundary test—contradicts
-        the TokenForge deterministic byte-level BPE boundary constraint in case "What
-        does deterministic byte-level BPE in TokenForge"; ask a stakeholder about
-        TokenForge deterministic byte-level BPE boundary before revising.
+      rationale: >-
+        I am confident in the reversible-byte claim; quality and capacity require separate experiments.
+      update_trigger: >-
+        Update when model validation, profile, compression, or downstream evaluation changes the recommendation.
     rubric:
       facts_correct: Names the verified TokenForge deterministic byte-level BPE boundary
         facts without smuggling in a result, scale, or capability that the prompt
@@ -2875,13 +2494,11 @@ items:
   context: The interviewer wants queue admission distinguished from delivery durability,
     including retry stalls, shutdown behavior, DLQ/replay, and the meaning of a constrained
     spike.
-  best_answer: TraceBridge uses a bounded in-process queue, so Enqueue returns ErrLocalQueueFull
-    instead of hiding surge pressure in memory. Workers flush by size or time and
-    retry until context stops them; shutdown's final flush can lose a batch on error.
-    The constrained spike intentionally treats 429 and 503 as visible admission outcomes,
-    not healthy capacity. This case study does not establish persistent idempotency,
-    multi-process replay, or production capacity; stalled retry needs DLQ, replay,
-    and observability decisions.
+  best_answer: I would keep TraceBridge's queue bounded so Enqueue returns ErrLocalQueueFull
+    instead of hiding pressure in memory. I would flush by size or time, bound retry by
+    context, and persist a DLQ or replay record before shutdown when a batch cannot be
+    delivered. I would measure lag, rejections, retries, and loss; 429 or 503 in the
+    constrained spike is visible admission pressure, not proof of production capacity.
   distractors:
   - text: I would let the local queue grow until the exporter recovers so telemetry
       producers never receive a rejection. Retrying forever proves events will survive
@@ -2969,9 +2586,9 @@ items:
     challenge_kind: failure
     best_answer: >-
       TraceBridge uses a bounded in-process queue, so Enqueue returns ErrLocalQueueFull instead of hiding surge
-      pressure in memory. If the failure in the follow-up appears, I would name the
-      user or system consequence, contain it with a bounded mitigation, and verify recovery with
-      a focused test or metric.
+      pressure in memory. I would persist pending batches before shutdown, expose authorized DLQ and
+      replay state, and measure lag, rejections, retries, and loss. Bounded admission makes overload
+      visible but does not provide durable delivery after a stalled retry or failed final flush.
     distractors:
     - text: I would describe the TraceBridge bounded admission and retry stall failure
         as impossible because the happy path already passed its test.
@@ -3023,27 +2640,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-11-tracebridge-bounded-admission-and-retry-stall-delayed-11
-      prompt: New evidence about TraceBridge bounded admission and retry stall says
-        a stakeholder clarifies a TraceBridge bounded admission and retry stall requirement
-        that changes the TraceBridge bounded admission and retry stall success condition;
-        with the TraceBridge bounded admission and retry stall workload for TraceBridge
-        bounded admission and retry stall no longer fits the original resource bound,
-        how do you update the TraceBridge bounded admission and retry stall decision
-        rule?
-      changed_constraint: the TraceBridge bounded admission and retry stall workload
-        for TraceBridge bounded admission and retry stall no longer fits the original
-        resource bound
-      new_evidence: a stakeholder clarifies a TraceBridge bounded admission and retry
-        stall requirement that changes the TraceBridge bounded admission and retry
-        stall success condition
-      best_answer: I would keep the facts that remain supported about TraceBridge
-        bounded admission and retry stall, treat a stakeholder clarifies a TraceBridge
-        bounded admission and retry stall requirement that changes the TraceBridge
-        bounded admission and retry stall success condition as new evidence rather
-        than a result, and state the updated decision rule under the TraceBridge bounded
-        admission and retry stall workload for TraceBridge bounded admission and retry
-        stall no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A retry stalls during an outage and shutdown begins with a pending batch. What must be durable?
+      changed_constraint: >-
+        bounded admission does not guarantee pending delivery across shutdown
+      new_evidence: >-
+        the final flush fails while the local queue contains a batch and no replay record
+      best_answer: >-
+        I would persist pending batches or a durable DLQ before shutdown, authorize replay, and measure lag, rejections, retries, and loss; I would not call admission rejection delivery.
       distractors:
       - text: I would preserve every part of the original TraceBridge bounded admission
           and retry stall answer because changing it after review would be inconsistent.
@@ -3061,39 +2665,29 @@ items:
     goal: Make backpressure and recovery boundaries inspectable without inventing
       durable guarantees.
   critical_thinking:
-    problem_frame: 'Frame TraceBridge bounded admission and retry stall before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      TraceBridge bounds in-process admission but a stalled retry and failed shutdown flush can lose pending work; I must separate overload visibility from durable replay.
     claim_map:
-      fact: The prompt explicitly tests TraceBridge bounded admission and retry stall
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend TraceBridge
-        bounded admission and retry stall, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the TraceBridge bounded admission
-        and retry stall constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for TraceBridge bounded admission and retry stall: the
-        scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        A full queue returns a visible local rejection instead of unlimited memory growth.
+      inference: >-
+        Durable DLQ, replay, and idempotency are separate mechanisms from bounded admission.
+      assumption: >-
+        I am assuming a publisher or durable store can own pending batches across process shutdown.
+      unknown: >-
+        Queue persistence, retry authorization, shutdown timing, lag, and loss rate are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about TraceBridge bounded
-        admission and retry stall would be a false equivalence because the prompt
-        does not establish that both choices satisfy the same contract.
-      hard_constraint: The hard TraceBridge bounded admission and retry stall constraint
-        is the required guarantee stated by the interviewer; no missing measurement
-        licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for TraceBridge bounded admission
-        and retry stall; first clarify the constraint or collect the evidence that
-        would make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating a larger in-process queue and a bounded admission policy as interchangeable throughput fixes would be a false equivalence: one delays failure while the other makes overload visible.
+      hard_constraint: >-
+        The hard constraint is bounded memory and an explicit exporter-outage signal, with a defined decision for retry, shed, or durable hand-off.
+      decision_rule: >-
+        Measure queue age and exporter recovery first; keep admission bounded and choose retry or shedding from the loss and latency contract instead of hiding the stall in memory.
     failure_probe:
       kind: edge_case
-      prompt: 'Tracebridge bounded admission and retry stall: which empty or extreme
-        TraceBridge bounded admission and retry stall case would expose the hidden
-        assumption, and what would you measure about TraceBridge bounded admission
-        and retry stall?'
+      prompt: >-
+        What shutdown trace would prove a pending batch was lost after the final flush failed?
     evidence_check:
       basis: Check the TraceBridge bounded admission and retry stall claim against
         backend-challenges/tracebridge-go-observability-pipeline/README.md and the
@@ -3105,16 +2699,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the TraceBridge bounded
-        admission and retry stall question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you apply backpressure in TraceBridge",
-        update TraceBridge bounded admission and retry stall when TraceBridge bounded
-        admission and retry stall evidence—a TraceBridge bounded admission and retry
-        stall trace or TraceBridge bounded admission and retry stall test—contradicts
-        the TraceBridge bounded admission and retry stall constraint in case "How
-        would you apply backpressure in TraceBridge"; ask a stakeholder about TraceBridge
-        bounded admission and retry stall before revising.
+      rationale: >-
+        I am confident in the admission behavior; durable delivery and capacity claims require persistence and outage evidence.
+      update_trigger: >-
+        Update when DLQ/replay tests or outage measurements establish a durable recovery boundary.
     rubric:
       facts_correct: Names the verified TraceBridge bounded admission and retry stall
         facts without smuggling in a result, scale, or capability that the prompt
@@ -3144,13 +2732,13 @@ items:
   context: The interviewer is probing lost credentials, recoverable signing keys,
     local cryptography, redaction limits, DNS rebinding, redirects, and connection-time
     enforcement.
-  best_answer: TrustVault's in-memory MVP generates random prefixed tokens, stores
-    API and client secrets as HMAC-SHA256 hashes with a pepper, and compares them
-    constant-time. It reveals those secrets once rather than storing them. Webhook
-    signing material remains recoverable via AES-GCM from a locally derived key; recursive
-    redaction handles known names. SSRF tests reject private, localhost, HTTP, and
-    redirects, but not connection-time pinning or DNS rebinding. This is not KMS/HSM
-    or zero-leak proof; lost one-time secrets require rotation.
+  best_answer: >-
+    I would present the MVP as a bounded claim: it generates prefixed tokens, hashes API and
+    client secrets with HMAC-SHA256 and a pepper, and reveals them once. I would keep recoverable
+    webhook signing material behind AES-GCM, rotate a lost one-time secret, and treat recursive
+    redaction as known-pattern coverage. I would add KMS or HSM key management, resolve-and-connect
+    pinning, and redirect tests before claiming protection against DNS rebinding, zero leakage, or
+    durable secret recovery.
   distractors:
   - text: I would store every revealed API and client secret encrypted so it can always
       be shown again. A random prefix and HMAC make rotation unnecessary, while AES-GCM
@@ -3240,9 +2828,9 @@ items:
     challenge_kind: new_evidence
     best_answer: >-
       TrustVault's in-memory MVP generates random prefixed tokens, stores API and client secrets as HMAC-SHA256
-      hashes with a pepper, and compares them constant-time. I would keep the claims that
-      remain supported, identify exactly which premise the new observation changes, and run a focused
-      check before revising the decision.
+      hashes with a pepper, and compares them constant-time. I would rotate a lost one-time secret,
+      move envelope keys to KMS or HSM, pin the resolve-and-connect destination, and reject or
+      revalidate redirects before claiming durable recovery or complete SSRF protection.
     distractors:
     - text: I would keep the TrustVault secret lifecycle and SSRF boundary recommendation
         unchanged because changing position would look inconsistent.
@@ -3297,27 +2885,14 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: go_experience-12-trustvault-secret-lifecycle-and-ssrf-boundary-delayed-12
-      prompt: 'Trustvault secret lifecycle and ssrf boundary gets a new constraint:
-        a stakeholder asks for a stronger TrustVault secret lifecycle and SSRF boundary
-        guarantee than the first TrustVault secret lifecycle and SSRF boundary answer
-        promised. After a trace of TrustVault secret lifecycle and SSRF boundary isolates
-        a different TrustVault secret lifecycle and SSRF boundary bottleneck than
-        the one you named, which TrustVault secret lifecycle and SSRF boundary assumption
-        is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger TrustVault secret lifecycle
-        and SSRF boundary guarantee than the first TrustVault secret lifecycle and
-        SSRF boundary answer promised
-      new_evidence: a trace of TrustVault secret lifecycle and SSRF boundary isolates
-        a different TrustVault secret lifecycle and SSRF boundary bottleneck than
-        the one you named
-      best_answer: I would keep the facts that remain supported about TrustVault secret
-        lifecycle and SSRF boundary, treat a trace of TrustVault secret lifecycle
-        and SSRF boundary isolates a different TrustVault secret lifecycle and SSRF
-        boundary bottleneck than the one you named as new evidence rather than a result,
-        and state the updated decision rule under a stakeholder asks for a stronger
-        TrustVault secret lifecycle and SSRF boundary guarantee than the first TrustVault
-        secret lifecycle and SSRF boundary answer promised. I would then name one
-        focused check before treating the revised answer as settled.
+      prompt: >-
+        A one-time secret is lost and a webhook resolves public before redirecting to a private address. Which controls change?
+      changed_constraint: >-
+        lost credentials need rotation and every redirect or connection needs destination enforcement
+      new_evidence: >-
+        resolver-time checks do not cover a changed address or redirect target
+      best_answer: >-
+        I would rotate the lost one-time secret, move envelope keys to KMS or HSM, pin resolve-and-connect destinations, and reject or revalidate redirects before claiming complete SSRF protection.
       distractors:
       - text: I would preserve every part of the original TrustVault secret lifecycle
           and SSRF boundary answer because changing it after review would be inconsistent.
@@ -3334,53 +2909,33 @@ items:
       including the expected denial or recovery path.
     goal: Make credential lifecycle and outbound-network controls independently verifiable.
   critical_thinking:
-    problem_frame: 'Frame TrustVault secret lifecycle and SSRF boundary before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
+    problem_frame: >-
+      TrustVault differentiates one-time API secrets, recoverable webhook keys, and resolver-time SSRF checks; I must protect rotation and connection-time destination enforcement.
     claim_map:
-      fact: The prompt explicitly tests TrustVault secret lifecycle and SSRF boundary
-        within a Go project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend TrustVault
-        secret lifecycle and SSRF boundary, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the TrustVault secret lifecycle and
-        SSRF boundary constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for TrustVault secret lifecycle and SSRF boundary: the
-        scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+      fact: >-
+        The MVP hashes nonrecoverable secrets and encrypts recoverable signing material locally.
+      inference: >-
+        A public DNS result or redirect does not prove the eventual connection remains public or approved.
+      assumption: >-
+        I am assuming lost one-time secrets can be revoked and reissued without plaintext recovery.
+      unknown: >-
+        Key custody, redirect handling, connection pinning, redaction coverage, and rotation workflow are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the executable Go boundary for TrustVault secret lifecycle and SSRF
-          boundary
-        benefit: It keeps the TrustVault secret lifecycle and SSRF boundary reasoning
-          close to the stated Go project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the TrustVault secret lifecycle and
-          SSRF boundary workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated TrustVault secret lifecycle and SSRF boundary
-          contract and its invariant are the facts that matter most.
-      - option: a production-scale claim not established by the repository for TrustVault
-          secret lifecycle and SSRF boundary
-        benefit: It can make the TrustVault secret lifecycle and SSRF boundary boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the TrustVault secret lifecycle and SSRF boundary evidence has not
-          established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first TrustVault secret lifecycle and SSRF boundary
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Go project deep dive constraint makes the first assumption
-        unsafe.
+      - option: resolve and validate the destination, then connect to the validated IP with redirect controls
+        benefit: I align the checked destination with the connection attempt and can audit the allowed range decision.
+        cost_or_risk: DNS changes, IPv4/IPv6 handling, redirects, and connection races require detailed tests.
+        valid_when: Use it when the application owns outbound HTTP and can enforce the whole transport path.
+      - option: route webhook delivery through a controlled egress proxy with network policy
+        benefit: I centralize destination enforcement, logging, and secret-free connection controls.
+        cost_or_risk: The proxy becomes a dependency and must preserve request identity, timeout, and retry semantics.
+        valid_when: Use it when centralized egress policy is available and the application cannot safely own every resolver path.
+      decision_rule: I choose the boundary that controls the actual connection and redirects, then add key management and rotation evidence before claiming SSRF or secret-lifecycle completeness.
     failure_probe:
       kind: failure_mode
-      prompt: 'Trustvault secret lifecycle and ssrf boundary: when the TrustVault
-        secret lifecycle and SSRF boundary constraint tightens during rollout, what
-        breaks first in TrustVault secret lifecycle and SSRF boundary, and how do
-        you observe it?'
+      prompt: >-
+        What redirect or resolve-to-connect change would bypass the current private-range check?
     evidence_check:
       basis: Check the TrustVault secret lifecycle and SSRF boundary claim against
         backend-challenges/trustvault-go-security-control-plane/README.md and the
@@ -3392,16 +2947,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the TrustVault secret
-        lifecycle and SSRF boundary question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you explain TrustVault's one-time secret",
-        update TrustVault secret lifecycle and SSRF boundary when TrustVault secret
-        lifecycle and SSRF boundary evidence—a TrustVault secret lifecycle and SSRF
-        boundary trace or TrustVault secret lifecycle and SSRF boundary test—contradicts
-        the TrustVault secret lifecycle and SSRF boundary constraint in case "How
-        would you explain TrustVault's one-time secret"; ask a stakeholder about TrustVault
-        secret lifecycle and SSRF boundary before revising.
+      rationale: >-
+        I am confident in the one-time versus recoverable-secret distinction; KMS custody and SSRF completeness remain unverified.
+      update_trigger: >-
+        Update when rotation, KMS/HSM, resolver, redirect, or connection tests add evidence to the security boundary.
     rubric:
       facts_correct: Names the verified TrustVault secret lifecycle and SSRF boundary
         facts without smuggling in a result, scale, or capability that the prompt

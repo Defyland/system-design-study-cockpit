@@ -1,6 +1,28 @@
 require "test_helper"
 
 class ArcadeLessonComposerTest < ActiveSupport::TestCase
+  test "an editorial answer change invalidates an open lesson even when its schema version stays the same" do
+    content = ArcadeContent.new
+    composer = ArcadeLessonComposer.new(learner_key: "editorial-revision", content: content)
+    lesson = composer.call(target_mode: "interview", interview_role: "frontend", size: 3, new_cards: 1, seed: "editorial")
+    item = content.item_by_key(lesson.plan.first.fetch("card_key"))
+    original_version = content.content_version(item)
+    assert_equal original_version, content.content_version(item.to_a.reverse.to_h)
+    assert_equal 3, composer.exercises_for(lesson, current_position: 0).length
+
+    item[:best_answer] = item["best_answer"] = "I would revise this answer after checking the actual release boundary."
+    refute_equal original_version, content.content_version(item)
+    assert_raises(ArcadeLessonComposer::StaleContent) { composer.exercises_for(lesson, current_position: 0) }
+    assert_no_difference "ArcadeExerciseEvent.count" do
+      assert_raises(ArcadeLessonRecorder::StaleContent) do
+        ArcadeLessonRecorder.new(learner_key: "editorial-revision", content: content).call(
+          lesson: lesson,
+          result: { exercise_id: lesson.plan.first.fetch("exercise_id"), response: { confirmed: true }, response_ms: 100 }
+        )
+      end
+    end
+  end
+
   test "an overdue review takes the last slot before an unlocked stage that is not due" do
     content = ArcadeContent.new
     now = Time.current

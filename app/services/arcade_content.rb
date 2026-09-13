@@ -68,8 +68,10 @@ class ArcadeContent
   end
 
   def content_version(item)
-    item[:content_version] || item["content_version"] || item[:version] || item["version"] ||
-      Digest::SHA256.hexdigest(canonical_json(item))[0, 16]
+    # Pack contract versions describe the schema, not an editorial revision.
+    # Bind the lesson to its actual text so an edited answer cannot silently
+    # replace the material a learner saw before submitting.
+    Digest::SHA256.hexdigest(canonical_json(factory_item(item)))[0, 16]
   end
 
   def build(item, stage:, slot: 0, timed: false, boss: false, occurrence: nil)

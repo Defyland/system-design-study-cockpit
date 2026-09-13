@@ -329,7 +329,7 @@
           <section class="arcade-feedback" aria-labelledby="feynman-title" aria-live="polite">
             <span class="arcade-kicker">Commit recorded · feedback still locked</span>
             <h2 id="feynman-title">Feynman pass before the reveal</h2>
-            <p class="arcade-context">Explain why you chose that option in your own words. This is the closed-book reasoning trace; the answer and diagnostic stay server-side until you commit this pass.</p>
+            <p class="arcade-context">Explain your choice in first person: why it fits this problem, which cost you accept, and what evidence would change your decision. Name anything you still need to verify. The model answer appears after you submit this explanation.</p>
             <% if @feynman_dto.present? %>
               <% case @feynman_dto["variant_id"].to_s %>
               <% when "follow_up" %>
@@ -388,11 +388,11 @@
             <div class="arcade-capture">
               <label>
                 <span><strong>Typed answer</strong> <small class="arcade-muted">required; at least 40 characters before feedback</small></span>
-                <%= form.text_area :typed_answer, rows: 4, class: "arcade-text", required: true, minlength: 40, placeholder: "State your decision, caveat, evidence, and next step…", data: { english_arcade_target: "typed" } %>
+                <%= form.text_area :typed_answer, rows: 4, class: "arcade-text", required: true, minlength: 40, placeholder: "I would choose… because… I accept… I would verify…", data: { english_arcade_target: "typed" } %>
               </label>
             </div>
             <fieldset class="arcade-critical" aria-labelledby="critical-thinking-title">
-              <legend id="critical-thinking-title"><strong><%= @exercise == "follow_up" ? "Follow-up critical-thinking ledger" : "Critical-thinking ledger" %></strong> <small class="arcade-muted">captured before feedback; label evidence, do not fact-check yourself</small></legend>
+              <legend id="critical-thinking-title"><strong><%= @exercise == "follow_up" ? "Follow-up critical-thinking ledger" : "Critical-thinking ledger" %></strong> <small class="arcade-muted">Before feedback, separate what the prompt establishes from what you infer or assume. Mark uncertain details for verification.</small></legend>
               <label for="english-arcade-evidence-verified">Verified fact(s)
                 <%= form.text_area :evidence_verified, id: "english-arcade-evidence-verified", rows: 2, class: "arcade-text", required: @current_card.critical_thinking.present?, placeholder: "What does the prompt, code, or source actually establish?" %>
               </label>

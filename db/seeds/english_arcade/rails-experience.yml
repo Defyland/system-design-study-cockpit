@@ -53,8 +53,8 @@ target:
 cards:
 - id: rails_experience-card-1
   front: What is the key boundary in early Rails integrations and geospatial work?
-  back: Name the failure, the protective decision, and the stated limit before claiming
-    an outcome.
+  back: I would name the provider or geospatial failure, the protective timeout or
+    asynchronous decision, and the stated evidence limit before claiming an outcome.
   box: 1
   source:
     repo: backend-challenges
@@ -68,8 +68,8 @@ cards:
       one failure mode, and state what evidence would update the recommendation?
 - id: rails_experience-card-2
   front: What is the key boundary in a growing ecommerce API?
-  back: Name the failure, the protective decision, and the stated limit before claiming
-    an outcome.
+  back: I would name the identity or query failure, the protective loading or scope
+    decision, and the measurement limit before claiming an outcome.
   box: 2
   source:
     repo: backend-challenges
@@ -83,8 +83,8 @@ cards:
       one failure mode, and state what evidence would update the recommendation?
 - id: rails_experience-card-3
   front: What is the key boundary in payment performance and safe rollout?
-  back: Name the failure, the protective decision, and the stated limit before claiming
-    an outcome.
+  back: I would name the idempotency or rollout failure, the protective compatibility
+    decision, and the evidence limit before claiming an outcome.
   box: 3
   source:
     repo: backend-challenges
@@ -429,10 +429,10 @@ items:
     provisional until representative timing exists.
   response_versions:
     short: >-
-      In the Job Search Dashboard portfolio code, the linker batches identity matching by
-      fingerprint or canonical URL, and its test checks accepted and rejected links. Active
-      Record Optimizer treats query changes as evidence questions: inspect SQL and, when
-      available, runtime or EXPLAIN evidence before claiming improvement.
+      I would separate the two portfolio artifacts. In the Job Search Dashboard code, the linker
+      batches identity matching by fingerprint or canonical URL, and its test checks accepted and
+      rejected links. Active Record Optimizer treats query changes as evidence questions: I would
+      inspect SQL and, when available, runtime or EXPLAIN evidence before claiming improvement.
     medium: >-
       I would separate the two portfolio artifacts. In the Job Search Dashboard implementation,
       the orchestrator batches candidate identity matching by fingerprint or canonical URL and
@@ -740,10 +740,10 @@ items:
     proof of personal operation or a financial result.
   response_versions:
     short: >-
-      In the SettleFlow portfolio code, the idempotency runner locks an organization-scoped key,
-      checks method, path, and hash reuse, replays success, and represents stale or failed work.
-      I would evolve the schema with a compatibility window, bounded backfill, validation, and a
-      later contract.
+      I would bind a SettleFlow retry to organization, key, method, path, and request hash before
+      replaying success; a changed request should conflict and stale processing needs an explicit
+      recovery rule. For schema evolution, I would use a compatibility window, bounded backfill,
+      validation, and a later contract.
     medium: >-
       In SettleFlow’s portfolio code, Idempotency::Runner handles command replay inside an Active
       Record transaction: it locks an organization-scoped key, rejects reuse when method, path, or
@@ -2291,7 +2291,10 @@ items:
     The committed SettleFlow code binds organization, idempotency key, method, path, canonical query, and body hash before replaying a response. Its lock helper deduplicates wallet projections and sorts them before acquisition. I would treat those as useful mechanisms, not proof of exactly-once financial effects: changed requests, callers that bypass the helper, transaction scope, and external side effects still need verification.
   response_versions:
     short: >-
-      SettleFlow binds a retry to semantic request identity and replays only a matching response. Its lock helper removes duplicate wallets and acquires them in a shared order. That lowers one deadlock risk, but it does not establish exactly-once processing or cover callers outside the helper.
+      I would bind a SettleFlow retry to semantic request identity and replay only a matching
+      response. I would remove duplicate wallets and acquire them in a shared order to lower one
+      deadlock risk, while keeping exactly-once processing and callers outside the helper as open
+      verification questions.
     medium: >-
       The committed SettleFlow code binds organization, idempotency key, method, path, canonical query, and body hash before replaying a response. Its lock helper deduplicates wallet projections and sorts them before acquisition. I would treat those as useful mechanisms, not proof of exactly-once financial effects: changed requests, callers that bypass the helper, transaction scope, and external side effects still need verification.
     deep: >-
@@ -2382,11 +2385,11 @@ items:
       the first response could hide a different intended operation.
     challenge_kind: failure
     best_answer: >-
-      The service should compare the stored organization, idempotency key, method, canonical path,
-      normalized query, and request hash with the second request. If the query changes semantics,
-      it should return an idempotency conflict before business work, not replay the first response;
-      only a matching identity may replay. The trade-off is extra canonicalization and client key
-      discipline in exchange for preventing one key from masking two commands.
+      I would compare the stored organization, idempotency key, method, canonical path, normalized
+      query, and request hash with the second request. If the query changes semantics, I would
+      return an idempotency conflict before business work rather than replay the first response;
+      only a matching identity may replay. I accept extra canonicalization and client key
+      discipline because they prevent one key from masking two commands.
     distractors:
     - text: I would replay the stored response whenever the key matches, even if the normalized
         query or body hash changed. The key is the client’s authority, so rejecting it would create
@@ -2573,12 +2576,23 @@ items:
   context: The interviewer is probing the separate boundaries of recovery and egress
     control in inspectable portfolio code, including what neither boundary guarantees.
   best_answer: >-
-    The FlowBridge code retries stale queued work, optionally enforces host patterns, resolves addresses, rejects private or reserved ranges, and passes a selected IP to the client. The client bounds timeouts and truncates retained response content, but it does not cap bytes transferred. These controls narrow one outbound path; they are not complete SSRF prevention or exactly-once recovery without redirect checks and effect reconciliation.
+    I would treat the FlowBridge controls as separate boundaries. The recovery job retries stale
+    queued work; host patterns, address resolution, private or reserved range checks, and client
+    timeouts narrow one outbound path. The client truncates retained response content but does not
+    cap bytes transferred. I would revalidate redirects and reconcile remote effects before calling
+    this complete SSRF prevention or exactly-once recovery.
   response_versions:
     short: >-
-      FlowBridge re-enqueues stale queued work and validates resolved addresses before connecting. An allowlist can add a host boundary, while private or reserved range checks and timeouts narrow exposure. The client truncates retained response content after reading it, not bytes transferred, so redirects and prior remote effects remain open questions.
+      I would re-enqueue stale FlowBridge work only with a stable operation identity and validate
+      resolved addresses before connecting. An allowlist, private or reserved range checks, and
+      timeouts narrow exposure. I would still verify redirect revalidation, transport-byte limits,
+      and reconciliation of any remote effect.
     medium: >-
-      The FlowBridge code retries stale queued work, optionally enforces host patterns, resolves addresses, rejects private or reserved ranges, and passes a selected IP to the client. The client bounds timeouts and truncates retained response content, but it does not cap bytes transferred. These controls narrow one outbound path; they are not complete SSRF prevention or exactly-once recovery without redirect checks and effect reconciliation.
+      I would treat the FlowBridge controls as separate boundaries. The recovery job retries stale
+      queued work; host patterns, address resolution, private or reserved range checks, and client
+      timeouts narrow one outbound path. The client truncates retained response content but does not
+      cap bytes transferred. I would revalidate redirects and reconcile remote effects before calling
+      this complete SSRF prevention or exactly-once recovery.
     deep: >-
       I would treat recovery and outbound validation as separate controls. The FlowBridge recovery job re-enqueues queued executions older than its stale threshold. Its policy can enforce host patterns, resolve all addresses, reject private or reserved ranges, and give the client a selected connection IP. The client sets timeouts and truncates the body it retains or processes; that is not a transport-byte limit. Those checks narrow a DNS-related path, but a redirect can change the destination and a stale row may follow a remote action whose result remains unresolved. I would revalidate every redirect and retry, preserve a stable workflow or node-operation identity, and reconcile the external outcome before rerunning. The cited code supports defensive boundaries, not a complete SSRF or exactly-once guarantee.
   distractors:
@@ -2858,7 +2872,10 @@ items:
     The Rediscraft Ruby experiment uses a bounded per-client backlog around IO.select, drops persistently slow clients, and isolates connection errors. Its AOF appends a valid mutation before applying it and rewrites relative EXPIRE as EXPIREAT. I would describe that as replay-oriented ordering, not durability proof: if the process stops after logging but before applying, a restart may apply the command again, and fsync behavior is still unverified.
   response_versions:
     short: >-
-      Rediscraft bounds each client's write backlog around an IO.select reactor and drops persistently slow clients. Its AOF appends before applying and converts relative EXPIRE to EXPIREAT. That favors replay, but a crash can separate log state from applied state; fsync and throughput still need evidence.
+      I would bound each Rediscraft client's write backlog around an IO.select reactor and drop
+      persistently slow clients. I would append the AOF record before applying and convert relative
+      EXPIRE to EXPIREAT for replay, while treating crash ordering, fsync, and throughput as evidence
+      questions.
     medium: >-
       The Rediscraft Ruby experiment uses a bounded per-client backlog around IO.select, drops persistently slow clients, and isolates connection errors. Its AOF appends a valid mutation before applying it and rewrites relative EXPIRE as EXPIREAT. I would describe that as replay-oriented ordering, not durability proof: if the process stops after logging but before applying, a restart may apply the command again, and fsync behavior is still unverified.
     deep: >-
@@ -3871,7 +3888,10 @@ items:
     The FiscalBridge ADR keeps state transitions, idempotency, locks, audit, and outbox intent in the domain. The sandbox client exposes issue, cancel, status, and document operations with structured results and digest metadata, and the adapter test checks that port surface. I would use that boundary to keep provider protocols out of workflow rules, while requiring callers to persist results and reconcile ambiguous outcomes by domain identity. The cited revision does not establish municipal issuance, certificates, compliance, or a live integration. A shared port costs translation and reconciliation work but avoids provider-specific branches in the domain.
   response_versions:
     short: >-
-      The ADR keeps state, idempotency, locks, audit, and outbox intent in the domain. The sandbox adapter exposes issue, cancel, status, and document operations with structured results. That limits provider coupling, but callers still need to reconcile ambiguous results. The cited work is a portfolio study, not evidence of municipal issuance, compliance, or a live integration.
+      I would keep state, idempotency, locks, audit, and outbox intent in the FiscalBridge domain.
+      I would expose issue, cancel, status, and document operations through a structured adapter,
+      then reconcile ambiguous results by domain identity. I would describe the cited work as a
+      portfolio study, not evidence of municipal issuance, compliance, or a live integration.
     medium: >-
       The FiscalBridge ADR keeps state transitions, idempotency, locks, audit, and outbox intent in the domain. The sandbox client exposes issue, cancel, status, and document operations with structured results and digest metadata, and the adapter test checks that port surface. I would use that boundary to keep provider protocols out of workflow rules, while requiring callers to persist results and reconcile ambiguous outcomes by domain identity. The cited revision does not establish municipal issuance, certificates, compliance, or a live integration. A shared port costs translation and reconciliation work but avoids provider-specific branches in the domain.
     deep: >-
@@ -4133,12 +4153,11 @@ items:
     real data, users, or operating results for external evidence.
   response_versions:
     short: >-
-      OpenBank Sandbox couples consent, audit, and webhook enqueue in one transaction. It
-      rejects private networks by default unless WEBHOOK_ALLOW_PRIVATE_ADDRESSES=true
-      overrides that policy; the client assigns the resolved IP before http.request. That
-      proves a committed request boundary, not current production/provider execution,
-      real-network assurance, or redirect revalidation. It remains a didactic sandbox,
-      not FAPI certification.
+      I would couple OpenBank Sandbox consent, audit, and webhook enqueue in one transaction. I
+      would keep the default private-network rejection and assign the resolved IP before
+      http.request, while verifying the override, redirects, and revalidation separately. I would
+      describe this as a didactic request boundary, not production/provider execution, real-network
+      assurance, or FAPI certification.
     medium: >-
       OpenBank Sandbox models a consent transition, its audit record, and queued webhook work in one transaction. The simulation is didactic, not FAPI or certified Open Finance. Its endpoint policy resolves the webhook host, rejects private networks by default unless WEBHOOK_ALLOW_PRIVATE_ADDRESSES=true overrides that policy, and the cited HTTP client assigns the resolved IP to Net::HTTP before calling http.request. That is a committed delivery implementation and connection boundary, not proof of current execution, production or provider operation, or assurance on a real network. The client does not establish redirect handling or revalidation. I would frame mTLS and FAPI flows as missing upgrade controls and reserve claims about certification, real data, users, or operating results for external evidence.
     deep: >-
@@ -5699,21 +5718,28 @@ items:
     builder is an orchestrating consumer rather than an AI gateway.
   context: The interviewer expects four distinct component responsibilities, their
     limits, and a recovery story for contract drift or a failed subprocess.
-  best_answer: In this local portfolio pipeline, Context Pack Builder first curates
-    bounded docs, manifests, CI, selected tests, git state, and risk-name warnings;
-    it is not a secret scanner or complete semantic understanding. Prompt Registry
-    then validates a versioned YAML manifest and materializes Markdown placeholders,
-    without scoring, routing, or runtime policy. Eval Harness adds static readiness
-    heuristics, not a full suite or live GitHub verification. Review Packet Builder
-    consumes those public CLI outputs and composes a packet, so version drift, process
-    failure, and sensitive aggregation remain explicit risks.
+  best_answer: >-
+    I would keep four local contracts separate. Context Pack Builder curates bounded docs,
+    manifests, CI, selected tests, git state, and risk-name warnings; it is not a secret scanner or
+    complete semantic understanding. Prompt Registry validates a versioned YAML manifest and
+    materializes Markdown placeholders without scoring, routing, or runtime policy. Eval Harness
+    adds static readiness heuristics, not a full suite or live GitHub verification. Review Packet
+    Builder consumes those public CLI outputs and composes a packet, so I would stop on version
+    drift or child-process failure and treat sensitive aggregation as an explicit risk.
   response_versions:
     short: >-
-      Four local CLIs have bounded roles: Context Pack Builder curates, Prompt Registry
-      validates and materializes, Eval Harness assesses static readiness, and Review Packet
-      Builder composes. The packet builder is an orchestrating consumer, not an AI gateway;
-      no model routing, authentication, or spend control is evidenced.
-    medium: 'In this local portfolio pipeline, Context Pack Builder first curates bounded docs, manifests, CI, selected tests, git state, and risk-name warnings; it is not a secret scanner or complete semantic understanding. Prompt Registry then validates a versioned YAML manifest and materializes Markdown placeholders, without scoring, routing, or runtime policy. Eval Harness adds static readiness heuristics, not a full suite or live GitHub verification. Review Packet Builder consumes those public CLI outputs and composes a packet, so version drift, process failure, and sensitive aggregation remain explicit risks.'
+      I would describe four bounded roles: Context Pack Builder curates, Prompt Registry validates
+      and materializes, Eval Harness assesses static readiness, and Review Packet Builder composes.
+      I would treat the packet builder as an orchestrating consumer; the cited artifacts do not
+      evidence model routing, authentication, or spend control.
+    medium: >-
+      I would keep four local contracts separate. Context Pack Builder curates bounded docs,
+      manifests, CI, selected tests, git state, and risk-name warnings; it is not a secret scanner or
+      complete semantic understanding. Prompt Registry validates a versioned YAML manifest and
+      materializes Markdown placeholders without scoring, routing, or runtime policy. Eval Harness
+      adds static readiness heuristics, not a full suite or live GitHub verification. Review Packet
+      Builder consumes those public CLI outputs and composes a packet, so I would stop on version
+      drift or child-process failure and treat sensitive aggregation as an explicit risk.
     deep: >-
       This local portfolio pipeline has four bounded contracts. Context Pack Builder curates
       selected docs, manifests, CI, tests, Git state, and risk-name warnings, but does not

@@ -60,35 +60,38 @@ target:
 cards:
 - id: general-card-unknowns
   front: How should you handle an unknown?
-  back: State what is unknown, name the assumption or source to check, and continue
-    only with supported reasoning.
+  back: >-
+    I state what is unknown, name the assumption or source I will check, and continue
+    only with reasoning I can support.
   box: 1
   source:
     repo: system-design-estudos
     path: reviews/day-14-interview-compression.md
     note: Concise calibrated response.
   critical_thinking:
-    cue: How should you handle an unknown? Before answering, separate the stated fact
-      from your assumption and name one condition that could change it.
-    check: For this general professional conversation card, can you compare two options,
-      name one failure mode, and state what evidence would update the recommendation?
+    cue: What detail is unknown, which assumption would I need, and what source or
+      person could verify it before the decision becomes unsafe?
+    check: Can I compare a reversible step with a pause, name the harm of improvising,
+      and state what evidence would let me proceed?
 - id: general-card-incident
   front: What belongs in an incident update?
-  back: Known impact, unknown cause, current mitigation, and the exact time of the
-    next update.
+  back: >-
+    I report known impact, unknown cause, the current mitigation, and the exact time
+    of my next update.
   box: 1
   source:
     repo: system-design-estudos
     path: areas/11-operational-playbooks/playbooks/incident-severity-and-triage.md
     note: Incident communication structure.
   critical_thinking:
-    cue: What belongs in an incident update? Before answering, separate the stated
-      fact from your assumption and name one condition that could change it.
-    check: For this general professional conversation card, can you compare two options,
-      name one failure mode, and state what evidence would update the recommendation?
+    cue: Which incident facts are observed, which cause is still a hypothesis, and who
+      owns the next update? Keep the mitigation and checkpoint explicit.
+    check: Can I compare a reversible mitigation with waiting for causality, name the
+      communication failure, and state the timeline evidence that would update the message?
 - id: general-card-close
   front: How do you close an interview?
-  back: Ask about a consequential success condition and follow up with a note tied
+  back: >-
+    I ask about a consequential success condition and follow up with a question tied
     to the discussion.
   box: 2
   source:
@@ -96,10 +99,10 @@ cards:
     path: reviews/day-14-interview-compression.md
     note: Interview compression.
   critical_thinking:
-    cue: How do you close an interview? Before answering, separate the stated fact
-      from your assumption and name one condition that could change it.
-    check: For this general professional conversation card, can you compare two options,
-      name one failure mode, and state what evidence would update the recommendation?
+    cue: Which first-ninety-day decision and success signal would help me judge this
+      role? Separate a useful baseline from a proxy that does not prove reliability.
+    check: Can I compare a consequential role question with a generic close, name the
+      proxy failure, and state what baseline or owner would make the answer useful?
 items:
 - id: general-01-introduction
   version: 1.6.0
@@ -1956,22 +1959,23 @@ items:
     communication, the on-call database engineer owns the latency check, and the next update is
     at 14:30 UTC. Database latency is a hypothesis, not a confirmed cause.
   best_answer: >-
-    Known: checkout failures increased fifteen minutes after the release. Unknown: whether
-    database latency is causal. Rolling back the release is the active mitigation. The incident
-    commander owns communication, and the on-call database engineer is checking latency. Next
-    update: 14:30 UTC. We will keep the cause open and report observations separately from
-    hypotheses.
+    I would report: “Known: checkout failures increased fifteen minutes after the release.
+    Unknown: whether database latency is causal. Rolling back the release is the active
+    mitigation. The incident commander owns communication, and the on-call database engineer
+    is checking latency. Next update: 14:30 UTC.” I would keep the cause open and report
+    observations separately from hypotheses.
   response_versions:
     short: >-
-      Known: checkout failures increased fifteen minutes after the release. Unknown: whether
-      database latency is causal. Rollback is underway; the incident commander owns
-      communication, and the on-call database engineer checks latency. Next update: 14:30 UTC.
+      I would report: “Known: checkout failures increased fifteen minutes after the release.
+      Unknown: whether database latency is causal. Rollback is underway; the incident
+      commander owns communication, and the on-call database engineer checks latency. Next
+      update: 14:30 UTC.”
     medium: >-
-      Known: checkout failures increased fifteen minutes after the release. Unknown: whether
-      database latency is causal. Rolling back the release is the active mitigation. The incident
-      commander owns communication, and the on-call database engineer is checking latency. Next
-      update: 14:30 UTC. We will keep the cause open and report observations separately from
-      hypotheses.
+      I would report: “Known: checkout failures increased fifteen minutes after the release.
+      Unknown: whether database latency is causal. Rolling back the release is the active
+      mitigation. The incident commander owns communication, and the on-call database engineer
+      is checking latency. Next update: 14:30 UTC.” I would keep the cause open and report
+      observations separately from hypotheses.
     deep: >-
       I would send: “Known: checkout failures increased fifteen minutes after the release.
       Unknown: whether database latency is causal. Rollback is the active mitigation. The

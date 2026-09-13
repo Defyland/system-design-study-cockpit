@@ -85,49 +85,50 @@ templates:
 cards:
 - id: dsa-card-pattern-first
   front: How do you open a live-coding answer in English?
-  back: Pattern name, why it fits this input shape, then the invariant. Code only
-    after the interviewer has heard the plan.
+  back: I open by naming the pattern, explaining why the input shape fits it, and stating
+    the invariant I will preserve. I write code only after the interviewer can follow
+    that plan.
   box: 1
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
     note: Opening-minute discipline for algorithm rounds.
   critical_thinking:
-    cue: How do you open a live-coding answer in English? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this DSA live coding card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: How do you open a live-coding answer in English? Name the input shape, the
+      pattern it suggests, and the invariant you will check before writing code.
+    check: Can you explain when a simpler scan would win, name the failure a wrong
+      pattern choice would cause, and say which input trace would change your mind?
 - id: dsa-card-invariant
   front: What counts as an invariant rather than a description of the loop?
-  back: A property true at a fixed point of every iteration. "It moves forward and
-    updates the answer" is control flow, not an invariant.
+  back: I call a property an invariant only when it is true at the same boundary of
+    every iteration. I distinguish that proof obligation from control flow such as
+    moving a pointer or updating a result.
   box: 1
   source:
     repo: system-design-estudos
     path: areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
     note: Core problems where invariants are stated explicitly.
   critical_thinking:
-    cue: What counts as an invariant rather than a description of the loop? Before
-      answering, separate the stated fact from your assumption and name one condition
-      that could change it.
-    check: For this DSA live coding card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: What counts as an invariant rather than a description of the loop? State what
+      must be true before and after processing [a,b,a], then identify the repair.
+    check: Can you compare a last-index window with a nested scan, name the duplicate
+      case that breaks a careless update, and state the assertion you would trace?
 - id: dsa-card-hedging
   front: How much hedging belongs in a complexity claim?
-  back: 'None on the bound itself. Hedge only a genuinely data-dependent worst case:
-    "linear in n, worst case an array with no repeats".'
+  back: >-
+    I state a proven bound directly. I hedge only the data-dependent part, for example:
+    the scan is linear in n, with the worst input filling the auxiliary map.
   box: 2
   source:
     repo: original
     path: english-arcade/dsa/hedging-calibration
     note: Distilled from the hedging failures authored in this pack.
   critical_thinking:
-    cue: How much hedging belongs in a complexity claim? Before answering, separate
-      the stated fact from your assumption and name one condition that could change
-      it.
-    check: For this DSA live coding card, can you compare two options, name one failure
-      mode, and state what evidence would update the recommendation?
+    cue: How much hedging belongs in a complexity claim? Separate the proven bound
+      from the input-dependent worst case before you qualify either one.
+    check: Can you compare a precise bound with an unsupported guarantee, name the
+      input that fills auxiliary state, and say what measurement would expose a bad
+      complexity claim?
 items:
 - id: dsa-01-pattern-naming
   version: 1.4.0
@@ -382,10 +383,10 @@ items:
       boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      At the top of every iteration the segment between the two pointers holds only
-      distinct values, and everything left of the slow pointer has already been counted. I
-      would keep the claims that remain supported, identify exactly which premise the new observation
-      changes, and run a focused check before revising the decision.
+      I would set the left boundary to max(left, last_seen[a] + 1) when the second a
+      arrives. On [a,b,a], the first window is [a,b], the last index of a is 0, and the
+      next left boundary is 1, so [b,a] is distinct; I would trace that update before
+      claiming the invariant is restored.
     distractors:
     - text: I would keep the Invariants recommendation unchanged because changing
         position would look inconsistent.
@@ -471,20 +472,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-02-invariant-statement-delayed-2
-      prompt: 'Review note for Invariants: a trace of Invariants isolates a different
-        Invariants bottleneck than the one you named. Given a stakeholder asks for
-        a stronger Invariants guarantee than the first Invariants answer promised,
-        what would you now defend, retract, and verify about Invariants?'
-      changed_constraint: a stakeholder asks for a stronger Invariants guarantee than
-        the first Invariants answer promised
-      new_evidence: a trace of Invariants isolates a different Invariants bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Invariants,
-        treat a trace of Invariants isolates a different Invariants bottleneck than
-        the one you named as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Invariants guarantee
-        than the first Invariants answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: A trace on [a,b,a,c,a] exposes a stale left-boundary update, and the
+        interviewer now asks for a proof that the window is distinct after every step.
+        What claim would you keep, narrow, and verify?
+      changed_constraint: the interviewer requires the distinct-window invariant to be
+        demonstrated after every left-boundary repair
+      new_evidence: a trace on [a,b,a,c,a] shows the left boundary was not advanced past
+        the previous occurrence of a
+      best_answer: I would keep the claim that the active window must be distinct, but
+        I would retract any promise that a generic pointer move is enough once the trace
+        exposes a stale left boundary. I would use last_seen with max(left, index + 1),
+        then verify [a,b,a,c,a] with an assertion after every repair before accepting the
+        stronger guarantee.
       distractors:
       - text: I would preserve every part of the original Invariants answer because
           changing it after review would be inconsistent.
@@ -502,77 +501,77 @@ items:
     path: english-arcade/dsa/invariant-statement
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Deep dive on Invariants: compare Invariants options with one measurement;
-      which failure around Invariants would make Invariants switch?'
-    goal: Move from the short Invariants answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: Trace [a,b,a,c,b] aloud, write the invariant before and after each repair,
+      and compare last_seen with set-removal on the same input.
+    goal: Defend a distinct-window invariant with a concrete trace, then state the memory
+      and proof trade-off that determines the implementation.
   critical_thinking:
-    problem_frame: 'Frame Invariants before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame the distinct-window proof before discussing code: state
+      what is true at the iteration boundary, how a repeated value moves the left edge,
+      and which trace can falsify that statement.'
     claim_map:
-      fact: The prompt explicitly tests Invariants within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Invariants,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Invariants constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Invariants: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The active window is required to contain no repeated value, and the prompt
+        asks for the property that makes the two-pointer algorithm correct.
+      inference: A last-seen index plus max(left, last_seen[value] + 1) can restore
+        that property in one pass, but only if the boundary is never moved backward.
+      assumption: I am assuming the result is the longest contiguous distinct run and
+        that a map proportional to distinct values is acceptable.
+      unknown: The input bound, auxiliary-memory limit, and exact invariant boundary
+        the interviewer wants are still unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Invariants
-        benefit: It keeps the Invariants reasoning close to the stated DSA live coding
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Invariants workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Invariants contract and its invariant are
-          the facts that matter most.
-      - option: a broader-state or sorting alternative for Invariants
-        benefit: It can make the Invariants boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Invariants evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Invariants option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant DSA live
-        coding constraint makes the first assumption unsafe.
+      - option: A last-index window that jumps left past the duplicate.
+        benefit: It proves the distinct-window invariant with one monotonic left boundary
+          and avoids rescanning.
+        cost_or_risk: It stores last positions and is easy to get wrong if an old index
+          moves the boundary backward.
+        valid_when: Use it when the input can be large and linear traversal is worth
+          the map.
+      - option: A set with a while-loop that removes values from the left.
+        benefit: It makes each removal visible and can be easier to narrate while learning
+          the invariant.
+        cost_or_risk: It performs more state updates and does not expose the duplicate
+          index as directly as last_seen.
+        valid_when: Use it when clarity of incremental removal matters and the same
+          distinct-window contract still holds.
+      decision_rule: I choose the last-index window when its monotonic-boundary invariant
+        and memory cost fit; I choose the set-removal version when its simpler trace
+        is more valuable, then test [a,b,a] and a later duplicate.
     failure_probe:
-      kind: edge_case
-      prompt: 'Invariants: what Invariants limit should you probe before trusting
-        the answer, and how would Invariants behave there?'
+      kind: counterexample
+      prompt: Trace [a,b,a,c,b]. Which left boundary should follow the second a and
+        then b, and what assertion would catch a boundary that moves backward?
+    certainty:
+      level: high
+      rationale: I am highly certain about the invariant and the max update under the
+        stated predicate; the implementation choice remains conditional on bounds and
+        memory.
+      update_trigger: Update when a trace shows a stale left boundary, the interviewer
+        forbids the map, or the result contract is no longer a longest contiguous distinct
+        run.
+    rubric:
+      facts_correct: States the distinct-window invariant at a fixed iteration boundary
+        and applies it to the repeated-value trace.
+      assumptions_explicit: Names the assumed result contract and map budget instead
+        of treating the sliding window as automatic.
+      alternatives_considered: Compares last-index jumps with set-based removals and
+        says when each preserves the contract.
+      tradeoff_quality: Connects proof simplicity, pointer movement, map space, and
+        the trace that can invalidate the choice.
+      follow_up_adaptation: Changes the update or recommendation when a later duplicate
+        or memory constraint appears.
+      certainty_calibration: Uses high confidence for the invariant while reserving
+        the broader design choice for bound and trace evidence.
     evidence_check:
-      basis: Check the Invariants claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+      basis: Check the distinct-window invariant, last-seen update, and input/memory
+        bounds against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Invariants,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: This exercise can test the invariant and trace, but it cannot prove
+        performance for an unspecified input distribution or memory limit.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Invariants question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What exactly does your loop keep true", update Invariants
-        when Invariants evidence—a Invariants trace or Invariants test—contradicts
-        the Invariants constraint in case "What exactly does your loop keep true";
-        ask a stakeholder about Invariants before revising.
-    rubric:
-      facts_correct: Names the verified Invariants facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Invariants premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Invariants options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Invariants choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Invariants
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Invariants recommendation.
 - id: dsa-03-complexity-defence
   version: 1.4.0
   target: dsa
@@ -591,10 +590,11 @@ items:
       boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Each index is visited at most twice, once by each pointer, so time is
-      linear in the length of the input. I would label the follow-up premise as
-      an assumption, ask the smallest question that could disprove it, and protect the edge
-      case before committing to the recommendation.
+      I would explain that an exact one-pass distinctness check needs enough state to
+      remember which values have appeared, so constant auxiliary space forces a
+      different cost or a weaker contract. I would ask whether the input is bounded or
+      whether sorting and a second pass are acceptable, then defend the choice against
+      that answer.
     distractors:
     - text: I would repeat my original Complexity answer with more confidence because
         the interviewer probably assumes the usual case.
@@ -609,10 +609,12 @@ items:
       and one qualification about the input.
     goal: Compress the Complexity answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: Each index is visited at most twice, once by each pointer, so time
-    is linear in the length of the input. Space is bounded by the number of distinct
-    values in the window rather than the whole array, so worst case it is also linear,
-    and that worst case is an array with no repeats.
+  best_answer: >-
+    I count each pointer's total movement rather than multiplying the loops: the right
+    index advances n times and the left index never moves backward, so time is O(n). The
+    last-index map stores at most one entry per distinct value, so auxiliary space is
+    O(n) in the no-repeat case. If constant auxiliary space is mandatory, I would explain
+    the slower comparison or sorting trade-off and ask which constraint is negotiable.
   distractors:
   - text: It is O of n because we only have one loop in the code, and the space is
       O of one because I am only using a single hash variable rather than creating
@@ -678,20 +680,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-03-complexity-defence-delayed-3
-      prompt: New evidence about Complexity says a code inspection of Complexity confirms
-        the Complexity mechanism but not its impact; with the Complexity dependency
-        is slower for Complexity and the failure is ambiguous rather than explicit,
-        how do you update the Complexity decision rule?
-      changed_constraint: the Complexity dependency is slower for Complexity and the
-        failure is ambiguous rather than explicit
-      new_evidence: a code inspection of Complexity confirms the Complexity mechanism
-        but not its impact
-      best_answer: I would keep the facts that remain supported about Complexity,
-        treat a code inspection of Complexity confirms the Complexity mechanism but
-        not its impact as new evidence rather than a result, and state the updated
-        decision rule under the Complexity dependency is slower for Complexity and
-        the failure is ambiguous rather than explicit. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: A code review confirms that each pointer moves monotonically, but a benchmark
+        shows the hash path is slower at the target size and does not identify why. How
+        would you update the complexity claim and the next check?
+      changed_constraint: the target-size benchmark makes the constant-space alternative
+        relevant even though the pointer-count proof still holds
+      new_evidence: a benchmark confirms the pointer movement but shows the hash path is
+        slower without identifying the cause
+      best_answer: I would keep the pointer-count argument for O(n) as a code-level claim,
+        but I would not treat inspection as proof of runtime impact. If a dependency is
+        slower, I would benchmark the actual map and scan paths on representative sizes,
+        report the measured variance, and qualify the recommendation until that evidence
+        explains the ambiguous failure.
       distractors:
       - text: I would preserve every part of the original Complexity answer because
           changing it after review would be inconsistent.
@@ -709,77 +709,76 @@ items:
     path: english-arcade/dsa/complexity-defence
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Defend Complexity after a counterexample: which Complexity assumption
-      changes, and what evidence keeps the revised Complexity choice honest?'
-    goal: Move from the short Complexity answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: Defend O(n) by counting pointer movement, then measure peak map/allocation
+      cost against a sorted or scan-based alternative at the target input size.
+    goal: Separate an asymptotic proof from a runtime recommendation and choose the
+      trade-off from measured memory and latency limits.
   critical_thinking:
-    problem_frame: 'Frame Complexity before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame the complexity defence from actual movements and stored
+      state: count pointer advances, bound the map, and ask which resource limit is
+      binding before naming an alternative.'
     claim_map:
-      fact: The prompt explicitly tests Complexity within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Complexity,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Complexity constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Complexity: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The right pointer advances through the input once, the left pointer never
+        moves backward, and the map records the most recent position for each distinct
+        value.
+      inference: The current implementation is O(n) time and O(n) auxiliary space in
+        the no-repeat case, while a constant-space requirement changes the trade-off.
+      assumption: I am assuming the interviewer accepts auxiliary state and wants an
+        exact longest-run result rather than an approximation.
+      unknown: The input size, memory ceiling, and whether sorting or a second pass
+        is allowed are still unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Complexity
-        benefit: It keeps the Complexity reasoning close to the stated DSA live coding
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Complexity workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Complexity contract and its invariant are
-          the facts that matter most.
-      - option: a broader-state or sorting alternative for Complexity
-        benefit: It can make the Complexity boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Complexity evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Complexity option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant DSA live
-        coding constraint makes the first assumption unsafe.
+      - option: The last-index map and two monotonic pointers.
+        benefit: It gives the linear pointer-count proof and direct duplicate jumps.
+        cost_or_risk: Its map grows with distinct values and can be slower or larger
+          than a scan at a small target size.
+        valid_when: Use it when latency and original order matter more than auxiliary
+          space.
+      - option: Sort or scan with bounded state before evaluating the run.
+        benefit: It can reduce map state or fit a strict memory contract and gives a
+          different proof boundary.
+        cost_or_risk: Sorting costs O(n log n), may lose original order, and a comparison
+          scan can be quadratic.
+        valid_when: Use it only when the memory ceiling or input bound makes the map
+          unacceptable.
+      decision_rule: I defend O(n) for the current pointer code, then choose the map
+        or a slower lower-state path from the explicit memory, order, and latency constraints.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Complexity: if a caller retries Complexity at the worst moment, what
-        failure mode appears first, and how would you protect Complexity?'
+      kind: edge_case
+      prompt: 'Which input and instrumented count would expose a false O(n) claim: all
+        distinct values for map growth, or a pointer reset that makes the left movement
+        repeat?'
+    certainty:
+      level: high
+      rationale: I can prove the asymptotic pointer and map bounds from the code; I
+        am less certain which implementation wins on the target machine.
+      update_trigger: Update the recommendation when a pointer resets, a strict memory
+        ceiling appears, or a representative benchmark shows the map path misses the
+        latency budget.
+    rubric:
+      facts_correct: Counts each pointer movement and states worst-case map space rather
+        than multiplying nested-looking loops.
+      assumptions_explicit: Names whether auxiliary memory, original order, and exactness
+        are assumed constraints.
+      alternatives_considered: Compares the current map path with sorting or a bounded-state
+        scan and keeps their costs honest.
+      tradeoff_quality: Connects O(n) time, O(n) space, order preservation, and measured
+        constants to the choice.
+      follow_up_adaptation: Retains the proof but narrows the runtime recommendation
+        when benchmark or memory evidence changes.
+      certainty_calibration: States the proven bound directly and qualifies only the
+        workload-dependent choice.
     evidence_check:
-      basis: Check the Complexity claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+      basis: Check the pointer-movement proof, map cardinality, and stated time/space
+        contract against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Complexity,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: The code-level bound does not predict allocator cost, cache behavior,
+        or workload latency without a representative benchmark.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Complexity question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "You said linear time. Can you defend", update Complexity
-        when Complexity evidence—a Complexity trace or Complexity test—contradicts
-        the Complexity constraint in case "You said linear time. Can you defend";
-        ask a stakeholder about Complexity before revising.
-    rubric:
-      facts_correct: Names the verified Complexity facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Complexity premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Complexity options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Complexity choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Complexity
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Complexity recommendation.
 - id: dsa-04-ruby-default-trap
   version: 1.4.0
   target: dsa
@@ -799,11 +798,10 @@ items:
       evidence boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      I passed a single default object to the hash, so every missing key hands
-      back that same array and my pushes all land in one place. I would
-      treat the follow-up observation as evidence, not as proof of impact; I would inspect
-      the smallest relevant trace or test and state what remains uncertain before changing the
-      decision.
+      I would distinguish a missing key from a stored zero with key? or fetch, because a
+      default value can make a lookup look present when it is not. I would test both
+      states before and after the increment, then choose the counter form whose default
+      cannot hide that distinction.
     distractors:
     - text: I would cite my experience with Ruby runtime traps as enough proof and
         move on without naming an observation.
@@ -887,22 +885,18 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: dsa-04-ruby-default-trap-delayed-4
-      prompt: 'Ruby runtime traps gets a new constraint: new Ruby runtime traps evidence
-        contradicts the Ruby runtime traps assumption that made the first option attractive.
-        After a measured Ruby runtime traps comparison shows the alternative has a
-        different Ruby runtime traps cost profile, which Ruby runtime traps assumption
-        is no longer safe?'
-      changed_constraint: new Ruby runtime traps evidence contradicts the Ruby runtime
-        traps assumption that made the first option attractive
-      new_evidence: a measured Ruby runtime traps comparison shows the alternative
-        has a different Ruby runtime traps cost profile
-      best_answer: I would keep the facts that remain supported about Ruby runtime
-        traps, treat a measured Ruby runtime traps comparison shows the alternative
-        has a different Ruby runtime traps cost profile as new evidence rather than
-        a result, and state the updated decision rule under new Ruby runtime traps
-        evidence contradicts the Ruby runtime traps assumption that made the first
-        option attractive. I would then name one focused check before treating the
-        revised answer as settled.
+      prompt: A benchmark shows the block-form counter allocates more at this key
+        distribution, while a test still relies on distinguishing an absent key from
+        zero. Which assumption is unsafe, and what would you verify next?
+      changed_constraint: the counter must preserve absent-key semantics while meeting a
+        measured allocation budget
+      new_evidence: the same-key-distribution benchmark shows a different allocation
+        profile for the alternative counter form
+      best_answer: I would keep the distinction between a missing key and a stored zero,
+        but I would revisit the counter form if a measurement shows the alternative has
+        a materially different allocation cost. I would benchmark both forms with the
+        same key distribution, then choose the one that preserves the absent-key contract
+        within the observed budget.
       distractors:
       - text: I would preserve every part of the original Ruby runtime traps answer
           because changing it after review would be inconsistent.
@@ -920,80 +914,75 @@ items:
     path: english-arcade/dsa/ruby-default-trap
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Five more minutes on Ruby runtime traps: which boundary, alternative,
-      and update trigger would you explain for Ruby runtime traps?'
-    goal: Move from the short Ruby runtime traps answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: Run a two-key mutation trace with object_id and key?, then compare a per-key
+      block with Hash.new(0) on the same absent and stored-zero cases.
+    goal: Diagnose shared default identity first, then choose a default form that preserves
+      both mutation isolation and presence semantics.
   critical_thinking:
-    problem_frame: 'Frame Ruby runtime traps before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: 'I frame the Ruby hash bug as object identity plus key-presence semantics:
+      identify what a missing lookup returns, whether that object is shared, and what
+      the counter contract needs.'
     claim_map:
-      fact: The prompt explicitly tests Ruby runtime traps within a DSA live coding
-        context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Ruby runtime
-        traps, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Ruby runtime traps constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Ruby runtime traps: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: A single mutable default object is returned for every missing key, so pushes
+        through different keys mutate one shared array.
+      inference: A default block that assigns a fresh array per key prevents the shared-object
+        bug, while key? or fetch distinguishes absence from a stored zero.
+      assumption: I am assuming the counter must preserve separate per-key state and
+        callers care whether a key was absent before incrementing.
+      unknown: The required default value, allocation budget, and whether absence and
+        zero have different business meaning are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Ruby runtime traps
-        benefit: It keeps the Ruby runtime traps reasoning close to the stated DSA
-          live coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Ruby runtime traps workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Ruby runtime traps contract and its invariant
-          are the facts that matter most.
-      - option: a broader-state or sorting alternative for Ruby runtime traps
-        benefit: It can make the Ruby runtime traps boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Ruby runtime traps evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Ruby runtime traps option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant DSA
-        live coding constraint makes the first assumption unsafe.
+      - option: Hash.new { |hash, key| hash[key] = [] } for mutable per-key state.
+        benefit: It allocates and stores a fresh object for each missing key, so mutations
+          stay isolated.
+        cost_or_risk: It allocates state for every key touched and requires the block
+          to assign deliberately.
+        valid_when: Use it when each key owns mutable collection state.
+      - option: Hash.new(0) or fetch/key? for scalar frequency state.
+        benefit: It keeps integer counting simple and makes an absent key versus stored
+          zero explicit when fetch or key? is used.
+        cost_or_risk: It is the wrong shape for mutable collections and a default lookup
+          can hide absence if callers rely on presence.
+        valid_when: Use it when the counter stores scalars and the caller has an explicit
+          absence contract.
+      decision_rule: I choose a per-key block for mutable arrays and a scalar default
+        plus key? or fetch for counts; I reject one shared mutable default in either
+        case.
     failure_probe:
       kind: counterexample
-      prompt: 'Ruby runtime traps: where would a tiny Ruby runtime traps counterexample
-        expose a false assumption, and what would you change about Ruby runtime traps?'
+      prompt: Mutate the missing values for two distinct keys, inspect object_id and
+        key?, and show which result would prove the default object is shared or absence
+        is hidden.
+    certainty:
+      level: high
+      rationale: I am certain about shared default identity and the block form; the
+        scalar or collection choice still depends on the caller contract.
+      update_trigger: Update when a test shows a scalar counter, a required zero default,
+        or an allocation budget that makes per-key mutable state inappropriate.
+    rubric:
+      facts_correct: Names shared object identity and the fresh block-created value,
+        then distinguishes missing from stored zero.
+      assumptions_explicit: States whether mutation, scalar counting, and absence semantics
+        are part of the contract.
+      alternatives_considered: Compares mutable per-key blocks with scalar defaults
+        plus explicit presence checks.
+      tradeoff_quality: Connects correctness, object allocation, and absence visibility
+        to the chosen hash form.
+      follow_up_adaptation: Uses object_id/key? tests to change the recommendation rather
+        than defending the default by habit.
+      certainty_calibration: Uses high confidence for Ruby default semantics and keeps
+        workload-dependent allocation claims measured.
     evidence_check:
-      basis: Check the Ruby runtime traps claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+      basis: Check the shared-default object, block-created per-key state, and absent-versus-zero
+        counter behavior against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Ruby runtime
-        traps, but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: A small object_id test demonstrates the Ruby semantics but does not
+        establish the allocation profile of a production key distribution.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Ruby runtime traps
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Your counter hash is behaving oddly on", update Ruby
-        runtime traps when Ruby runtime traps evidence—a Ruby runtime traps trace
-        or Ruby runtime traps test—contradicts the Ruby runtime traps constraint in
-        case "Your counter hash is behaving oddly on"; ask a stakeholder about Ruby
-        runtime traps before revising.
-    rubric:
-      facts_correct: Names the verified Ruby runtime traps facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Ruby runtime traps premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Ruby runtime traps options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Ruby runtime traps choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Ruby runtime
-        traps by changing the claim or evidence boundary rather than repeating the
-        base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Ruby runtime traps recommendation.
 - id: dsa-05-clarifying-question
   version: 1.4.0
   target: dsa
@@ -1012,9 +1001,10 @@ items:
       the evidence boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      Two things, if you do not mind. I would compare that choice with the
-      credible alternative against the requirement in the follow-up, cost, and failure risk, then switch
-      only if evidence makes the alternative safer.
+      I would confirm whether ties are stable, whether duplicate values are allowed, and
+      whether an empty input has a defined result. Those answers determine whether I can
+      use a frequency map directly or need a tie-break rule and an explicit empty-case
+      branch, so I would ask them before choosing the algorithm.
     distractors:
     - text: I would defend the first Clarifying the contract option because offering
         an alternative might make the decision look uncertain.
@@ -1094,25 +1084,18 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: dsa-05-clarifying-question-delayed-5
-      prompt: 'Revisit Clarifying the contract after a Clarifying the contract test
-        exposes a boundary case that the Clarifying the contract examples did not
-        cover and two Clarifying the contract callers from the case "Do you have any
-        questions before you" or Clarifying the contract tenants now compete for the
-        same Clarifying the contract boundary: what remains factual about Clarifying
-        the contract, what becomes provisional, and why?'
-      changed_constraint: two Clarifying the contract callers from the case "Do you
-        have any questions before you" or Clarifying the contract tenants now compete
-        for the same Clarifying the contract boundary
-      new_evidence: a Clarifying the contract test exposes a boundary case that the
-        Clarifying the contract examples did not cover
-      best_answer: I would keep the facts that remain supported about Clarifying the
-        contract, treat a Clarifying the contract test exposes a boundary case that
-        the Clarifying the contract examples did not cover as new evidence rather
-        than a result, and state the updated decision rule under two Clarifying the
-        contract callers from the case "Do you have any questions before you" or Clarifying
-        the contract tenants now compete for the same Clarifying the contract boundary.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: A test reveals that two callers expect different tie-breaks for equal counts,
+        and neither caller specified the empty-input result. What remains known, what is
+        provisional, and which question comes first?
+      changed_constraint: two callers share the algorithm but require an explicit tie-break
+        and empty-input contract
+      new_evidence: a boundary test exposes conflicting tie-break expectations and an
+        unspecified empty-input result
+      best_answer: I would keep the explicit questions about ties, duplicates, and empty
+        input, but I would mark the answer provisional when a boundary test or competing
+        caller exposes a missing rule. I would ask which caller owns the tie-break and
+        run both callers through the same empty and duplicate cases before choosing the
+        algorithm.
       distractors:
       - text: I would preserve every part of the original Clarifying the contract
           answer because changing it after review would be inconsistent.
@@ -1130,82 +1113,74 @@ items:
     path: english-arcade/dsa/clarifying-question
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Revisit Clarifying the contract beyond the happy path: what is factual
-      about Clarifying the contract, what is provisional, and which Clarifying the
-      contract test could change it?'
-    goal: Move from the short Clarifying the contract answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: Which tie, duplicate, empty, k-bound, and streamability questions would
+      you ask before choosing heap or sort and writing the output contract?
+    goal: Turn clarification into an explicit top-k contract so the data structure follows
+      evidence instead of habit.
   critical_thinking:
-    problem_frame: 'Frame Clarifying the contract before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: 'I frame clarification as algorithm input: identify tie order, duplicate
+      policy, empty behavior, and memory/stream constraints before selecting a top-k
+      method.'
     claim_map:
-      fact: The prompt explicitly tests Clarifying the contract within a DSA live
-        coding context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Clarifying
-        the contract, but that does not prove one implementation wins under every
-        workload or audience.
-      assumption: An unstated assumption is that the Clarifying the contract constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Clarifying the contract: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: The opening prompt leaves tie-breaking and whether the input fits in memory
+        unspecified.
+      inference: Those answers determine whether a map plus heap, full sort, or streaming
+        approach can satisfy the result contract.
+      assumption: I am assuming “top k” means ranking by count or score and that callers
+        need deterministic output, but neither is stated yet.
+      unknown: Tie order, duplicate treatment, empty-input result, k bounds, and streamability
+        are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Clarifying the contract
-        benefit: It keeps the Clarifying the contract reasoning close to the stated
-          DSA live coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Clarifying the contract workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Clarifying the contract contract and its
-          invariant are the facts that matter most.
-      - option: a broader-state or sorting alternative for Clarifying the contract
-        benefit: It can make the Clarifying the contract boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Clarifying the contract evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Clarifying the contract option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        DSA live coding constraint makes the first assumption unsafe.
+      - option: Frequency map plus a size-k heap with an explicit tie key.
+        benefit: It keeps bounded result state while preserving a deterministic top-k
+          contract after counting.
+        cost_or_risk: It needs a tie rule, map state, and careful handling when k exceeds
+          the number of values.
+        valid_when: Use it when the input can be counted and output state should stay
+          bounded.
+      - option: Sort all scored items after counting.
+        benefit: It is easy to explain and makes deterministic tie ordering visible
+          in one place.
+        cost_or_risk: It uses O(n) result state and O(n log n) ordering work, so it
+          may not fit a large stream.
+        valid_when: Use it when the input fits memory and clarity or full ordering matters
+          more than heap bounds.
+      decision_rule: I ask the contract questions first; I use the heap when bounded
+        output state matters and sort when the bound is small or full ordering is required.
     failure_probe:
       kind: edge_case
-      prompt: 'Clarifying the contract: which Clarifying the contract boundary deserves
-        the first test, and what observation about Clarifying the contract would overturn
-        the premise?'
+      prompt: If two callers demand opposite tie orders and one passes an empty input,
+        which question must be answered before any heap or sort choice can be defended?
+    certainty:
+      level: medium
+      rationale: I am certain that the omitted boundaries matter; I cannot be certain
+        whether heap, sort, or streaming wins before the contract is answered.
+      update_trigger: Update the algorithm when the caller selects a tie owner, empty
+        behavior, stream requirement, or k bound that changes state or ordering.
+    rubric:
+      facts_correct: Names the missing tie, duplicate, empty, and memory facts instead
+        of pretending the top-k contract is complete.
+      assumptions_explicit: States which unanswered requirement would change data structure
+        or output behavior.
+      alternatives_considered: Compares a size-k heap with full sorting and ties each
+        to the clarified input contract.
+      tradeoff_quality: Explains how deterministic ordering, memory, and complexity
+        trade off before code begins.
+      follow_up_adaptation: Changes the recommendation when two callers or a boundary
+        test reveal incompatible expectations.
+      certainty_calibration: Uses medium certainty until the interviewer answers the
+        questions that select the algorithm.
     evidence_check:
-      basis: Check the Clarifying the contract claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
+      basis: Check the missing top-k tie, duplicate, empty-input, and memory constraints
+        against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/system-design-interview-checklist.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Clarifying
-        the contract, but it cannot prove an unmeasured production outcome, personal
-        ownership, or universal rule.
+      limitation: Clarifying questions expose the design contract but cannot choose
+        an algorithm until the interviewer supplies the missing requirements.
       checked_on: '2026-08-25'
-    certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Clarifying the contract
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Do you have any questions before you", update Clarifying
-        the contract when Clarifying the contract evidence—a Clarifying the contract
-        trace or Clarifying the contract test—contradicts the Clarifying the contract
-        constraint in case "Do you have any questions before you"; ask a stakeholder
-        about Clarifying the contract before revising.
-    rubric:
-      facts_correct: Names the verified Clarifying the contract facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Clarifying the contract premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Clarifying the contract options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Clarifying the contract choice to a benefit,
-        a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Clarifying
-        the contract by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Clarifying the contract recommendation.
 - id: dsa-06-mid-problem-recovery
   version: 1.4.0
   target: dsa
@@ -1224,9 +1199,9 @@ items:
       the evidence boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I went internal for a moment, apologies. If the failure in the follow-up appears,
-      I would name the user or system consequence, contain it with a bounded mitigation,
-      and verify recovery with a focused test or metric.
+      I would name the failing trace, state which part of the invariant it violates, and
+      patch only that base case or update. I would rerun the same small trace first, then
+      a neighboring case, so the repair is tied to evidence rather than a silent rewrite.
     distractors:
     - text: I would describe the Recovering from a mistake failure as impossible because
         the happy path already passed its test.
@@ -1306,22 +1281,18 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: dsa-06-mid-problem-recovery-delayed-6
-      prompt: The Recovering from a mistake review adds a stakeholder clarifies a
-        Recovering from a mistake requirement that changes the Recovering from a mistake
-        success condition while the Recovering from a mistake workload for Recovering
-        from a mistake no longer fits the original resource bound; which conclusion
-        about Recovering from a mistake would you narrow before proposing a repair?
-      changed_constraint: the Recovering from a mistake workload for Recovering from
-        a mistake no longer fits the original resource bound
-      new_evidence: a stakeholder clarifies a Recovering from a mistake requirement
-        that changes the Recovering from a mistake success condition
-      best_answer: I would keep the facts that remain supported about Recovering from
-        a mistake, treat a stakeholder clarifies a Recovering from a mistake requirement
-        that changes the Recovering from a mistake success condition as new evidence
-        rather than a result, and state the updated decision rule under the Recovering
-        from a mistake workload for Recovering from a mistake no longer fits the original
-        resource bound. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: The interviewer changes the success condition from returning a number to
+        returning a bounded explanation for every empty subtree, while the deep-tree
+        workload exceeds the original recursion budget. Which conclusion would you narrow
+        before proposing a repair?
+      changed_constraint: the deep-tree workload no longer fits the original recursion
+        resource bound and the response contract now includes an explanation
+      new_evidence: the interviewer explicitly changes the success condition and supplies
+        a deep-tree case that exceeds the original bound
+      best_answer: I would keep the failing empty-subtree trace, but I would retract any
+        claim that adding zero alone satisfies a changed success condition or a larger
+        workload. I would restate the new bound, choose the smallest bounded repair, and
+        re-run the failing trace plus a deep tree before calling recovery complete.
       distractors:
       - text: I would preserve every part of the original Recovering from a mistake
           answer because changing it after review would be inconsistent.
@@ -1339,74 +1310,68 @@ items:
     path: english-arcade/dsa/mid-problem-recovery
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Use a deep dive on Recovering from a mistake to name the competing Recovering
-      from a mistake cost, the first failure signal, and the observation that would
-      update Recovering from a mistake.
-    goal: Move from the short Recovering from a mistake answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: How would you trace the empty-subtree failure, patch only the base case,
+      re-trace a parent and a deep tree, and decide when an iterative redesign is justified?
+    goal: 'Make recovery observable: connect the smallest repair to the failing trace,
+      then separate local correctness from depth and output guarantees.'
   critical_thinking:
-    problem_frame: 'Frame Recovering from a mistake before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: 'I frame recovery around the failing trace and original return contract:
+      state the empty-subtree case, the smallest base-case repair, and the re-trace
+      that can disprove it.'
     claim_map:
-      fact: The prompt explicitly tests Recovering from a mistake within a DSA live
-        coding context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Recovering
-        from a mistake, but that does not prove one implementation wins under every
-        workload or audience.
-      assumption: An unstated assumption is that the Recovering from a mistake constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Recovering from a mistake: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: The current recursion reaches an empty subtree and returns nil while its
+        caller expects a numeric result.
+      inference: Returning zero at that base case is the smallest repair for the original
+        contract, but it is not enough if the interviewer changes the output or depth
+        requirement.
+      assumption: I am assuming the original result treats an empty subtree as zero
+        and the recursion depth fits the current budget.
+      unknown: The revised success condition, maximum tree depth, and whether iterative
+        traversal is acceptable are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Recovering from a
-        mistake would be a false equivalence because the prompt does not establish
-        that both choices satisfy the same contract.
-      hard_constraint: The hard Recovering from a mistake constraint is the required
-        guarantee stated by the interviewer; no missing measurement licenses a stronger
-        comparison.
-      decision_rule: Do not manufacture a trade-off for Recovering from a mistake;
-        first clarify the constraint or collect the evidence that would make two options
-        genuinely comparable.
+      rejected_alternative: Jumping to a different traversal or rewriting the whole
+        solution before proving the empty-subtree failure would compare implementations
+        instead of repairing the observed contract violation.
+      hard_constraint: The hard constraint is to make the failing trace and return type
+        correct first, then test the smallest neighboring case before choosing any broader
+        redesign.
+      decision_rule: I repair and re-trace the known base case before comparing alternatives;
+        a new output or depth constraint is the evidence that makes a redesign applicable.
     failure_probe:
       kind: failure_mode
-      prompt: 'Recovering from a mistake: when the first Recovering from a mistake
-        recovery path fails, which consequence reaches the user, and what bounded
-        mitigation follows for Recovering from a mistake?'
+      prompt: Trace the empty subtree and one neighboring node. Which return type breaks
+        first, and what assertion would show that the base case repaired the invariant
+        without hiding a second defect?
+    certainty:
+      level: medium
+      rationale: I am confident about the observed nil-versus-number mismatch; confidence
+        in zero as the final repair depends on the unchanged contract and depth.
+      update_trigger: Update when a deep tree exceeds the recursion budget, the output
+        must include explanations, or the neighboring trace exposes another violated
+        invariant.
+    rubric:
+      facts_correct: Names the failing empty-subtree input, actual return, expected
+        type, and smallest repair.
+      assumptions_explicit: Separates the original contract from assumptions about depth
+        or a newly requested explanation.
+      alternatives_considered: Explains why comparison is premature until the known
+        failing trace is repaired and re-run.
+      tradeoff_quality: Balances repair scope, proof evidence, recursion risk, and the
+        cost of a broader redesign.
+      follow_up_adaptation: Narrows the claim when the interviewer changes output or
+        depth instead of claiming zero solves everything.
+      certainty_calibration: Uses medium certainty for the local base case and names
+        the evidence needed for a broader guarantee.
     evidence_check:
-      basis: Check the Recovering from a mistake claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+      basis: Check the empty-subtree trace, numeric return contract, and changed success
+        condition or recursion budget against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Recovering
-        from a mistake, but it cannot prove an unmeasured production outcome, personal
-        ownership, or universal rule.
+      limitation: A small trace can validate the local repair but cannot establish deep-tree
+        safety or a new output contract without representative depth tests.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Recovering from
-        a mistake question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "You have gone quiet. What is going", update Recovering
-        from a mistake when Recovering from a mistake evidence—a Recovering from a
-        mistake trace or Recovering from a mistake test—contradicts the Recovering
-        from a mistake constraint in case "You have gone quiet. What is going"; ask
-        a stakeholder about Recovering from a mistake before revising.
-    rubric:
-      facts_correct: Names the verified Recovering from a mistake facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Recovering from a mistake premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Recovering from a mistake options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Recovering from a mistake choice to a benefit,
-        a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Recovering from
-        a mistake by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Recovering from a mistake recommendation.
 - id: dsa-07-tradeoff-language
   version: 1.4.0
   target: dsa
@@ -1425,10 +1390,11 @@ items:
       keeping the evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      I could sort first and scan, which drops the extra memory to effectively nothing
-      but pushes time to n log n. I would keep the claims that remain
-      supported, identify exactly which premise the new observation changes, and run a focused check
-      before revising the decision.
+      I would remove the per-value map first and accept sorting plus a scan, which trades
+      the map's extra space for O(n log n) time and may destroy original order. If the
+      caller needs request latency or order preservation, I would keep the map; if a
+      memory ceiling dominates and sorting is allowed, I would choose the trade-off and
+      verify it on the stated input bound.
     distractors:
     - text: I would keep the Time and space trade-offs recommendation unchanged because
         changing position would look inconsistent.
@@ -1511,23 +1477,18 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: dsa-07-tradeoff-language-delayed-7
-      prompt: For Time and space trade-offs, new evidence is a trace of Time and space
-        trade-offs isolates a different Time and space trade-offs bottleneck than
-        the one you named and the constraint is a stakeholder asks for a stronger
-        Time and space trade-offs guarantee than the first Time and space trade-offs
-        answer promised. What alternative now deserves consideration for Time and
-        space trade-offs?
-      changed_constraint: a stakeholder asks for a stronger Time and space trade-offs
-        guarantee than the first Time and space trade-offs answer promised
-      new_evidence: a trace of Time and space trade-offs isolates a different Time
-        and space trade-offs bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about Time and space
-        trade-offs, treat a trace of Time and space trade-offs isolates a different
-        Time and space trade-offs bottleneck than the one you named as new evidence
-        rather than a result, and state the updated decision rule under a stakeholder
-        asks for a stronger Time and space trade-offs guarantee than the first Time
-        and space trade-offs answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: A memory trace shows the sorted copy, rather than the hash, is the peak
+        allocation, and the interviewer now requires a stated memory ceiling. Which
+        resource claim survives and which alternative deserves a measured comparison?
+      changed_constraint: the answer must meet an explicit peak-memory ceiling as well
+        as the original latency requirement
+      new_evidence: a memory trace identifies sort workspace as the peak allocation,
+        contrary to the assumed constant-space benefit
+      best_answer: I would keep the latency-versus-memory trade-off, but I would retract
+        the phrase "effectively nothing" if the sorted copy or sort workspace matters to
+        the memory budget. I would measure peak memory and elapsed time for the real input
+        bound, then choose the hash or sort path from those constraints rather than from a
+        slogan about constant space.
       distractors:
       - text: I would preserve every part of the original Time and space trade-offs
           answer because changing it after review would be inconsistent.
@@ -1545,83 +1506,72 @@ items:
     path: english-arcade/dsa/tradeoff-language
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Walk through Time and space trade-offs under a changed requirement: which
-      Time and space trade-offs claim survives, which option wins, and why would Time
-      and space trade-offs need new evidence?'
-    goal: Move from the short Time and space trade-offs answer to a deep, evidence-led
-      defence without inventing an outcome.
+    prompt: Given a peak-memory trace for hash and sorted paths, how would you state
+      whether order is preserved and decide under an explicit memory ceiling?
+    goal: Finish every trade-off with a default, a binding constraint, and measured
+      evidence that can reverse it.
   critical_thinking:
-    problem_frame: 'Frame Time and space trade-offs before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: 'I frame the memory trade-off with both resource axes and the input
+      contract: compare the map path with sorting, then state what would make me switch.'
     claim_map:
-      fact: The prompt explicitly tests Time and space trade-offs within a DSA live
-        coding context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Time and
-        space trade-offs, but that does not prove one implementation wins under every
-        workload or audience.
-      assumption: An unstated assumption is that the Time and space trade-offs constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Time and space trade-offs: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: The current hash solution uses linear auxiliary state; sorting can reduce
+        map state but costs ordering work and may require a sorted copy.
+      inference: A request path may favor map latency, while a batch with a strict memory
+        ceiling may favor sorting or a bounded scan after measuring peak memory.
+      assumption: I am assuming the caller permits changing order or paying O(n log
+        n) when memory is the binding constraint.
+      unknown: Peak-memory definition, input mutability, order preservation, and latency
+        budget are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Time and space trade-offs
-        benefit: It keeps the Time and space trade-offs reasoning close to the stated
-          DSA live coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Time and space trade-offs workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Time and space trade-offs contract and
-          its invariant are the facts that matter most.
-      - option: a broader-state or sorting alternative for Time and space trade-offs
-        benefit: It can make the Time and space trade-offs boundary more explicit
-          when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Time and space trade-offs evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Time and space trade-offs option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        DSA live coding constraint makes the first assumption unsafe.
+      - option: Hash state with direct lookups.
+        benefit: It preserves input order and gives expected linear work with straightforward
+          duplicate checks.
+        cost_or_risk: The map and object overhead can dominate memory or allocator cost
+          at large distinct counts.
+        valid_when: Use it when latency and order matter and the map fits the measured
+          budget.
+      - option: Sort then scan or use a bounded comparison-based pass.
+        benefit: It can lower hash-state overhead and make a memory-first batch path
+          possible.
+        cost_or_risk: Sorting costs O(n log n), may allocate a copy, and can destroy
+          original order unless indices are retained.
+        valid_when: Use it when peak memory is the binding constraint and sorting/order
+          changes are accepted.
+      decision_rule: I default to the map for latency and order, but switch only when
+        a measured memory ceiling outweighs its faster lookup path.
     failure_probe:
-      kind: counterexample
-      prompt: 'Time and space trade-offs: what stakeholder reply about Time and space
-        trade-offs would invalidate the recommendation, and which Time and space trade-offs
-        premise would you revisit?'
-    evidence_check:
-      basis: Check the Time and space trade-offs claim against system-design-estudos/decision-contrasts/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
-      source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Time and
-        space trade-offs, but it cannot prove an unmeasured production outcome, personal
-        ownership, or universal rule.
-      checked_on: '2026-08-25'
+      kind: edge_case
+      prompt: A memory trace says the sorted copy, not the hash, is the peak allocation.
+        Which “constant-space” phrase becomes false, and what measurement separates
+        the choices?
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Time and space
-        trade-offs question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "Could you do this with less memory,", update Time
-        and space trade-offs when Time and space trade-offs evidence—a Time and space
-        trade-offs trace or Time and space trade-offs test—contradicts the Time and
-        space trade-offs constraint in case "Could you do this with less memory,";
-        ask a stakeholder about Time and space trade-offs before revising.
+      rationale: The trade-off direction is clear, but the winner depends on peak allocation,
+        mutability, and latency evidence.
+      update_trigger: Update when a peak-memory trace, order requirement, or latency
+        benchmark shows that the default map path violates the contract.
     rubric:
-      facts_correct: Names the verified Time and space trade-offs facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Time and space trade-offs premise that is still
-        assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Time and space trade-offs options,
-        or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Time and space trade-offs choice to a benefit,
-        a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Time and
-        space trade-offs by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Time and space trade-offs recommendation.
+      facts_correct: States the current map cost and the real sort/copy cost instead
+        of calling sorting free of memory.
+      assumptions_explicit: Names which resource and order assumptions allow a switch.
+      alternatives_considered: Compares hash lookup with sorting or a bounded comparison
+        path and states when each wins.
+      tradeoff_quality: Connects latency, peak memory, order preservation, and implementation
+        complexity to the choice.
+      follow_up_adaptation: Revises “effectively nothing” or the default path when the
+        trace changes the binding constraint.
+      certainty_calibration: Uses medium confidence for the default and asks for peak-memory/latency
+        evidence before committing.
+    evidence_check:
+      basis: Check the hash-versus-sort time, peak-memory, and order-preservation trade-off
+        against system-design-estudos/decision-contrasts/README.md and the exact interview
+        context; record whether each part is fact, inference, or hypothesis.
+      source_kind: authored_scenario
+      limitation: Asymptotic space labels do not settle allocator peaks or copy behavior;
+        those require measurements on the actual input bound.
+      checked_on: '2026-08-25'
 - id: dsa-08-scaling-followup
   version: 1.4.0
   target: dsa
@@ -1640,9 +1590,10 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      The counting stays the same, but it moves. I would label the follow-up premise
-      as an assumption, ask the smallest question that could disprove it, and protect the
-      edge case before committing to the recommendation.
+      I would partition by value so every copy of a value reaches one owner, count locally,
+      and merge the local top-k results. If the key space or a single hot key still exceeds
+      memory, I would ask whether an approximate sketch is allowed and validate its error
+      against an exact sample before trading correctness for capacity.
     distractors:
     - text: I would repeat my original Scaling follow-up answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -1724,21 +1675,18 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: dsa-08-scaling-followup-delayed-8
-      prompt: A second pass on Scaling follow-up finds a code inspection of Scaling
-        follow-up confirms the Scaling follow-up mechanism but not its impact; with
-        the Scaling follow-up dependency is slower for Scaling follow-up and the failure
-        is ambiguous rather than explicit, which Scaling follow-up test would you
-        run before keeping the original rule?
-      changed_constraint: the Scaling follow-up dependency is slower for Scaling follow-up
-        and the failure is ambiguous rather than explicit
-      new_evidence: a code inspection of Scaling follow-up confirms the Scaling follow-up
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Scaling follow-up,
-        treat a code inspection of Scaling follow-up confirms the Scaling follow-up
-        mechanism but not its impact as new evidence rather than a result, and state
-        the updated decision rule under the Scaling follow-up dependency is slower
-        for Scaling follow-up and the failure is ambiguous rather than explicit. I
-        would then name one focused check before treating the revised answer as settled.
+      prompt: A code review confirms that partitioning by key keeps each value together,
+        but a benchmark shows skewed keys and a slow merge with no clear failure signal.
+        Which test would you run before keeping the exact-count rule?
+      changed_constraint: the design must handle skewed keys within the memory budget
+        while preserving exact counts
+      new_evidence: a benchmark confirms key ownership but shows skew and slow merging
+        without identifying a single failing component
+      best_answer: I would keep key ownership as the correctness condition for exact
+        distributed counts, but I would not infer scale from code inspection. I would
+        measure partition skew, hot-key memory, and merge time; if the dependency remains
+        slow or the failure is ambiguous, I would test an exact sample before considering
+        an approximate sketch.
       distractors:
       - text: I would preserve every part of the original Scaling follow-up answer
           because changing it after review would be inconsistent.
@@ -1756,79 +1704,74 @@ items:
     path: english-arcade/dsa/scaling-followup
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: Connect Scaling follow-up, connect the Scaling follow-up implementation
-      choice to its failure mode, measurement, and condition for choosing the alternative.
-    goal: Move from the short Scaling follow-up answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: What partition skew, hot-key memory, merge-time, and sketch-error evidence
+      would you measure before choosing distributed exactness or approximation?
+    goal: Carry the single-machine invariant into a distributed design without hiding
+      the cost of skew, merge, or approximation error.
   critical_thinking:
-    problem_frame: 'Frame Scaling follow-up before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: 'I frame distributed counting around key ownership and merge correctness:
+      decide where each value lives, measure skew, and state when approximation is allowed.'
     claim_map:
-      fact: The prompt explicitly tests Scaling follow-up within a DSA live coding
-        context; treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Scaling follow-up,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Scaling follow-up constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Scaling follow-up: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: Exact counts require every occurrence of a value to reach one owner before
+        local counts are merged.
+      inference: Partitioning by value preserves exactness, but hot keys and merge traffic
+        can still exhaust one node or the memory budget.
+      assumption: I am assuming the caller still needs exact counts and permits a repartition
+        or a network merge.
+      unknown: Key skew, hot-key cardinality, network budget, merge latency, and tolerated
+        counting error are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Scaling follow-up
-        benefit: It keeps the Scaling follow-up reasoning close to the stated DSA
-          live coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Scaling follow-up workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Scaling follow-up contract and its invariant
-          are the facts that matter most.
-      - option: a broader-state or sorting alternative for Scaling follow-up
-        benefit: It can make the Scaling follow-up boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Scaling follow-up evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Scaling follow-up option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant DSA
-        live coding constraint makes the first assumption unsafe.
+      - option: Exact key partitioning followed by a local-top-k merge.
+        benefit: It preserves correctness because one owner sees every occurrence of
+          a value.
+        cost_or_risk: A hot key can overload one owner and the merge can become a network
+          or memory bottleneck.
+        valid_when: Use it when exactness is required and skew/merge budgets are measured.
+      - option: An approximate sketch with an error contract.
+        benefit: It bounds memory and can absorb a large key space when exact counts
+          do not fit.
+        cost_or_risk: It can misorder near-ties and requires error validation, not just
+          a framework choice.
+        valid_when: Use it only when the product accepts measured error and exact samples
+          can validate the sketch.
+      decision_rule: I keep key ownership for exact output; I choose a sketch only after
+        the caller accepts an error bound and measurements show exact partitioning cannot
+        fit.
     failure_probe:
-      kind: edge_case
-      prompt: 'Scaling follow-up: where does the Scaling follow-up premise need a
-        boundary check, and which result would make you reframe Scaling follow-up?'
+      kind: failure_mode
+      prompt: 'Which observation would expose the exact partition plan first: one hot
+        key exhausting its owner, a slow merge, or an error budget that was never agreed?'
+    certainty:
+      level: medium
+      rationale: I am confident that key ownership is necessary for exact counts; I
+        am not confident it is sufficient for the target scale without skew and merge
+        evidence.
+      update_trigger: Update when hot-key memory, merge latency, or an explicit error
+        budget makes approximate counting or a different owner strategy viable.
+    rubric:
+      facts_correct: States why every occurrence must share an owner and what the local
+        merge preserves.
+      assumptions_explicit: Names the assumptions about exactness, skew, network, and
+        tolerated error.
+      alternatives_considered: Compares exact partition/merge with an approximate sketch
+        and names the validation each needs.
+      tradeoff_quality: Connects correctness, hot-key memory, merge latency, and error
+        to the scaling choice.
+      follow_up_adaptation: Keeps the exact proof while narrowing the capacity claim
+        when benchmark evidence exposes skew.
+      certainty_calibration: Uses medium confidence for ownership correctness and conditions
+        the architecture on scale evidence.
     evidence_check:
-      basis: Check the Scaling follow-up claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/04-system-design-canonical-problems.md
+      basis: Check the key-ownership proof, partition skew, merge cost, and exact-versus-approximate
+        error contract against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/04-system-design-canonical-problems.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Scaling follow-up,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: The partition proof says nothing about network throughput, skewed
+        memory, or acceptable approximation until those are measured and agreed.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Scaling follow-up
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Now suppose the input does not fit", update Scaling
-        follow-up when Scaling follow-up evidence—a Scaling follow-up trace or Scaling
-        follow-up test—contradicts the Scaling follow-up constraint in case "Now suppose
-        the input does not fit"; ask a stakeholder about Scaling follow-up before
-        revising.
-    rubric:
-      facts_correct: Names the verified Scaling follow-up facts without smuggling
-        in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Scaling follow-up premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Scaling follow-up options, or
-        explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Scaling follow-up choice to a benefit, a cost
-        or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about Scaling follow-up
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Scaling follow-up recommendation.
 - id: dsa-09-whiteboard-thinking-aloud
   version: 1.4.0
   target: dsa
@@ -1847,9 +1790,10 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      Sure. I would treat the follow-up observation as evidence, not as proof of impact;
-      I would inspect the smallest relevant trace or test and state what remains uncertain
-      before changing the decision.
+      I would challenge the complement check immediately before insertion, because adding
+      first can let an element match itself. On a pair such as [3,3], I would trace the
+      map before and after each lookup and use that trace to verify both the match and the
+      no-match path.
     distractors:
     - text: I would cite my experience with Thinking aloud as enough proof and move
         on without naming an observation.
@@ -1931,21 +1875,17 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-09-whiteboard-thinking-aloud-delayed-9
-      prompt: 'Thinking aloud: the later Thinking aloud review says a measured Thinking
-        aloud comparison shows the alternative has a different Thinking aloud cost
-        profile. Under new Thinking aloud evidence contradicts the Thinking aloud
-        assumption that made the first option attractive, which part of Thinking aloud
-        survives and which Thinking aloud claim changes?'
-      changed_constraint: new Thinking aloud evidence contradicts the Thinking aloud
-        assumption that made the first option attractive
-      new_evidence: a measured Thinking aloud comparison shows the alternative has
-        a different Thinking aloud cost profile
-      best_answer: I would keep the facts that remain supported about Thinking aloud,
-        treat a measured Thinking aloud comparison shows the alternative has a different
-        Thinking aloud cost profile as new evidence rather than a result, and state
-        the updated decision rule under new Thinking aloud evidence contradicts the
-        Thinking aloud assumption that made the first option attractive. I would then
-        name one focused check before treating the revised answer as settled.
+      prompt: A benchmark shows that the alternative lookup structure has a different
+        cost profile at the target size. Which part of your check-before-insert reasoning
+        survives, and which performance claim should you revisit?
+      changed_constraint: the lookup structure must meet the target-size cost budget
+        without reintroducing self-pair matches
+      new_evidence: a same-input benchmark shows a different lookup and memory cost for
+        the alternative structure
+      best_answer: I would keep the check-before-insert reasoning, but I would revisit the
+        map choice if a measured comparison shows a different cost profile at the target
+        size. I would compare lookup cost, memory, and the self-pair failure case on the
+        same inputs, then update only the claim that the evidence actually challenges.
       distractors:
       - text: I would preserve every part of the original Thinking aloud answer because
           changing it after review would be inconsistent.
@@ -1963,79 +1903,72 @@ items:
     path: english-arcade/dsa/thinking-aloud
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Thinking aloud: inspect Thinking aloud evidence next; which edge case
-      for Thinking aloud would alter the trade-off?'
-    goal: Move from the short Thinking aloud answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: Can you narrate the [3,3] trace, then compare map lookup-before-insert with
+      sorted two-pointer search while preserving the required indices?
+    goal: Make each spoken step carry a correctness reason, a failure it avoids, or
+      evidence that could change the data structure.
   critical_thinking:
-    problem_frame: 'Frame Thinking aloud before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame the running commentary around the next decision and its
+      failure case: name the map, check the complement before insertion, and trace a
+      duplicate pair.'
     claim_map:
-      fact: The prompt explicitly tests Thinking aloud within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Thinking
-        aloud, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Thinking aloud constraint is
-        the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Thinking aloud: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The two-sum style path must check whether the complement exists before inserting
+        the current value if an element cannot pair with itself.
+      inference: A map gives expected constant-time lookup, while sort/two-pointer can
+        use less hash state but changes order and index handling.
+      assumption: I am assuming the contract returns a pair of indices or values and
+        disallows using the same element twice.
+      unknown: Duplicate policy, return ordering, input mutation, and memory limit are
+        unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Thinking aloud
-        benefit: It keeps the Thinking aloud reasoning close to the stated DSA live
-          coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Thinking aloud workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Thinking aloud contract and its invariant
-          are the facts that matter most.
-      - option: a broader-state or sorting alternative for Thinking aloud
-        benefit: It can make the Thinking aloud boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Thinking aloud evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Thinking aloud option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant DSA
-        live coding constraint makes the first assumption unsafe.
+      - option: Map lookup before insert.
+        benefit: It preserves one-pass reasoning and handles an earlier complement without
+          sorting.
+        cost_or_risk: It uses auxiliary map state and needs a clear duplicate/index
+          contract.
+        valid_when: Use it when one-pass latency and original positions matter.
+      - option: Sort with two pointers while retaining original positions.
+        benefit: It can lower lookup overhead and make the ordered search proof explicit.
+        cost_or_risk: It adds sorting cost, index bookkeeping, and can obscure the original
+          order.
+        valid_when: Use it when memory is tighter and the caller accepts sorting and
+          index mapping.
+      decision_rule: I default to check-before-insert with a map when one-pass indices
+        matter; I switch to sorting only when its memory or proof benefit is measured
+        and the index contract survives.
     failure_probe:
-      kind: failure_mode
-      prompt: 'Thinking aloud: if the Thinking aloud decision fails under plausible
-        load or a difficult turn, what consequence appears first, and how would you
-        contain Thinking aloud?'
+      kind: counterexample
+      prompt: Trace [3,3] before and after lookup and insertion. Which map state proves
+        that the current value was not matched to itself?
+    certainty:
+      level: high
+      rationale: I am highly certain about checking before insertion for the no-self-pair
+        rule; the data-structure preference depends on the caller contract.
+      update_trigger: Update when the caller allows self-pairs, needs all pairs, requires
+        sorted output, or supplies a memory limit that changes the map choice.
+    rubric:
+      facts_correct: Names the complement check and demonstrates it on a duplicate input
+        rather than narrating syntax.
+      assumptions_explicit: States the no-self-pair, index, order, and mutation assumptions.
+      alternatives_considered: Compares one-pass map lookup with sorted two-pointer
+        search and its index bookkeeping.
+      tradeoff_quality: Connects lookup memory, sort cost, original order, and duplicate
+        correctness to the recommendation.
+      follow_up_adaptation: Keeps the self-pair invariant while revising the data structure
+        when the output contract changes.
+      certainty_calibration: Uses high confidence for operation order and qualifies
+        the broader performance choice.
     evidence_check:
-      basis: Check the Thinking aloud claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+      basis: Check the check-before-insert invariant, duplicate behavior, and two-sum
+        output contract against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Thinking
-        aloud, but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: The trace proves operation order for the stated pair contract but
+        cannot choose map versus sorting without input and memory evidence.
       checked_on: '2026-08-25'
-    certainty:
-      level: high
-      rationale: Certainty is high because the prompt bounds the Thinking aloud question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Could you keep talking me through it", update Thinking
-        aloud when Thinking aloud evidence—a Thinking aloud trace or Thinking aloud
-        test—contradicts the Thinking aloud constraint in case "Could you keep talking
-        me through it"; ask a stakeholder about Thinking aloud before revising.
-    rubric:
-      facts_correct: Names the verified Thinking aloud facts without smuggling in
-        a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Thinking aloud premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Thinking aloud options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Thinking aloud choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about Thinking aloud
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses high certainty deliberately and names the evidence
-        that would update the Thinking aloud recommendation.
 - id: dsa-10-edge-case-enumeration
   version: 1.4.0
   target: dsa
@@ -2054,9 +1987,10 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      Three cases. I would compare that choice with the credible alternative against the requirement
-      in the follow-up, cost, and failure risk, then switch only if evidence makes the
-      alternative safer.
+      I would choose the all-duplicate trace first because it can move the left boundary
+      repeatedly and expose a stale-index bug. I would assert that the window contains no
+      duplicate after every repair, then keep the empty and single-element tests as the
+      return-value boundaries.
     distractors:
     - text: I would defend the first Edge cases option because offering an alternative
         might make the decision look uncertain.
@@ -2071,10 +2005,11 @@ items:
       case, and a representative case.'
     goal: Compress the Edge cases answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: Three cases. An empty input, which should return zero rather than raise.
-    A single element, where the window never shrinks. And an array that is entirely
-    duplicates, which is the case that stresses the left pointer moving more than
-    once in a single step.
+  best_answer: >-
+    I would test three boundaries before calling it done: empty input should return zero,
+    a single element should never shrink the window, and an all-duplicate input should
+    move the left pointer more than once when needed. Those traces exercise both the
+    return value and the invariant.
   distractors:
   - text: I would test it with some different inputs to make sure it works properly
       in all the situations, including some bigger ones and maybe some strange ones
@@ -2135,23 +2070,17 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-10-edge-case-enumeration-delayed-10
-      prompt: 'Review note for Edge cases: a Edge cases test exposes a boundary case
-        that the Edge cases examples did not cover. Given two Edge cases callers from
-        the case "What would you test before you call" or Edge cases tenants now compete
-        for the same Edge cases boundary, what would you now defend, retract, and
-        verify about Edge cases?'
-      changed_constraint: two Edge cases callers from the case "What would you test
-        before you call" or Edge cases tenants now compete for the same Edge cases
-        boundary
-      new_evidence: a Edge cases test exposes a boundary case that the Edge cases
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Edge cases,
-        treat a Edge cases test exposes a boundary case that the Edge cases examples
-        did not cover as new evidence rather than a result, and state the updated
-        decision rule under two Edge cases callers from the case "What would you test
-        before you call" or Edge cases tenants now compete for the same Edge cases
-        boundary. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: A new test supplies a repeated value after the left boundary has already
+        moved, and two callers expect different results for that case. What would you
+        defend, retract, and verify before changing the implementation?
+      changed_constraint: the algorithm must preserve its invariant for repeated values
+        while the callers agree on one return-value contract
+      new_evidence: a trace exposes a repeated-value boundary after a prior repair and
+        the callers disagree about the expected result
+      best_answer: I would keep the empty, single-element, and duplicate boundaries, but
+        I would add the newly exposed case to the invariant test rather than pretend the
+        original list was exhaustive. I would assert the window after each left-boundary
+        update and compare both callers' expected return values before changing code.
       distractors:
       - text: I would preserve every part of the original Edge cases answer because
           changing it after review would be inconsistent.
@@ -2169,77 +2098,74 @@ items:
     path: english-arcade/dsa/edge-case-enumeration
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Deep dive on Edge cases: compare Edge cases options with one measurement;
-      which failure around Edge cases would make Edge cases switch?'
-    goal: Move from the short Edge cases answer to a deep, evidence-led defence without
-      inventing an outcome.
+    prompt: Write assertions for empty, single, all-duplicate, and repeated-after-left-move
+      inputs, then compare them with an oracle-driven generated trace.
+    goal: Turn “edge cases” into a small adversarial test plan tied to the invariant
+      and the result contract.
   critical_thinking:
-    problem_frame: 'Frame Edge cases before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame edge tests as invariant attacks: cover empty, single, all-duplicate,
+      and repeated-after-move inputs, then state the expected return and window property.'
     claim_map:
-      fact: The prompt explicitly tests Edge cases within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Edge cases,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Edge cases constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Edge cases: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The implementation must handle empty input, a single element, all duplicates,
+        and a duplicate that arrives after the left boundary has moved.
+      inference: Those cases exercise both result initialization and the max-left/last-seen
+        invariant instead of merely repeating the sample.
+      assumption: I am assuming empty input returns zero and the result is the longest
+        distinct contiguous window.
+      unknown: The exact empty result, malformed-input behavior, and whether callers
+        expect a value or the window itself are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Edge cases
-        benefit: It keeps the Edge cases reasoning close to the stated DSA live coding
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Edge cases workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Edge cases contract and its invariant are
-          the facts that matter most.
-      - option: a broader-state or sorting alternative for Edge cases
-        benefit: It can make the Edge cases boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Edge cases evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Edge cases option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant DSA live
-        coding constraint makes the first assumption unsafe.
+      - option: A small hand-picked boundary suite with assertions after each repair.
+        benefit: It directly targets the empty, duplicate, and pointer-boundary failures
+          visible in the code.
+        cost_or_risk: It can miss interactions that were not imagined by the author.
+        valid_when: Use it as the minimum gate before claiming the invariant is implemented.
+      - option: Property-based or generated traces checked against a simple oracle.
+        benefit: It explores many duplicate and boundary arrangements and can find a
+          stale-index interaction.
+        cost_or_risk: It costs more setup and still needs an oracle and clear result
+          contract.
+        valid_when: Use it when the algorithm will be reused or hand-picked cases keep
+          finding regressions.
+      decision_rule: I start with the explicit boundary suite, then add generated oracle
+        checks when the invariant is central enough that one missed interaction would
+        be costly.
     failure_probe:
-      kind: counterexample
-      prompt: 'Edge cases: which adversarial Edge cases example could disprove the
-        recommendation, and what evidence about Edge cases would you request?'
+      kind: edge_case
+      prompt: After the left boundary moves, insert another repeated value. Which assertion
+        shows the active window is still distinct and the returned length still matches
+        the caller contract?
+    certainty:
+      level: high
+      rationale: I am confident these boundaries expose common initialization and stale-index
+        errors; confidence in completeness depends on the result contract and broader
+        traces.
+      update_trigger: Update the suite when a new caller expectation, failing generated
+        trace, or changed result contract exposes an uncovered boundary.
+    rubric:
+      facts_correct: Names expected behavior for empty, single, duplicate-heavy, and
+        repeated-after-move inputs.
+      assumptions_explicit: States the result and invariant assumptions behind each
+        test.
+      alternatives_considered: Compares a focused boundary suite with generated/property-based
+        traces and an oracle.
+      tradeoff_quality: Connects test cost, defect discovery, oracle quality, and contract
+        confidence to the testing choice.
+      follow_up_adaptation: Adds a newly exposed case without pretending the original
+        list was exhaustive.
+      certainty_calibration: Uses high confidence for the minimum cases and keeps completeness
+        conditional on new evidence.
     evidence_check:
-      basis: Check the Edge cases claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
+      basis: Check the empty/single/duplicate boundary suite and the window invariant
+        after repeated left updates against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/02-dsa-core-problems-in-ruby-and-typescript.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Edge cases,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: Passing a finite edge suite does not prove all input sequences or
+        a performance bound; the oracle and input contract still matter.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Edge cases question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What would you test before you call", update Edge
-        cases when Edge cases evidence—a Edge cases trace or Edge cases test—contradicts
-        the Edge cases constraint in case "What would you test before you call"; ask
-        a stakeholder about Edge cases before revising.
-    rubric:
-      facts_correct: Names the verified Edge cases facts without smuggling in a result,
-        scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Edge cases premise that is still assumed and
-        asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Edge cases options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Edge cases choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about Edge cases
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Edge cases recommendation.
 - id: dsa-11-disagreeing-with-interviewer
   version: 1.4.0
   target: dsa
@@ -2258,10 +2184,10 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      I do not think so, but let me walk through it and you can
-      tell me where I have gone wrong. If the failure in the follow-up appears,
-      I would name the user or system consequence, contain it with a bounded mitigation,
-      and verify recovery with a focused test or metric.
+      I would count pointer increments with you: the right pointer advances once per
+      element, and the left pointer advances at most n times in total because it never
+      moves backward. I would trace the duplicate-heavy input that prompted the concern,
+      then revise the bound if the implementation actually resets either pointer.
     distractors:
     - text: I would describe the Disagreement failure as impossible because the happy
         path already passed its test.
@@ -2344,20 +2270,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-11-disagreeing-with-interviewer-delayed-11
-      prompt: New evidence about Disagreement says a stakeholder clarifies a Disagreement
-        requirement that changes the Disagreement success condition; with the Disagreement
-        workload for Disagreement no longer fits the original resource bound, how
-        do you update the Disagreement decision rule?
-      changed_constraint: the Disagreement workload for Disagreement no longer fits
-        the original resource bound
-      new_evidence: a stakeholder clarifies a Disagreement requirement that changes
-        the Disagreement success condition
-      best_answer: I would keep the facts that remain supported about Disagreement,
-        treat a stakeholder clarifies a Disagreement requirement that changes the
-        Disagreement success condition as new evidence rather than a result, and state
-        the updated decision rule under the Disagreement workload for Disagreement
-        no longer fits the original resource bound. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: The interviewer changes the result contract to include the trace, and the
+        input no longer fits the original memory bound. How would you update the linear
+        complexity claim and explain the alternative without becoming defensive?
+      changed_constraint: the result must include a trace while the input exceeds the
+        original auxiliary-memory budget
+      new_evidence: the interviewer changes the output contract and supplies an input
+        bound that invalidates the original memory assumption
+      best_answer: I would keep the pointer-count proof under the original contract, but
+        I would retract the linear recommendation if the new result or resource bound
+        changes what must be retained. I would restate the contract, compare sorting or
+        a bounded scan, and trace the disputed loop before defending a new complexity
+        claim.
       distractors:
       - text: I would preserve every part of the original Disagreement answer because
           changing it after review would be inconsistent.
@@ -2375,66 +2299,68 @@ items:
     path: english-arcade/dsa/disagreeing-politely
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Defend Disagreement after a counterexample: which Disagreement assumption
-      changes, and what evidence keeps the revised Disagreement choice honest?'
-    goal: Move from the short Disagreement answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: Answer the quadratic objection with a duplicate-heavy pointer trace, then
+      state which code or output change would make a new algorithm comparison applicable.
+    goal: Practise calm disagreement as an evidence-led operation count, with a clear
+      boundary for retracting the claim.
   critical_thinking:
-    problem_frame: 'Frame Disagreement before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame disagreement as a proof obligation under the current implementation:
+      count pointer advances, identify any reset, and invite a trace rather than arguing
+      from confidence.'
     claim_map:
-      fact: The prompt explicitly tests Disagreement within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Disagreement,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Disagreement constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Disagreement: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The right pointer advances once per element and the left pointer advances
+        monotonically at most n times in the current window implementation.
+      inference: The current loop is linear by amortized pointer movement, but a reset,
+        extra scan, or changed output contract can invalidate that claim.
+      assumption: I am assuming the code shown is the code being analyzed and does not
+        reconstruct the window or trace on every iteration.
+      unknown: The disputed implementation details, required trace output, and memory
+        bound may change the applicable complexity claim.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Disagreement would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Disagreement constraint is the required guarantee
-        stated by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Disagreement; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: Switching algorithms to appease a quadratic objection would
+        avoid the operation-count question and could discard a correct proof under the
+        current contract.
+      hard_constraint: The hard constraint is to count the actual right and left pointer
+        increments and inspect whether either resets; only then can a different algorithm
+        be compared honestly.
+      decision_rule: I defend or retract the current bound from a trace first; I compare
+        alternatives only after the interviewer changes the contract or the count disproves
+        the proof.
     failure_probe:
-      kind: edge_case
-      prompt: 'Disagreement: which empty or extreme Disagreement case would expose
-        the hidden assumption, and what would you measure about Disagreement?'
+      kind: counterexample
+      prompt: Use a duplicate-heavy input to count both pointers. What exact reset or
+        repeated scan would make the linear proof false?
+    certainty:
+      level: high
+      rationale: I am confident in the pointer-count argument for the current code;
+        I would lower confidence immediately if a pointer resets or output requirements
+        retain extra state.
+      update_trigger: Update when an operation trace shows repeated pointer work, a
+        hidden scan, or a new result contract that changes retained state.
+    rubric:
+      facts_correct: Counts actual increments and states why the left pointer does not
+        multiply work across right-pointer iterations.
+      assumptions_explicit: Names the assumption that the implementation never resets
+        or scans the window anew.
+      alternatives_considered: Explains why proof comes before comparing algorithms
+        when the objection concerns this code.
+      tradeoff_quality: Balances confidence, trace evidence, output retention, and memory
+        cost without becoming combative.
+      follow_up_adaptation: Retracts or narrows the claim when the implementation or
+        contract changes.
+      certainty_calibration: Uses high confidence for the shown proof and an explicit
+        trigger for revising it.
     evidence_check:
-      basis: Check the Disagreement claim against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
+      basis: Check the amortized pointer-count proof and any changed output or memory
+        contract against system-design-estudos/areas/01-metodo-e-entrevistas/backend-interview-foundations/chapters/01-dsa-operating-system-and-pattern-selection.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Disagreement,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: An amortized proof applies to the shown code and contract; it does
+        not cover an unseen implementation, trace materialization, or changed memory
+        requirement.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Disagreement question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "I think your solution is quadratic, is", update Disagreement
-        when Disagreement evidence—a Disagreement trace or Disagreement test—contradicts
-        the Disagreement constraint in case "I think your solution is quadratic, is";
-        ask a stakeholder about Disagreement before revising.
-    rubric:
-      facts_correct: Names the verified Disagreement facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Disagreement premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Disagreement options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Disagreement choice to a benefit, a cost or risk,
-        and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Disagreement by
-        changing the claim or evidence boundary rather than repeating the base answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Disagreement recommendation.
 - id: dsa-12-time-pressure-triage
   version: 1.4.0
   target: dsa
@@ -2453,10 +2379,10 @@ items:
       evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      I would spend three minutes tracing the duplicate-heavy case, because that is where I
-      think the bug is, and keep the last two for complexity. I would keep
-      the claims that remain supported, identify exactly which premise the new observation changes, and
-      run a focused check before revising the decision.
+      I would spend three minutes tracing the duplicate-heavy case, because that is where
+      I think the bug is, and keep the last two for complexity. If the trace exposes a
+      broken invariant, I would name that weakness and stop polishing; if it passes, I
+      would use the remaining time to state the bound and its space cost clearly.
     distractors:
     - text: I would keep the Time pressure recommendation unchanged because changing
         position would look inconsistent.
@@ -2534,20 +2460,18 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: dsa-12-time-pressure-triage-delayed-12
-      prompt: 'Time pressure gets a new constraint: a stakeholder asks for a stronger
-        Time pressure guarantee than the first Time pressure answer promised. After
-        a trace of Time pressure isolates a different Time pressure bottleneck than
-        the one you named, which Time pressure assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Time pressure guarantee
-        than the first Time pressure answer promised
-      new_evidence: a trace of Time pressure isolates a different Time pressure bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Time pressure,
-        treat a trace of Time pressure isolates a different Time pressure bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under a stakeholder asks for a stronger Time pressure
-        guarantee than the first Time pressure answer promised. I would then name
-        one focused check before treating the revised answer as settled.
+      prompt: A trace shows the empty-input branch, rather than the duplicate-heavy
+        path, is the likely failure, and the interviewer asks for a stronger guarantee
+        before time runs out. Which assumption is no longer safe, and what do you test?
+      changed_constraint: the remaining time must cover the newly identified boundary
+        failure before any broader complexity guarantee is defended
+      new_evidence: a short trace points to the empty-input branch as the likely defect
+        instead of the duplicate-heavy path
+      best_answer: I would keep the duplicate-heavy trace as the first check when it still
+        carries the highest failure risk, but I would retract that priority if the new
+        trace shows another bottleneck. I would name the stronger guarantee, spend the
+        remaining time on the smallest confirming test, and state which complexity or
+        edge-case claim remains unverified.
       distractors:
       - text: I would preserve every part of the original Time pressure answer because
           changing it after review would be inconsistent.
@@ -2565,74 +2489,70 @@ items:
     path: english-arcade/dsa/time-pressure-triage
     note: Original interview phrasing authored for this pack.
   extension:
-    prompt: 'Five more minutes on Time pressure: which boundary, alternative, and
-      update trigger would you explain for Time pressure?'
-    goal: Move from the short Time pressure answer to a deep, evidence-led defence
-      without inventing an outcome.
+    prompt: How would you allocate five minutes between a duplicate trace, an empty-input
+      check, and the complexity explanation, and change the plan when the first trace
+      changes the risk?
+    goal: Make time pressure produce a defensible evidence order, not a polished but
+      unverified algorithm.
   critical_thinking:
-    problem_frame: 'Frame Time pressure before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: 'I frame the five-minute plan around the highest-risk unverified
+      claim: test the suspected invariant failure, name the time split, then state what
+      remains unverified.'
     claim_map:
-      fact: The prompt explicitly tests Time pressure within a DSA live coding context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Time pressure,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Time pressure constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Time pressure: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: The solution is written but untested, one edge case is suspected, and only
+        five minutes remain.
+      inference: A short duplicate-heavy trace can reveal a correctness defect faster
+        than polishing code or debating an unmeasured optimization.
+      assumption: I am assuming the duplicate-heavy path is the highest-risk failure
+        and that the interviewer values a verified limitation over superficial completeness.
+      unknown: The actual failing branch, input contract, and remaining complexity questions
+        are unknown until the first trace runs.
     comparison:
       applicable: true
       alternatives:
-      - option: the named algorithmic pattern for Time pressure
-        benefit: It keeps the Time pressure reasoning close to the stated DSA live
-          coding constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Time pressure workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Time pressure contract and its invariant
-          are the facts that matter most.
-      - option: a broader-state or sorting alternative for Time pressure
-        benefit: It can make the Time pressure boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Time pressure evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Time pressure option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant DSA
-        live coding constraint makes the first assumption unsafe.
+      - option: Trace the highest-risk boundary first, then state complexity.
+        benefit: It produces direct correctness evidence and leaves a precise limitation
+          if time expires.
+        cost_or_risk: It may leave a lower-risk optimization or an untested branch unresolved.
+        valid_when: Use it when a suspected invariant failure threatens the result contract.
+      - option: Polish implementation or lead with a complexity defence.
+        benefit: It can improve readability or communication when correctness is already
+          evidenced.
+        cost_or_risk: It can consume the deadline while the suspected bug remains invisible.
+        valid_when: Use it only after the weakest correctness case has passed or the
+          interviewer changes the priority.
+      decision_rule: I spend the first minutes on the smallest trace with the highest
+        failure risk, then use whatever remains for the bound and explicit gaps.
     failure_probe:
       kind: failure_mode
-      prompt: 'Time pressure: when the Time pressure constraint tightens during rollout,
-        what breaks first in Time pressure, and how do you observe it?'
+      prompt: If the empty branch fails before the duplicate trace, how would you reallocate
+        the remaining minutes and state which claim you cannot verify?
+    certainty:
+      level: low
+      rationale: I have a rational initial priority but low certainty about the failing
+        branch until a trace supplies evidence.
+      update_trigger: Update the minute allocation when the first trace identifies a
+        different failure, a stronger guarantee is requested, or correctness is already
+        established.
+    rubric:
+      facts_correct: States the suspected bug, exact time allocation, and the minimum
+        trace before polishing.
+      assumptions_explicit: Names the assumption that duplicate-heavy input is the highest-risk
+        path and admits what remains unknown.
+      alternatives_considered: Compares trace-first triage with polish-first or complexity-first
+        work and says when each is justified.
+      tradeoff_quality: Connects correctness risk, remaining time, communication value,
+        and incomplete evidence to the plan.
+      follow_up_adaptation: Reallocates time when the first trace changes the likely
+        failure instead of defending the initial plan.
+      certainty_calibration: Uses low certainty until the trace runs and explicitly
+        labels any claim left unverified.
     evidence_check:
-      basis: Check the Time pressure claim against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
+      basis: Check the five-minute triage order, suspected duplicate invariant, and
+        new trace that may change priority against system-design-estudos/areas/01-metodo-e-entrevistas/snippets/senior-production-answer-template.md
         and the exact interview context; record whether each part is fact, inference,
         or hypothesis.
       source_kind: authored_scenario
-      limitation: This DSA live coding exercise can test reasoning about Time pressure,
-        but it cannot prove an unmeasured production outcome, personal ownership,
-        or universal rule.
+      limitation: A deadline plan can prioritize evidence but cannot guarantee complete
+        testing or prove an unrun complexity claim.
       checked_on: '2026-08-25'
-    certainty:
-      level: medium
-      rationale: Certainty is medium because the prompt bounds the Time pressure question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "We have about five minutes left. How", update Time
-        pressure when Time pressure evidence—a Time pressure trace or Time pressure
-        test—contradicts the Time pressure constraint in case "We have about five
-        minutes left. How"; ask a stakeholder about Time pressure before revising.
-    rubric:
-      facts_correct: Names the verified Time pressure facts without smuggling in a
-        result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the Time pressure premise that is still assumed
-        and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Time pressure options, or explains
-        the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the Time pressure choice to a benefit, a cost or
-        risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about Time pressure
-        by changing the claim or evidence boundary rather than repeating the base
-        answer.
-      certainty_calibration: Uses medium certainty deliberately and names the evidence
-        that would update the Time pressure recommendation.

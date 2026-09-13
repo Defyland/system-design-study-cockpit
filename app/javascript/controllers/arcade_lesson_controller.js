@@ -63,7 +63,7 @@ export default class extends Controller {
     this.exerciseTarget.innerHTML = ""
     this.exerciseTarget.removeAttribute("inert")
     this.dossierCopyTarget.innerHTML = "<p>Answer this exercise to open its reference notes. Try recalling it without the previous model.</p>"
-    const context = { submit: () => this.submit(), keyboard: null, cleanup: [], audio: this.audio, companionBaseUrl: this.companionBaseUrlValue }
+    const context = { lessonId: this.idValue, submit: () => this.submit(), keyboard: null, cleanup: [], audio: this.audio, companionBaseUrl: this.companionBaseUrlValue }
     renderer.render(this.exerciseTarget, exercise, context)
     this.startedAt = performance.now()
     this.cleanupExercise = () => context.cleanup.forEach((callback) => callback())
@@ -146,6 +146,13 @@ export default class extends Controller {
     const collected = renderer.collect(this.exerciseTarget) || {}
     this.busy = true
     this.machine.beginGrade()
+    const button = this.exerciseTarget.querySelector("[data-arena-submit]")
+    const status = this.exerciseTarget.querySelector("[data-arena-submit-status]")
+    const originalLabel = button?.textContent
+    this.exerciseTarget.setAttribute("aria-busy", "true")
+    this.exerciseTarget.setAttribute("inert", "")
+    if (button) { button.disabled = true; button.textContent = "Saving answer…" }
+    if (status) { status.dataset.state = "saving"; status.textContent = "Saving your answer…" }
     const csrf = document.querySelector("meta[name='csrf-token']")?.content
     const body = { result: { exercise_id: exercise.exercise_id, response: collected.response, response_text: collected.response_text, response_ms: Math.max(0, Math.round(performance.now() - this.startedAt)), self_rating: collected.self_rating } }
     try {
@@ -153,6 +160,9 @@ export default class extends Controller {
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || "Could not record this exercise")
       this.lastResult = result
+      renderer.recorded?.(this.exerciseTarget, exercise, { lessonId: this.idValue })
+      if (button) button.textContent = "Answer saved"
+      if (status) { status.dataset.state = "saved"; status.textContent = "Answer recorded" }
       this.exerciseTarget.setAttribute("inert", "")
       this.combo = result.correct ? this.combo + 1 : 0
       this.audio.play(result.correct ? "success" : "stop")
@@ -160,8 +170,14 @@ export default class extends Controller {
       this.renderFeedback(result)
     } catch (error) {
       this.machine.state = "exercise"
-      this.showError(error.message)
-    } finally { this.busy = false }
+      this.exerciseTarget.removeAttribute("inert")
+      if (button) { button.disabled = false; button.textContent = originalLabel }
+      if (status) { status.dataset.state = "error"; status.textContent = "Answer not saved. Try again." }
+      this.showError(error.message, () => this.submit())
+    } finally {
+      this.busy = false
+      this.exerciseTarget.removeAttribute("aria-busy")
+    }
   }
 
   renderFeedback(result) {
@@ -207,25 +223,23 @@ export default class extends Controller {
     if (this.busy || !this.lastResult) return
     this.feedbackTarget.hidden = true
     this.feedbackTarget.innerHTML = ""
-    const refreshed = await this.refreshLesson()
-    if (!refreshed) return this.showError("The next exercise could not be loaded. Your result is saved; retry when connected.")
+    try { await this.refreshLesson() } catch (error) {
+      return this.showError(error.message === "stale_content" ? "stale_content" : "The next exercise could not be loaded. Your result is saved; retry when connected.")
+    }
     this.lastResult = null
     if (this.machine.state === "results" || this.machine.position >= this.exercises.length) return this.finishLesson()
     this.renderCurrent()
   }
 
   async refreshLesson() {
-    try {
-      const response = await fetch(`${window.location.pathname}.json`, { headers: { Accept: "application/json" }, credentials: "same-origin" })
-      if (!response.ok) return false
-      const payload = await response.json()
-      const lesson = payload.lesson || payload
-      this.exercises = lesson.exercises || this.exercises
-      this.lessonData.resume_position = Number(lesson.resume_position || 0)
-      this.machine.total = this.exercises.length
-      this.machine.start(this.lessonData.resume_position)
-      return true
-    } catch (_error) { return false }
+    const response = await fetch(`${window.location.pathname}.json`, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+    const payload = await response.json()
+    if (!response.ok) throw new Error(payload.error || "Could not refresh lesson")
+    const lesson = payload.lesson || payload
+    this.exercises = lesson.exercises || this.exercises
+    this.lessonData.resume_position = Number(lesson.resume_position || 0)
+    this.machine.total = this.exercises.length
+    this.machine.start(this.lessonData.resume_position)
   }
 
   async finishLesson() {
@@ -239,7 +253,7 @@ export default class extends Controller {
       this.finished = true
       this.machine.results()
       this.renderResults(result)
-    } catch (error) { this.showError(error.message) } finally { this.finishing = false }
+    } catch (error) { this.showError(error.message, () => this.finishLesson()) } finally { this.finishing = false }
   }
 
   renderResults(result) {
@@ -248,9 +262,9 @@ export default class extends Controller {
     this.resultsTarget.hidden = false
     const accuracy = Number(result.accuracy || 0)
     const cards = result.cards || result.summary?.cards || []
-    const progressLabel = this.lessonData.interview_role ? "rehearsal progress" : "mastery"
+    const progressLabel = this.lessonData.interview_role ? "rehearsal progress" : "practice progress"
     const cardLines = cards.slice(0, 6).map((card) => `<li><strong>${escape(card.card_key)}</strong> · ${(Number(card.mastery?.score || 0) * 100).toFixed(0)}% ${progressLabel}</li>`).join("")
-    this.resultsTarget.innerHTML = `<p class="arena-eyebrow">Lesson complete</p><h2>${result.perfect ? "Perfect lesson." : "The next pass is clear."}</h2><div class="arena-results-grid"><div class="arena-result-stat"><strong>${Math.round(accuracy * 100)}%</strong><span>accuracy</span></div><div class="arena-result-stat"><strong>${result.max_combo || 0}</strong><span>max combo</span></div><div class="arena-result-stat"><strong>${Object.values(result.misses_by_axis || {}).reduce((sum, value) => sum + Number(value || 0), 0)}</strong><span>misses</span></div></div><h3>Cards that moved</h3><ul>${cardLines || "<li>Keep the first stage moving.</li>"}</ul><div class="arena-exercise-actions"><a class="arena-button" href="/arena">Return to hub</a><a class="arena-button arena-button-quiet" href="/arena">Again</a></div>`
+    this.resultsTarget.innerHTML = `<p class="arena-eyebrow">Lesson complete</p><h2>${result.perfect ? "All exercise checks passed." : "Review the misses, then try again."}</h2><div class="arena-results-grid"><div class="arena-result-stat"><strong>${Math.round(accuracy * 100)}%</strong><span>accuracy</span></div><div class="arena-result-stat"><strong>${result.max_combo || 0}</strong><span>max combo</span></div><div class="arena-result-stat"><strong>${Object.values(result.misses_by_axis || {}).reduce((sum, value) => sum + Number(value || 0), 0)}</strong><span>misses</span></div></div><h3>Practice recorded</h3><ul>${cardLines || "<li>No card progress was recorded in this round.</li>"}</ul><div class="arena-exercise-actions"><a class="arena-button" href="/arena">Return to hub</a><a class="arena-button arena-button-quiet" href="/arena">Again</a></div>`
     if (this.lessonData.interview_role) {
       const note = document.createElement("p")
       note.className = "arena-response-scope"
@@ -260,11 +274,20 @@ export default class extends Controller {
     this.resultsTarget.focus()
   }
 
-  showError(message) {
+  showError(message, retry = () => this.next()) {
     this.feedbackTarget.hidden = false
     this.feedbackTarget.classList.add("is-wrong")
+    if (message === "stale_content") {
+      this.machine.state = "stale"
+      this.lastResult = null
+      this.exerciseTarget.hidden = true
+      this.exerciseTarget.setAttribute("inert", "")
+      this.feedbackTarget.innerHTML = `<h2>Study material updated</h2><p>This lesson uses earlier wording. Start a new lesson for the revised questions and answers; your previously recorded work remains saved.</p><a class="arena-button" href="/arena">Return to Arena</a>`
+      this.feedbackTarget.querySelector("a")?.focus()
+      return
+    }
     this.feedbackTarget.innerHTML = `<h2>Connection paused</h2><p>${escape(message)}</p><button type="button" class="arena-button" data-arena-retry="true">Retry</button>`
-    this.feedbackTarget.querySelector("[data-arena-retry]")?.addEventListener("click", () => { this.feedbackTarget.hidden = true; this.feedbackTarget.classList.remove("is-wrong"); if (this.lastResult) this.next() })
+    this.feedbackTarget.querySelector("[data-arena-retry]")?.addEventListener("click", () => { this.feedbackTarget.hidden = true; this.feedbackTarget.classList.remove("is-wrong"); retry() })
   }
 
   openDialog(dialog) { this.lastFocus = document.activeElement; dialog?.showModal(); dialog?.querySelector("button")?.focus() }

@@ -13,7 +13,7 @@ class ArcadeHubTest < ActionDispatch::IntegrationTest
     get arena_path, headers: { "REMOTE_USER" => "arcade-hub-test" }
 
     assert_response :success
-    assert_select "[data-arena-top-confusions] li", text: /No recorded confusions yet\./
+    assert_select "[data-arena-top-confusions] li", text: /No selections recorded for these axes yet\./
     assert_select "[data-arena-calibration]", text: /No self-rated answers yet\./
     assert_select "input[name='lesson[target_mode]'][value='card']", minimum: 1
     assert_select "input[name='lesson[card_key]']", minimum: 1

@@ -23,27 +23,27 @@
       <span><strong data-arcade-lesson-target="position">1</strong> / <%= @lesson_payload.dig("totals", "total") %></span>
     </div>
     <div class="arena-progress-track" aria-hidden="true"><i data-arcade-lesson-target="progress"></i></div>
-    <div class="arena-hud-meta"><span class="arena-hud-meta-note">Answer the prompt, then use the feedback to choose the next move.</span><span class="arena-stage-badge" data-arcade-lesson-target="stage">Meet</span><span class="arena-target-badge" data-arcade-lesson-target="target">Mixed</span><span class="arena-combo" data-arcade-lesson-target="combo">Combo 0</span></div>
+    <div class="arena-hud-meta"><span class="arena-stage-badge" data-arcade-lesson-target="stage">Meet</span><span class="arena-target-badge" data-arcade-lesson-target="target">Mixed</span><span class="arena-combo" data-arcade-lesson-target="combo">Combo 0</span></div>
   </section>
 
-  <main class="arena-exercise-wrap" aria-live="polite">
+  <main class="arena-exercise-wrap">
     <div class="arena-lesson-layout">
       <div class="arena-exercise-column">
         <div class="arena-exercise" data-arcade-lesson-target="exercise"></div>
         <section class="arena-feedback" data-arcade-lesson-target="feedback" hidden aria-live="assertive"></section>
         <section class="arena-results" data-arcade-lesson-target="results" tabindex="-1" hidden></section>
       </div>
-      <aside class="arena-lesson-guide" aria-labelledby="lesson-guide-title">
-        <p class="arena-eyebrow">How to use this lesson</p>
-        <h2 id="lesson-guide-title">Build a clear answer.</h2>
+      <details class="arena-lesson-guide">
+        <summary id="lesson-guide-title">Answer guide</summary>
+        <div class="arena-lesson-guide-content">
+          <p class="arena-eyebrow">Three useful moves</p>
         <ol class="arena-guide-steps">
-          <li><span>01</span><div><strong>Read the situation</strong><small>Notice the constraint and the audience.</small></div></li>
-          <li><span>02</span><div><strong>Answer from memory</strong><small>Lead with the decision before the detail.</small></div></li>
-          <li><span>03</span><div><strong>Use the feedback</strong><small>Keep the distinction, then try the next variation.</small></div></li>
+          <li><span>01</span><div><strong>Read the situation</strong><small>What do I know, what am I assuming, and which question would resolve my uncertainty?</small></div></li>
+          <li><span>02</span><div><strong>Answer from memory</strong><small>Answer the question or identify the requested distinction. Add a reason, cost, or condition when it helps explain that answer.</small></div></li>
+          <li><span>03</span><div><strong>Use the feedback</strong><small>Which part of my explanation needs evidence or correction? Revise it, then test the decision against the next variation.</small></div></li>
         </ol>
-        <div class="arena-guide-callout"><strong>Small moves compound.</strong><p>Accuracy comes from making the boundary explicit, not from saying more.</p></div>
-        <% if interview_role %><p class="arena-guide-role"><span class="arena-eyebrow">Role lens</span><strong><%= interview_role_label %></strong></p><% end %>
-      </aside>
+        </div>
+      </details>
     </div>
   </main>
 

@@ -3,6 +3,37 @@ require "yaml"
 require_relative "../../lib/english_arcade/pack_validator"
 
 class EnglishArcadeContentQualityTest < ActiveSupport::TestCase
+  test "authored critical fields state evidence instead of substituting the topic into a scaffold" do
+    scaffold = /The prompt explicitly tests|The reasonable inference is that the answer must defend|A tool-first A-versus-B debate|Certainty is high because the prompt bounds/i
+    Dir.glob(Rails.root.join("db/seeds/english_arcade/*.yml")).each do |path|
+      YAML.safe_load_file(path, aliases: false).fetch("items").each do |item|
+        next unless item["critical_thinking"]
+
+        refute_match scaffold, item.fetch("critical_thinking").to_json, item.fetch("id")
+      end
+    end
+  end
+
+  test "all authored model answers speak in the learner's first person without generic reasoning tails" do
+    Dir.glob(Rails.root.join("db/seeds/english_arcade/*.yml")).each do |path|
+      pack = YAML.safe_load_file(path, aliases: false)
+      models = pack.fetch("cards").map { |card| [ "#{card.fetch('id')}.back", card.fetch("back") ] }
+      pack.fetch("items").each do |item|
+        id = item.fetch("id")
+        models << [ "#{id}.best_answer", item.fetch("best_answer") ]
+        models << [ "#{id}.follow_up", item.dig("follow_up", "best_answer") ]
+        models << [ "#{id}.delayed_variant", item.dig("recall", "delayed_variant", "best_answer") ]
+        item.fetch("response_versions", {}).each { |version, answer| models << [ "#{id}.#{version}", answer ] }
+      end
+      models.each do |id, answer|
+        next if answer.nil? # Elective legacy packs do not have adaptive answer variants.
+
+        assert_match(/\b(?:I|my|me)\b/, answer, id)
+        refute_match(/I would label the follow-up premise as an assumption|ask the smallest question that could disprove it|protect the edge case before committing to the recommendation/i, answer, id)
+      end
+    end
+  end
+
   PACKS = %w[databases general].freeze
   CANONICAL_INTERVIEW_PACKS = %w[dsa ruby rails react golang elixir system-design].freeze
   REQUIRED = %w[follow_up compression feynman black_box recall sources].freeze

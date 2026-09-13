@@ -80,6 +80,10 @@ class EnglishArcadeBestAnswerFill
 
     first = first.deep_stringify_keys
     second = second.deep_stringify_keys
-    "Option A offers #{first['benefit']} Its cost or risk is #{first['cost_or_risk']} Option B offers #{second['benefit']} Its cost or risk is #{second['cost_or_risk']}"
+    [
+      "I would compare these consequences before choosing.",
+      "Option A\nBenefit: #{first['benefit']}\nCost or risk: #{first['cost_or_risk']}",
+      "Option B\nBenefit: #{second['benefit']}\nCost or risk: #{second['cost_or_risk']}"
+    ].join("\n\n")
   end
 end

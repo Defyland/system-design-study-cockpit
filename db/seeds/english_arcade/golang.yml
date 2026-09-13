@@ -52,8 +52,8 @@ target:
 cards:
 - id: golang-card-interface-consumer
   front: Where do Go interfaces belong?
-  back: In the consumer package, kept small. The producer returns a concrete type;
-    the caller declares only the method it needs.
+  back: I define a small interface in the consumer package. The producer returns a
+    concrete type, and I declare only the method my caller needs.
   box: 1
   source:
     repo: system-design-estudos
@@ -66,8 +66,8 @@ cards:
       state what evidence would update the recommendation?
 - id: golang-card-goroutine-ownership
   front: What must you say when you start a goroutine?
-  back: Who stops it and how. An unowned goroutine is a leak waiting for production
-    traffic.
+  back: I name who stops the goroutine and how. If I cannot identify its owner and
+    cancellation path, it is a leak waiting for production traffic.
   box: 2
   source:
     repo: system-design-estudos
@@ -81,7 +81,7 @@ cards:
       state what evidence would update the recommendation?
 - id: golang-card-error-wrapping
   front: How do you talk about error wrapping precisely?
-  back: Wrap with context at each boundary, compare with errors.Is or errors.As, and
+  back: I wrap with context at each boundary, compare with errors.Is or errors.As, and
     never match on message strings.
   box: 1
   source:
@@ -111,10 +111,9 @@ items:
       boundary explicit.
     challenge_kind: evidence
     best_answer: >-
-      In the consumer package, and as small as I can make it. I would
-      treat the follow-up observation as evidence, not as proof of impact; I would inspect
-      the smallest relevant trace or test and state what remains uncertain before changing the
-      decision.
+      I would define the interface beside the consumer, keep only the methods it calls, and use a
+      fake that tests behavior rather than mirroring the producer. I would inspect package ownership
+      and avoid an interface merely for style.
     distractors:
     - text: I would cite my experience with Interfaces as enough proof and move on
         without naming an observation.
@@ -192,20 +191,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-01-interface-placement-delayed-1
-      prompt: 'Interfaces: the later Interfaces review says a Interfaces test exposes
-        a boundary case that the Interfaces examples did not cover. Under the Interfaces
-        workload for Interfaces no longer fits the original resource bound, which
-        part of Interfaces survives and which Interfaces claim changes?'
-      changed_constraint: the Interfaces workload for Interfaces no longer fits the
-        original resource bound
-      new_evidence: a Interfaces test exposes a boundary case that the Interfaces
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about Interfaces,
-        treat a Interfaces test exposes a boundary case that the Interfaces examples
-        did not cover as new evidence rather than a result, and state the updated
-        decision rule under the Interfaces workload for Interfaces no longer fits
-        the original resource bound. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A fake mirrors twelve producer methods, but the consumer calls only two. What interface boundary would you keep?
+      changed_constraint: >-
+        the consumer needs a small behavior contract rather than a producer-shaped interface
+      new_evidence: >-
+        the fake exposes unused methods and a consumer test uses only two calls
+      best_answer: >-
+        I would define the interface beside the consumer with the two methods it calls, keep the producer concrete, and test behavior through a focused fake.
       distractors:
       - text: I would preserve every part of the original Interfaces answer because
           changing it after review would be inconsistent.
@@ -228,31 +221,29 @@ items:
     goal: Move from the short Interfaces answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Interfaces before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A consumer needs a small dependency behavior while a producer exposes a larger concrete API; I must place the interface where the behavior is consumed.
     claim_map:
-      fact: The prompt explicitly tests Interfaces within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Interfaces,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Interfaces constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Interfaces: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Go interfaces are satisfied implicitly and need only the methods the consumer uses.
+      inference: >-
+        A consumer-owned interface limits coupling and keeps the fake focused.
+      assumption: >-
+        I am assuming the consumer owns the behavior contract and does not need producer-specific methods.
+      unknown: >-
+        Package ownership, method set, fake behavior, and future substitutability are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Interfaces would
-        be a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Interfaces constraint is the required guarantee stated
-        by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Interfaces; first clarify
-        the constraint or collect the evidence that would make two options genuinely
-        comparable.
+      rejected_alternative: >-
+        Treating a consumer-owned minimal interface and a producer-owned full interface as interchangeable styles would be a false equivalence: they create different dependency and test boundaries.
+      hard_constraint: >-
+        The hard constraint is to keep the consumer dependent on the behavior it uses while returning the producer's concrete value.
+      decision_rule: >-
+        Inspect the call sites first; place the smallest interface with the consumer and keep it concrete only when no substitution boundary is needed.
     failure_probe:
       kind: counterexample
-      prompt: 'Interfaces: what minimum input for Interfaces would break the Interfaces
-        recommendation, and how would you revise the Interfaces claim?'
+      prompt: >-
+        What unused producer method or consumer assertion would show the interface is too broad or misplaced?
     evidence_check:
       basis: Check the Interfaces claim against system-design-estudos/areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
         and the exact interview context; record whether each part is fact, inference,
@@ -263,12 +254,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Interfaces question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Where would you define the interface for", update
-        Interfaces when Interfaces evidence—a Interfaces trace or Interfaces test—contradicts
-        the Interfaces constraint in case "Where would you define the interface for";
-        ask a stakeholder about Interfaces before revising.
+      rationale: >-
+        I am confident in consumer-owned minimal interfaces; the exact method set requires call-site evidence.
+      update_trigger: >-
+        Update when a new caller, package dependency, or behavior test changes the interface owner.
     rubric:
       facts_correct: Names the verified Interfaces facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -299,10 +288,10 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      It blocks on the send forever, so the goroutine never exits and whatever it
-      holds stays alive. I would compare that choice with the credible alternative against the
-      requirement in the follow-up, cost, and failure risk, then switch only if evidence makes
-      the alternative safer.
+      It blocks on the send forever, so the goroutine never exits and whatever it holds stays alive.
+      I would give the goroutine a context or channel owner, test cancellation and a blocked send,
+      and check the goroutine count after the test. A buffer is appropriate only when its bound and
+      backpressure behavior are explicit.
     distractors:
     - text: I would defend the first Goroutines option because offering an alternative
         might make the decision look uncertain.
@@ -377,20 +366,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-02-goroutine-leak-delayed-2
-      prompt: 'Review note for Goroutines: a stakeholder clarifies a Goroutines requirement
-        that changes the Goroutines success condition. Given a stakeholder asks for
-        a stronger Goroutines guarantee than the first Goroutines answer promised,
-        what would you now defend, retract, and verify about Goroutines?'
-      changed_constraint: a stakeholder asks for a stronger Goroutines guarantee than
-        the first Goroutines answer promised
-      new_evidence: a stakeholder clarifies a Goroutines requirement that changes
-        the Goroutines success condition
-      best_answer: I would keep the facts that remain supported about Goroutines,
-        treat a stakeholder clarifies a Goroutines requirement that changes the Goroutines
-        success condition as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Goroutines guarantee
-        than the first Goroutines answer promised. I would then name one focused check
-        before treating the revised answer as settled.
+      prompt: >-
+        A blocked send remains after request cancellation and the goroutine count rises. What ownership rule is missing?
+      changed_constraint: >-
+        the goroutine needs cancellation or a bounded owner for its channel send
+      new_evidence: >-
+        a canceled request leaves the sender blocked and a leak test observes a rising goroutine count
+      best_answer: >-
+        I would pass a context or define channel ownership, select on cancellation, and test blocked-send cleanup and goroutine count rather than add an unbounded buffer.
       distractors:
       - text: I would preserve every part of the original Goroutines answer because
           changing it after review would be inconsistent.
@@ -413,41 +396,33 @@ items:
     goal: Move from the short Goroutines answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Goroutines before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A sender can block forever when no receiver remains; I must define channel ownership, cancellation, and a bounded buffer policy.
     claim_map:
-      fact: The prompt explicitly tests Goroutines within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Goroutines,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Goroutines constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Goroutines: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A blocked channel send prevents the goroutine from exiting.
+      inference: >-
+        Context cancellation or an owned channel can bound the wait; a buffer only changes the first send boundary.
+      assumption: >-
+        I am assuming the caller can cancel and that dropping a result is an explicit policy.
+      unknown: >-
+        Channel owner, buffer bound, cancellation timing, and retained resources are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Goroutines
-        benefit: It keeps the Goroutines reasoning close to the stated Go constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Goroutines workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Goroutines contract and its invariant are
-          the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Goroutines
-        benefit: It can make the Goroutines boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Goroutines evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Goroutines option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Go constraint
-        makes the first assumption unsafe.
+      - option: pass cancellation to the sender and let it select on the context
+        benefit: I can prove the goroutine exits when the caller times out and keep backpressure visible.
+        cost_or_risk: Every producer must honor cancellation, and the result path needs a clear owner.
+        valid_when: Use it when the caller may stop waiting before the result is ready.
+      - option: use a bounded buffer sized to the producer contract
+        benefit: I let one known result complete without a receiver and keep the send simple.
+        cost_or_risk: A buffer does not solve an unbounded producer or downstream work, and an unjustified size hides pressure.
+        valid_when: Use it only when the result count and ownership make the buffer bound explicit.
+      decision_rule: I prefer cancellation for a request-scoped producer; I use a buffer only when its bound proves the goroutine can finish without masking overload.
     failure_probe:
       kind: edge_case
-      prompt: 'Goroutines: what Goroutines limit should you probe before trusting
-        the answer, and how would Goroutines behave there?'
+      prompt: >-
+        What cancellation and blocked-send test would prove the goroutine exits rather than leak?
     evidence_check:
       basis: Check the Goroutines claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
         and the exact interview context; record whether each part is fact, inference,
@@ -458,12 +433,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Goroutines question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What happens to this goroutine if nobody", update
-        Goroutines when Goroutines evidence—a Goroutines trace or Goroutines test—contradicts
-        the Goroutines constraint in case "What happens to this goroutine if nobody";
-        ask a stakeholder about Goroutines before revising.
+      rationale: >-
+        I am confident in the leak mechanism; the safe cancellation or drop policy depends on ownership and result semantics.
+      update_trigger: >-
+        Update when leak tests or result-delivery requirements change whether cancellation, buffering, or ownership should win.
     rubric:
       facts_correct: Names the verified Goroutines facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -495,9 +468,9 @@ items:
       explicit.
     challenge_kind: failure
     best_answer: >-
-      Because cancellation has to travel the whole call chain. If the failure in the
-      follow-up appears, I would name the user or system consequence, contain it with a
-      bounded mitigation, and verify recovery with a focused test or metric.
+      I would pass the request context to the downstream call, return promptly when ctx.Done fires,
+      and verify the deadline and cancellation path with a fake dependency. I would not create a
+      child context that outlives the request without a stated reason.
     distractors:
     - text: I would describe the Context failure as impossible because the happy path
         already passed its test.
@@ -512,10 +485,9 @@ items:
       error the caller can act on.
     goal: Compress the Context answer into its decision, premise, trade-off, and verification
       step.
-  best_answer: Because cancellation has to travel the whole call chain. If the client
-    hangs up, every downstream call should stop rather than finish work nobody will
-    read. It also carries the deadline, so a slow dependency cannot outlive the request
-    that started it.
+  best_answer: I propagate cancellation through the whole call chain because a client
+    hang-up should stop downstream work nobody will read. I also carry the deadline,
+    so a slow dependency cannot outlive the request that started it.
   distractors:
   - text: Because it is the standard Go convention and most libraries expect it, so
       following it keeps the code consistent with the rest of the ecosystem and with
@@ -574,20 +546,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-03-context-propagation-delayed-3
-      prompt: New evidence about Context says a trace of Context isolates a different
-        Context bottleneck than the one you named; with the Context dependency is
-        slower for Context and the failure is ambiguous rather than explicit, how
-        do you update the Context decision rule?
-      changed_constraint: the Context dependency is slower for Context and the failure
-        is ambiguous rather than explicit
-      new_evidence: a trace of Context isolates a different Context bottleneck than
-        the one you named
-      best_answer: I would keep the facts that remain supported about Context, treat
-        a trace of Context isolates a different Context bottleneck than the one you
-        named as new evidence rather than a result, and state the updated decision
-        rule under the Context dependency is slower for Context and the failure is
-        ambiguous rather than explicit. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        A downstream client ignores cancellation after the caller disconnects. Which boundary must change?
+      changed_constraint: >-
+        the request context must reach the downstream operation and stop work after cancellation
+      new_evidence: >-
+        a canceled request leaves the fake downstream call running past its deadline
+      best_answer: >-
+        I would pass the request context to the downstream call, return on ctx.Done, and test deadline and cancellation propagation with a fake dependency.
       distractors:
       - text: I would preserve every part of the original Context answer because changing
           it after review would be inconsistent.
@@ -610,41 +576,33 @@ items:
     goal: Move from the short Context answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Context before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A request deadline and cancellation must cross every downstream boundary; I must ensure no dependency outlives the caller without an explicit reason.
     claim_map:
-      fact: The prompt explicitly tests Context within a Go context; treat that named
-        boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Context,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Context constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Context: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Context carries cancellation and deadlines through a Go call chain.
+      inference: >-
+        Passing the request context lets downstream work stop when the client disconnects or deadline expires.
+      assumption: >-
+        I am assuming the downstream client honors the context and no detached work is required.
+      unknown: >-
+        Cancellation timing, dependency behavior, and any intentional background work are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Context
-        benefit: It keeps the Context reasoning close to the stated Go constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Context workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Context contract and its invariant are
-          the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Context
-        benefit: It can make the Context boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Context evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Context option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Go constraint
-        makes the first assumption unsafe.
+      - option: pass context through every request-scoped call and honor its deadline
+        benefit: I propagate cancellation and time budget to the actual dependency boundary.
+        cost_or_risk: Every API must accept and forward the context correctly, or the chain still leaks work.
+        valid_when: Use it for inbound request, RPC, database, and downstream calls.
+      - option: pass a custom cancellation flag or timeout configuration beside the request
+        benefit: It may fit a legacy API that cannot accept context yet.
+        cost_or_risk: Different flags and timers drift, and libraries cannot observe one standard deadline or cancellation signal.
+        valid_when: Use it only at an adapter boundary while migrating to context-aware APIs.
+      decision_rule: I use context for request lifetime and cancellation; I keep a custom mechanism only as a bounded compatibility adapter with a migration test.
     failure_probe:
       kind: failure_mode
-      prompt: 'Context: if a caller retries Context at the worst moment, what failure
-        mode appears first, and how would you protect Context?'
+      prompt: >-
+        What canceled-request test would show the downstream call continues past the deadline?
     evidence_check:
       basis: Check the Context claim against system-design-estudos/areas/09-backend-principles/cards/graceful-shutdown.md
         and the exact interview context; record whether each part is fact, inference,
@@ -655,12 +613,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Context question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why pass context as the first argument", update Context
-        when Context evidence—a Context trace or Context test—contradicts the Context
-        constraint in case "Why pass context as the first argument"; ask a stakeholder
-        about Context before revising.
+      rationale: >-
+        I am confident in propagating context as a contract; the exception for detached work needs an explicit lifecycle owner.
+      update_trigger: >-
+        Update when a fake dependency, deadline trace, or background-job requirement changes the context boundary.
     rubric:
       facts_correct: Names the verified Context facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -690,10 +646,9 @@ items:
       boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Each layer adds what only it knows, so the repository adds the query or
-      the identifier and the handler adds the operation. I would keep the claims that
-      remain supported, identify exactly which premise the new observation changes, and run a focused
-      check before revising the decision.
+      I would preserve a stable sentinel or type for the caller and add operation context once per
+      boundary. I would test errors.Is and errors.As, and ensure logs do not depend on message text;
+      a layer with no new context should return the original error.
     distractors:
     - text: I would keep the Errors recommendation unchanged because changing position
         would look inconsistent.
@@ -708,10 +663,10 @@ items:
       one matching test.
     goal: Compress the Errors answer into its decision, premise, trade-off, and verification
       step.
-  best_answer: Each layer adds what only it knows, so the repository adds the query
-    or the identifier and the handler adds the operation. If a layer has nothing new
-    to say, it should return the error unchanged rather than restating the one below
-    it.
+  best_answer: >-
+    I have each layer add only what it knows: the repository adds the query or identifier
+    and the handler adds the operation. If I have nothing new to say at a layer, I return
+    the error unchanged rather than restating the one below it.
   distractors:
   - text: I wrap at every level with a message describing what the function was doing,
       which builds up a complete trail of the call path in the final error message.
@@ -770,20 +725,14 @@ items:
       before changing the implementation?
     delayed_variant:
       id: golang-04-error-wrapping-delayed-4
-      prompt: 'Errors gets a new constraint: new Errors evidence contradicts the Errors
-        assumption that made the first option attractive. After a code inspection
-        of Errors confirms the Errors mechanism but not its impact, which Errors assumption
-        is no longer safe?'
-      changed_constraint: new Errors evidence contradicts the Errors assumption that
-        made the first option attractive
-      new_evidence: a code inspection of Errors confirms the Errors mechanism but
-        not its impact
-      best_answer: I would keep the facts that remain supported about Errors, treat
-        a code inspection of Errors confirms the Errors mechanism but not its impact
-        as new evidence rather than a result, and state the updated decision rule
-        under new Errors evidence contradicts the Errors assumption that made the
-        first option attractive. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A handler compares error strings and misses a wrapped sentinel. What error contract would you preserve?
+      changed_constraint: >-
+        callers need stable errors.Is or errors.As classification while layers add context
+      new_evidence: >-
+        the wrapped error no longer matches a string comparison but errors.Is identifies the sentinel
+      best_answer: >-
+        I would preserve the sentinel or type, add operation context once per boundary, and test errors.Is/As so behavior does not depend on message text.
       distractors:
       - text: I would preserve every part of the original Errors answer because changing
           it after review would be inconsistent.
@@ -806,41 +755,33 @@ items:
     goal: Move from the short Errors answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Errors before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      A caller needs stable classification while each layer adds operation context; I must preserve sentinel/type identity and avoid string-based contracts.
     claim_map:
-      fact: The prompt explicitly tests Errors within a Go context; treat that named
-        boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Errors, but
-        that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Errors constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Errors: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        errors.Is and errors.As can classify wrapped errors when identity is preserved.
+      inference: >-
+        Each boundary should add only context it owns and return an unchanged error when it adds nothing.
+      assumption: >-
+        I am assuming the caller has a meaningful sentinel or type to classify.
+      unknown: >-
+        Caller classification, wrap depth, log policy, and stable error ownership are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Errors
-        benefit: It keeps the Errors reasoning close to the stated Go constraint and
-          makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Errors workload or requirement changes
-          beyond the prompt.
-        valid_when: Use it when the stated Errors contract and its invariant are the
-          facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Errors
-        benefit: It can make the Errors boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Errors evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Errors option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Go constraint
-        makes the first assumption unsafe.
+      - option: wrap with operation context while preserving identity for errors.Is or errors.As
+        benefit: I give operators the failing operation and let callers branch on the underlying cause.
+        cost_or_risk: Repeated wrappers become noisy if each layer adds no new information.
+        valid_when: Use it when a layer knows a useful operation, identifier, or boundary.
+      - option: return a new opaque message at each layer
+        benefit: It can expose a simple user-facing message without internal details.
+        cost_or_risk: I lose machine-checkable identity and make retry or not-found decisions brittle.
+        valid_when: Use it only at a deliberate presentation boundary after logging or mapping the cause.
+      decision_rule: I wrap at informative boundaries and map to an opaque user error only at the presentation edge; I preserve identity for programmatic handling.
     failure_probe:
       kind: counterexample
-      prompt: 'Errors: where would a tiny Errors counterexample expose a false assumption,
-        and what would you change about Errors?'
+      prompt: >-
+        Which errors.Is or errors.As assertion would fail if a layer replaced the original error with text?
     evidence_check:
       basis: Check the Errors claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
         and the exact interview context; record whether each part is fact, inference,
@@ -851,12 +792,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Errors question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "How do you decide what to add", update Errors when
-        Errors evidence—a Errors trace or Errors test—contradicts the Errors constraint
-        in case "How do you decide what to add"; ask a stakeholder about Errors before
-        revising.
+      rationale: >-
+        I am confident in identity-preserving wrapping; the right sentinel or type comes from caller behavior.
+      update_trigger: >-
+        Update when caller tests or an error taxonomy changes which identity must survive the boundary.
     rubric:
       facts_correct: Names the verified Errors facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -886,9 +825,9 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      A mutex, or an atomic counter. I would label the follow-up premise as an
-      assumption, ask the smallest question that could disprove it, and protect the edge case
-      before committing to the recommendation.
+      I would keep a mutex or atomic counter when state is shared and the critical section is short;
+      I would choose a channel when one goroutine owns the state or work is transferred. I would
+      make ownership explicit before benchmarking contention.
     distractors:
     - text: I would repeat my original Concurrency design answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -903,9 +842,10 @@ items:
       proof you can maintain.
     goal: Compress the Concurrency design answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: A mutex, or an atomic counter. Channels transfer ownership of data
-    between goroutines, and nothing is handed over here; it is shared state with a
-    short critical section. A channel adds a serialising goroutine for nothing.
+  best_answer: I would use a mutex, or an atomic counter. Channels transfer ownership
+    of data between goroutines, and I am not handing data over here; I am protecting
+    shared state with a short critical section. A channel adds a serialising goroutine
+    for no benefit.
   distractors:
   - text: A channel, because the Go proverb says to share memory by communicating
       rather than communicating by sharing memory, so channels are the idiomatic choice
@@ -964,24 +904,14 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: golang-05-channel-vs-mutex-delayed-5
-      prompt: 'Revisit Concurrency design after a measured Concurrency design comparison
-        shows the alternative has a different Concurrency design cost profile and
-        two Concurrency design callers from the case "Would you use a channel or a"
-        or Concurrency design tenants now compete for the same Concurrency design
-        boundary: what remains factual about Concurrency design, what becomes provisional,
-        and why?'
-      changed_constraint: two Concurrency design callers from the case "Would you
-        use a channel or a" or Concurrency design tenants now compete for the same
-        Concurrency design boundary
-      new_evidence: a measured Concurrency design comparison shows the alternative
-        has a different Concurrency design cost profile
-      best_answer: I would keep the facts that remain supported about Concurrency
-        design, treat a measured Concurrency design comparison shows the alternative
-        has a different Concurrency design cost profile as new evidence rather than
-        a result, and state the updated decision rule under two Concurrency design
-        callers from the case "Would you use a channel or a" or Concurrency design
-        tenants now compete for the same Concurrency design boundary. I would then
-        name one focused check before treating the revised answer as settled.
+      prompt: >-
+        Contention profiling shows a shared counter is protected by a serializing channel with no owner. What would you change?
+      changed_constraint: >-
+        shared short-lived state needs an explicit ownership or locking model
+      new_evidence: >-
+        the channel adds a goroutine and queue wait without transferring ownership
+      best_answer: >-
+        I would use a mutex or atomic counter for shared short critical state, or give one goroutine ownership if work is truly transferred, then benchmark the chosen model.
       distractors:
       - text: I would preserve every part of the original Concurrency design answer
           because changing it after review would be inconsistent.
@@ -1005,44 +935,33 @@ items:
     goal: Move from the short Concurrency design answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Concurrency design before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      A shared counter has a short invariant-preserving update; I must distinguish shared state from work transfer before choosing a mutex, atomic, or channel.
     claim_map:
-      fact: The prompt explicitly tests Concurrency design within a Go context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Concurrency
-        design, but that does not prove one implementation wins under every workload
-        or audience.
-      assumption: An unstated assumption is that the Concurrency design constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Concurrency design: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The counter is shared state unless one goroutine explicitly owns it.
+      inference: >-
+        A mutex or atomic usually keeps a short shared update visible, while a channel adds an owner and queue semantics.
+      assumption: >-
+        I am assuming no work handoff or ordering requirement justifies a dedicated owner goroutine.
+      unknown: >-
+        Ownership, contention, invariant width, and latency target are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Concurrency design
-        benefit: It keeps the Concurrency design reasoning close to the stated Go
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Concurrency design workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Concurrency design contract and its invariant
-          are the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Concurrency design
-        benefit: It can make the Concurrency design boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Concurrency design evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Concurrency design option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Go
-        constraint makes the first assumption unsafe.
+      - option: a mutex or atomic operation around the shared counter
+        benefit: I keep the critical section local and make the data ownership obvious.
+        cost_or_risk: I must maintain lock discipline and avoid holding it across blocking work.
+        valid_when: Use it when goroutines share state rather than transfer ownership.
+      - option: a channel with one owner goroutine serializing counter updates
+        benefit: I can make ownership explicit when updates already arrive as messages.
+        cost_or_risk: It adds a goroutine, queueing, shutdown, and backpressure behavior for a scalar counter.
+        valid_when: Use it when the counter is part of an existing event loop, not merely to avoid a mutex.
+      decision_rule: I use a mutex or atomic for shared scalar state; I choose a channel only when message ownership already defines the surrounding design.
     failure_probe:
       kind: edge_case
-      prompt: 'Concurrency design: which Concurrency design boundary deserves the
-        first test, and what observation about Concurrency design would overturn the
-        premise?'
+      prompt: >-
+        What ownership or contention observation would make a channel cheaper or clearer than a mutex?
     evidence_check:
       basis: Check the Concurrency design claim against system-design-estudos/areas/09-backend-principles/cards/concurrency-parallelism.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1054,12 +973,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Concurrency design
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Would you use a channel or a", update Concurrency
-        design when Concurrency design evidence—a Concurrency design trace or Concurrency
-        design test—contradicts the Concurrency design constraint in case "Would you
-        use a channel or a"; ask a stakeholder about Concurrency design before revising.
+      rationale: >-
+        I am confident in making ownership explicit; performance choice requires contention evidence after correctness is clear.
+      update_trigger: >-
+        Update when ownership, critical-section width, or contention profiling changes the coordination model.
     rubric:
       facts_correct: Names the verified Concurrency design facts without smuggling
         in a result, scale, or capability that the prompt does not establish.
@@ -1092,9 +1009,8 @@ items:
     best_answer: >-
       I would take a CPU profile from the running process over a representative window
       and read it as a flame graph, cumulative time before self time. I would
-      treat the follow-up observation as evidence, not as proof of impact; I would inspect
-      the smallest relevant trace or test and state what remains uncertain before changing the
-      decision.
+      use mutex or block profiles for waiting and allocation profiles for heap pressure, then
+      benchmark one change against representative traffic and check tail latency.
     distractors:
     - text: I would cite my experience with Profiling as enough proof and move on
         without naming an observation.
@@ -1168,20 +1084,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-06-profiling-delayed-6
-      prompt: The Profiling review adds a Profiling test exposes a boundary case that
-        the Profiling examples did not cover while the Profiling workload for Profiling
-        no longer fits the original resource bound; which conclusion about Profiling
-        would you narrow before proposing a repair?
-      changed_constraint: the Profiling workload for Profiling no longer fits the
-        original resource bound
-      new_evidence: a Profiling test exposes a boundary case that the Profiling examples
-        did not cover
-      best_answer: I would keep the facts that remain supported about Profiling, treat
-        a Profiling test exposes a boundary case that the Profiling examples did not
-        cover as new evidence rather than a result, and state the updated decision
-        rule under the Profiling workload for Profiling no longer fits the original
-        resource bound. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        CPU is low but mutex wait and allocations spike during the same request window. Which profiles guide the next change?
+      changed_constraint: >-
+        the hotspot may be blocking or allocation pressure rather than on-CPU work
+      new_evidence: >-
+        mutex/block and heap profiles rise while the CPU profile does not
+      best_answer: >-
+        I would use CPU, mutex/block, and allocation profiles to separate the causes, change one hotspot, and benchmark representative traffic including tail latency.
       distractors:
       - text: I would preserve every part of the original Profiling answer because
           changing it after review would be inconsistent.
@@ -1204,30 +1114,29 @@ items:
     goal: Move from the short Profiling answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Profiling before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      High CPU, blocking, and allocation pressure need different evidence; I must choose profiles before changing a hotspot.
     claim_map:
-      fact: The prompt explicitly tests Profiling within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Profiling,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Profiling constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Profiling: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        A CPU profile shows on-CPU work, while mutex/block and heap profiles show waiting and allocation pressure.
+      inference: >-
+        A flame graph can identify a hot path but cannot explain a lock wait or heap-retention problem alone.
+      assumption: >-
+        I am assuming the captured window represents the workload that matters.
+      unknown: >-
+        Traffic mix, tail latency, lock wait, allocation volume, and profile overhead are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Profiling would be
-        a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Profiling constraint is the required guarantee stated
-        by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Profiling; first clarify the
-        constraint or collect the evidence that would make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating a CPU profile, a metric dashboard, and a code inspection as interchangeable diagnosis would be a false equivalence: they answer different questions about sampled execution and aggregate behavior.
+      hard_constraint: >-
+        The hard constraint is to identify the hot path in a representative workload before changing code or claiming a CPU fix.
+      decision_rule: >-
+        Start with a bounded CPU profile and corroborating latency or allocation evidence; use metrics to choose the window and code inspection only to form the next hypothesis.
     failure_probe:
       kind: failure_mode
-      prompt: 'Profiling: when the first Profiling recovery path fails, which consequence
-        reaches the user, and what bounded mitigation follows for Profiling?'
+      prompt: >-
+        Which profile result would distinguish on-CPU serialization from mutex wait or allocation pressure?
     evidence_check:
       basis: Check the Profiling claim against system-design-estudos/areas/09-backend-principles/cards/scaling-performance.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1238,12 +1147,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Profiling question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "The service uses more CPU than expected.", update
-        Profiling when Profiling evidence—a Profiling trace or Profiling test—contradicts
-        the Profiling constraint in case "The service uses more CPU than expected.";
-        ask a stakeholder about Profiling before revising.
+      rationale: >-
+        I am confident in selecting profiles by symptom; the repair remains provisional until representative benchmarking.
+      update_trigger: >-
+        Update when a profile or benchmark shows the hotspot is elsewhere or the change worsens tail behavior.
     rubric:
       facts_correct: Names the verified Profiling facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -1274,9 +1181,9 @@ items:
       boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      No. I would compare that choice with the credible alternative against the requirement in
-      the follow-up, cost, and failure risk, then switch only if evidence makes the alternative
-      safer.
+      I would inspect promoted methods and name collisions on the embedded type. If callers need
+      distinct behavior or explicit ownership, I would use a named field and test method dispatch
+      instead of assuming inheritance.
     distractors:
     - text: I would defend the first Composition option because offering an alternative
         might make the decision look uncertain.
@@ -1291,10 +1198,10 @@ items:
       where explicit delegation wins.
     goal: Compress the Composition answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: No. Embedding promotes the methods, so the outer type gets them, but
-    there is no dynamic dispatch back to the outer type. If the embedded method calls
-    another method, it calls its own, not an override, which is the behaviour that
-    surprises people from an inheritance background.
+  best_answer: No. I read embedding as promoting the methods to the outer type without
+    dynamic dispatch back to that outer type. If the embedded method calls another
+    method, it calls its own, not an override; that is the behaviour that surprises me
+    when I bring an inheritance expectation to Go.
   distractors:
   - text: It is effectively the same thing in practice, since the outer type gains
       all the methods of the embedded type and can override them by defining its own
@@ -1350,21 +1257,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-07-struct-embedding-delayed-7
-      prompt: For Composition, new evidence is a stakeholder clarifies a Composition
-        requirement that changes the Composition success condition and the constraint
-        is a stakeholder asks for a stronger Composition guarantee than the first
-        Composition answer promised. What alternative now deserves consideration for
-        Composition?
-      changed_constraint: a stakeholder asks for a stronger Composition guarantee
-        than the first Composition answer promised
-      new_evidence: a stakeholder clarifies a Composition requirement that changes
-        the Composition success condition
-      best_answer: I would keep the facts that remain supported about Composition,
-        treat a stakeholder clarifies a Composition requirement that changes the Composition
-        success condition as new evidence rather than a result, and state the updated
-        decision rule under a stakeholder asks for a stronger Composition guarantee
-        than the first Composition answer promised. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        Embedding promotes a method whose name collides with an outer method and callers expect override dispatch. What boundary changes?
+      changed_constraint: >-
+        the caller needs explicit ownership when promotion would hide dispatch semantics
+      new_evidence: >-
+        a method invoked through the embedded value bypasses the outer method
+      best_answer: >-
+        I would use a named field when distinct behavior is required, test method dispatch explicitly, and avoid describing embedding as inheritance.
       distractors:
       - text: I would preserve every part of the original Composition answer because
           changing it after review would be inconsistent.
@@ -1387,41 +1287,33 @@ items:
     goal: Move from the short Composition answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Composition before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      Embedding promotes methods but does not provide subclass override dispatch; I must check collisions and choose explicit fields when ownership matters.
     claim_map:
-      fact: The prompt explicitly tests Composition within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Composition,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Composition constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Composition: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        An embedded method can be promoted to the outer type.
+      inference: >-
+        Calls through the embedded receiver do not dynamically dispatch back to an outer method as inheritance would.
+      assumption: >-
+        I am assuming callers rely on promotion rather than a distinct collaborator contract.
+      unknown: >-
+        Method collisions, receiver dispatch, API readability, and ownership are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Composition
-        benefit: It keeps the Composition reasoning close to the stated Go constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Composition workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Composition contract and its invariant
-          are the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Composition
-        benefit: It can make the Composition boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Composition evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Composition option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Go
-        constraint makes the first assumption unsafe.
+      - option: embed the helper when method promotion and its concrete behavior are part of the outer API
+        benefit: I reuse the helper and expose the promoted methods with little delegation code.
+        cost_or_risk: Callers may mistake promotion for overriding, and the embedded method does not dispatch back to the outer type.
+        valid_when: Use it when composition and method promotion are the intended contract.
+      - option: store the helper and delegate each method explicitly
+        benefit: I make the outer API and any adaptation or override behavior explicit.
+        cost_or_risk: I write more forwarding code and must maintain it as the helper changes.
+        valid_when: Use it when the outer type needs a narrower contract or different behavior.
+      decision_rule: I embed only when promotion is safe to expose; I delegate when API control or behavior adaptation matters.
     failure_probe:
       kind: counterexample
-      prompt: 'Composition: what stakeholder reply about Composition would invalidate
-        the recommendation, and which Composition premise would you revisit?'
+      prompt: >-
+        What promoted method or collision would make explicit composition safer than embedding?
     evidence_check:
       basis: Check the Composition claim against system-design-estudos/areas/09-backend-principles/cards/application-boundaries-and-service-layer.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1432,12 +1324,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Composition question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Is embedding here the same as inheritance?", update
-        Composition when Composition evidence—a Composition trace or Composition test—contradicts
-        the Composition constraint in case "Is embedding here the same as inheritance?";
-        ask a stakeholder about Composition before revising.
+      rationale: >-
+        I am confident that embedding is not inheritance; the API choice depends on method ownership and caller expectations.
+      update_trigger: >-
+        Update when method-dispatch tests or a name collision reveals hidden coupling.
     rubric:
       facts_correct: Names the verified Composition facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -1469,10 +1359,9 @@ items:
       boundary explicit.
     challenge_kind: failure
     best_answer: >-
-      Stop accepting new connections, let in-flight requests finish within a deadline shorter than the
-      platform's kill timeout, then close dependencies in reverse order. If the failure in the
-      follow-up appears, I would name the user or system consequence, contain it with a
-      bounded mitigation, and verify recovery with a focused test or metric.
+      I would stop accepting connections, let in-flight requests run for a bounded grace period,
+      and close dependencies after the server returns. I would test deadline expiry, cancellation,
+      repeated shutdown, and resource cleanup so a slow handler cannot turn shutdown into a hard kill.
     distractors:
     - text: I would describe the Lifecycle failure as impossible because the happy
         path already passed its test.
@@ -1487,9 +1376,10 @@ items:
       and force-close safely.
     goal: Compress the Lifecycle answer into its decision, premise, trade-off, and
       verification step.
-  best_answer: Stop accepting new connections, let in-flight requests finish within
+  best_answer: I stop accepting new connections, let in-flight requests finish within
     a deadline shorter than the platform's kill timeout, then close dependencies in
-    reverse order. Waiting indefinitely just turns it into a hard kill.
+    reverse order. I avoid waiting indefinitely because that just turns shutdown into
+    a hard kill.
   distractors:
   - text: I would listen for the signal and then close the server and the database
       connections cleanly so that nothing is left open when the process finally exits.
@@ -1548,20 +1438,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-08-graceful-shutdown-delayed-8
-      prompt: A second pass on Lifecycle finds a trace of Lifecycle isolates a different
-        Lifecycle bottleneck than the one you named; with the Lifecycle dependency
-        is slower for Lifecycle and the failure is ambiguous rather than explicit,
-        which Lifecycle test would you run before keeping the original rule?
-      changed_constraint: the Lifecycle dependency is slower for Lifecycle and the
-        failure is ambiguous rather than explicit
-      new_evidence: a trace of Lifecycle isolates a different Lifecycle bottleneck
-        than the one you named
-      best_answer: I would keep the facts that remain supported about Lifecycle, treat
-        a trace of Lifecycle isolates a different Lifecycle bottleneck than the one
-        you named as new evidence rather than a result, and state the updated decision
-        rule under the Lifecycle dependency is slower for Lifecycle and the failure
-        is ambiguous rather than explicit. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        The platform kill deadline arrives while one request is still running and the database closes first. What shutdown order is required?
+      changed_constraint: >-
+        in-flight work needs a bounded grace period before dependencies close
+      new_evidence: >-
+        shutdown logs show a request using a closed dependency before the process deadline
+      best_answer: >-
+        I would stop accepts, let in-flight requests run within a bounded grace period, close dependencies after the server returns, and test deadline expiry and repeated shutdown.
       distractors:
       - text: I would preserve every part of the original Lifecycle answer because
           changing it after review would be inconsistent.
@@ -1584,41 +1468,33 @@ items:
     goal: Move from the short Lifecycle answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Lifecycle before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      Shutdown must stop new accepts, drain in-flight requests within a deadline, and close dependencies in a safe order.
     claim_map:
-      fact: The prompt explicitly tests Lifecycle within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Lifecycle,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Lifecycle constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Lifecycle: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        The platform supplies a finite kill deadline and in-flight work may still use dependencies.
+      inference: >-
+        Closing dependencies before handlers finish can turn graceful shutdown into request failure.
+      assumption: >-
+        I am assuming handlers honor context and the grace period is shorter than the platform kill timeout.
+      unknown: >-
+        Grace duration, handler cancellation, dependency order, and repeated-shutdown behavior are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Lifecycle
-        benefit: It keeps the Lifecycle reasoning close to the stated Go constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Lifecycle workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Lifecycle contract and its invariant are
-          the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Lifecycle
-        benefit: It can make the Lifecycle boundary more explicit when the first option's
-          hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Lifecycle evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Lifecycle option when its stated contract holds;
-        choose the alternative only when evidence shows that the relevant Go constraint
-        makes the first assumption unsafe.
+      - option: stop admission, drain in-flight work under a deadline, then close dependencies
+        benefit: I preserve completed work while giving the process a bounded exit path.
+        cost_or_risk: I need cancellation and timeout telemetry, and slow handlers may still be forced out.
+        valid_when: Use it when the service contract permits a short drain window.
+      - option: close listeners and dependencies immediately on signal
+        benefit: I exit quickly and avoid waiting on stuck work.
+        cost_or_risk: In-flight requests fail abruptly and partial side effects need recovery.
+        valid_when: Use it only when interruption is acceptable or the platform deadline is extremely short.
+      decision_rule: I drain within the platform's deadline by default; I choose immediate close only when the request contract and recovery path accept dropped work.
     failure_probe:
       kind: edge_case
-      prompt: 'Lifecycle: where does the Lifecycle premise need a boundary check,
-        and which result would make you reframe Lifecycle?'
+      prompt: >-
+        Which shutdown trace would show a handler uses a closed dependency or outlives the kill deadline?
     evidence_check:
       basis: Check the Lifecycle claim against system-design-estudos/areas/09-backend-principles/cards/graceful-shutdown.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1629,12 +1505,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Lifecycle question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "What does a correct shutdown look like", update Lifecycle
-        when Lifecycle evidence—a Lifecycle trace or Lifecycle test—contradicts the
-        Lifecycle constraint in case "What does a correct shutdown look like"; ask
-        a stakeholder about Lifecycle before revising.
+      rationale: >-
+        I am confident in the ordering principle; the grace period and cleanup sequence require deployment and test evidence.
+      update_trigger: >-
+        Update when shutdown tests, dependency ownership, or platform deadlines change the drain policy.
     rubric:
       facts_correct: Names the verified Lifecycle facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -1665,9 +1539,9 @@ items:
       evidence boundary explicit.
     challenge_kind: new_evidence
     best_answer: >-
-      Because the interface is not nil even though the value inside it is. I
-      would keep the claims that remain supported, identify exactly which premise the new observation
-      changes, and run a focused check before revising the decision.
+      I would inspect the interface's dynamic type and value, return a literal nil when no error
+      exists, and test a typed nil pointer. I would avoid reflection unless the boundary truly needs
+      it.
     distractors:
     - text: I would keep the Nil semantics recommendation unchanged because changing
         position would look inconsistent.
@@ -1682,9 +1556,9 @@ items:
       that distinguishes them.
     goal: Compress the Nil semantics answer into its decision, premise, trade-off,
       and verification step.
-  best_answer: Because the interface is not nil even though the value inside it is.
+  best_answer: I see the interface as non-nil even though the value inside it is nil.
     An interface holds a type and a value, and here the type is set, so the comparison
-    fails. The fix is to return a literal nil rather than a typed nil pointer.
+    fails. I return a literal nil rather than a typed nil pointer.
   distractors:
   - text: It looks like the variable is being shadowed somewhere, so the nil check
       is comparing a different variable than the one that was actually assigned earlier
@@ -1745,21 +1619,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-09-nil-interface-delayed-9
-      prompt: 'Nil semantics: the later Nil semantics review says a code inspection
-        of Nil semantics confirms the Nil semantics mechanism but not its impact.
-        Under new Nil semantics evidence contradicts the Nil semantics assumption
-        that made the first option attractive, which part of Nil semantics survives
-        and which Nil semantics claim changes?'
-      changed_constraint: new Nil semantics evidence contradicts the Nil semantics
-        assumption that made the first option attractive
-      new_evidence: a code inspection of Nil semantics confirms the Nil semantics
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about Nil semantics,
-        treat a code inspection of Nil semantics confirms the Nil semantics mechanism
-        but not its impact as new evidence rather than a result, and state the updated
-        decision rule under new Nil semantics evidence contradicts the Nil semantics
-        assumption that made the first option attractive. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        A typed nil pointer is stored in an error interface and a nil comparison fails. What construction should change?
+      changed_constraint: >-
+        the interface must be literal nil when no error exists
+      new_evidence: >-
+        the interface contains a dynamic pointer type with a nil value
+      best_answer: >-
+        I would return a literal nil, add a typed-nil test, and inspect the dynamic type/value pair rather than use reflection as a default fix.
       distractors:
       - text: I would preserve every part of the original Nil semantics answer because
           changing it after review would be inconsistent.
@@ -1782,42 +1649,33 @@ items:
     goal: Move from the short Nil semantics answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Nil semantics before proposing a solution: state the actor,
-      required outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      An interface can hold a nil pointer with a non-nil dynamic type; I must inspect construction and return literal nil when no error exists.
     claim_map:
-      fact: The prompt explicitly tests Nil semantics within a Go context; treat that
-        named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Nil semantics,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Nil semantics constraint is the
-        dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Nil semantics: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Interface equality includes its dynamic type and value.
+      inference: >-
+        A typed nil pointer inside an interface is not equal to a nil interface.
+      assumption: >-
+        I am assuming the value crossed an error or interface boundary as a typed pointer.
+      unknown: >-
+        Dynamic type, constructor return path, and caller comparison are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Nil semantics
-        benefit: It keeps the Nil semantics reasoning close to the stated Go constraint
-          and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Nil semantics workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Nil semantics contract and its invariant
-          are the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Nil semantics
-        benefit: It can make the Nil semantics boundary more explicit when the first
-          option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Nil semantics evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Nil semantics option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Go
-        constraint makes the first assumption unsafe.
+      - option: return a literal nil interface when no value exists
+        benefit: I keep the caller's nil check aligned with the absence of a dynamic type.
+        cost_or_risk: The implementation must avoid assigning a typed nil pointer before returning.
+        valid_when: Use it when the API's nil result means no error or no value.
+      - option: return a typed nil pointer inside the interface
+        benefit: It may preserve a concrete method set for an API that deliberately uses typed values.
+        cost_or_risk: The interface compares non-nil and can panic when callers invoke methods without a value.
+        valid_when: Use it only when the contract explicitly distinguishes typed absence and every caller handles it.
+      decision_rule: I return literal nil for ordinary absence; I keep typed nil only with an explicit interface contract and tests for the comparison and method calls.
     failure_probe:
       kind: failure_mode
-      prompt: 'Nil semantics: if the Nil semantics decision fails under plausible
-        load or a difficult turn, what consequence appears first, and how would you
-        contain Nil semantics?'
+      prompt: >-
+        What dynamic type/value pair would make the nil check false despite a nil pointer?
     evidence_check:
       basis: Check the Nil semantics claim against system-design-estudos/areas/09-backend-principles/cards/error-handling-fault-tolerance.md
         and the exact interview context; record whether each part is fact, inference,
@@ -1829,12 +1687,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: high
-      rationale: Certainty is high because the prompt bounds the Nil semantics question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "This nil check is not firing. Any", update Nil semantics
-        when Nil semantics evidence—a Nil semantics trace or Nil semantics test—contradicts
-        the Nil semantics constraint in case "This nil check is not firing. Any";
-        ask a stakeholder about Nil semantics before revising.
+      rationale: >-
+        I am highly certain about the type/value mechanism; the repair depends on the construction path.
+      update_trigger: >-
+        Update when a typed-nil test or API signature shows the nil boundary is elsewhere.
     rubric:
       facts_correct: Names the verified Nil semantics facts without smuggling in a
         result, scale, or capability that the prompt does not establish.
@@ -1866,9 +1722,9 @@ items:
       evidence boundary explicit.
     challenge_kind: assumption
     best_answer: >-
-      Not because it is large. I would label the follow-up premise as an assumption,
-      ask the smallest question that could disprove it, and protect the edge case before
-      committing to the recommendation.
+      I would split for a different ownership, scaling, deployment, or failure boundary, not merely
+      because a module is large. I would measure coupling, latency, and operational cost first; if a
+      module boundary resolves team collisions, I would keep one process.
     distractors:
     - text: I would repeat my original Service boundaries answer with more confidence
         because the interviewer probably assumes the usual case.
@@ -1943,23 +1799,14 @@ items:
       reasoning error before changing the implementation?
     delayed_variant:
       id: golang-10-service-boundaries-delayed-10
-      prompt: 'Review note for Service boundaries: a measured Service boundaries comparison
-        shows the alternative has a different Service boundaries cost profile. Given
-        two Service boundaries callers from the case "Would you split this into a
-        separate" or Service boundaries tenants now compete for the same Service boundaries
-        boundary, what would you now defend, retract, and verify about Service boundaries?'
-      changed_constraint: two Service boundaries callers from the case "Would you
-        split this into a separate" or Service boundaries tenants now compete for
-        the same Service boundaries boundary
-      new_evidence: a measured Service boundaries comparison shows the alternative
-        has a different Service boundaries cost profile
-      best_answer: I would keep the facts that remain supported about Service boundaries,
-        treat a measured Service boundaries comparison shows the alternative has a
-        different Service boundaries cost profile as new evidence rather than a result,
-        and state the updated decision rule under two Service boundaries callers from
-        the case "Would you split this into a separate" or Service boundaries tenants
-        now compete for the same Service boundaries boundary. I would then name one
-        focused check before treating the revised answer as settled.
+      prompt: >-
+        A module is large but has one release cadence and no independent failure or scaling profile. What would you measure before splitting it?
+      changed_constraint: >-
+        a service split needs an ownership, deployment, scaling, or failure boundary
+      new_evidence: >-
+        coupling and deployment metrics show no independent operational boundary
+      best_answer: >-
+        I would keep one process, measure ownership, latency, release cadence, and failure isolation, and split only when a concrete boundary outweighs distributed-system cost.
       distractors:
       - text: I would preserve every part of the original Service boundaries answer
           because changing it after review would be inconsistent.
@@ -1983,43 +1830,33 @@ items:
     goal: Move from the short Service boundaries answer to a deep, evidence-led defence
       without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Service boundaries before proposing a solution: state the
-      actor, required outcome, constraint, and unknown that could invalidate the first
-      recommendation.'
+    problem_frame: >-
+      A large module needs a concrete ownership, scaling, deployment, or failure boundary before becoming a service.
     claim_map:
-      fact: The prompt explicitly tests Service boundaries within a Go context; treat
-        that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Service boundaries,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Service boundaries constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Service boundaries: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Module size alone does not establish a service boundary.
+      inference: >-
+        A separate service can isolate release or failure behavior but adds network, deployment, and operational cost.
+      assumption: >-
+        I am assuming one process can still meet latency, ownership, and release needs.
+      unknown: >-
+        Team ownership, traffic profile, failure isolation, deployment cadence, and operational capacity are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Service boundaries
-        benefit: It keeps the Service boundaries reasoning close to the stated Go
-          constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Service boundaries workload or requirement
-          changes beyond the prompt.
-        valid_when: Use it when the stated Service boundaries contract and its invariant
-          are the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Service boundaries
-        benefit: It can make the Service boundaries boundary more explicit when the
-          first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Service boundaries evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Service boundaries option when its stated contract
-        holds; choose the alternative only when evidence shows that the relevant Go
-        constraint makes the first assumption unsafe.
+      - option: keep the boundary in one deployable service with a clear module or package seam
+        benefit: I retain local transactions and debugging while reducing coupling inside the codebase.
+        cost_or_risk: Teams and scaling remain coupled when the workload or failure domain truly differs.
+        valid_when: Use it when the data, release cadence, and failure boundary are shared.
+      - option: split a separately deployable service around an independent workload or failure boundary
+        benefit: I can scale, release, or contain that boundary independently.
+        cost_or_risk: I add network failure, data ownership, deployment, and observability costs.
+        valid_when: Use it only when measured scaling, cadence, or isolation pressure justifies those costs.
+      decision_rule: I fix the module boundary first; I split the service only when evidence shows a distinct scaling, release, or failure requirement.
     failure_probe:
       kind: counterexample
-      prompt: 'Service boundaries: which adversarial Service boundaries example could
-        disprove the recommendation, and what evidence about Service boundaries would
-        you request?'
+      prompt: >-
+        What measured boundary would show a process split solves a problem a module split cannot?
     evidence_check:
       basis: Check the Service boundaries claim against system-design-estudos/decision-contrasts/02-pod-isolation-vs-microservices.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2031,13 +1868,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Service boundaries
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Would you split this into a separate", update Service
-        boundaries when Service boundaries evidence—a Service boundaries trace or
-        Service boundaries test—contradicts the Service boundaries constraint in case
-        "Would you split this into a separate"; ask a stakeholder about Service boundaries
-        before revising.
+      rationale: >-
+        I am confident in measuring before splitting; the architecture depends on ownership and operational evidence.
+      update_trigger: >-
+        Update when coupling, release, latency, or failure metrics establish an independent service boundary.
     rubric:
       facts_correct: Names the verified Service boundaries facts without smuggling
         in a result, scale, or capability that the prompt does not establish.
@@ -2068,10 +1902,9 @@ items:
       explicit.
     challenge_kind: evidence
     best_answer: >-
-      Because the cases become data, so adding one is a line rather than a
-      function, and the failure output names which case broke. I would treat the follow-up
-      observation as evidence, not as proof of impact; I would inspect the smallest relevant
-      trace or test and state what remains uncertain before changing the decision.
+      I would table cases that share setup and assertions, name each case with input and expected
+      behavior, and split tests when setup or lifecycle differs. I would run the failing case alone
+      to verify that its name gives a maintainer useful diagnosis.
     distractors:
     - text: I would cite my experience with Testing as enough proof and move on without
         naming an observation.
@@ -2086,10 +1919,9 @@ items:
       output that explains the contract.
     goal: Compress the Testing answer into its decision, premise, trade-off, and verification
       step.
-  best_answer: Because the cases become data, so adding one is a line rather than
-    a function, and the failure output names which case broke. They stop helping when
-    the cases need different setup, at which point the table grows conditionals and
-    separate tests are clearer.
+  best_answer: I make the cases data, so adding one is a line rather than a function,
+    and the failure output names which case broke. I stop using a table when cases need
+    different setup; once conditionals grow, separate tests are clearer.
   distractors:
   - text: Because it reduces duplication in the test code and keeps everything for
       a given function together in one place, which makes the tests easier to read
@@ -2145,20 +1977,14 @@ items:
       error before changing the implementation?
     delayed_variant:
       id: golang-11-table-tests-delayed-11
-      prompt: New evidence about Testing says a Testing test exposes a boundary case
-        that the Testing examples did not cover; with the Testing workload for Testing
-        no longer fits the original resource bound, how do you update the Testing
-        decision rule?
-      changed_constraint: the Testing workload for Testing no longer fits the original
-        resource bound
-      new_evidence: a Testing test exposes a boundary case that the Testing examples
-        did not cover
-      best_answer: I would keep the facts that remain supported about Testing, treat
-        a Testing test exposes a boundary case that the Testing examples did not cover
-        as new evidence rather than a result, and state the updated decision rule
-        under the Testing workload for Testing no longer fits the original resource
-        bound. I would then name one focused check before treating the revised answer
-        as settled.
+      prompt: >-
+        Two cases need different setup and their table now branches on many flags. How should the test shape change?
+      changed_constraint: >-
+        table cases are useful only while setup and assertions share a clear contract
+      new_evidence: >-
+        the table's conditional setup hides which lifecycle failed
+      best_answer: >-
+        I would split tests with different setup or lifecycle, keep shared cases table-driven, and preserve names that identify input and expected behavior.
       distractors:
       - text: I would preserve every part of the original Testing answer because changing
           it after review would be inconsistent.
@@ -2181,30 +2007,29 @@ items:
     goal: Move from the short Testing answer to a deep, evidence-led defence without
       inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Testing before proposing a solution: state the actor, required
-      outcome, constraint, and unknown that could invalidate the first recommendation.'
+    problem_frame: >-
+      Table-driven tests help when cases share setup and assertions; I must split cases whose lifecycle or fixture needs differ.
     claim_map:
-      fact: The prompt explicitly tests Testing within a Go context; treat that named
-        boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Testing,
-        but that does not prove one implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the Testing constraint is the dominant
-        one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Testing: the scale, failure tolerance, ownership
-        boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Case data can make additions and failure names concise.
+      inference: >-
+        A table becomes harmful when conditionals obscure distinct setup or lifecycle behavior.
+      assumption: >-
+        I am assuming the cases share the same observable contract.
+      unknown: >-
+        Fixture divergence, failure readability, and lifecycle differences are unknown.
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Testing would be
-        a false equivalence because the prompt does not establish that both choices
-        satisfy the same contract.
-      hard_constraint: The hard Testing constraint is the required guarantee stated
-        by the interviewer; no missing measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Testing; first clarify the
-        constraint or collect the evidence that would make two options genuinely comparable.
+      rejected_alternative: >-
+        Treating table-driven and separate tests as a universal style choice would be a false equivalence: the setup and contract shape determine whether shared execution stays readable.
+      hard_constraint: >-
+        The hard constraint is named case coverage with failure output that explains the contract without hiding meaningful setup differences.
+      decision_rule: >-
+        Use a table while cases share setup and execution; split cases when their fixtures or assertions diverge enough that conditionals obscure the failure.
     failure_probe:
       kind: edge_case
-      prompt: 'Testing: which empty or extreme Testing case would expose the hidden
-        assumption, and what would you measure about Testing?'
+      prompt: >-
+        Which setup or lifecycle difference would make a table harder to diagnose than separate tests?
     evidence_check:
       basis: Check the Testing claim against system-design-estudos/areas/09-backend-principles/cards/testing-code-quality.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2215,12 +2040,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Testing question
-        but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Why do Go developers write table-driven tests", update
-        Testing when Testing evidence—a Testing trace or Testing test—contradicts
-        the Testing constraint in case "Why do Go developers write table-driven tests";
-        ask a stakeholder about Testing before revising.
+      rationale: >-
+        I am confident in the shared-contract criterion; the test shape should follow fixture and failure evidence.
+      update_trigger: >-
+        Update when a new case adds branching, hides cleanup, or weakens failure diagnostics.
     rubric:
       facts_correct: Names the verified Testing facts without smuggling in a result,
         scale, or capability that the prompt does not establish.
@@ -2251,9 +2074,9 @@ items:
       the evidence boundary explicit.
     challenge_kind: alternative
     best_answer: >-
-      I would start from their constraint rather than from the language. I would compare
-      that choice with the credible alternative against the requirement in the follow-up, cost, and
-      failure risk, then switch only if evidence makes the alternative safer.
+      I would present workload and team constraints, evidence on footprint, latency, and tooling,
+      and the adoption cost. I would choose another language when its ecosystem or delivery speed
+      fits the constraint better, and I would not advocate a rewrite without that evidence.
     distractors:
     - text: I would defend the first Cross-team communication option because offering
         an alternative might make the decision look uncertain.
@@ -2331,22 +2154,14 @@ items:
       the reasoning error before changing the implementation?
     delayed_variant:
       id: golang-12-explaining-to-non-go-team-delayed-12
-      prompt: 'Cross-team communication gets a new constraint: a stakeholder asks
-        for a stronger Cross-team communication guarantee than the first Cross-team
-        communication answer promised. After a stakeholder clarifies a Cross-team
-        communication requirement that changes the Cross-team communication success
-        condition, which Cross-team communication assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Cross-team communication
-        guarantee than the first Cross-team communication answer promised
-      new_evidence: a stakeholder clarifies a Cross-team communication requirement
-        that changes the Cross-team communication success condition
-      best_answer: I would keep the facts that remain supported about Cross-team communication,
-        treat a stakeholder clarifies a Cross-team communication requirement that
-        changes the Cross-team communication success condition as new evidence rather
-        than a result, and state the updated decision rule under a stakeholder asks
-        for a stronger Cross-team communication guarantee than the first Cross-team
-        communication answer promised. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        A team values delivery speed over footprint and has no concurrency bottleneck. What would change your Go recommendation?
+      changed_constraint: >-
+        language choice must follow the team's workload and delivery constraint
+      new_evidence: >-
+        a benchmark and team assessment show no footprint or latency problem but high rewrite cost
+      best_answer: >-
+        I would keep the existing language when delivery speed dominates, present Go only with measured workload evidence, and avoid a rewrite whose adoption cost exceeds the benefit.
       distractors:
       - text: I would preserve every part of the original Cross-team communication
           answer because changing it after review would be inconsistent.
@@ -2369,44 +2184,33 @@ items:
     goal: Move from the short Cross-team communication answer to a deep, evidence-led
       defence without inventing an outcome.
   critical_thinking:
-    problem_frame: 'Frame Cross-team communication before proposing a solution: state
-      the actor, required outcome, constraint, and unknown that could invalidate the
-      first recommendation.'
+    problem_frame: >-
+      A language recommendation must answer the team's workload and delivery constraint, not praise Go in isolation.
     claim_map:
-      fact: The prompt explicitly tests Cross-team communication within a Go context;
-        treat that named boundary as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Cross-team
-        communication, but that does not prove one implementation wins under every
-        workload or audience.
-      assumption: An unstated assumption is that the Cross-team communication constraint
-        is the dominant one; label it and ask whether the interviewer confirms it.
-      unknown: 'Still unknown for Cross-team communication: the scale, failure tolerance,
-        ownership boundary, and evidence threshold that would change the decision.'
+      fact: >-
+        Memory footprint, concurrency, latency, and delivery speed are separate selection criteria.
+      inference: >-
+        Go may fit a constrained concurrent service, while a rewrite may lose when adoption cost dominates.
+      assumption: >-
+        I am assuming the team has a measurable pain that Go can address.
+      unknown: >-
+        Workload, latency, footprint, team skill, migration cost, and ecosystem needs are unknown.
     comparison:
       applicable: true
       alternatives:
-      - option: a minimal Go interface or cancellation boundary for Cross-team communication
-        benefit: It keeps the Cross-team communication reasoning close to the stated
-          Go constraint and makes the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the Cross-team communication workload
-          or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Cross-team communication contract and its
-          invariant are the facts that matter most.
-      - option: a concrete type or shared coordination mechanism for Cross-team communication
-        benefit: It can make the Cross-team communication boundary more explicit when
-          the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Cross-team communication evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Cross-team communication option when its stated
-        contract holds; choose the alternative only when evidence shows that the relevant
-        Go constraint makes the first assumption unsafe.
+      - option: choose Go when the measured workload needs bounded concurrency and low per-process overhead
+        benefit: I connect the language choice to the team's operational constraint rather than to familiarity.
+        cost_or_risk: The team must learn Go's tooling, error and interface conventions, and hiring or maintenance implications.
+        valid_when: Use it when profiling and delivery requirements support the operational fit.
+      - option: keep the existing language and improve the bottleneck or workflow
+        benefit: I avoid rewrite risk and preserve team fluency when the constraint is not language-specific.
+        cost_or_risk: A real runtime or deployment limit may remain if the current stack cannot meet it.
+        valid_when: Use it when the measured pain is product design, profiling, or delivery rather than Go's runtime envelope.
+      decision_rule: I recommend Go only when its measured strengths answer the stated constraint; otherwise I improve or retain the existing stack.
     failure_probe:
       kind: failure_mode
-      prompt: 'Cross-team communication: when the Cross-team communication constraint
-        tightens during rollout, what breaks first in Cross-team communication, and
-        how do you observe it?'
+      prompt: >-
+        What benchmark or delivery constraint would make another language the better choice?
     evidence_check:
       basis: Check the Cross-team communication claim against system-design-estudos/areas/12-engineering-practice/cards/architecture-decision-records.md
         and the exact interview context; record whether each part is fact, inference,
@@ -2418,13 +2222,10 @@ items:
       checked_on: '2026-08-25'
     certainty:
       level: medium
-      rationale: Certainty is medium because the prompt bounds the Cross-team communication
-        question but does not reveal every workload, stakeholder priority, or outcome.
-      update_trigger: For case "Tell me how you would justify choosing", update Cross-team
-        communication when Cross-team communication evidence—a Cross-team communication
-        trace or Cross-team communication test—contradicts the Cross-team communication
-        constraint in case "Tell me how you would justify choosing"; ask a stakeholder
-        about Cross-team communication before revising.
+      rationale: >-
+        I am confident in starting from the team's constraint; the recommendation needs workload and adoption evidence.
+      update_trigger: >-
+        Update when benchmark, staffing, or delivery evidence changes the cost-benefit comparison.
     rubric:
       facts_correct: Names the verified Cross-team communication facts without smuggling
         in a result, scale, or capability that the prompt does not establish.

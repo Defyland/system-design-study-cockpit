@@ -53,45 +53,52 @@ target:
 cards:
 - id: career-card-framing
   front: What is the career story spine?
-  back: A recurring backend decision, one relevant example, and a truthful evidence
-    boundary.
+  back: >-
+    I start with one recurring backend decision, add one relevant example, and keep
+    the evidence boundary truthful.
   box: 1
   source:
     repo: system-design-estudos
     path: interview/story-bank/01-ruby-rails-backend-story-bank.md
     note: Career story source.
   critical_thinking:
-    cue: What is the career story spine? Before answering, separate the stated fact
-      from your assumption and name one condition that could change it.
-    check: For this career presentation card, can you compare two options, name one
-      failure mode, and state what evidence would update the recommendation?
+    cue: Which one responsibility and result should anchor my introduction for this
+      role? Separate a resume-backed fact from the broader capability I am inferring.
+    check: Can I compare a concise story with a technology inventory, name the overclaim
+      failure, and state what role signal would change my emphasis?
 - id: career-card-care
   front: What does CARE mean here?
-  back: Context, Actions, Result, Evaluate; close with what you learned or would change.
+  back: >-
+    I use Context, Actions, Result, and Evaluate; I close with what I learned or
+    would change.
   box: 2
   source:
     repo: original
     path: english-arcade/career/care
     note: Defined curriculum variant.
   critical_thinking:
-    cue: What does CARE mean here? Before answering, separate the stated fact from
-      your assumption and name one condition that could change it.
-    check: For this career presentation card, can you compare two options, name one
-      failure mode, and state what evidence would update the recommendation?
+    cue: >-
+      Which CARE step will make the example more useful: context, action, result,
+      or evaluation? Separate my action from the team outcome and name the missing
+      detail I would verify.
+    check: Can I compare a result-only story with a CARE story, name the attribution
+      failure, and state what evidence would strengthen the evaluation?
 - id: career-card-boundary
   front: What needs confirmation?
-  back: Ownership, metrics, and mechanisms when the referenced resume PDF was not found
-    in the searched workspace as of 2026-08-25.
+  back: >-
+    I separate what my resume confirms from what I still need to verify: ownership,
+    metric scope, mechanism, and outcome.
   box: 2
   source:
     repo: system-design-estudos
     path: interview/story-bank/01-ruby-rails-backend-story-bank.md
     note: Evidence boundary source.
   critical_thinking:
-    cue: What needs confirmation? Before answering, separate the stated fact from
-      your assumption and name one condition that could change it.
-    check: For this career presentation card, can you compare two options, name one
-      failure mode, and state what evidence would update the recommendation?
+    cue: Which parts of a resume claim should I verify before presenting it as my
+      experience? Separate the documented fact from my assumption and name the evidence
+      that could change the claim.
+    check: Can I separate ownership, metric scope, mechanism, and outcome, then name
+      the source or question that would verify each one?
 items:
 - id: career-01-a-60-to-90-second-introduction
   version: 1.6.0

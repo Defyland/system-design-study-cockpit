@@ -1,7 +1,7 @@
 import { escape, addSubmit, keyboardChoice } from "arcade/exercise_helpers"
 
 export function render(root, exercise, ctx) {
-  root.innerHTML = `<p class="arena-eyebrow">Spot the trap · name the axis</p><h2>What makes this phrasing weaker?</h2><p class="arena-question-context">${escape(exercise.payload?.distractor || exercise.prompt)}</p><div class="arena-choice-list" role="radiogroup" aria-label="Language axes"></div>`
+  root.innerHTML = `<p class="arena-eyebrow">Spot the trap · identify the weakness</p><h2>What makes this phrasing weaker?</h2><p class="arena-question-context">${escape(exercise.payload?.distractor || exercise.prompt)}</p><div class="arena-choice-list" role="radiogroup" aria-label="Language axes"></div>`
   const list = root.querySelector(".arena-choice-list")
   ;(exercise.payload?.axes || []).forEach((axis, index) => {
     const choice = document.createElement("button")

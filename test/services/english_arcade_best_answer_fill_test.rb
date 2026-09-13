@@ -28,7 +28,8 @@ class EnglishArcadeBestAnswerFillTest < ActiveSupport::TestCase
 
     assert_includes fill.fetch("comparison_option_a"), "Rails professional narrative"
     assert_includes fill.fetch("comparison_option_b"), "portfolio example"
-    assert_includes fill.fetch("comparison_tradeoff"), "Option A offers"
+    assert_includes fill.fetch("comparison_tradeoff"), "I would compare these consequences before choosing."
+    assert_includes fill.fetch("comparison_tradeoff"), card.critical_thinking.dig("comparison", "alternatives", 0, "cost_or_risk")
     assert artifact.fetch("complete"), artifact.fetch("missing").inspect
   end
 
@@ -36,5 +37,25 @@ class EnglishArcadeBestAnswerFillTest < ActiveSupport::TestCase
     card = @builder.card_for(target: "rails", card_key: "rails-01-n-plus-one", variant_id: "follow_up")
 
     refute EnglishArcadeBestAnswerFill.available_for?(card)
+  end
+
+  test "tradeoff paragraphs preserve authored punctuation and separate both alternatives" do
+    card = @builder.card_for(target: "career", card_key: "career-01-a-60-to-90-second-introduction")
+    card.critical_thinking["comparison"]["alternatives"] = [
+      { "option" => "A", "benefit" => "I can recover the event.", "cost_or_risk" => "I must operate the relay" },
+      { "option" => "B", "benefit" => "I keep fewer components", "cost_or_risk" => "I still need reconciliation." }
+    ]
+
+    assert_equal <<~TEXT.strip, EnglishArcadeBestAnswerFill.call(card).fetch("comparison_tradeoff")
+      I would compare these consequences before choosing.
+
+      Option A
+      Benefit: I can recover the event.
+      Cost or risk: I must operate the relay
+
+      Option B
+      Benefit: I keep fewer components
+      Cost or risk: I still need reconciliation.
+    TEXT
   end
 end

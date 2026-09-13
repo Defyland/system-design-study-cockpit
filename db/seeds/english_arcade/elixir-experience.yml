@@ -55,54 +55,59 @@ cards:
 - id: elixir_experience-card-1
   front: What does the PulseOps transaction guarantee, and what must the worker still
     handle?
-  back: Job, Oban handoff, and event commit or roll back together. The later worker
-    effect is outside that boundary—preserve idempotency and reconcile uncertainty;
-    do not call it exactly-once.
+  back: >-
+    I separate the Ecto transaction boundary from the worker effect: the Job, Oban handoff, and
+    event commit or roll back together, while the later external effect needs idempotency and
+    reconciliation. I would never call that exactly-once without evidence.
   box: 1
   source:
     repo: backend-challenges
     path: pulseops-elixir-job-platform/lib/pulse_ops/jobs.ex
     note: Local Job, Oban handoff, event, and idempotency boundary.
   critical_thinking:
-    cue: What does the PulseOps transaction guarantee, and what must the worker still
-      handle? Before answering, separate the stated fact from your assumption and
-      name one condition that could change it.
-    check: For this Elixir project deep dive card, can you compare two options, name
-      one failure mode, and state what evidence would update the recommendation?
+    cue: >-
+      What does the PulseOps transaction guarantee, and what must the worker still handle? Name
+      the local atomic boundary, then the external failure it cannot roll back.
+    check: >-
+      Can you compare local rollback with worker idempotency, name a crash window, and identify
+      the log or reconciliation evidence that would update your claim?
 - id: elixir_experience-card-2
   front: What remains after ReportForge stages an artifact and cancellation wins?
-  back: The short lock protects report state, not object storage. Finalization rechecks
-    then compensates with delete_for_report; deletion is not atomic rollback. The
-    current generator materializes data, so validate stream-first with chunk, cleanup,
-    cancellation, RSS, and storage-failure measurements.
+  back: >-
+    I treat the short lock as protection for report state, not object storage. Finalization
+    rechecks and compensates with delete_for_report; deletion is a separate operation, so I
+    measure cleanup, cancellation, RSS, and storage failure before calling it atomic.
   box: 2
   source:
     repo: backend-challenges
     path: reportforge-elixir-report-platform/lib/report_forge/reports.ex
     note: Staged artifact finalization and separate deletion compensation.
   critical_thinking:
-    cue: What remains after ReportForge stages an artifact and cancellation wins?
-      Before answering, separate the stated fact from your assumption and name one
-      condition that could change it.
-    check: For this Elixir project deep dive card, can you compare two options, name
-      one failure mode, and state what evidence would update the recommendation?
+    cue: >-
+      What remains after ReportForge stages an artifact and cancellation wins? Separate the row
+      lock, storage write, compensation, and crash window.
+    check: >-
+      Can you compare a short lock with a long lock, name the staged-object failure, and state
+      which cleanup or RSS measurement would change the design?
 - id: elixir_experience-card-3
   front: Why do neither a heap nor supervision solve Rinha Elixir scoring scale?
-  back: Exact scoring still scans every reference; a size-k heap replaces full sorting,
-    not an index. One GenServer serializes calls; supervision restarts it rather than
-    adding reads. Measure mailbox, p99, CPU, RSS, and two-instance memory before choosing
-    snapshots or bounded workers.
+  back: >-
+    I treat exact scoring as a scan over every reference; a size-k heap replaces full sorting,
+    not the scan or an index. One GenServer serializes calls, and supervision restarts it
+    without adding read concurrency, so I measure mailbox, p99, CPU, and RSS before choosing
+    snapshots or workers.
   box: 3
   source:
     repo: backend-challenges
     path: rinha-de-backend-2026-elixir/lib/rinha_backend_2026/reference_index.ex
     note: Synchronous scoring calls through one ReferenceIndex callback loop.
   critical_thinking:
-    cue: Why do neither a heap nor supervision solve Rinha Elixir scoring scale? Before
-      answering, separate the stated fact from your assumption and name one condition
-      that could change it.
-    check: For this Elixir project deep dive card, can you compare two options, name
-      one failure mode, and state what evidence would update the recommendation?
+    cue: >-
+      Why do neither a heap nor supervision solve Rinha Elixir scoring scale? Separate scan cost,
+      sort cost, serialized calls, and restart behavior.
+    check: >-
+      Can you compare a heap, an index, and bounded workers, name the remaining bottleneck in
+      each, and identify the benchmark that would justify ANN or snapshots?
 items:
 - id: elixir_experience-01-pulseops-transactional-enqueue
   version: 1.4.0
@@ -114,13 +119,14 @@ items:
     while handling an idempotency race?
   context: The interviewer is probing transaction contents, semantic replay, legacy
     nil fingerprints, and later external worker effects.
-  best_answer: 'PulseOps normalizes a create request, fingerprints it, and checks
-    idempotency before Repo.transaction. The transaction inserts Job, calls Oban.insert,
-    updates oban_job_id, and writes an event; an error rolls all of it back. A unique
+  best_answer: >-
+    I would explain PulseOps as normalizing a create request, fingerprinting it, and checking
+    idempotency before Repo.transaction. The transaction inserts Job, calls Oban.insert, updates
+    oban_job_id, and writes an event; an error rolls those local changes back. A unique
     constraint resolves races: equal semantics replay and a changed fingerprint conflicts.
-    Legacy nil fingerprints are derived and backfilled. That closes the local handoff
-    gap, not exactly-once for a worker''s external effect, which still needs idempotency
-    and reconciliation.'
+    Legacy nil fingerprints are derived and backfilled. I would state the limit clearly: this
+    closes the local handoff gap, not exactly-once for a worker external effect, which still
+    needs idempotency and reconciliation.
   distractors:
   - text: I would insert the Job first and enqueue through Oban after commit because
       a later retry can fill any missing handoff. An idempotency key alone proves
@@ -198,9 +204,11 @@ items:
     goal: Trace race and legacy cases without projecting exactly-once onto the worker.
     challenge_kind: alternative
     best_answer: >-
-      PulseOps normalizes a create request, fingerprints it, and checks idempotency before Repo.transaction. I would
-      compare that choice with the credible alternative against the requirement in the follow-up, cost,
-      and failure risk, then switch only if evidence makes the alternative safer.
+      I would let the database transaction roll back the local Job, Oban handoff, and event when
+      the crash lands inside it. For a legacy nil fingerprint, I would derive and backfill it
+      under the existing uniqueness rules; a changed payload on another node should conflict
+      rather than replay. I would keep external worker effects idempotent and use reconciliation
+      for the post-commit crash window.
     distractors:
     - text: I would defend the first PulseOps transactional idempotency and Oban enqueue
         option because offering an alternative might make the decision look uncertain.
@@ -252,28 +260,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-01-pulseops-transactional-enqueue-delayed-1
-      prompt: 'Pulseops transactional idempotency and oban enqueue: the later PulseOps
-        transactional idempotency and Oban enqueue review says a code inspection of
-        PulseOps transactional idempotency and Oban enqueue confirms the PulseOps
-        transactional idempotency and Oban enqueue mechanism but not its impact. Under
-        the PulseOps transactional idempotency and Oban enqueue workload for PulseOps
-        transactional idempotency and Oban enqueue no longer fits the original resource
-        bound, which part of PulseOps transactional idempotency and Oban enqueue survives
-        and which PulseOps transactional idempotency and Oban enqueue claim changes?'
-      changed_constraint: the PulseOps transactional idempotency and Oban enqueue
-        workload for PulseOps transactional idempotency and Oban enqueue no longer
-        fits the original resource bound
-      new_evidence: a code inspection of PulseOps transactional idempotency and Oban
-        enqueue confirms the PulseOps transactional idempotency and Oban enqueue mechanism
-        but not its impact
-      best_answer: I would keep the facts that remain supported about PulseOps transactional
-        idempotency and Oban enqueue, treat a code inspection of PulseOps transactional
-        idempotency and Oban enqueue confirms the PulseOps transactional idempotency
-        and Oban enqueue mechanism but not its impact as new evidence rather than
-        a result, and state the updated decision rule under the PulseOps transactional
-        idempotency and Oban enqueue workload for PulseOps transactional idempotency
-        and Oban enqueue no longer fits the original resource bound. I would then
-        name one focused check before treating the revised answer as settled.
+      prompt: >-
+        A crash occurs after the local transaction commits but before the worker external effect,
+        while a legacy row still has a nil fingerprint and another node sends a changed payload.
+        Which local guarantee survives and what must reconciliation verify?
+      changed_constraint: >-
+        the API must preserve idempotency semantics across legacy rows and the post-commit worker
+        gap
+      new_evidence: >-
+        the crash window is after commit, a legacy row lacks a fingerprint, and a second node
+        presents changed semantics
+      best_answer: >-
+        I would keep the local transaction guarantee and derive the legacy fingerprint before
+        applying the uniqueness rule, but I would retract any exactly-once claim for the worker
+        effect. I would make changed semantics conflict, replay equal semantics, and use
+        reconciliation to verify whether the external effect happened after the commit.
       distractors:
       - text: I would preserve every part of the original PulseOps transactional idempotency
           and Oban enqueue answer because changing it after review would be inconsistent.
@@ -290,79 +291,70 @@ items:
     goal: Verify local transaction semantics without inventing an end-to-end exactly-once
       guarantee.
   critical_thinking:
-    problem_frame: 'Frame PulseOps transactional idempotency and Oban enqueue before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests PulseOps transactional idempotency and Oban
-        enqueue within a Elixir project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend PulseOps
-        transactional idempotency and Oban enqueue, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the PulseOps transactional idempotency
-        and Oban enqueue constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for PulseOps transactional idempotency and Oban enqueue:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame this as two boundaries: the local transaction must keep the
+      Job, Oban handoff, oban_job_id, and event coherent, while a later worker effect
+      cannot be rolled back. I state the equal-versus-changed idempotency contract and
+      the crash window before proposing a fix.'
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about PulseOps transactional
-        idempotency and Oban enqueue would be a false equivalence because the prompt
-        does not establish that both choices satisfy the same contract.
-      hard_constraint: The hard PulseOps transactional idempotency and Oban enqueue
-        constraint is the required guarantee stated by the interviewer; no missing
-        measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for PulseOps transactional idempotency
-        and Oban enqueue; first clarify the constraint or collect the evidence that
-        would make two options genuinely comparable.
+      rejected_alternative: 'A direct comparison between the local Ecto transaction and
+        an external exactly-once worker guarantee is a false equivalence: they control
+        different failure boundaries.'
+      hard_constraint: The hard constraint is to preserve local row and handoff coherence
+        while admitting that an external effect survives a database rollback.
+      decision_rule: Use the transaction for the local records, then choose worker idempotency
+        and reconciliation from the external-effect contract; do not call the combined
+        path exactly once without evidence.
+    rubric:
+      facts_correct: Names the four local records in the transaction, the fingerprint
+        distinction, and the external side-effect limit.
+      assumptions_explicit: Separates the legacy-fingerprint and worker-idempotency assumptions
+        from the guarantees shown by the local transaction.
+      alternatives_considered: Explains why a local transaction is not interchangeable
+        with an external exactly-once protocol and identifies reconciliation as the second
+        boundary.
+      tradeoff_quality: Connects atomic local rollback, race resolution, backfill risk,
+        and post-commit recovery to the recommendation.
+      follow_up_adaptation: Adapts when the crash occurs after commit or when changed
+        semantics race with an equal replay instead of repeating the happy path.
+      certainty_calibration: Uses medium certainty for the end-to-end claim and names
+        the concrete concurrent and recovery evidence that would raise or lower it.
+    claim_map:
+      fact: The project material describes Repo.transaction covering the Job insert, Oban
+        insertion, oban_job_id update, and event write, with a uniqueness rule for the
+        request fingerprint.
+      inference: That local boundary can prevent a persisted Job from losing its recorded
+        handoff and can distinguish equal replay from changed semantics, but it cannot
+        make an external worker effect exactly once.
+      assumption: I am assuming a canonical fingerprint can be derived safely for legacy
+        nil rows and that the worker or reconciliation path can make its external effect
+        idempotent.
+      unknown: The post-commit crash behavior, external-effect identity, backfill locking
+        policy, and telemetry that proves reconciliation are still unknown.
     failure_probe:
       kind: counterexample
-      prompt: 'Pulseops transactional idempotency and oban enqueue: what minimum input
-        for PulseOps transactional idempotency and Oban enqueue would break the PulseOps
-        transactional idempotency and Oban enqueue recommendation, and how would you
-        revise the PulseOps transactional idempotency and Oban enqueue claim?'
+      prompt: 'Which trace would falsify the boundary: Oban insertion fails inside the
+        transaction, two nodes race with equal or changed fingerprints, or the process
+        crashes after commit before the worker effect? Name the local result and the reconciliation
+        evidence for each.'
     evidence_check:
-      basis: Check the PulseOps transactional idempotency and Oban enqueue claim against
-        backend-challenges/pulseops-elixir-job-platform/README.md and the exact interview
-        context; record whether each part is fact, inference, or hypothesis.
+      limitation: The source and interview scenario support the local transaction boundary
+        and its limits, but they do not establish production-scale race frequency, worker
+        exactly-once behavior, or the safety of every legacy backfill.
+      basis: Check the concrete claim against backend-challenges/pulseops-elixir-job-platform/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        PulseOps transactional idempotency and Oban enqueue, but it cannot prove an
-        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the PulseOps transactional
-        idempotency and Oban enqueue question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you prevent a persisted PulseOps", update
-        PulseOps transactional idempotency and Oban enqueue when PulseOps transactional
-        idempotency and Oban enqueue evidence—a PulseOps transactional idempotency
-        and Oban enqueue trace or PulseOps transactional idempotency and Oban enqueue
-        test—contradicts the PulseOps transactional idempotency and Oban enqueue constraint
-        in case "How would you prevent a persisted PulseOps"; ask a stakeholder about
-        PulseOps transactional idempotency and Oban enqueue before revising.
-    rubric:
-      facts_correct: Names the verified PulseOps transactional idempotency and Oban
-        enqueue facts without smuggling in a result, scale, or capability that the
-        prompt does not establish.
-      assumptions_explicit: Labels the PulseOps transactional idempotency and Oban
-        enqueue premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible PulseOps transactional idempotency
-        and Oban enqueue options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the PulseOps transactional idempotency and Oban enqueue
-        choice to a benefit, a cost or risk, and the condition under which another
-        choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about PulseOps transactional
-        idempotency and Oban enqueue by changing the claim or evidence boundary rather
-        than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the PulseOps transactional idempotency and Oban enqueue
-        recommendation.
+      level: medium
+      rationale: I am highly confident about what the described transaction can roll back,
+        but only moderately confident about replay and recovery until the uniqueness,
+        backfill, and post-commit paths are exercised together.
+      update_trigger: I would update the recommendation after a concurrent equal/changed-fingerprint
+        test, a crash-window reconciliation trace, or evidence that legacy backfill can
+        race with a new request.
+
 - id: elixir_experience-02-pulseops-per-tenant-queue-limit
   version: 1.4.0
   target: elixir_experience
@@ -373,13 +365,14 @@ items:
     global quota or fairness?
   context: The interviewer is probing local_only queue control, node-count changes,
     noisy neighbors, resync failure, and telemetry.
-  best_answer: 'PulseOps derives tenant-specific runtime queue names, so one tenant''s
-    manual drain need not run another''s queued work. The Provisioner starts, scales,
-    pauses, and resumes each queue with local_only: true, then periodically syncs
-    all queues. That is local node configuration, not a global tenant quota or fairness
-    guarantee: capacity can multiply with nodes, and resync catches exceptions by
-    logging and retaining state. A cluster-wide limit needs shared coordination plus
-    telemetry for noisy-neighbor pressure and provisioning drift.'
+  best_answer: >-
+    I would describe PulseOps deriving tenant-specific runtime queue names, so one tenant manual
+    drain need not run another tenant queued work. The Provisioner starts, scales, pauses, and
+    resumes each queue with local_only: true, then periodically syncs all queues. I would call
+    that local node configuration, not a global tenant quota or fairness guarantee: capacity can
+    multiply with nodes, and resync catches exceptions by logging and retaining state. A
+    cluster-wide limit needs shared coordination plus telemetry for noisy-neighbor pressure and
+    provisioning drift.
   distractors:
   - text: I would use the tenant queue name as proof that its concurrency is global
       across the cluster. Starting, scaling, or pausing locally changes every node
@@ -458,10 +451,10 @@ items:
     goal: Connect topology change, best-effort recovery, and fairness evidence.
     challenge_kind: failure
     best_answer: >-
-      PulseOps derives tenant-specific runtime queue names, so one tenant's manual drain need not run
-      another's queued work. If the failure in the follow-up appears, I would name the
-      user or system consequence, contain it with a bounded mitigation, and verify recovery with
-      a focused test or metric.
+      I would treat local_only queue state as node-local evidence, then add a shared tenant quota
+      or lease if the limit must hold across nodes. I would alert on sync failures, queue drift,
+      and noisy-neighbor pressure, and I would verify the Provisioner restart by comparing desired
+      and observed queue state after resync.
     distractors:
     - text: I would describe the PulseOps tenant queues and local-only cluster boundary
         failure as impossible because the happy path already passed its test.
@@ -513,29 +506,18 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-02-pulseops-per-tenant-queue-limit-delayed-2
-      prompt: 'Review note for PulseOps tenant queues and local-only cluster boundary:
-        a measured PulseOps tenant queues and local-only cluster boundary comparison
-        shows the alternative has a different PulseOps tenant queues and local-only
-        cluster boundary cost profile. Given a stakeholder asks for a stronger PulseOps
-        tenant queues and local-only cluster boundary guarantee than the first PulseOps
-        tenant queues and local-only cluster boundary answer promised, what would
-        you now defend, retract, and verify about PulseOps tenant queues and local-only
-        cluster boundary?'
-      changed_constraint: a stakeholder asks for a stronger PulseOps tenant queues
-        and local-only cluster boundary guarantee than the first PulseOps tenant queues
-        and local-only cluster boundary answer promised
-      new_evidence: a measured PulseOps tenant queues and local-only cluster boundary
-        comparison shows the alternative has a different PulseOps tenant queues and
-        local-only cluster boundary cost profile
-      best_answer: I would keep the facts that remain supported about PulseOps tenant
-        queues and local-only cluster boundary, treat a measured PulseOps tenant queues
-        and local-only cluster boundary comparison shows the alternative has a different
-        PulseOps tenant queues and local-only cluster boundary cost profile as new
-        evidence rather than a result, and state the updated decision rule under a
-        stakeholder asks for a stronger PulseOps tenant queues and local-only cluster
-        boundary guarantee than the first PulseOps tenant queues and local-only cluster
-        boundary answer promised. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        Two nodes each admit a noisy tenant and the Provisioner restarts while sync_all logs an
+        exception. What local claim survives, and what global quota evidence is still missing?
+      changed_constraint: >-
+        a tenant quota must hold across nodes and recover observably after Provisioner restart
+      new_evidence: >-
+        two local_only queues admit work beyond the intended global limit and sync_all records an
+        exception
+      best_answer: >-
+        I would keep tenant-specific names as a local isolation mechanism, but I would retract any
+        global quota claim. I would add shared quota coordination, alert on sync drift and the
+        logged exception, and verify admission and recovery across both nodes after restart.
       distractors:
       - text: I would preserve every part of the original PulseOps tenant queues and
           local-only cluster boundary answer because changing it after review would
@@ -552,95 +534,76 @@ items:
       pause, failed sync_all, provisioner restart, and noisy-neighbor saturation.
     goal: Test local isolation and expose the evidence required for a global policy.
   critical_thinking:
-    problem_frame: 'Frame PulseOps tenant queues and local-only cluster boundary before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests PulseOps tenant queues and local-only cluster
-        boundary within a Elixir project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend PulseOps
-        tenant queues and local-only cluster boundary, but that does not prove one
-        implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the PulseOps tenant queues and local-only
-        cluster boundary constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for PulseOps tenant queues and local-only cluster boundary:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame this as local isolation versus a cluster-wide policy: identify
+      the tenant queue actor, the desired concurrency limit, the node boundary, and the
+      signal that would show Provisioner drift or a noisy neighbor.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for PulseOps tenant queues and
-          local-only cluster boundary
-        benefit: It keeps the PulseOps tenant queues and local-only cluster boundary
-          reasoning close to the stated Elixir project deep dive constraint and makes
-          the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the PulseOps tenant queues and local-only
-          cluster boundary workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated PulseOps tenant queues and local-only cluster
-          boundary contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for PulseOps tenant
-          queues and local-only cluster boundary
-        benefit: It can make the PulseOps tenant queues and local-only cluster boundary
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the PulseOps tenant queues and local-only cluster boundary evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first PulseOps tenant queues and local-only cluster
-        boundary option when its stated contract holds; choose the alternative only
-        when evidence shows that the relevant Elixir project deep dive constraint
-        makes the first assumption unsafe.
+      - option: Keep tenant-specific local_only queues and add explicit drift telemetry.
+        benefit: It preserves the inspectable per-tenant isolation already described and
+          keeps queue control close to the node that executes it.
+        cost_or_risk: A tenant can still receive capacity on multiple nodes, and a failed
+          sync can leave local state divergent from intent.
+        valid_when: Use it when the requirement is local separation and the product accepts
+          best-effort cluster behavior.
+      - option: Add a shared tenant quota or lease before local queue admission.
+        benefit: It can enforce one tenant budget across nodes and make noisy-neighbor
+          pressure a shared signal.
+        cost_or_risk: It adds coordination, lease expiry, and failure handling; a shared
+          service outage can reject work or create a new bottleneck.
+        valid_when: Use it when the quota must survive node multiplication and measured
+          fairness matters more than purely local control.
+      decision_rule: Choose local_only queues when local isolation is the contract; choose
+        shared quota coordination only when cross-node admission and fairness are requirements
+        backed by a defined budget and telemetry.
+    rubric:
+      facts_correct: Distinguishes tenant-specific queue names and local_only control
+        from a cluster-wide quota or fairness result.
+      assumptions_explicit: States the node-scaling and failed-sync assumptions instead
+        of treating periodic reconciliation as proof of convergence.
+      alternatives_considered: Compares local isolation with a shared quota or lease and
+        states the requirement that makes each valid.
+      tradeoff_quality: Connects coordination cost, noisy-neighbor protection, drift visibility,
+        and node multiplication to the policy choice.
+      follow_up_adaptation: Changes the claim when a second node exceeds the intended
+        budget or sync_all reports a failure.
+      certainty_calibration: Uses medium certainty and names cross-node admission and
+        recovery evidence rather than claiming fairness from queue configuration.
+    claim_map:
+      fact: 'The described Provisioner derives tenant-specific runtime queue names, uses
+        local_only: true for queue control, and periodically syncs queue state.'
+      inference: Those mechanisms can isolate drains on one node, but adding nodes can
+        multiply admission capacity, so they do not by themselves prove a global quota
+        or fairness.
+      assumption: I am assuming the product needs a limit that holds across nodes and
+        that shared quota state or leases are available if local configuration cannot
+        enforce it.
+      unknown: The desired cluster-wide quota, queue admission semantics, resync convergence
+        time, and telemetry for noisy-neighbor pressure are not established.
     failure_probe:
       kind: edge_case
-      prompt: 'Pulseops tenant queues and local-only cluster boundary: what PulseOps
-        tenant queues and local-only cluster boundary limit should you probe before
-        trusting the answer, and how would PulseOps tenant queues and local-only cluster
-        boundary behave there?'
+      prompt: Put the same noisy tenant on two nodes, restart the Provisioner, and make
+        sync_all log an exception. Which local isolation claim survives, what global claim
+        fails, and which queue drift, admission, and recovery measurements would decide
+        the next step?
     evidence_check:
-      basis: Check the PulseOps tenant queues and local-only cluster boundary claim
-        against backend-challenges/pulseops-elixir-job-platform/README.md and the
-        exact interview context; record whether each part is fact, inference, or hypothesis.
+      limitation: The source describes queue naming and local control, but it does not
+        prove cross-node fairness, quota enforcement, convergence latency, or the effect
+        of a failed sync.
+      basis: Check the concrete claim against backend-challenges/pulseops-elixir-job-platform/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        PulseOps tenant queues and local-only cluster boundary, but it cannot prove
-        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the PulseOps tenant queues
-        and local-only cluster boundary question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you isolate tenant concurrency in", update
-        PulseOps tenant queues and local-only cluster boundary when PulseOps tenant
-        queues and local-only cluster boundary evidence—a PulseOps tenant queues and
-        local-only cluster boundary trace or PulseOps tenant queues and local-only
-        cluster boundary test—contradicts the PulseOps tenant queues and local-only
-        cluster boundary constraint in case "How would you isolate tenant concurrency
-        in"; ask a stakeholder about PulseOps tenant queues and local-only cluster
-        boundary before revising.
-    rubric:
-      facts_correct: Names the verified PulseOps tenant queues and local-only cluster
-        boundary facts without smuggling in a result, scale, or capability that the
-        prompt does not establish.
-      assumptions_explicit: Labels the PulseOps tenant queues and local-only cluster
-        boundary premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible PulseOps tenant queues and local-only
-        cluster boundary options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the PulseOps tenant queues and local-only cluster
-        boundary choice to a benefit, a cost or risk, and the condition under which
-        another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about PulseOps tenant
-        queues and local-only cluster boundary by changing the claim or evidence boundary
-        rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the PulseOps tenant queues and local-only cluster boundary
-        recommendation.
+      level: medium
+      rationale: I am confident that local_only control is narrower than a global quota;
+        I am only moderately confident about operational fairness until two-node admission
+        and restart telemetry exist.
+      update_trigger: I would update the choice after measuring node-scaled admission,
+        sync recovery time, queue drift, and per-tenant saturation under a shared workload.
+
 - id: elixir_experience-03-pulseops-terminal-reconciliation
   version: 1.4.0
   target: elixir_experience
@@ -651,13 +614,14 @@ items:
     is already terminal without double-transitioning it?
   context: The interviewer is probing bounded candidate selection, row locking, state
     revalidation, repair idempotency, and the operational limits of a historical routine.
-  best_answer: PulseOps selects a bounded, ordered set where a platform Job is running
-    but Oban is terminal. For each candidate, a transaction locks the Job with FOR
-    UPDATE, rereads Oban, and revalidates state before updating timestamps or errors,
-    upserting the attempt, and inserting an event. A changed state or transaction
-    error returns :noop, so concurrent reconcilers do not apply a second transition.
-    This is a database repair routine, not evidence of scheduler cadence, cluster
-    throughput, or exactly-once effects outside that transaction.
+  best_answer: >-
+    I would describe PulseOps selecting a bounded, ordered set where a platform Job is running
+    but Oban is terminal. For each candidate, a transaction locks the Job with FOR UPDATE,
+    rereads Oban, and revalidates state before updating timestamps or errors, upserting the
+    attempt, and inserting an event. A changed state or transaction error returns :noop, so
+    concurrent reconcilers do not apply a second transition. I would keep the scope precise:
+    this is a database repair routine, not evidence of scheduler cadence, cluster throughput, or
+    exactly-once effects outside that transaction.
   distractors:
   - text: I would enumerate every still-running platform Job, overwrite it from an
       apparently terminal Oban record, and append an attempt plus event whenever reconciliation
@@ -739,9 +703,10 @@ items:
       or exactly-once delivery.
     challenge_kind: new_evidence
     best_answer: >-
-      PulseOps selects a bounded, ordered set where a platform Job is running but Oban
-      is terminal. I would keep the claims that remain supported, identify exactly which premise
-      the new observation changes, and run a focused check before revising the decision.
+      I would return :noop when the locked reread shows a changed state or a missing Oban row, and
+      I would give each attempt and event a stable identity. I would count duplicate-event
+      conflicts separately from transaction failures, then use telemetry to distinguish a
+      concurrent no-op from a repair that never reached commit.
     distractors:
     - text: I would keep the PulseOps terminal state reconciliation recommendation
         unchanged because changing position would look inconsistent.
@@ -792,25 +757,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-03-pulseops-terminal-reconciliation-delayed-3
-      prompt: New evidence about PulseOps terminal state reconciliation says a PulseOps
-        terminal state reconciliation test exposes a boundary case that the PulseOps
-        terminal state reconciliation examples did not cover; with the PulseOps terminal
-        state reconciliation dependency is slower for PulseOps terminal state reconciliation
-        and the failure is ambiguous rather than explicit, how do you update the PulseOps
-        terminal state reconciliation decision rule?
-      changed_constraint: the PulseOps terminal state reconciliation dependency is
-        slower for PulseOps terminal state reconciliation and the failure is ambiguous
-        rather than explicit
-      new_evidence: a PulseOps terminal state reconciliation test exposes a boundary
-        case that the PulseOps terminal state reconciliation examples did not cover
-      best_answer: I would keep the facts that remain supported about PulseOps terminal
-        state reconciliation, treat a PulseOps terminal state reconciliation test
-        exposes a boundary case that the PulseOps terminal state reconciliation examples
-        did not cover as new evidence rather than a result, and state the updated
-        decision rule under the PulseOps terminal state reconciliation dependency
-        is slower for PulseOps terminal state reconciliation and the failure is ambiguous
-        rather than explicit. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        A reconciliation trace finds the Oban row deleted, one transaction fails after the lock, and
+        another run records a duplicate-event conflict. Which outcome is noop and what telemetry
+        would you require?
+      changed_constraint: >-
+        repair must be idempotent and distinguish missing work, transaction failure, and duplicate
+        event identity
+      new_evidence: >-
+        the candidate changes across rereads and the review observes both a transaction error and a
+        duplicate-event conflict
+      best_answer: >-
+        I would keep :noop for a state that no longer matches or an Oban row that is absent by
+        policy, but I would report a transaction failure and duplicate-event conflict separately. I
+        would attach stable job, attempt, and event identities, then verify each outcome with
+        telemetry rather than collapsing them into one repair count.
       distractors:
       - text: I would preserve every part of the original PulseOps terminal state
           reconciliation answer because changing it after review would be inconsistent.
@@ -827,86 +788,76 @@ items:
     goal: Exercise repair idempotency while keeping the batch's operating behavior
       unclaimed.
   critical_thinking:
-    problem_frame: 'Frame PulseOps terminal state reconciliation before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests PulseOps terminal state reconciliation within
-        a Elixir project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend PulseOps
-        terminal state reconciliation, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the PulseOps terminal state reconciliation
-        constraint is the dominant one; label it and ask whether the interviewer confirms
-        it.
-      unknown: 'Still unknown for PulseOps terminal state reconciliation: the scale,
-        failure tolerance, ownership boundary, and evidence threshold that would change
-        the decision.'
+    problem_frame: 'I frame reconciliation as a conditional state repair: find a bounded
+      candidate, lock the platform Job, reread Oban, and decide whether a transition is
+      still valid before writing an attempt or event.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for PulseOps terminal state reconciliation
-        benefit: It keeps the PulseOps terminal state reconciliation reasoning close
-          to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the PulseOps terminal state reconciliation
-          workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated PulseOps terminal state reconciliation
-          contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for PulseOps terminal
-          state reconciliation
-        benefit: It can make the PulseOps terminal state reconciliation boundary more
-          explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the PulseOps terminal state reconciliation evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first PulseOps terminal state reconciliation option
-        when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Elixir project deep dive constraint makes the first
-        assumption unsafe.
+      - option: Lock and reread the Job and Oban row before a conditional repair.
+        benefit: It makes the decision use current local state and gives concurrent reconcilers
+          a clear no-op path.
+        cost_or_risk: It holds a row lock during repair work and can contend with normal
+          transitions if the transaction grows.
+        valid_when: Use it when local correctness and a bounded repair transaction matter
+          more than maximum reconciliation parallelism.
+      - option: Use a short conditional update with unique attempt/event identities and
+          retry conflicts.
+        benefit: It can reduce lock duration and make duplicate repairs visible through
+          conflict handling.
+        cost_or_risk: It needs careful reread and retry logic, and a conflict can be harder
+          to explain than an explicit locked no-op.
+        valid_when: Use it when contention is measured and the team can operate a well-defined
+          optimistic retry policy.
+      decision_rule: Choose the locked reread when stale repairs are the dominant risk;
+        choose the shorter optimistic path only when contention measurements justify its
+        added conflict and retry complexity.
+    rubric:
+      facts_correct: Names the bounded candidate, FOR UPDATE lock, Oban reread, conditional
+        state check, and attempt/event identity.
+      assumptions_explicit: States the no-op and uniqueness assumptions instead of treating
+        the initial scan as current truth.
+      alternatives_considered: Compares locked repair with a shorter conditional-update
+        strategy and explains when contention makes the alternative worthwhile.
+      tradeoff_quality: Connects stale reads, lock duration, duplicate observability,
+        and retry complexity to the repair choice.
+      follow_up_adaptation: Responds differently to a missing row, changed state, duplicate
+        event, and failed transaction.
+      certainty_calibration: Keeps confidence on local repair semantics separate from
+        unverified scheduler and throughput claims.
+    claim_map:
+      fact: The described routine selects ordered candidates, takes a database row lock
+        before rereading Oban, revalidates state, and writes repair records inside a transaction.
+      inference: The lock and reread can turn a stale scan into a local no-op and stable
+        attempt/event identities can make repeated repair observable, but they do not
+        prove scheduler cadence or an external exactly-once effect.
+      assumption: I am assuming a missing Oban row or changed state is a defined no-op
+        and that attempt and event identities have a uniqueness or conflict policy.
+      unknown: The duplicate-event policy, batch fairness, scheduler frequency, and behavior
+        when the Oban row disappears during repair are not established.
     failure_probe:
       kind: failure_mode
-      prompt: 'Pulseops terminal state reconciliation: if a caller retries PulseOps
-        terminal state reconciliation at the worst moment, what failure mode appears
-        first, and how would you protect PulseOps terminal state reconciliation?'
+      prompt: Two reconcilers see one candidate, the Oban row is deleted before the locked
+        reread, one transaction fails, and an event write is retried. Which cases should
+        be :noop, which identity should conflict, and what telemetry separates concurrency
+        from an incomplete repair?
     evidence_check:
-      basis: Check the PulseOps terminal state reconciliation claim against backend-challenges/pulseops-elixir-job-platform/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports a local repair transaction and its state checks,
+        but it does not prove batch throughput, scheduler behavior, or a universal duplicate-event
+        policy.
+      basis: Check the concrete claim against backend-challenges/pulseops-elixir-job-platform/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        PulseOps terminal state reconciliation, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the PulseOps terminal
-        state reconciliation question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you reconcile a PulseOps Job", update PulseOps
-        terminal state reconciliation when PulseOps terminal state reconciliation
-        evidence—a PulseOps terminal state reconciliation trace or PulseOps terminal
-        state reconciliation test—contradicts the PulseOps terminal state reconciliation
-        constraint in case "How would you reconcile a PulseOps Job"; ask a stakeholder
-        about PulseOps terminal state reconciliation before revising.
-    rubric:
-      facts_correct: Names the verified PulseOps terminal state reconciliation facts
-        without smuggling in a result, scale, or capability that the prompt does not
-        establish.
-      assumptions_explicit: Labels the PulseOps terminal state reconciliation premise
-        that is still assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible PulseOps terminal state reconciliation
-        options, or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the PulseOps terminal state reconciliation choice
-        to a benefit, a cost or risk, and the condition under which another choice
-        wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about PulseOps
-        terminal state reconciliation by changing the claim or evidence boundary rather
-        than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the PulseOps terminal state reconciliation recommendation.
+      level: medium
+      rationale: I am confident that a locked reread narrows stale-state races; I am less
+        certain about throughput and duplicate semantics until those conflict paths are
+        tested.
+      update_trigger: I would revise the design after observing lock contention, duplicate-event
+        conflicts, missing-row frequency, or a repair that commits an invalid transition.
+
 - id: elixir_experience-04-reportforge-inflight-cancellation
   version: 1.4.0
   target: elixir_experience
@@ -918,13 +869,13 @@ items:
   context: The interviewer is probing transaction order, state revalidation, late
     Oban cancellation, in-flight I/O, retry races, and the boundary before artifact
     compensation.
-  best_answer: ReportForge commits cancellation before asking Oban to stop work. In
-    Repo.transaction it locks and revalidates the Report, stores cancelled status
-    plus an event, and clears execution_job_id. After commit, it calls Oban.cancel_job
-    only if an ID existed; worker and completion paths recheck cancelled. That prevents
-    a late completion from simply overwriting the local state, but it does not preempt
-    I/O already started or guarantee the later Oban call succeeds. The row lock must
-    not span artifact writing.
+  best_answer: >-
+    I would explain that ReportForge commits cancellation before asking Oban to stop work. In
+    Repo.transaction it locks and revalidates the Report, stores cancelled status plus an event,
+    and clears execution_job_id. After commit, it calls Oban.cancel_job only if an ID existed;
+    worker and completion paths recheck cancelled. That prevents a late completion from simply
+    overwriting local state, but it does not preempt I/O already started or guarantee the later
+    Oban call succeeds. I would keep the row lock out of artifact writing.
   distractors:
   - text: I would synchronously call Oban.cancel_job while retaining the Report row
       lock, then persist cancellation only after it returns. That guarantees an already-running
@@ -1006,9 +957,10 @@ items:
       compensation to its separate boundary.
     challenge_kind: assumption
     best_answer: >-
-      ReportForge commits cancellation before asking Oban to stop work. I would label the follow-up
-      premise as an assumption, ask the smallest question that could disprove it, and protect
-      the edge case before committing to the recommendation.
+      I would keep the row lock short, commit cancelled state first, and make worker and
+      completion paths recheck it after every external boundary. I would record Oban cancellation
+      failure and late completion as separate telemetry, then define whether retry means a new
+      attempt or a reconciliation of the same report.
     distractors:
     - text: I would repeat my original ReportForge cancellation of in-flight work
         answer with more confidence because the interviewer probably assumes the usual
@@ -1064,27 +1016,19 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-04-reportforge-inflight-cancellation-delayed-4
-      prompt: 'Reportforge cancellation of in-flight work gets a new constraint: new
-        ReportForge cancellation of in-flight work evidence contradicts the ReportForge
-        cancellation of in-flight work assumption that made the first option attractive.
-        After a stakeholder clarifies a ReportForge cancellation of in-flight work
-        requirement that changes the ReportForge cancellation of in-flight work success
-        condition, which ReportForge cancellation of in-flight work assumption is
-        no longer safe?'
-      changed_constraint: new ReportForge cancellation of in-flight work evidence
-        contradicts the ReportForge cancellation of in-flight work assumption that
-        made the first option attractive
-      new_evidence: a stakeholder clarifies a ReportForge cancellation of in-flight
-        work requirement that changes the ReportForge cancellation of in-flight work
-        success condition
-      best_answer: I would keep the facts that remain supported about ReportForge
-        cancellation of in-flight work, treat a stakeholder clarifies a ReportForge
-        cancellation of in-flight work requirement that changes the ReportForge cancellation
-        of in-flight work success condition as new evidence rather than a result,
-        and state the updated decision rule under new ReportForge cancellation of
-        in-flight work evidence contradicts the ReportForge cancellation of in-flight
-        work assumption that made the first option attractive. I would then name one
-        focused check before treating the revised answer as settled.
+      prompt: >-
+        Cancellation commits, Oban cancellation fails, the worker has started I/O, and a retry races
+        with cancel. Which cancellation guarantee survives and what state checks must be explicit?
+      changed_constraint: >-
+        cancellation must be durable and observable without claiming it preempts already-started I/O
+      new_evidence: >-
+        the database state is cancelled but the Oban call fails after the worker has begun external
+        I/O
+      best_answer: >-
+        I would keep durable cancelled state and the worker recheck, but I would retract any
+        guarantee that in-flight I/O stops. I would make retry and late completion idempotent,
+        record the failed Oban cancellation, and reconcile the external work without holding a row
+        lock across the write.
       distractors:
       - text: I would preserve every part of the original ReportForge cancellation
           of in-flight work answer because changing it after review would be inconsistent.
@@ -1102,91 +1046,75 @@ items:
     goal: Separate local lifecycle correctness from stop latency and the next artifact-compensation
       exercise.
   critical_thinking:
-    problem_frame: 'Frame ReportForge cancellation of in-flight work before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReportForge cancellation of in-flight work
-        within a Elixir project deep dive context; treat that named boundary as the
-        verified starting fact.
-      inference: The reasonable inference is that the answer must defend ReportForge
-        cancellation of in-flight work, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the ReportForge cancellation of in-flight
-        work constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for ReportForge cancellation of in-flight work: the
-        scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame cancellation as a race between the ReportForge row state,
+      an Oban execution, and work already started: define the state transition, the worker''s
+      recheck, and the side effect that cancellation cannot preempt.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for ReportForge cancellation
-          of in-flight work
-        benefit: It keeps the ReportForge cancellation of in-flight work reasoning
-          close to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the ReportForge cancellation of in-flight
-          work workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated ReportForge cancellation of in-flight work
-          contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for ReportForge cancellation
-          of in-flight work
-        benefit: It can make the ReportForge cancellation of in-flight work boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the ReportForge cancellation of in-flight work evidence has not
-          established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first ReportForge cancellation of in-flight work option
-        when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Elixir project deep dive constraint makes the first
-        assumption unsafe.
+      - option: Commit the canceled state and have the worker recheck before completion.
+        benefit: It gives the database an authoritative local outcome and keeps the lock
+          short while handling an already-running worker.
+        cost_or_risk: 'It is cooperative: started I/O may finish and require separate
+          cleanup or compensation.'
+        valid_when: Use it when local lifecycle correctness matters and the worker can
+          cheaply recheck state.
+      - option: Add a cancellation token or lease that the worker checks around expensive
+          stages.
+        benefit: It can reduce wasted work and make long-running stages more interruptible.
+        cost_or_risk: It adds token ownership, check points, and failure semantics; it
+          still cannot retract an external effect already sent.
+        valid_when: Use it when measured stop latency or resource waste justifies cooperative
+          checkpoints.
+      decision_rule: Choose the state-first recheck for the local guarantee; add tokens
+        or leases only when stop-latency measurements show that worker checkpoints are
+        worth their coordination cost.
+    rubric:
+      facts_correct: Separates the local canceled state, Oban cancellation call, worker/completion
+        recheck, and already-started I/O.
+      assumptions_explicit: Labels assumptions about missing execution ids, short locks,
+        and completion behavior.
+      alternatives_considered: Compares state-first cancellation with cooperative tokens
+        or leases and names the stop-latency condition for the latter.
+      tradeoff_quality: Connects local race correctness, wasted work, lock scope, and
+        compensation to the design.
+      follow_up_adaptation: Adapts when cancellation occurs before or after I/O and when
+        a retry or completion arrives late.
+      certainty_calibration: Does not call local state cancellation an end-to-end stop
+        guarantee without race and I/O evidence.
+    claim_map:
+      fact: The described cancellation path marks report state and separately calls Oban
+        cancellation using execution_job_id, while completion and worker paths recheck
+        state.
+      inference: State-first cancellation plus a worker recheck can prevent a late completion
+        from winning the local lifecycle race, but it cannot stop I/O that already began.
+      assumption: I am assuming completion honors the canceled state, a missing execution_job_id
+        is handled explicitly, and the row lock is not held over artifact or external
+        I/O.
+      unknown: Stop latency, retry-versus-cancel ordering, artifact effects after cancellation,
+        and the exact behavior of an already-running Oban job remain unknown.
     failure_probe:
       kind: counterexample
-      prompt: 'Reportforge cancellation of in-flight work: where would a tiny ReportForge
-        cancellation of in-flight work counterexample expose a false assumption, and
-        what would you change about ReportForge cancellation of in-flight work?'
+      prompt: Cancel after a worker starts I/O, let completion race with cancellation,
+        and vary execution_job_id, retry, and artifact-write timing. Which local row state
+        should win, and what side effect still needs compensation or measurement?
     evidence_check:
-      basis: Check the ReportForge cancellation of in-flight work claim against backend-challenges/reportforge-elixir-report-platform/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports local state and Oban cancellation boundaries, but
+        it does not establish cancellation latency, process preemption, external-effect
+        rollback, or artifact cleanup success.
+      basis: Check the concrete claim against backend-challenges/reportforge-elixir-report-platform/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReportForge cancellation of in-flight work, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the ReportForge cancellation
-        of in-flight work question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "What does ReportForge cancellation actually guarantee
-        when", update ReportForge cancellation of in-flight work when ReportForge
-        cancellation of in-flight work evidence—a ReportForge cancellation of in-flight
-        work trace or ReportForge cancellation of in-flight work test—contradicts
-        the ReportForge cancellation of in-flight work constraint in case "What does
-        ReportForge cancellation actually guarantee when"; ask a stakeholder about
-        ReportForge cancellation of in-flight work before revising.
-    rubric:
-      facts_correct: Names the verified ReportForge cancellation of in-flight work
-        facts without smuggling in a result, scale, or capability that the prompt
-        does not establish.
-      assumptions_explicit: Labels the ReportForge cancellation of in-flight work
-        premise that is still assumed and asks the smallest clarifying question that
-        matters.
-      alternatives_considered: Compares two credible ReportForge cancellation of in-flight
-        work options, or explains the hard constraint that makes comparison a false
-        equivalence.
-      tradeoff_quality: Connects the ReportForge cancellation of in-flight work choice
-        to a benefit, a cost or risk, and the condition under which another choice
-        wins.
-      follow_up_adaptation: Responds to the assumption challenge about ReportForge
-        cancellation of in-flight work by changing the claim or evidence boundary
-        rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReportForge cancellation of in-flight work recommendation.
+      level: medium
+      rationale: I am confident that a state recheck is different from process preemption;
+        I need race and I/O evidence before claiming a practical stop guarantee.
+      update_trigger: I would update the plan after a concurrent cancellation test shows
+        a late completion, a missing execution id, or measurable wasted I/O after the
+        row is canceled.
+
 - id: elixir_experience-05-reportforge-staged-artifact-compensation
   version: 1.4.0
   target: elixir_experience
@@ -1198,14 +1126,14 @@ items:
   context: The interviewer is probing short lock scope, staged-object compensation,
     cancellation revalidation, orphan risk, and the boundary separate from Oban cancellation
     intent.
-  best_answer: 'ReportForge prepares completion under a short row lock, then writes
-    artifact bytes through ArtifactStorage after that transaction ends. Finalization
-    reacquires the lock and revalidates running state; if cancellation, a state change,
-    or an error wins, it calls delete_for_report as compensation. That preserves responsive
-    state changes during storage, and the cited test describes cancellation between
-    put and finalize ending with no artifact record. It is not atomic database-plus-storage
-    behavior: delete is separate, its result is ignored, and a crash can leave a staged
-    object.'
+  best_answer: >-
+    I would explain that ReportForge prepares completion under a short row lock, then writes
+    artifact bytes through ArtifactStorage after the transaction ends. Finalization reacquires
+    the lock and revalidates running state; if cancellation, a state change, or an error wins,
+    it calls delete_for_report as compensation. That keeps state changes responsive during
+    storage, and the cited test covers cancellation between put and finalize with no artifact
+    record. I would state the limit: database-plus-storage is not atomic because delete is
+    separate, its result is ignored, and a crash can leave a staged object.
   distractors:
   - text: I would deliberately retain the Report row lock throughout ArtifactStorage.put_artifact
       so cancellation cannot interleave with storage. Once bytes exist, the final
@@ -1293,10 +1221,10 @@ items:
     goal: Reason about orphan recovery rather than confusing compensation with atomicity.
     challenge_kind: evidence
     best_answer: >-
-      ReportForge prepares completion under a short row lock, then writes artifact bytes through ArtifactStorage
-      after that transaction ends. I would treat the follow-up observation as evidence, not as
-      proof of impact; I would inspect the smallest relevant trace or test and state
-      what remains uncertain before changing the decision.
+      I would key staged objects by report and attempt identity, sweep objects with no finalized
+      record, and alert when delete_for_report fails. Before deleting anything I would recheck the
+      current artifact identity, and I would treat a duplicate attempt as a conflict or explicit
+      idempotent replay rather than a reason to delete a valid artifact.
     distractors:
     - text: I would cite my experience with ReportForge staged artifact cancellation
         compensation as enough proof and move on without naming an observation.
@@ -1350,32 +1278,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-05-reportforge-staged-artifact-compensation-delayed-5
-      prompt: 'Revisit ReportForge staged artifact cancellation compensation after
-        a trace of ReportForge staged artifact cancellation compensation isolates
-        a different ReportForge staged artifact cancellation compensation bottleneck
-        than the one you named and two ReportForge staged artifact cancellation compensation
-        callers from the case "How would you explain the cancellation race" or ReportForge
-        staged artifact cancellation compensation tenants now compete for the same
-        ReportForge staged artifact cancellation compensation boundary: what remains
-        factual about ReportForge staged artifact cancellation compensation, what
-        becomes provisional, and why?'
-      changed_constraint: two ReportForge staged artifact cancellation compensation
-        callers from the case "How would you explain the cancellation race" or ReportForge
-        staged artifact cancellation compensation tenants now compete for the same
-        ReportForge staged artifact cancellation compensation boundary
-      new_evidence: a trace of ReportForge staged artifact cancellation compensation
-        isolates a different ReportForge staged artifact cancellation compensation
-        bottleneck than the one you named
-      best_answer: I would keep the facts that remain supported about ReportForge
-        staged artifact cancellation compensation, treat a trace of ReportForge staged
-        artifact cancellation compensation isolates a different ReportForge staged
-        artifact cancellation compensation bottleneck than the one you named as new
-        evidence rather than a result, and state the updated decision rule under two
-        ReportForge staged artifact cancellation compensation callers from the case
-        "How would you explain the cancellation race" or ReportForge staged artifact
-        cancellation compensation tenants now compete for the same ReportForge staged
-        artifact cancellation compensation boundary. I would then name one focused
-        check before treating the revised answer as settled.
+      prompt: >-
+        The process crashes after put, delete_for_report later fails, and a duplicate attempt uses
+        the same idempotency identity. What artifact claim survives and what cleanup evidence is
+        required?
+      changed_constraint: >-
+        staged-object cleanup must be retryable and must not delete a valid artifact for the same
+        report identity
+      new_evidence: >-
+        a crash leaves storage ahead of the database and compensation fails while a duplicate
+        attempt appears
+      best_answer: >-
+        I would keep the short-lock and revalidation design, but I would retract any atomic rollback
+        claim. I would key the staged object by attempt, sweep objects with no finalized record,
+        retry failed deletion with telemetry, and recheck identity before removing anything that
+        could be valid.
       distractors:
       - text: I would preserve every part of the original ReportForge staged artifact
           cancellation compensation answer because changing it after review would
@@ -1393,96 +1310,76 @@ items:
       sharing an idempotency key.
     goal: Test compensation boundaries without claiming atomic object storage.
   critical_thinking:
-    problem_frame: 'Frame ReportForge staged artifact cancellation compensation before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReportForge staged artifact cancellation compensation
-        within a Elixir project deep dive context; treat that named boundary as the
-        verified starting fact.
-      inference: The reasonable inference is that the answer must defend ReportForge
-        staged artifact cancellation compensation, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the ReportForge staged artifact cancellation
-        compensation constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for ReportForge staged artifact cancellation compensation:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame this as a two-resource transaction that is not atomic: the
+      database report state and the staged object have separate commit paths, so finalization
+      must revalidate state and define compensation.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for ReportForge staged artifact
-          cancellation compensation
-        benefit: It keeps the ReportForge staged artifact cancellation compensation
-          reasoning close to the stated Elixir project deep dive constraint and makes
-          the evidence boundary visible.
-        cost_or_risk: It can be too narrow if the ReportForge staged artifact cancellation
-          compensation workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated ReportForge staged artifact cancellation
-          compensation contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for ReportForge staged
-          artifact cancellation compensation
-        benefit: It can make the ReportForge staged artifact cancellation compensation
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the ReportForge staged artifact cancellation compensation evidence
-          has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first ReportForge staged artifact cancellation compensation
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Elixir project deep dive constraint makes the first
-        assumption unsafe.
+      - option: Keep the short lock, put the object, revalidate, finalize, and compensate
+          with delete_for_report.
+        benefit: It avoids holding a database lock over storage I/O and makes the local
+          report decision explicit.
+        cost_or_risk: A crash or failed deletion can leave an orphan, and the put and
+          row update are never one atomic commit.
+        valid_when: Use it when lock duration matters and orphan cleanup is observable
+          and operable.
+      - option: Stage under a temporary key and promote or expire it through a storage
+          lifecycle policy.
+        benefit: It can separate visible artifacts from incomplete attempts and bound
+          orphan retention.
+        cost_or_risk: It adds promotion, lifecycle, and duplicate-key semantics; promotion
+          itself still needs a failure policy.
+        valid_when: Use it when object storage supports the lifecycle controls and orphan
+          retention is a material requirement.
+      decision_rule: Choose the current short-lock compensation path when cleanup is measurable;
+        choose temporary promotion or lifecycle controls when orphan retention and storage
+        recovery budgets require stronger containment.
+    rubric:
+      facts_correct: Names the put, short row lock, revalidation, finalization, and separate
+        delete_for_report boundary.
+      assumptions_explicit: States assumptions about object identity, idempotent deletion,
+        stale attempts, and retention.
+      alternatives_considered: Compares direct staged compensation with temporary-key
+        promotion or lifecycle expiry.
+      tradeoff_quality: Connects lock duration, orphan risk, delete failure, visibility,
+        and operational cleanup to the recommendation.
+      follow_up_adaptation: Changes the cleanup action when cancellation or a crash occurs
+        at a different stage.
+      certainty_calibration: Separates code-supported sequencing from any unmeasured claim
+        about atomic storage or cleanup completeness.
+    claim_map:
+      fact: The described ReportForge flow performs the object put outside the row lock
+        or database transaction, then reacquires and revalidates before finalization;
+        delete_for_report is a separate cleanup operation.
+      inference: Cancellation or a crash between put and finalize can leave an orphaned
+        object, so compensation narrows but does not remove the storage failure window.
+      assumption: I am assuming object keys are tied to a report or attempt, deletion
+        is idempotent enough to retry, and finalization can distinguish a stale attempt.
+      unknown: Storage consistency and delete latency, crash recovery, duplicate attempts,
+        and the retention policy for orphaned objects are not established.
     failure_probe:
       kind: edge_case
-      prompt: 'Reportforge staged artifact cancellation compensation: which ReportForge
-        staged artifact cancellation compensation boundary deserves the first test,
-        and what observation about ReportForge staged artifact cancellation compensation
-        would overturn the premise?'
+      prompt: Cancel before put, during a paused put, after put but before finalize, and
+        after a process crash. Which row state and object cleanup action should follow,
+        and what evidence would expose a leaked or wrongly deleted artifact?
     evidence_check:
-      basis: Check the ReportForge staged artifact cancellation compensation claim
-        against backend-challenges/reportforge-elixir-report-platform/lib/report_forge/reports.ex
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports separate database and object operations, but it
+        does not prove atomic storage, delete success, crash recovery, or an acceptable
+        orphan-retention budget.
+      basis: Check the concrete claim against backend-challenges/reportforge-elixir-report-platform/lib/report_forge/reports.ex
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReportForge staged artifact cancellation compensation, but it cannot prove
-        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the ReportForge staged
-        artifact cancellation compensation question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you explain the cancellation race", update
-        ReportForge staged artifact cancellation compensation when ReportForge staged
-        artifact cancellation compensation evidence—a ReportForge staged artifact
-        cancellation compensation trace or ReportForge staged artifact cancellation
-        compensation test—contradicts the ReportForge staged artifact cancellation
-        compensation constraint in case "How would you explain the cancellation race";
-        ask a stakeholder about ReportForge staged artifact cancellation compensation
-        before revising.
-    rubric:
-      facts_correct: Names the verified ReportForge staged artifact cancellation compensation
-        facts without smuggling in a result, scale, or capability that the prompt
-        does not establish.
-      assumptions_explicit: Labels the ReportForge staged artifact cancellation compensation
-        premise that is still assumed and asks the smallest clarifying question that
-        matters.
-      alternatives_considered: Compares two credible ReportForge staged artifact cancellation
-        compensation options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the ReportForge staged artifact cancellation compensation
-        choice to a benefit, a cost or risk, and the condition under which another
-        choice wins.
-      follow_up_adaptation: Responds to the evidence challenge about ReportForge staged
-        artifact cancellation compensation by changing the claim or evidence boundary
-        rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReportForge staged artifact cancellation compensation
-        recommendation.
+      level: medium
+      rationale: I am confident about the separate failure boundary and need storage and
+        crash evidence before claiming compensation is complete.
+      update_trigger: I would update the cleanup policy after fault injection shows a
+        leaked key, an over-broad deletion, a duplicate attempt collision, or unacceptable
+        delete latency.
+
 - id: elixir_experience-06-reportforge-stream-first-boundary
   version: 1.4.0
   target: elixir_experience
@@ -1494,13 +1391,14 @@ items:
   context: The interviewer is probing materialization paths, intended stream-first
     constraints, cancellation and backpressure design, and the difference between
     a code fact and a future architecture.
-  best_answer: 'ReportForge''s current generator is deliberately small, deterministic,
-    and in memory. It Enum.maps all rows; CSV uses map_join, JSON materializes manifest
-    plus rows, and ZIP builds CSV, JSON, and manifest before :zip.create with [:memory].
-    The architecture document instead defines stream-first constraints: bounded chunks,
-    incremental checksums and byte counts, temporary cleanup, and retryable writes.
-    I would present that as intended evolution, not implemented streaming, bounded
-    memory, large-report performance, or benchmark evidence for this study.'
+  best_answer: >-
+    I would be explicit that ReportForge current generator is deliberately small, deterministic,
+    and in memory. It Enum.maps all rows; CSV uses map_join, JSON materializes manifest plus
+    rows, and ZIP builds CSV, JSON, and manifest before :zip.create with [:memory]. The
+    architecture document instead defines stream-first constraints: bounded chunks, incremental
+    checksums and byte counts, temporary cleanup, and retryable writes. I would present that as
+    intended evolution, not implemented streaming, bounded memory, large-report performance, or
+    benchmark evidence for this study.
   distractors:
   - text: I would call the current generator streaming because Enum.map creates each
       row and an artifact appears afterward. CSV map_join and an in-memory ZIP reduce
@@ -1587,9 +1485,10 @@ items:
     goal: Turn the document into an evidence plan rather than an implementation claim.
     challenge_kind: alternative
     best_answer: >-
-      ReportForge's current generator is deliberately small, deterministic, and in memory. I would compare that
-      choice with the credible alternative against the requirement in the follow-up, cost, and failure
-      risk, then switch only if evidence makes the alternative safer.
+      I would feed bounded database chunks into an encoder, update checksum and byte count per
+      chunk, and write through multipart or temporary storage with cleanup ownership. I would
+      propagate cancellation and demand, measure RSS and throughput against the current in-memory
+      generator, and only set a limit after those measurements.
     distractors:
     - text: I would defend the first ReportForge in-memory generator and stream-first
         boundary option because offering an alternative might make the decision look
@@ -1642,29 +1541,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-06-reportforge-stream-first-boundary-delayed-6
-      prompt: The ReportForge in-memory generator and stream-first boundary review
-        adds a code inspection of ReportForge in-memory generator and stream-first
-        boundary confirms the ReportForge in-memory generator and stream-first boundary
-        mechanism but not its impact while the ReportForge in-memory generator and
-        stream-first boundary workload for ReportForge in-memory generator and stream-first
-        boundary no longer fits the original resource bound; which conclusion about
-        ReportForge in-memory generator and stream-first boundary would you narrow
-        before proposing a repair?
-      changed_constraint: the ReportForge in-memory generator and stream-first boundary
-        workload for ReportForge in-memory generator and stream-first boundary no
-        longer fits the original resource bound
-      new_evidence: a code inspection of ReportForge in-memory generator and stream-first
-        boundary confirms the ReportForge in-memory generator and stream-first boundary
-        mechanism but not its impact
-      best_answer: I would keep the facts that remain supported about ReportForge
-        in-memory generator and stream-first boundary, treat a code inspection of
-        ReportForge in-memory generator and stream-first boundary confirms the ReportForge
-        in-memory generator and stream-first boundary mechanism but not its impact
-        as new evidence rather than a result, and state the updated decision rule
-        under the ReportForge in-memory generator and stream-first boundary workload
-        for ReportForge in-memory generator and stream-first boundary no longer fits
-        the original resource bound. I would then name one focused check before treating
-        the revised answer as settled.
+      prompt: >-
+        The in-memory generator reaches its RSS limit on a large report, while a code inspection
+        confirms the intended stream-first mechanism but not its impact. Which conclusion would you
+        narrow?
+      changed_constraint: >-
+        large reports must stay within a measured RSS bound while preserving checksum, cancellation,
+        and cleanup semantics
+      new_evidence: >-
+        a large-report run exceeds RSS and the stream-first design exists in documentation but has
+        no performance evidence
+      best_answer: >-
+        I would keep the code fact that the current generator materializes rows and the intended
+        stream-first constraints, but I would retract any implemented-streaming claim. I would build
+        the chunked path, measure RSS and throughput against the current generator, and verify
+        cleanup and cancellation before setting a production limit.
       distractors:
       - text: I would preserve every part of the original ReportForge in-memory generator
           and stream-first boundary answer because changing it after review would
@@ -1683,81 +1574,66 @@ items:
     goal: Define evidence needed before the stream-first direction can become an implementation
       claim.
   critical_thinking:
-    problem_frame: 'Frame ReportForge in-memory generator and stream-first boundary
-      before proposing a solution: state the actor, required outcome, constraint,
-      and unknown that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReportForge in-memory generator and stream-first
-        boundary within a Elixir project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend ReportForge
-        in-memory generator and stream-first boundary, but that does not prove one
-        implementation wins under every workload or audience.
-      assumption: An unstated assumption is that the ReportForge in-memory generator
-        and stream-first boundary constraint is the dominant one; label it and ask
-        whether the interviewer confirms it.
-      unknown: 'Still unknown for ReportForge in-memory generator and stream-first
-        boundary: the scale, failure tolerance, ownership boundary, and evidence threshold
-        that would change the decision.'
+    problem_frame: 'I frame the answer around the evidence boundary: distinguish the current
+      in-memory generator from the intended stream-first direction, then name chunking,
+      backpressure, checksum, cleanup, and RSS as unverified contracts.'
     comparison:
       applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about ReportForge in-memory
-        generator and stream-first boundary would be a false equivalence because the
-        prompt does not establish that both choices satisfy the same contract.
-      hard_constraint: The hard ReportForge in-memory generator and stream-first boundary
-        constraint is the required guarantee stated by the interviewer; no missing
-        measurement licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for ReportForge in-memory generator
-        and stream-first boundary; first clarify the constraint or collect the evidence
-        that would make two options genuinely comparable.
+      rejected_alternative: Comparing the current materialized generator with the proposed
+        stream-first architecture as if both were implemented serving choices is a false
+        equivalence; one is code evidence and the other is a direction.
+      hard_constraint: The hard constraint is to avoid claiming bounded memory until an
+        actual chunked pipeline and its failure cleanup are measured against the current
+        generator.
+      decision_rule: Describe the current memory behavior as fact, treat stream-first
+        as a proposal, and choose it only after byte-equivalence, backpressure, cancellation,
+        and RSS evidence exist.
+    rubric:
+      facts_correct: Identifies the materializing calls and keeps them separate from the
+        intended stream-first direction.
+      assumptions_explicit: Labels the assumptions behind chunking, checksum, backpressure,
+        temporary storage, and cleanup.
+      alternatives_considered: Explains why current code and a proposed streaming architecture
+        are not yet comparable implementations.
+      tradeoff_quality: Connects memory, cancellation, producer demand, checksum correctness,
+        and cleanup to the evidence plan.
+      follow_up_adaptation: Changes the claim only when an implemented stream passes byte,
+        RSS, and failure tests.
+      certainty_calibration: Uses high confidence for the current code fact and low confidence
+        for the unimplemented production outcome.
+    claim_map:
+      fact: The described generator uses Enum.map, map_join, materialized JSON, and an
+        in-memory :zip.create path, while the exercise material points toward a stream-first
+        architecture.
+      inference: The current implementation is not evidence that the final artifact streams
+        or has bounded RSS; a chunked encoder and resource cleanup would have to be implemented
+        and measured.
+      assumption: I am assuming cursor chunks, incremental encoding, and a temporary or
+        multipart sink can preserve artifact bytes while allowing cancellation and backpressure.
+      unknown: Chunk size, checksum placement, producer demand, cancellation cleanup,
+        temporary storage limits, and full-dataset RSS are unknown.
     failure_probe:
       kind: failure_mode
-      prompt: 'Reportforge in-memory generator and stream-first boundary: when the
-        first ReportForge in-memory generator and stream-first boundary recovery path
-        fails, which consequence reaches the user, and what bounded mitigation follows
-        for ReportForge in-memory generator and stream-first boundary?'
+      prompt: Run the largest available report with a slow consumer, cancellation during
+        a chunk, checksum failure, and temporary cleanup failure. Which observation would
+        prove the current generator is materialized, and which would validate a stream-first
+        replacement?
     evidence_check:
-      basis: Check the ReportForge in-memory generator and stream-first boundary claim
-        against backend-challenges/reportforge-elixir-report-platform/README.md and
-        the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source and code can establish materialization in the current path,
+        but they cannot prove bounded RSS, stream backpressure, byte equivalence, or cleanup
+        behavior that is not implemented.
+      basis: Check the concrete claim against backend-challenges/reportforge-elixir-report-platform/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReportForge in-memory generator and stream-first boundary, but it cannot prove
-        an unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the ReportForge in-memory
-        generator and stream-first boundary question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you present ReportForge's stream-first architecture",
-        update ReportForge in-memory generator and stream-first boundary when ReportForge
-        in-memory generator and stream-first boundary evidence—a ReportForge in-memory
-        generator and stream-first boundary trace or ReportForge in-memory generator
-        and stream-first boundary test—contradicts the ReportForge in-memory generator
-        and stream-first boundary constraint in case "How would you present ReportForge's
-        stream-first architecture"; ask a stakeholder about ReportForge in-memory
-        generator and stream-first boundary before revising.
-    rubric:
-      facts_correct: Names the verified ReportForge in-memory generator and stream-first
-        boundary facts without smuggling in a result, scale, or capability that the
-        prompt does not establish.
-      assumptions_explicit: Labels the ReportForge in-memory generator and stream-first
-        boundary premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible ReportForge in-memory generator
-        and stream-first boundary options, or explains the hard constraint that makes
-        comparison a false equivalence.
-      tradeoff_quality: Connects the ReportForge in-memory generator and stream-first
-        boundary choice to a benefit, a cost or risk, and the condition under which
-        another choice wins.
-      follow_up_adaptation: Responds to the alternative challenge about ReportForge
-        in-memory generator and stream-first boundary by changing the claim or evidence
-        boundary rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReportForge in-memory generator and stream-first boundary
-        recommendation.
+      level: high
+      rationale: I am highly confident about the current materialization calls; I am deliberately
+        uncertain about the proposed stream design until it exists and is benchmarked.
+      update_trigger: I would update the recommendation after a full-dataset RSS benchmark,
+        byte-equivalence check, cancellation/backpressure test, and cleanup fault injection.
+
 - id: elixir_experience-07-reconpulse-atomic-replay-request
   version: 1.4.0
   target: elixir_experience
@@ -1768,13 +1644,14 @@ items:
     from diverging when an operator requests a replay?
   context: The interviewer is probing Ecto.Multi contents, rollback, local auditability,
     unsupported event behavior, and the limits beyond the request transaction.
-  best_answer: ReconPulse uses one Ecto.Multi to turn a replay request into consistent
+  best_answer: >-
+    I would describe ReconPulse using one Ecto.Multi to turn a replay request into consistent
     local intent. After requiring a reason, it inserts a queued ReplayJob with before_state,
-    inserts ReplayWorker through Oban, may mark the DeadLetter replay_requested, and
-    writes event and audit logs in Repo.transaction. Any step rolls the local request
-    back, avoiding a replay row, handoff, or audit trail that disagrees. That says
-    nothing about duplicate operator requests, worker success, unsupported events,
-    or exactly-once effects after the transaction.
+    inserts ReplayWorker through Oban, may mark the DeadLetter replay_requested, and writes
+    event and audit logs in Repo.transaction. Any step rolls the local request back, avoiding a
+    replay row, handoff, or audit trail that disagrees. I would keep the boundary explicit: it
+    says nothing about duplicate operator requests, worker success, unsupported events, or
+    exactly-once effects after the transaction.
   distractors:
   - text: I would insert ReplayJob, then enqueue a worker and write durable audit
       rows asynchronously so an asynchronous observability path cannot delay operators.
@@ -1859,10 +1736,10 @@ items:
     goal: Expose gaps the local transaction cannot settle.
     challenge_kind: failure
     best_answer: >-
-      ReconPulse uses one Ecto.Multi to turn a replay request into consistent local intent. If
-      the failure in the follow-up appears, I would name the user or system consequence,
-      contain it with a bounded mitigation, and verify recovery with a focused test or
-      metric.
+      I would require authorization and an idempotency key for repeated operator requests, keep
+      each Ecto.Multi rollback local, and make unsupported events an explicit terminal outcome.
+      For a worker crash I would expose retry and dead-letter state, then reconcile the external
+      effect separately from the committed audit trail.
     distractors:
     - text: I would describe the ReconPulse atomic replay request failure as impossible
         because the happy path already passed its test.
@@ -1916,24 +1793,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-07-reconpulse-atomic-replay-request-delayed-7
-      prompt: For ReconPulse atomic replay request, new evidence is a measured ReconPulse
-        atomic replay request comparison shows the alternative has a different ReconPulse
-        atomic replay request cost profile and the constraint is a stakeholder asks
-        for a stronger ReconPulse atomic replay request guarantee than the first ReconPulse
-        atomic replay request answer promised. What alternative now deserves consideration
-        for ReconPulse atomic replay request?
-      changed_constraint: a stakeholder asks for a stronger ReconPulse atomic replay
-        request guarantee than the first ReconPulse atomic replay request answer promised
-      new_evidence: a measured ReconPulse atomic replay request comparison shows the
-        alternative has a different ReconPulse atomic replay request cost profile
-      best_answer: I would keep the facts that remain supported about ReconPulse atomic
-        replay request, treat a measured ReconPulse atomic replay request comparison
-        shows the alternative has a different ReconPulse atomic replay request cost
-        profile as new evidence rather than a result, and state the updated decision
-        rule under a stakeholder asks for a stronger ReconPulse atomic replay request
-        guarantee than the first ReconPulse atomic replay request answer promised.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        An operator repeats a replay request while each Ecto.Multi step can roll back, then the
+        worker crashes and the event is unsupported. Which local guarantee survives and what
+        recovery contract must you add?
+      changed_constraint: >-
+        replay requests must be authorized and idempotent while unsupported events and worker
+        failures remain visible terminal states
+      new_evidence: >-
+        repeated operator requests and an unsupported event expose gaps after local transaction
+        rollback and worker failure
+      best_answer: >-
+        I would keep the local all-or-nothing intent created by Ecto.Multi, but I would retract any
+        claim that it deduplicates operator requests or completes the replay. I would add an
+        idempotency key, explicit unsupported status, and worker retry or dead-letter telemetry,
+        then reconcile the external effect separately.
       distractors:
       - text: I would preserve every part of the original ReconPulse atomic replay
           request answer because changing it after review would be inconsistent.
@@ -1948,85 +1822,76 @@ items:
       request, dead-letter update, worker crash, unsupported event, and audit authorization.
     goal: Verify local request coherence and reveal the policy work beyond it.
   critical_thinking:
-    problem_frame: 'Frame ReconPulse atomic replay request before proposing a solution:
-      state the actor, required outcome, constraint, and unknown that could invalidate
-      the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReconPulse atomic replay request within a
-        Elixir project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend ReconPulse
-        atomic replay request, but that does not prove one implementation wins under
-        every workload or audience.
-      assumption: An unstated assumption is that the ReconPulse atomic replay request
-        constraint is the dominant one; label it and ask whether the interviewer confirms
-        it.
-      unknown: 'Still unknown for ReconPulse atomic replay request: the scale, failure
-        tolerance, ownership boundary, and evidence threshold that would change the
-        decision.'
+    problem_frame: 'I frame a replay request as a local command transaction: the operator''s
+      reason and authorization must be checked, then the replay row, Oban job, audit trail,
+      and event must either commit together or roll back together.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for ReconPulse atomic replay
-          request
-        benefit: It keeps the ReconPulse atomic replay request reasoning close to
-          the stated Elixir project deep dive constraint and makes the evidence boundary
-          visible.
-        cost_or_risk: It can be too narrow if the ReconPulse atomic replay request
-          workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated ReconPulse atomic replay request contract
-          and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for ReconPulse atomic
-          replay request
-        benefit: It can make the ReconPulse atomic replay request boundary more explicit
-          when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the ReconPulse atomic replay request evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first ReconPulse atomic replay request option when
-        its stated contract holds; choose the alternative only when evidence shows
-        that the relevant Elixir project deep dive constraint makes the first assumption
-        unsafe.
+      - option: Keep the Ecto.Multi local transaction for the replay command.
+        benefit: It makes the local row, job handoff, and audit trail succeed or fail
+          as one database decision.
+        cost_or_risk: The worker and external effect remain outside the transaction, so
+          a post-commit crash still needs idempotency and reconciliation.
+        valid_when: Use it when local request coherence is the main invariant and the
+          worker boundary is explicitly handled.
+      - option: Record an outbox command and dispatch it with an independently idempotent
+          worker.
+        benefit: It can make post-commit dispatch and retry state more visible when the
+          worker boundary is operationally complex.
+        cost_or_risk: It adds an outbox poller or dispatcher, more states, and another
+          recovery path to operate.
+        valid_when: Use it when dispatch visibility and external-effect recovery matter
+          enough to justify the extra component.
+      decision_rule: Choose Ecto.Multi when local replay coherence is sufficient; choose
+        an outbox-style dispatcher only when post-commit delivery evidence and operations
+        require a separately visible command state.
+    rubric:
+      facts_correct: Names every local Multi participant and distinguishes rollback from
+        worker or external failures.
+      assumptions_explicit: States assumptions about authorization, identity uniqueness,
+        unsupported events, and worker rechecks.
+      alternatives_considered: Compares the local Multi with an outbox dispatcher and
+        gives a requirement-based decision rule.
+      tradeoff_quality: Connects local atomicity, post-commit delivery, operational state,
+        and extra component cost to the choice.
+      follow_up_adaptation: Adapts separately to a transaction failure, repeated request,
+        worker crash, and unsupported event.
+      certainty_calibration: Keeps confidence on local rollback separate from unverified
+        external delivery and authorization claims.
+    claim_map:
+      fact: The described ReconPulse flow uses Ecto.Multi to insert a replay row, enqueue
+        an Oban job, write audit/event records, and optionally update a dead-letter record
+        in one local transaction.
+      inference: That Multi can prevent partial local request state, but it cannot roll
+        back a worker crash, an unsupported event, or an external side effect after commit.
+      assumption: I am assuming the replay and event identities are unique, the operator
+        reason is authorized, and the worker rechecks unsupported or already-processed
+        events.
+      unknown: Authorization policy, external idempotency, dead-letter ownership, worker
+        retry semantics, and audit visibility are not established by the local Multi.
     failure_probe:
       kind: counterexample
-      prompt: 'Reconpulse atomic replay request: what stakeholder reply about ReconPulse
-        atomic replay request would invalidate the recommendation, and which ReconPulse
-        atomic replay request premise would you revisit?'
+      prompt: Fail each Multi step, repeat the same replay request, crash the worker,
+        and submit an unsupported event. Which local rows should roll back, which identity
+        should deduplicate, and which policy must the worker enforce after commit?
     evidence_check:
-      basis: Check the ReconPulse atomic replay request claim against backend-challenges/reconpulse-elixir-finops-control-tower/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports local Multi sequencing, but it does not establish
+        operator authorization, worker exactly-once behavior, external rollback, or a
+        complete dead-letter policy.
+      basis: Check the concrete claim against backend-challenges/reconpulse-elixir-finops-control-tower/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReconPulse atomic replay request, but it cannot prove an unmeasured production
-        outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the ReconPulse atomic
-        replay request question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "How would you prevent a ReconPulse replay", update
-        ReconPulse atomic replay request when ReconPulse atomic replay request evidence—a
-        ReconPulse atomic replay request trace or ReconPulse atomic replay request
-        test—contradicts the ReconPulse atomic replay request constraint in case "How
-        would you prevent a ReconPulse replay"; ask a stakeholder about ReconPulse
-        atomic replay request before revising.
-    rubric:
-      facts_correct: Names the verified ReconPulse atomic replay request facts without
-        smuggling in a result, scale, or capability that the prompt does not establish.
-      assumptions_explicit: Labels the ReconPulse atomic replay request premise that
-        is still assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible ReconPulse atomic replay request
-        options, or explains the hard constraint that makes comparison a false equivalence.
-      tradeoff_quality: Connects the ReconPulse atomic replay request choice to a
-        benefit, a cost or risk, and the condition under which another choice wins.
-      follow_up_adaptation: Responds to the failure challenge about ReconPulse atomic
-        replay request by changing the claim or evidence boundary rather than repeating
-        the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReconPulse atomic replay request recommendation.
+      level: medium
+      rationale: I am confident that Ecto.Multi provides the described local rollback
+        boundary; I need worker and authorization evidence before extending that guarantee.
+      update_trigger: I would update the recommendation after a failure matrix shows an
+        orphaned local row, a duplicate replay, an unauthorized request, or a worker effect
+        that cannot be reconciled.
+
 - id: elixir_experience-08-reconpulse-webhook-failure-circuit-risk
   version: 1.4.0
   target: elixir_experience
@@ -2038,14 +1903,14 @@ items:
   context: The interviewer is probing auditable delivery transitions, endpoint state,
     Oban retry timing, duplicate delivery, and a concurrency risk inferred from the
     code rather than a measured result.
-  best_answer: ReconPulse queues a Delivery and Oban job for each eligible endpoint
-    in one transaction. Dispatch rejects disabled or open endpoints; a 2xx marks delivery
-    and resets endpoint state, while failure records retry or dead-letter status,
-    next_retry_at, and endpoint failure state through another Multi. Historical tests
-    specify those paths. However, the endpoint was loaded before HTTP and failure_count
-    plus one is not an explicit locked or atomic increment, so concurrent failures
-    create an inferred risk of stale circuit decisions, not measured distributed breaker
-    coordination or exactly-once delivery.
+  best_answer: >-
+    I would describe ReconPulse queuing a Delivery and Oban job for each eligible endpoint in
+    one transaction. Dispatch rejects disabled or open endpoints; a 2xx marks delivery and
+    resets endpoint state, while failure records retry or dead-letter status, next_retry_at, and
+    endpoint failure state through another Multi. Historical tests specify those paths. I would
+    flag the inferred risk: the endpoint was loaded before HTTP and failure_count plus one is
+    not an explicit locked or atomic increment, so concurrent failures may make stale circuit
+    decisions; that is not measured distributed breaker coordination or exactly-once delivery.
   distractors:
   - text: I would treat each failed HTTP response as a global circuit update because
       the delivery transaction writes durable shared endpoint state. Loading the endpoint
@@ -2137,9 +2002,10 @@ items:
     goal: Reason from the inferred concurrency risk without inventing a measured failure.
     challenge_kind: new_evidence
     best_answer: >-
-      ReconPulse queues a Delivery and Oban job for each eligible endpoint in one transaction.
-      I would keep the claims that remain supported, identify exactly which premise the new
-      observation changes, and run a focused check before revising the decision.
+      I would reload or lock endpoint state before incrementing failure_count, align Oban retry
+      timing with next_retry_at, and define a half-open probe that cannot let every worker
+      through. I would make delivery idempotent, expose state transitions and retry age, and test
+      concurrent failures against one endpoint.
     distractors:
     - text: I would keep the ReconPulse webhook failure and circuit-state risk recommendation
         unchanged because changing position would look inconsistent.
@@ -2193,27 +2059,22 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-08-reconpulse-webhook-failure-circuit-risk-delayed-8
-      prompt: A second pass on ReconPulse webhook failure and circuit-state risk finds
-        a ReconPulse webhook failure and circuit-state risk test exposes a boundary
-        case that the ReconPulse webhook failure and circuit-state risk examples did
-        not cover; with the ReconPulse webhook failure and circuit-state risk dependency
-        is slower for ReconPulse webhook failure and circuit-state risk and the failure
-        is ambiguous rather than explicit, which ReconPulse webhook failure and circuit-state
-        risk test would you run before keeping the original rule?
-      changed_constraint: the ReconPulse webhook failure and circuit-state risk dependency
-        is slower for ReconPulse webhook failure and circuit-state risk and the failure
-        is ambiguous rather than explicit
-      new_evidence: a ReconPulse webhook failure and circuit-state risk test exposes
-        a boundary case that the ReconPulse webhook failure and circuit-state risk
-        examples did not cover
-      best_answer: I would keep the facts that remain supported about ReconPulse webhook
-        failure and circuit-state risk, treat a ReconPulse webhook failure and circuit-state
-        risk test exposes a boundary case that the ReconPulse webhook failure and
-        circuit-state risk examples did not cover as new evidence rather than a result,
-        and state the updated decision rule under the ReconPulse webhook failure and
-        circuit-state risk dependency is slower for ReconPulse webhook failure and
-        circuit-state risk and the failure is ambiguous rather than explicit. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        Concurrent deliveries load the same endpoint state, stale failure_count decisions open the
+        circuit incorrectly, and retry age disagrees with next_retry_at. Which risk is now
+        evidenced?
+      changed_constraint: >-
+        endpoint circuit transitions and retry scheduling must remain consistent under concurrent
+        delivery failures
+      new_evidence: >-
+        a concurrent trace shows stale endpoint state and a retry schedule that diverges from
+        next_retry_at
+      best_answer: >-
+        I would keep the tested success and failure paths, but I would describe the stale-increment
+        concern as static code evidence that suggests a concurrency risk, not as an observed breaker
+        failure. I would run a focused concurrent update test and inspect telemetry for lost
+        increments, stale circuit decisions, and half-open behavior before claiming coordinated
+        breaker behavior.
       distractors:
       - text: I would preserve every part of the original ReconPulse webhook failure
           and circuit-state risk answer because changing it after review would be
@@ -2232,93 +2093,80 @@ items:
     goal: Test observable transitions and the evidence needed for coordinated circuit
       behavior.
   critical_thinking:
-    problem_frame: 'Frame ReconPulse webhook failure and circuit-state risk before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReconPulse webhook failure and circuit-state
-        risk within a Elixir project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend ReconPulse
-        webhook failure and circuit-state risk, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the ReconPulse webhook failure and
-        circuit-state risk constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for ReconPulse webhook failure and circuit-state risk:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame webhook delivery as a persisted state machine under concurrent
+      workers: separate the row-state transitions and retry schedule from the unmeasured
+      question of whether concurrent failures coordinate safely.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for ReconPulse webhook failure
-          and circuit-state risk
-        benefit: It keeps the ReconPulse webhook failure and circuit-state risk reasoning
-          close to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the ReconPulse webhook failure and circuit-state
-          risk workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated ReconPulse webhook failure and circuit-state
-          risk contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for ReconPulse webhook
-          failure and circuit-state risk
-        benefit: It can make the ReconPulse webhook failure and circuit-state risk
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the ReconPulse webhook failure and circuit-state risk evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first ReconPulse webhook failure and circuit-state
-        risk option when its stated contract holds; choose the alternative only when
-        evidence shows that the relevant Elixir project deep dive constraint makes
-        the first assumption unsafe.
+      - option: Keep row-state transitions and add a focused concurrent test plus transition
+          telemetry.
+        benefit: It preserves the current delivery model while distinguishing a static
+          risk from an observed coordination failure.
+        cost_or_risk: A test and metrics may reveal that the existing update is insufficient,
+          and telemetry alone does not make updates atomic.
+        valid_when: Use it as the next evidence step when the production requirement and
+          current implementation are still being established.
+      - option: Use an atomic conditional update or lease for failure counts and half-open
+          probes.
+        benefit: It can prevent stale increments and restrict probe ownership when concurrency
+          evidence requires coordination.
+        cost_or_risk: It adds conditional conflict handling, lease expiry, and more state
+          transitions to operate.
+        valid_when: Use it after a focused concurrent test or telemetry shows lost updates
+          or multiple half-open probes.
+      decision_rule: Call the concurrency issue a static risk until focused concurrent
+        testing or telemetry shows observed breaker behavior; adopt atomic updates or
+        leases only when that evidence and the circuit contract require them.
+    rubric:
+      facts_correct: Separates persisted Delivery/Oban transitions and endpoint preload
+        from the unobserved concurrent-update outcome.
+      assumptions_explicit: Labels the static-code inference and avoids calling a breaker
+        failure evidenced without a concurrent test or telemetry.
+      alternatives_considered: Compares evidence-first instrumentation with an atomic
+        update or lease and states when the stronger mechanism is justified.
+      tradeoff_quality: Connects stale state, probe ownership, retry visibility, receiver
+        deduplication, and coordination cost to the decision.
+      follow_up_adaptation: Changes the claim when concurrency evidence appears instead
+        of treating the inferred risk as an observed outage.
+      certainty_calibration: Uses low certainty and names the exact test or telemetry
+        that would update it.
+    claim_map:
+      fact: The described path persists Delivery and Oban transitions, preloads the endpoint
+        before the HTTP call, and derives a new failure count from the current row state.
+      inference: Static code evidence suggests that a non-atomic failure_count + 1 update
+        could lose increments or make circuit decisions stale under concurrency, but it
+        is not an observed breaker failure until a focused concurrent test or telemetry
+        demonstrates it.
+      assumption: I am assuming endpoint state, retry timing, half-open admission, and
+        receiver deduplication each have explicit policies rather than relying on a single
+        stale preload.
+      unknown: Measured lost updates, half-open probe coordination, duplicate receiver
+        delivery, retry-age visibility, and the actual behavior of the breaker under concurrent
+        failure are unknown.
     failure_probe:
       kind: edge_case
-      prompt: 'Reconpulse webhook failure and circuit-state risk: where does the ReconPulse
-        webhook failure and circuit-state risk premise need a boundary check, and
-        which result would make you reframe ReconPulse webhook failure and circuit-state
-        risk?'
+      prompt: Drive concurrent failures for one endpoint, open and half-open the circuit,
+        deliver duplicate receiver attempts, and inspect retry age. Which observation
+        would move the claim from static risk to measured coordination failure?
     evidence_check:
-      basis: Check the ReconPulse webhook failure and circuit-state risk claim against
-        backend-challenges/reconpulse-elixir-finops-control-tower/README.md and the
-        exact interview context; record whether each part is fact, inference, or hypothesis.
+      limitation: The source supports persisted delivery and retry state, but static inspection
+        cannot establish observed concurrent breaker behavior, receiver deduplication,
+        or metrics quality.
+      basis: Check the concrete claim against backend-challenges/reconpulse-elixir-finops-control-tower/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReconPulse webhook failure and circuit-state risk, but it cannot prove an
-        unmeasured production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
       level: low
-      rationale: Certainty is low because the prompt bounds the ReconPulse webhook
-        failure and circuit-state risk question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "How would you describe ReconPulse webhook retries",
-        update ReconPulse webhook failure and circuit-state risk when ReconPulse webhook
-        failure and circuit-state risk evidence—a ReconPulse webhook failure and circuit-state
-        risk trace or ReconPulse webhook failure and circuit-state risk test—contradicts
-        the ReconPulse webhook failure and circuit-state risk constraint in case "How
-        would you describe ReconPulse webhook retries"; ask a stakeholder about ReconPulse
-        webhook failure and circuit-state risk before revising.
-    rubric:
-      facts_correct: Names the verified ReconPulse webhook failure and circuit-state
-        risk facts without smuggling in a result, scale, or capability that the prompt
-        does not establish.
-      assumptions_explicit: Labels the ReconPulse webhook failure and circuit-state
-        risk premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible ReconPulse webhook failure and
-        circuit-state risk options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the ReconPulse webhook failure and circuit-state
-        risk choice to a benefit, a cost or risk, and the condition under which another
-        choice wins.
-      follow_up_adaptation: Responds to the new_evidence challenge about ReconPulse
-        webhook failure and circuit-state risk by changing the claim or evidence boundary
-        rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReconPulse webhook failure and circuit-state risk recommendation.
+      rationale: I am confident that the current code shape warrants a concurrency question;
+        I am not confident that it loses updates or miscoordinates probes until a focused
+        concurrent test and telemetry show that behavior.
+      update_trigger: I would update the claim only after a focused concurrent failure
+        test or production telemetry demonstrates lost increments, stale circuit decisions,
+        multiple half-open probes, or a clean coordinated result.
+
 - id: elixir_experience-09-reconpulse-broker-and-ssrf-boundaries
   version: 1.4.0
   target: elixir_experience
@@ -2329,14 +2177,14 @@ items:
     and its webhook egress SSRF-safe?
   context: The interviewer is testing whether the broker and outbound-network boundaries
     are evaluated separately rather than compressed into one safety claim.
-  best_answer: ReconPulse has a Broadway shape, but its Pipeline uses DummyProducer
-    with producer concurrency one, processors, and a batcher. That demonstrates neither
-    real broker acknowledgements, redelivery, partition ordering, demand backpressure,
-    nor outage recovery. Separately, webhook validation requires HTTPS and rejects
-    localhost or literal private IPs, yet it only parses host text before the HTTP
-    client resolves and connects. I would require a real producer and resolve-and-connect
-    address pinning, plus redirect policy, before calling either boundary broker-backed
-    or SSRF-safe.
+  best_answer: >-
+    I would separate the two boundaries. ReconPulse has a Broadway shape, but its Pipeline uses
+    DummyProducer with producer concurrency one, processors, and a batcher; that demonstrates
+    neither real broker acknowledgements, redelivery, partition ordering, demand backpressure,
+    nor outage recovery. Webhook validation requires HTTPS and rejects localhost or literal
+    private IPs, yet it parses host text before the HTTP client resolves and connects. I would
+    require a real producer and resolve-and-connect address pinning, plus redirect policy,
+    before calling either boundary broker-backed or SSRF-safe.
   distractors:
   - text: I would call the pipeline broker-backed because Broadway declares configurable
       processors and batchers. DummyProducer has the same operational behavior as
@@ -2425,10 +2273,10 @@ items:
     goal: Turn each gap into its own validation plan.
     challenge_kind: assumption
     best_answer: >-
-      ReconPulse has a Broadway shape, but its Pipeline uses DummyProducer with producer concurrency one,
-      processors, and a batcher. I would label the follow-up premise as an assumption, ask
-      the smallest question that could disprove it, and protect the edge case before committing
-      to the recommendation.
+      I would specify a real Broadway producer with acknowledgements, demand, partitions,
+      ordering, redelivery, and DLQ behavior, then test each independently from SSRF controls. For
+      URLs I would resolve and pin the address at connect time, handle rebinding and redirects,
+      and show tests for private targets and every redirect hop.
     distractors:
     - text: I would repeat my original ReconPulse broker ingestion and SSRF boundaries
         answer with more confidence because the interviewer probably assumes the usual
@@ -2485,28 +2333,20 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-09-reconpulse-broker-and-ssrf-boundaries-delayed-9
-      prompt: 'Reconpulse broker ingestion and ssrf boundaries: the later ReconPulse
-        broker ingestion and SSRF boundaries review says a stakeholder clarifies a
-        ReconPulse broker ingestion and SSRF boundaries requirement that changes the
-        ReconPulse broker ingestion and SSRF boundaries success condition. Under new
-        ReconPulse broker ingestion and SSRF boundaries evidence contradicts the ReconPulse
-        broker ingestion and SSRF boundaries assumption that made the first option
-        attractive, which part of ReconPulse broker ingestion and SSRF boundaries
-        survives and which ReconPulse broker ingestion and SSRF boundaries claim changes?'
-      changed_constraint: new ReconPulse broker ingestion and SSRF boundaries evidence
-        contradicts the ReconPulse broker ingestion and SSRF boundaries assumption
-        that made the first option attractive
-      new_evidence: a stakeholder clarifies a ReconPulse broker ingestion and SSRF
-        boundaries requirement that changes the ReconPulse broker ingestion and SSRF
-        boundaries success condition
-      best_answer: I would keep the facts that remain supported about ReconPulse broker
-        ingestion and SSRF boundaries, treat a stakeholder clarifies a ReconPulse
-        broker ingestion and SSRF boundaries requirement that changes the ReconPulse
-        broker ingestion and SSRF boundaries success condition as new evidence rather
-        than a result, and state the updated decision rule under new ReconPulse broker
-        ingestion and SSRF boundaries evidence contradicts the ReconPulse broker ingestion
-        and SSRF boundaries assumption that made the first option attractive. I would
-        then name one focused check before treating the revised answer as settled.
+      prompt: >-
+        A broker outage requires redelivery and a URL resolves to a private address after passing
+        host-text validation. Which boundary claims survive and which tests must be added?
+      changed_constraint: >-
+        broker acknowledgement and SSRF policy must cover outage redelivery, DNS resolution,
+        rebinding, and redirects
+      new_evidence: >-
+        the current producer is a DummyProducer and a resolved private address bypasses the
+        host-text check
+      best_answer: >-
+        I would keep the fact that the current pipeline is only a shape and that host-text checks
+        run before connection, but I would retract broker-backed and SSRF-safe claims. I would add a
+        real producer with acknowledgement tests and resolve-and-connect pinning with redirect and
+        rebinding tests, evaluating each boundary independently.
       distractors:
       - text: I would preserve every part of the original ReconPulse broker ingestion
           and SSRF boundaries answer because changing it after review would be inconsistent.
@@ -2523,93 +2363,77 @@ items:
       private IP, redirect to private IP, and connection pin mismatch.
     goal: Produce independent evidence for messaging and egress boundaries.
   critical_thinking:
-    problem_frame: 'Frame ReconPulse broker ingestion and SSRF boundaries before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests ReconPulse broker ingestion and SSRF boundaries
-        within a Elixir project deep dive context; treat that named boundary as the
-        verified starting fact.
-      inference: The reasonable inference is that the answer must defend ReconPulse
-        broker ingestion and SSRF boundaries, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the ReconPulse broker ingestion and
-        SSRF boundaries constraint is the dominant one; label it and ask whether the
-        interviewer confirms it.
-      unknown: 'Still unknown for ReconPulse broker ingestion and SSRF boundaries:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame this as two independent proof obligations: a Broadway-shaped
+      ingestion path must show broker acknowledgement and redelivery semantics, while
+      webhook egress must show DNS, redirect, and connection controls that host-text validation
+      alone cannot prove.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for ReconPulse broker ingestion
-          and SSRF boundaries
-        benefit: It keeps the ReconPulse broker ingestion and SSRF boundaries reasoning
-          close to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the ReconPulse broker ingestion and
-          SSRF boundaries workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated ReconPulse broker ingestion and SSRF boundaries
-          contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for ReconPulse broker
-          ingestion and SSRF boundaries
-        benefit: It can make the ReconPulse broker ingestion and SSRF boundaries boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the ReconPulse broker ingestion and SSRF boundaries evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first ReconPulse broker ingestion and SSRF boundaries
-        option when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Elixir project deep dive constraint makes the first
-        assumption unsafe.
+      - option: Keep DummyProducer for local shape tests and label it as a test seam.
+        benefit: It keeps deterministic pipeline tests cheap and makes the current evidence
+          boundary honest.
+        cost_or_risk: It cannot exercise broker ack, redelivery, partition ordering, or
+          backpressure behavior.
+        valid_when: Use it for unit and contract tests while production broker semantics
+          remain separately verified.
+      - option: Use a real broker producer and an egress resolver/pinning policy.
+        benefit: It can provide broker-native acknowledgement and demand evidence and
+          can constrain the IP actually connected to.
+        cost_or_risk: It adds broker operations, redelivery handling, DNS/redirect complexity,
+          and failure telemetry.
+        valid_when: Use it when production requires broker delivery semantics or webhook
+          egress must resist rebinding and redirect attacks.
+      decision_rule: Keep the local producer only as a labeled test seam; require broker
+        evidence and connection-time egress controls before making either production claim.
+    rubric:
+      facts_correct: Distinguishes a Broadway-shaped DummyProducer from a broker-backed
+        producer and host-text checks from connection-time SSRF controls.
+      assumptions_explicit: States assumptions about broker delivery, DNS resolution,
+        redirects, and IP pinning.
+      alternatives_considered: Compares a labeled local test seam with a real broker plus
+        egress-control design and states the production requirement for each.
+      tradeoff_quality: Connects test determinism, broker operations, redelivery, demand,
+        DNS/rebinding risk, and connection controls.
+      follow_up_adaptation: Adapts independently when an acknowledgement is lost, a message
+        is redelivered, or a public URL resolves or redirects privately.
+      certainty_calibration: Does not call the current path broker-backed or SSRF-safe
+        without direct evidence.
+    claim_map:
+      fact: The described DummyProducer has a Broadway-shaped interface and concurrency
+        one, but the material does not show broker acknowledgement, redelivery, partition,
+        or demand behavior; egress checks HTTPS and host text before making the request.
+      inference: Those facts support a local pipeline seam and a basic URL policy, not
+        a broker-backed ingestion guarantee or SSRF safety against DNS rebinding, redirects,
+        or resolved private addresses.
+      assumption: I am assuming a real producer can expose ack/redelivery semantics and
+        the egress client can resolve, pin, and revalidate destinations at connection
+        time.
+      unknown: Broker failure and ordering semantics, demand saturation, DNS resolver
+        behavior, redirect policy, private-IP ranges, and connection pinning are unknown.
     failure_probe:
       kind: failure_mode
-      prompt: 'Reconpulse broker ingestion and ssrf boundaries: if the ReconPulse
-        broker ingestion and SSRF boundaries decision fails under plausible load or
-        a difficult turn, what consequence appears first, and how would you contain
-        ReconPulse broker ingestion and SSRF boundaries?'
+      prompt: Drop an acknowledgement, redeliver a message, reorder a partition, saturate
+        demand, resolve a public host to a private IP, and redirect to a private IP. Which
+        evidence is missing for the broker claim and which control must reject the egress?
     evidence_check:
-      basis: Check the ReconPulse broker ingestion and SSRF boundaries claim against
-        backend-challenges/reconpulse-elixir-finops-control-tower/lib/recon_pulse/ingestion/pipeline.ex
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source can establish the DummyProducer shape and current URL checks,
+        but it cannot prove broker semantics, DNS rebinding resistance, redirect safety,
+        or connection pinning without those components and tests.
+      basis: Check the concrete claim against backend-challenges/reconpulse-elixir-finops-control-tower/lib/recon_pulse/ingestion/pipeline.ex
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        ReconPulse broker ingestion and SSRF boundaries, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the ReconPulse broker
-        ingestion and SSRF boundaries question but does not reveal every workload,
-        stakeholder priority, or outcome.
-      update_trigger: For case "What would you require before calling this", update
-        ReconPulse broker ingestion and SSRF boundaries when ReconPulse broker ingestion
-        and SSRF boundaries evidence—a ReconPulse broker ingestion and SSRF boundaries
-        trace or ReconPulse broker ingestion and SSRF boundaries test—contradicts
-        the ReconPulse broker ingestion and SSRF boundaries constraint in case "What
-        would you require before calling this"; ask a stakeholder about ReconPulse
-        broker ingestion and SSRF boundaries before revising.
-    rubric:
-      facts_correct: Names the verified ReconPulse broker ingestion and SSRF boundaries
-        facts without smuggling in a result, scale, or capability that the prompt
-        does not establish.
-      assumptions_explicit: Labels the ReconPulse broker ingestion and SSRF boundaries
-        premise that is still assumed and asks the smallest clarifying question that
-        matters.
-      alternatives_considered: Compares two credible ReconPulse broker ingestion and
-        SSRF boundaries options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the ReconPulse broker ingestion and SSRF boundaries
-        choice to a benefit, a cost or risk, and the condition under which another
-        choice wins.
-      follow_up_adaptation: Responds to the assumption challenge about ReconPulse
-        broker ingestion and SSRF boundaries by changing the claim or evidence boundary
-        rather than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the ReconPulse broker ingestion and SSRF boundaries recommendation.
+      level: medium
+      rationale: I am confident that the current facts do not justify the two production
+        labels; the correct broker and egress mechanisms depend on requirements and runtime
+        evidence.
+      update_trigger: I would update the claims after broker fault tests show acknowledgement/redelivery
+        behavior and egress tests cover resolution, redirect, private-range rejection,
+        and connection identity.
+
 - id: elixir_experience-10-rinha-elixir-supervised-resource-reload
   version: 1.4.0
   target: elixir_experience
@@ -2621,14 +2445,15 @@ items:
   context: The interviewer is probing synchronous init, readiness, historical sample-resource
     restart evidence, and the performance and availability gaps that supervision alone
     cannot establish.
-  best_answer: ReferenceIndex loads resources synchronously in GenServer init, so
-    ready_status exists only after state does. The historical test kills a supervised
-    pid, observes a new pid become ready, then scores sample resources with at least
-    five references. That demonstrates revision-level restart semantics and readiness
-    after sample load. It does not establish full three-million-resource reload latency,
-    memory envelope, availability while reloading, corrupt-resource recovery, restart-storm
-    behavior, or challenge submission performance. A warm handoff or versioned index
-    needs separate benchmark and failure evidence.
+  best_answer: >-
+    I would scope the ReferenceIndex evidence: it loads resources synchronously in GenServer
+    init, so ready_status exists only after state does. The historical test kills a supervised
+    pid, observes a new pid become ready, then scores sample resources with at least five
+    references. That demonstrates revision-level restart semantics and readiness after sample
+    load. I would not present it as full three-million-resource reload latency, memory envelope,
+    availability while reloading, corrupt-resource recovery, restart-storm behavior, or
+    challenge submission performance. A warm handoff or versioned index needs separate benchmark
+    and failure evidence.
   distractors:
   - text: I would treat any successful supervisor restart as proof that the entire
       reference dataset reloads within strict latency and memory limits. Once a new
@@ -2716,10 +2541,10 @@ items:
     goal: Connect failure policy, availability, and capacity to the actual index boundary.
     challenge_kind: evidence
     best_answer: >-
-      ReferenceIndex loads resources synchronously in GenServer init, so ready_status exists only after state does.
-      I would treat the follow-up observation as evidence, not as proof of impact; I
-      would inspect the smallest relevant trace or test and state what remains uncertain before
-      changing the decision.
+      I would require a warm handoff or versioned index so readers see one complete generation
+      while a new one loads, with an explicit memory budget for overlap. I would test
+      corrupt-resource startup, restart intensity, readiness during swap, and two-instance RSS and
+      latency before claiming full-scale availability.
     distractors:
     - text: I would cite my experience with Rinha Elixir supervised resource reload
         as enough proof and move on without naming an observation.
@@ -2774,30 +2599,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-10-rinha-elixir-supervised-resource-reload-delayed-10
-      prompt: 'Review note for Rinha Elixir supervised resource reload: a trace of
-        Rinha Elixir supervised resource reload isolates a different Rinha Elixir
-        supervised resource reload bottleneck than the one you named. Given two Rinha
-        Elixir supervised resource reload callers from the case "What does a supervised
-        Rinha Elixir ReferenceIndex" or Rinha Elixir supervised resource reload tenants
-        now compete for the same Rinha Elixir supervised resource reload boundary,
-        what would you now defend, retract, and verify about Rinha Elixir supervised
-        resource reload?'
-      changed_constraint: two Rinha Elixir supervised resource reload callers from
-        the case "What does a supervised Rinha Elixir ReferenceIndex" or Rinha Elixir
-        supervised resource reload tenants now compete for the same Rinha Elixir supervised
-        resource reload boundary
-      new_evidence: a trace of Rinha Elixir supervised resource reload isolates a
-        different Rinha Elixir supervised resource reload bottleneck than the one
-        you named
-      best_answer: I would keep the facts that remain supported about Rinha Elixir
-        supervised resource reload, treat a trace of Rinha Elixir supervised resource
-        reload isolates a different Rinha Elixir supervised resource reload bottleneck
-        than the one you named as new evidence rather than a result, and state the
-        updated decision rule under two Rinha Elixir supervised resource reload callers
-        from the case "What does a supervised Rinha Elixir ReferenceIndex" or Rinha
-        Elixir supervised resource reload tenants now compete for the same Rinha Elixir
-        supervised resource reload boundary. I would then name one focused check before
-        treating the revised answer as settled.
+      prompt: >-
+        A corrupt resource causes restart intensity, two instances reload the full data set, and
+        callers ask for readiness during a swap. Which historical evidence survives and what
+        benchmark is missing?
+      changed_constraint: >-
+        reload must provide bounded overlap memory, readiness semantics, and recovery from corrupt
+        resources across instances
+      new_evidence: >-
+        corrupt startup, two-instance reload, and readiness-during-swap cases exceed the historical
+        sample-load test
+      best_answer: >-
+        I would keep the evidence for supervised restart and readiness after the sample load, but I
+        would retract any full-scale availability claim. I would define a warm handoff or versioned
+        index, measure overlap RSS and latency across two instances, and test corrupt-resource
+        recovery and restart intensity.
       distractors:
       - text: I would preserve every part of the original Rinha Elixir supervised
           resource reload answer because changing it after review would be inconsistent.
@@ -2814,89 +2630,76 @@ items:
     goal: Build evidence for a larger resource envelope without treating sample supervision
       as final performance proof.
   critical_thinking:
-    problem_frame: 'Frame Rinha Elixir supervised resource reload before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests Rinha Elixir supervised resource reload within
-        a Elixir project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend Rinha Elixir
-        supervised resource reload, but that does not prove one implementation wins
-        under every workload or audience.
-      assumption: An unstated assumption is that the Rinha Elixir supervised resource
-        reload constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for Rinha Elixir supervised resource reload: the scale,
-        failure tolerance, ownership boundary, and evidence threshold that would change
-        the decision.'
+    problem_frame: 'I frame supervision evidence narrowly: identify the ReferenceIndex
+      process, what readiness means after init, and which full-dataset latency, RSS, and
+      handoff questions remain outside a restart test.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for Rinha Elixir supervised resource
-          reload
-        benefit: It keeps the Rinha Elixir supervised resource reload reasoning close
-          to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the Rinha Elixir supervised resource
-          reload workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Rinha Elixir supervised resource reload
-          contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for Rinha Elixir
-          supervised resource reload
-        benefit: It can make the Rinha Elixir supervised resource reload boundary
-          more explicit when the first option's hidden assumption is not guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Rinha Elixir supervised resource reload evidence has not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Rinha Elixir supervised resource reload option
-        when its stated contract holds; choose the alternative only when evidence
-        shows that the relevant Elixir project deep dive constraint makes the first
-        assumption unsafe.
+      - option: Keep one supervised ReferenceIndex with synchronous initialization.
+        benefit: It is simple and the current restart path makes process ownership and
+          readiness easy to inspect.
+        cost_or_risk: A reload can block or lose readiness, and a failed replacement may
+          leave no usable generation unless that policy is explicit.
+        valid_when: Use it when the resource is small enough and measured restart or reload
+          downtime fits the budget.
+      - option: Build a versioned replacement and publish it only after complete initialization.
+        benefit: It can keep the previous generation readable while a new resource loads
+          and make handoff atomic to readers.
+        cost_or_risk: It temporarily duplicates memory and requires ownership, cleanup,
+          and failed-generation handling.
+        valid_when: Use it when full-dataset reload or availability budgets justify overlap
+          and the RSS envelope supports it.
+      decision_rule: Keep the single supervised process only when full-resource reload
+        fits the availability and memory budgets; choose versioned handoff when overlap
+        and failure ownership are measured requirements.
+    rubric:
+      facts_correct: States exactly what supervised restart and readiness establish and
+        separates them from full-dataset serving claims.
+      assumptions_explicit: Labels assumptions about complete generation readiness, failed
+        init ownership, and overlap memory.
+      alternatives_considered: Compares one supervised state with a versioned replacement
+        and states the resource-budget condition for each.
+      tradeoff_quality: Connects reload latency, availability, RSS overlap, cleanup, and
+        failure ownership to the design.
+      follow_up_adaptation: Changes the recommendation when the full dataset misses latency
+        or RSS or when readers see an incomplete generation.
+      certainty_calibration: Keeps medium certainty for process recovery and avoids claiming
+        final performance from a sample.
+    claim_map:
+      fact: The described sample kills a ReferenceIndex process and observes supervised
+        restart and readiness, with synchronous initialization of resource data.
+      inference: That demonstrates a supervised process can recover in the sample path;
+        it does not demonstrate full-dataset reload time, two-index memory pressure, or
+        uninterrupted availability during replacement.
+      assumption: I am assuming a failed init keeps the old serving state or fails closed,
+        and that readiness is defined as a complete usable generation rather than a spawned
+        process.
+      unknown: Full resource size, init latency, RSS during overlap, corrupt-resource
+        behavior, restart storms, and reader behavior during reload are unknown.
     failure_probe:
       kind: counterexample
-      prompt: 'Rinha elixir supervised resource reload: which adversarial Rinha Elixir
-        supervised resource reload example could disprove the recommendation, and
-        what evidence about Rinha Elixir supervised resource reload would you request?'
+      prompt: Load the full dataset, corrupt a resource, restart repeatedly, and read
+        during a replacement. Which observation would show supervision recovered a process
+        but failed the serving or memory contract?
     evidence_check:
-      basis: Check the Rinha Elixir supervised resource reload claim against backend-challenges/rinha-de-backend-2026-elixir/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports supervised restart and sample readiness, but it
+        cannot establish full-dataset performance, availability during reload, or memory
+        behavior from that sample.
+      basis: Check the concrete claim against backend-challenges/rinha-de-backend-2026-elixir/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        Rinha Elixir supervised resource reload, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the Rinha Elixir supervised
-        resource reload question but does not reveal every workload, stakeholder priority,
-        or outcome.
-      update_trigger: For case "What does a supervised Rinha Elixir ReferenceIndex",
-        update Rinha Elixir supervised resource reload when Rinha Elixir supervised
-        resource reload evidence—a Rinha Elixir supervised resource reload trace or
-        Rinha Elixir supervised resource reload test—contradicts the Rinha Elixir
-        supervised resource reload constraint in case "What does a supervised Rinha
-        Elixir ReferenceIndex"; ask a stakeholder about Rinha Elixir supervised resource
-        reload before revising.
-    rubric:
-      facts_correct: Names the verified Rinha Elixir supervised resource reload facts
-        without smuggling in a result, scale, or capability that the prompt does not
-        establish.
-      assumptions_explicit: Labels the Rinha Elixir supervised resource reload premise
-        that is still assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Rinha Elixir supervised resource
-        reload options, or explains the hard constraint that makes comparison a false
-        equivalence.
-      tradeoff_quality: Connects the Rinha Elixir supervised resource reload choice
-        to a benefit, a cost or risk, and the condition under which another choice
-        wins.
-      follow_up_adaptation: Responds to the evidence challenge about Rinha Elixir
-        supervised resource reload by changing the claim or evidence boundary rather
-        than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the Rinha Elixir supervised resource reload recommendation.
+      level: medium
+      rationale: I am confident about the narrow process-restart claim; I am deliberately
+        uncertain about serving continuity and memory until the full resource envelope
+        is measured.
+      update_trigger: I would update the design after full-dataset init/RSS measurements,
+        corrupt-resource tests, restart-storm tests, and a reader-visible generation handoff
+        test.
+
 - id: elixir_experience-11-rinha-elixir-exact-knn-scaling-baseline
   version: 1.4.0
   target: elixir_experience
@@ -2908,12 +2711,12 @@ items:
   context: The interviewer is probing true exact-search complexity, correctness value,
     full-dataset evidence gaps, and the trade-offs between a heap and approximate
     indexing.
-  best_answer: Rinha's 14-dimensional scorer maps every reference to a squared distance,
-    sorts all N candidates, takes five, and counts labels. That costs O(N*d + N log
-    N) per query, O(N) candidate and sort space, plus O(N*d) stored references per
-    instance. I would defend it as a correctness oracle and reviewable baseline, not
-    a scaling claim. First I would benchmark the official three million records; a
-    size-five heap removes full sorting but not scanning, then ANN or quantization
+  best_answer: >-
+    I would defend Rinha 14-dimensional scoring as a correctness oracle and reviewable baseline:
+    it maps every reference to a squared distance, sorts all N candidates, takes five, and
+    counts labels. That costs O(N*d + N log N) per query, O(N) candidate and sort space, plus
+    O(N*d) stored references per instance. I would benchmark the official three million records
+    first; a size-five heap removes full sorting but not scanning, while ANN or quantization
     trades recall, memory, build, and update complexity.
   distractors:
   - text: I would optimize by replacing the full sort with a size-five heap, then
@@ -3004,10 +2807,10 @@ items:
       trade-offs.
     challenge_kind: alternative
     best_answer: >-
-      Rinha's 14-dimensional scorer maps every reference to a squared distance, sorts all N candidates,
-      takes five, and counts labels. I would compare that choice with the credible alternative
-      against the requirement in the follow-up, cost, and failure risk, then switch only if
-      evidence makes the alternative safer.
+      I would benchmark the official three million records first and compare full sort with a
+      size-five heap by p99, CPU, RSS, and recall against the exact baseline. I would move to ANN
+      or quantization only when scan or memory misses the budget, and I would record recall, index
+      build, updates, and two-instance cost in that decision.
     distractors:
     - text: I would defend the first Rinha Elixir exact k-NN scaling baseline option
         because offering an alternative might make the decision look uncertain.
@@ -3061,26 +2864,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-11-rinha-elixir-exact-knn-scaling-baseline-delayed-11
-      prompt: New evidence about Rinha Elixir exact k-NN scaling baseline says a code
-        inspection of Rinha Elixir exact k-NN scaling baseline confirms the Rinha
-        Elixir exact k-NN scaling baseline mechanism but not its impact; with the
-        Rinha Elixir exact k-NN scaling baseline workload for Rinha Elixir exact k-NN
-        scaling baseline no longer fits the original resource bound, how do you update
-        the Rinha Elixir exact k-NN scaling baseline decision rule?
-      changed_constraint: the Rinha Elixir exact k-NN scaling baseline workload for
-        Rinha Elixir exact k-NN scaling baseline no longer fits the original resource
-        bound
-      new_evidence: a code inspection of Rinha Elixir exact k-NN scaling baseline
-        confirms the Rinha Elixir exact k-NN scaling baseline mechanism but not its
-        impact
-      best_answer: I would keep the facts that remain supported about Rinha Elixir
-        exact k-NN scaling baseline, treat a code inspection of Rinha Elixir exact
-        k-NN scaling baseline confirms the Rinha Elixir exact k-NN scaling baseline
-        mechanism but not its impact as new evidence rather than a result, and state
-        the updated decision rule under the Rinha Elixir exact k-NN scaling baseline
-        workload for Rinha Elixir exact k-NN scaling baseline no longer fits the original
-        resource bound. I would then name one focused check before treating the revised
-        answer as settled.
+      prompt: >-
+        The official three-million-record benchmark misses the p99 and RSS budget, while a size-five
+        heap preserves exact recall. Which scaling claim changes and what evidence would justify
+        ANN?
+      changed_constraint: >-
+        the exact result must meet p99 and RSS budgets while recall remains measured against the
+        baseline
+      new_evidence: >-
+        the official benchmark misses p99 and RSS, but the size-five heap matches exact recall on
+        the tested set
+      best_answer: >-
+        I would keep the exact scorer as the correctness baseline and the heap as a sorting
+        optimization, but I would retract the baseline as a serving design under the measured
+        budget. I would benchmark ANN or quantization against recall, build time, updates, memory,
+        and two-instance cost before trading exactness for capacity.
       distractors:
       - text: I would preserve every part of the original Rinha Elixir exact k-NN
           scaling baseline answer because changing it after review would be inconsistent.
@@ -3096,75 +2894,76 @@ items:
       memory, index build, updates, and two API instances on official resources.
     goal: Choose the next optimization from measured correctness and operating trade-offs.
   critical_thinking:
-    problem_frame: 'Frame Rinha Elixir exact k-NN scaling baseline before proposing
-      a solution: state the actor, required outcome, constraint, and unknown that
-      could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests Rinha Elixir exact k-NN scaling baseline within
-        a Elixir project deep dive context; treat that named boundary as the verified
-        starting fact.
-      inference: The reasonable inference is that the answer must defend Rinha Elixir
-        exact k-NN scaling baseline, but that does not prove one implementation wins
-        under every workload or audience.
-      assumption: An unstated assumption is that the Rinha Elixir exact k-NN scaling
-        baseline constraint is the dominant one; label it and ask whether the interviewer
-        confirms it.
-      unknown: 'Still unknown for Rinha Elixir exact k-NN scaling baseline: the scale,
-        failure tolerance, ownership boundary, and evidence threshold that would change
-        the decision.'
+    problem_frame: 'I frame the exact scorer as an oracle and the optimization as a measured
+      budget decision: count scan, distance, sort, stored-reference, and per-instance
+      costs before trading exactness or memory.'
     comparison:
-      applicable: false
-      rejected_alternative: A tool-first A-versus-B debate about Rinha Elixir exact
-        k-NN scaling baseline would be a false equivalence because the prompt does
-        not establish that both choices satisfy the same contract.
-      hard_constraint: The hard Rinha Elixir exact k-NN scaling baseline constraint
-        is the required guarantee stated by the interviewer; no missing measurement
-        licenses a stronger comparison.
-      decision_rule: Do not manufacture a trade-off for Rinha Elixir exact k-NN scaling
-        baseline; first clarify the constraint or collect the evidence that would
-        make two options genuinely comparable.
+      applicable: true
+      alternatives:
+      - option: Replace full sorting with a size-five exact heap.
+        benefit: It preserves exact recall while reducing the per-query ordering work
+          from full sort to top-k maintenance.
+        cost_or_risk: It still scans all references, uses candidate state, and may not
+          solve p99 or RSS at the official corpus size.
+        valid_when: Use it first when sorting, rather than scanning or stored references,
+          is the measured bottleneck.
+      - option: Adopt ANN or quantization after measuring against the exact oracle.
+        benefit: It may reduce query or memory cost at the scale where exact scanning
+          misses the serving budget.
+        cost_or_risk: It trades recall, build time, update complexity, and operational
+          memory for capacity.
+        valid_when: Use it only when the exact benchmark misses a p99 or RSS budget and
+          the product accepts a measured recall trade-off.
+      decision_rule: Benchmark the official corpus first; choose the exact heap when full
+        sort is the measured issue, and move to ANN or quantization only when scan or
+        memory misses a budget and recall remains within an explicit bound.
+    rubric:
+      facts_correct: States the 14-dimensional full scan, full sort, k=5 result, asymptotic
+        work, and stored-reference memory.
+      assumptions_explicit: Names the exactness, corpus-representativeness, recall, and
+        resource-budget assumptions.
+      alternatives_considered: Compares an exact size-five heap with ANN or quantization
+        and states when each is valid.
+      tradeoff_quality: Connects exact recall, sort versus scan cost, RSS, index build,
+        updates, and two-instance operation to the optimization.
+      follow_up_adaptation: Changes the serving recommendation when the heap preserves
+        recall but the official budget still fails.
+      certainty_calibration: Uses medium certainty and keeps the exact scorer as an oracle
+        until approximation evidence is measured.
+    claim_map:
+      fact: The described baseline computes squared distances over 14 dimensions for every
+        reference, sorts all candidates, takes five, and stores references per instance.
+      inference: That gives an exact correctness baseline with O(N*d + N log N) query
+        work and O(N) candidate/sort space; a bounded top-k heap reduces ordering work
+        but still scans the references and retains the stored reference set.
+      assumption: I am assuming recall must remain exact until an ANN or quantization
+        benchmark defines an accepted error budget and that the official three-million-record
+        corpus is representative.
+      unknown: The p99/RSS budget, index build and update cost, recall tolerance, and
+        two-instance memory envelope are unknown until the official benchmark runs.
     failure_probe:
       kind: edge_case
-      prompt: 'Rinha elixir exact k-nn scaling baseline: which empty or extreme Rinha
-        Elixir exact k-NN scaling baseline case would expose the hidden assumption,
-        and what would you measure about Rinha Elixir exact k-NN scaling baseline?'
+      prompt: Run the official corpus with a size-five heap and with the exact sort. If
+        the heap preserves recall but p99 or RSS still misses, which claim survives and
+        what ANN evidence is required before changing the oracle?
     evidence_check:
-      basis: Check the Rinha Elixir exact k-NN scaling baseline claim against backend-challenges/rinha-de-backend-2026-elixir/README.md
-        and the exact interview context; record whether each part is fact, inference,
-        or hypothesis.
+      limitation: The source supports the exact algorithm and its asymptotic costs, but
+        it cannot predict allocator peaks, cache behavior, ANN recall, or two-instance
+        resource use without the official benchmark.
+      basis: Check the concrete claim against backend-challenges/rinha-de-backend-2026-elixir/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        Rinha Elixir exact k-NN scaling baseline, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the Rinha Elixir exact
-        k-NN scaling baseline question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you defend this exact Rinha", update Rinha
-        Elixir exact k-NN scaling baseline when Rinha Elixir exact k-NN scaling baseline
-        evidence—a Rinha Elixir exact k-NN scaling baseline trace or Rinha Elixir
-        exact k-NN scaling baseline test—contradicts the Rinha Elixir exact k-NN scaling
-        baseline constraint in case "How would you defend this exact Rinha"; ask a
-        stakeholder about Rinha Elixir exact k-NN scaling baseline before revising.
-    rubric:
-      facts_correct: Names the verified Rinha Elixir exact k-NN scaling baseline facts
-        without smuggling in a result, scale, or capability that the prompt does not
-        establish.
-      assumptions_explicit: Labels the Rinha Elixir exact k-NN scaling baseline premise
-        that is still assumed and asks the smallest clarifying question that matters.
-      alternatives_considered: Compares two credible Rinha Elixir exact k-NN scaling
-        baseline options, or explains the hard constraint that makes comparison a
-        false equivalence.
-      tradeoff_quality: Connects the Rinha Elixir exact k-NN scaling baseline choice
-        to a benefit, a cost or risk, and the condition under which another choice
-        wins.
-      follow_up_adaptation: Responds to the alternative challenge about Rinha Elixir
-        exact k-NN scaling baseline by changing the claim or evidence boundary rather
-        than repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the Rinha Elixir exact k-NN scaling baseline recommendation.
+      level: medium
+      rationale: I am confident about the exact baseline and heap boundary; I am only
+        moderately confident about the next optimization until p99, RSS, recall, build,
+        and update measurements exist.
+      update_trigger: I would update the recommendation after the official benchmark identifies
+        whether sort, scan, stored references, index build, or update cost misses the
+        budget.
+
 - id: elixir_experience-12-rinha-elixir-genserver-serialization-risk
   version: 1.4.0
   target: elixir_experience
@@ -3176,14 +2975,13 @@ items:
   context: The interviewer is probing synchronous GenServer.call scoring, structural
     serialization, memory ownership, admission, and measured options rather than an
     asserted bottleneck.
-  best_answer: ReferenceIndex exposes scoring through GenServer.call, and its handle_call
-    runs Scoring.score synchronously across state.references before replying. One
-    callback loop therefore serializes scoring requests within each API instance;
-    that is a structural concurrency risk, not a measured p99 bottleneck. Supervision
-    can restart the process but adds no read concurrency, while challenge topology
-    may load full references per instance. I would measure mailbox, p99, CPU, and
-    RSS, then compare versioned immutable ETS or persistent_term snapshots, bounded
-    workers, and admission with warm-swap failure ownership.
+  best_answer: >-
+    I would treat the ReferenceIndex GenServer as a structural concurrency risk: GenServer.call
+    runs Scoring.score synchronously across state.references before replying, so one callback
+    loop serializes scoring requests within each API instance. Supervision can restart it but
+    adds no read concurrency, and challenge topology may load full references per instance. I
+    would measure mailbox, p99, CPU, and RSS, then compare versioned immutable ETS or
+    persistent_term snapshots, bounded workers, and admission with warm-swap failure ownership.
   distractors:
   - text: I would solve serialization by starting unbounded Tasks that independently
       duplicate the ReferenceIndex state. The supervisor will absorb memory and garbage
@@ -3271,10 +3069,10 @@ items:
     goal: Evaluate read-concurrency designs without unmanaged copies.
     challenge_kind: failure
     best_answer: >-
-      ReferenceIndex exposes scoring through GenServer.call, and its handle_call runs Scoring.score synchronously across state.references before
-      replying. If the failure in the follow-up appears, I would name the user or
-      system consequence, contain it with a bounded mitigation, and verify recovery with a focused
-      test or metric.
+      I would measure mailbox depth, p99, CPU, and RSS under the official workload, then compare a
+      versioned ETS or persistent_term snapshot with bounded workers and admission. I would make
+      warm swap publish one complete generation, define who owns a failed generation, and verify
+      that readers never observe a partial index.
     distractors:
     - text: I would describe the Rinha Elixir single-GenServer serialization risk
         failure as impossible because the happy path already passed its test.
@@ -3329,28 +3127,21 @@ items:
     mastery_threshold: 8
     delayed_variant:
       id: elixir_experience-12-rinha-elixir-genserver-serialization-risk-delayed-12
-      prompt: 'Rinha elixir single-genserver serialization risk gets a new constraint:
-        a stakeholder asks for a stronger Rinha Elixir single-GenServer serialization
-        risk guarantee than the first Rinha Elixir single-GenServer serialization
-        risk answer promised. After a measured Rinha Elixir single-GenServer serialization
-        risk comparison shows the alternative has a different Rinha Elixir single-GenServer
-        serialization risk cost profile, which Rinha Elixir single-GenServer serialization
-        risk assumption is no longer safe?'
-      changed_constraint: a stakeholder asks for a stronger Rinha Elixir single-GenServer
-        serialization risk guarantee than the first Rinha Elixir single-GenServer
-        serialization risk answer promised
-      new_evidence: a measured Rinha Elixir single-GenServer serialization risk comparison
-        shows the alternative has a different Rinha Elixir single-GenServer serialization
-        risk cost profile
-      best_answer: I would keep the facts that remain supported about Rinha Elixir
-        single-GenServer serialization risk, treat a measured Rinha Elixir single-GenServer
-        serialization risk comparison shows the alternative has a different Rinha
-        Elixir single-GenServer serialization risk cost profile as new evidence rather
-        than a result, and state the updated decision rule under a stakeholder asks
-        for a stronger Rinha Elixir single-GenServer serialization risk guarantee
-        than the first Rinha Elixir single-GenServer serialization risk answer promised.
-        I would then name one focused check before treating the revised answer as
-        settled.
+      prompt: >-
+        Mailbox and p99 measurements show one GenServer serializes scoring beyond the target, while
+        a versioned snapshot has a different memory profile. Which risk is evidenced and what
+        warm-swap check is required?
+      changed_constraint: >-
+        scoring must meet p99 and memory budgets while each reader sees one complete index
+        generation
+      new_evidence: >-
+        measurements show serialized scoring pressure and a snapshot alternative with a different
+        RSS profile
+      best_answer: >-
+        I would upgrade the GenServer serialization from structural risk to a measured bottleneck,
+        but I would keep supervision separate from read concurrency. I would compare snapshots and
+        bounded workers under the same load, then verify that warm swap publishes one complete
+        generation and that a failed generation leaves the previous one readable.
       distractors:
       - text: I would preserve every part of the original Rinha Elixir single-GenServer
           serialization risk answer because changing it after review would be inconsistent.
@@ -3368,90 +3159,74 @@ items:
     goal: Select a concurrency design from measured throughput, memory, and recovery
       behavior.
   critical_thinking:
-    problem_frame: 'Frame Rinha Elixir single-GenServer serialization risk before
-      proposing a solution: state the actor, required outcome, constraint, and unknown
-      that could invalidate the first recommendation.'
-    claim_map:
-      fact: The prompt explicitly tests Rinha Elixir single-GenServer serialization
-        risk within a Elixir project deep dive context; treat that named boundary
-        as the verified starting fact.
-      inference: The reasonable inference is that the answer must defend Rinha Elixir
-        single-GenServer serialization risk, but that does not prove one implementation
-        wins under every workload or audience.
-      assumption: An unstated assumption is that the Rinha Elixir single-GenServer
-        serialization risk constraint is the dominant one; label it and ask whether
-        the interviewer confirms it.
-      unknown: 'Still unknown for Rinha Elixir single-GenServer serialization risk:
-        the scale, failure tolerance, ownership boundary, and evidence threshold that
-        would change the decision.'
+    problem_frame: 'I frame read concurrency as a measured interaction between the ReferenceIndex
+      callback loop, reference memory, and generation visibility: identify the serialization
+      point, target p99/RSS, and failure ownership before choosing a replacement.'
     comparison:
       applicable: true
       alternatives:
-      - option: the inspectable Elixir/OTP mechanism for Rinha Elixir single-GenServer
-          serialization risk
-        benefit: It keeps the Rinha Elixir single-GenServer serialization risk reasoning
-          close to the stated Elixir project deep dive constraint and makes the evidence
-          boundary visible.
-        cost_or_risk: It can be too narrow if the Rinha Elixir single-GenServer serialization
-          risk workload or requirement changes beyond the prompt.
-        valid_when: Use it when the stated Rinha Elixir single-GenServer serialization
-          risk contract and its invariant are the facts that matter most.
-      - option: an operational-impact claim needing confirmation for Rinha Elixir
-          single-GenServer serialization risk
-        benefit: It can make the Rinha Elixir single-GenServer serialization risk
-          boundary more explicit when the first option's hidden assumption is not
-          guaranteed.
-        cost_or_risk: It adds implementation or communication cost and may solve a
-          problem the Rinha Elixir single-GenServer serialization risk evidence has
-          not established.
-        valid_when: Use it when a measured constraint, requirement, or failure mode
-          makes the first option unsafe.
-      decision_rule: Choose the first Rinha Elixir single-GenServer serialization
-        risk option when its stated contract holds; choose the alternative only when
-        evidence shows that the relevant Elixir project deep dive constraint makes
-        the first assumption unsafe.
+      - option: Publish versioned ETS or persistent_term snapshots and warm-swap complete
+          generations.
+        benefit: Readers can avoid one synchronous callback loop and observe one immutable
+          generation if publication is atomic.
+        cost_or_risk: Snapshot build or replacement can duplicate memory and pressure
+          garbage collection; failed generations need explicit ownership.
+        valid_when: Use it when measured read contention dominates and the RSS envelope
+          supports generation overlap.
+      - option: Keep state ownership but add bounded workers and admission control.
+        benefit: It can raise concurrency without allowing unbounded task or reference
+          copies and can make overload rejection explicit.
+        cost_or_risk: Workers still need safe read snapshots, queue limits, and failure
+          handling; admission can reduce availability under load.
+        valid_when: Use it when bounded parallelism meets the p99 target without the memory
+          cost of full snapshot replacement.
+      decision_rule: Measure the current callback bottleneck first; choose snapshots when
+        generation overlap fits memory and atomic visibility matters, or bounded workers
+        when controlled parallelism meets p99 without unmanaged copies.
+    rubric:
+      facts_correct: Names synchronous GenServer.call, the per-instance callback loop,
+        state.references, and the fact that supervision adds recovery rather than readers.
+      assumptions_explicit: States assumptions about complete generations, bounded admission,
+        RSS, and stale-reader tolerance.
+      alternatives_considered: Compares immutable snapshots with bounded workers/admission
+        and gives a measurement-based decision rule.
+      tradeoff_quality: Connects p99, mailbox, CPU, RSS, copy/GC cost, overload rejection,
+        and warm-swap ownership to the choice.
+      follow_up_adaptation: Adapts when the current bottleneck is measured or when a replacement
+        generation fails or exceeds memory.
+      certainty_calibration: Keeps structural risk separate from a measured production
+        bottleneck and names the tests that would update the recommendation.
+    claim_map:
+      fact: The described path uses synchronous GenServer.call for Scoring.score over
+        state.references, so callbacks serialize scoring within each API instance; supervision
+        restarts the process but does not add readers.
+      inference: Versioned snapshots or bounded workers could improve concurrency, but
+        copying full references, garbage collection, admission, and warm-swap ownership
+        can create new limits.
+      assumption: I am assuming readers can use one complete immutable generation and
+        that the target workload permits bounded admission rather than unbounded task
+        creation.
+      unknown: Mailbox depth, p99, CPU, RSS, copy behavior, instance count, replacement
+        failure, and the acceptable stale-generation window are unknown.
     failure_probe:
       kind: failure_mode
-      prompt: 'Rinha elixir single-genserver serialization risk: when the Rinha Elixir
-        single-GenServer serialization risk constraint tightens during rollout, what
-        breaks first in Rinha Elixir single-GenServer serialization risk, and how
-        do you observe it?'
+      prompt: Drive the official workload until mailbox and p99 rise, then publish a replacement
+        whose RSS is too high or whose init fails. Which risk is measured, and what proves
+        readers see either the previous complete generation or the new complete one?
     evidence_check:
-      basis: Check the Rinha Elixir single-GenServer serialization risk claim against
-        backend-challenges/rinha-de-backend-2026-elixir/README.md and the exact interview
-        context; record whether each part is fact, inference, or hypothesis.
+      limitation: The source supports synchronous callback serialization and supervised
+        ownership, but it does not prove a bottleneck, snapshot copy cost, GC pressure,
+        or warm-swap atomicity without measurements.
+      basis: Check the concrete claim against backend-challenges/rinha-de-backend-2026-elixir/README.md
+        and the exact interview context; record which statements are code facts, inferences,
+        assumptions, and unknowns.
       source_kind: primary_code
-      limitation: This Elixir project deep dive exercise can test reasoning about
-        Rinha Elixir single-GenServer serialization risk, but it cannot prove an unmeasured
-        production outcome, personal ownership, or universal rule.
       checked_on: '2026-08-25'
     certainty:
-      level: low
-      rationale: Certainty is low because the prompt bounds the Rinha Elixir single-GenServer
-        serialization risk question but does not reveal every workload, stakeholder
-        priority, or outcome.
-      update_trigger: For case "How would you redesign Rinha Elixir read", update
-        Rinha Elixir single-GenServer serialization risk when Rinha Elixir single-GenServer
-        serialization risk evidence—a Rinha Elixir single-GenServer serialization
-        risk trace or Rinha Elixir single-GenServer serialization risk test—contradicts
-        the Rinha Elixir single-GenServer serialization risk constraint in case "How
-        would you redesign Rinha Elixir read"; ask a stakeholder about Rinha Elixir
-        single-GenServer serialization risk before revising.
-    rubric:
-      facts_correct: Names the verified Rinha Elixir single-GenServer serialization
-        risk facts without smuggling in a result, scale, or capability that the prompt
-        does not establish.
-      assumptions_explicit: Labels the Rinha Elixir single-GenServer serialization
-        risk premise that is still assumed and asks the smallest clarifying question
-        that matters.
-      alternatives_considered: Compares two credible Rinha Elixir single-GenServer
-        serialization risk options, or explains the hard constraint that makes comparison
-        a false equivalence.
-      tradeoff_quality: Connects the Rinha Elixir single-GenServer serialization risk
-        choice to a benefit, a cost or risk, and the condition under which another
-        choice wins.
-      follow_up_adaptation: Responds to the failure challenge about Rinha Elixir single-GenServer
-        serialization risk by changing the claim or evidence boundary rather than
-        repeating the base answer.
-      certainty_calibration: Uses low certainty deliberately and names the evidence
-        that would update the Rinha Elixir single-GenServer serialization risk recommendation.
+      level: medium
+      rationale: I am confident about the structural serialization boundary; I am not
+        confident which replacement wins until p99, RSS, copy, and failure measurements
+        exist.
+      update_trigger: I would update the design after mailbox/p99/RSS tests, snapshot
+        copy measurements, bounded-worker saturation, admission behavior, and failed-generation
+        visibility tests.

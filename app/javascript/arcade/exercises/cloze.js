@@ -6,7 +6,7 @@ export function render(root, exercise, ctx) {
     const match = String(token).match(/^(.*)\[(blank-\d+)\](.*)$/)
     return match ? `${escape(match[1])}<mark data-arena-blank="${escape(match[2])}">_____</mark>${escape(match[3])}` : escape(token)
   }
-  root.innerHTML = `<p class="arena-eyebrow">Cloze · rebuild the anchors</p><h2>Complete the answer's precise spans.</h2><p class="arena-cloze-line">${(exercise.payload?.tokens || []).map(renderToken).join(" ")}</p><div class="arena-cloze-blanks"></div>`
+  root.innerHTML = `<p class="arena-eyebrow">Cloze · complete the missing phrases</p><h2>Choose the words that preserve the meaning.</h2><p class="arena-cloze-line">${(exercise.payload?.tokens || []).map(renderToken).join(" ")}</p><div class="arena-cloze-blanks"></div>`
   const container = root.querySelector(".arena-cloze-blanks")
   blanks.forEach((blank) => {
     const section = document.createElement("section"); section.className = "arena-cloze-blank"; section.dataset.arenaBlank = blank.id
