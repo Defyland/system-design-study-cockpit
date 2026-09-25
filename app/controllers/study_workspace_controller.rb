@@ -15,7 +15,7 @@ class StudyWorkspaceController < ApplicationController
     @missing_source = params[:document_id].present? && !@document
     return unless @document
 
-    @sections = StudyDocumentCards.new(documents: [@document]).cards
+    @sections = StudyDocumentCards.new(documents: [ @document ]).cards
     @selected = params[:section].present? ? @sections.find { |section| section[:id] == params[:section] } : @sections.first
     @missing_source ||= params[:section].present? && !@selected
     @groups = {
@@ -36,10 +36,10 @@ class StudyWorkspaceController < ApplicationController
     scope = @source_ids.any? ? StudyDocument.where(id: @source_ids).ordered : StudyDocument.ordered
     @documents = scope.to_a.filter_map do |document|
       sections = cards_by_document.fetch(document.id, []).select { |card| StudyCardCatalog.in_topic?(card, @selected_topic) }
-      [document, sections] if sections.any?
+      [ document, sections ] if sections.any?
     end
     @selected_document = @documents.map(&:first).find { |document| document.id.to_s == params[:document_id].to_s } if params[:document_id].present?
-    @selected_section = StudyDocumentCards.new(documents: [@selected_document]).cards.find { |section| section[:id] == params[:section] } if @selected_document && params[:section].present?
+    @selected_section = StudyDocumentCards.new(documents: [ @selected_document ]).cards.find { |section| section[:id] == params[:section] } if @selected_document && params[:section].present?
   end
 
   def configure

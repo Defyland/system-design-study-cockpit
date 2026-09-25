@@ -102,7 +102,7 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
   end
 
   test "card bookmark reading undo completion review and saving error" do
-    visit study_configure_path(topic: "all", source_ids: [@document.id])
+    visit study_configure_path(topic: "all", source_ids: [ @document.id ])
     click_button "Começar"
     assert_selector ".study-question", text: /Agentic Systems/, wait: 15
     capture("05-card-closed")
@@ -132,7 +132,7 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
     capture("10-review-selection")
     click_button "Revisar seleção"
     assert_text "Revisão escolhida", wait: 15
-    assert_equal [StudyDocumentCards.new(documents: [@document]).cards.first[:id]], StudyCardRound.last.card_keys
+    assert_equal [ StudyDocumentCards.new(documents: [ @document ]).cards.first[:id] ], StudyCardRound.last.card_keys
     assert_no_horizontal_overflow
   end
 
@@ -169,7 +169,7 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
     assert_text "Use quando o sistema precisa planejar passos"
     capture_desktop("02-guide")
 
-    visit study_configure_path(topic: "kind:ai_system", source_ids: [@document.id])
+    visit study_configure_path(topic: "kind:ai_system", source_ids: [ @document.id ])
     click_button "Começar"
     assert_selector ".study-question", text: /Agentic Systems/, wait: 15
     click_button "Guardar"
@@ -234,7 +234,7 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
     assert_no_selector "select[name='document_id'] option[value='#{third.id}']", visible: :all
     capture_desktop("08-guide-switched-source")
     page.driver.browser.manage.window.resize_to(390, 844)
-    visit study_guide_path(topic: "all", document_id: @document.id, source_ids: [@document.id, @quiz_document.id], tab: "Compare")
+    visit study_guide_path(topic: "all", document_id: @document.id, source_ids: [ @document.id, @quiz_document.id ], tab: "Compare")
     assert_no_selector ".study-guide-reading", visible: true
     assert_text "Este documento não contém uma comparação identificada"
     capture("14-guide-empty-tab")
@@ -242,12 +242,12 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
 
   test "long source and narrow viewports keep content and controls reachable" do
     @document.update!(body_markdown: @document.body_markdown + "\n## Código longo\n\n```ruby\n" + ("very_long_identifier_" * 20) + "\n```\n")
-    [320, 430].each do |width|
+    [ 320, 430 ].each do |width|
       page.driver.browser.manage.window.resize_to(width, width == 320 ? 568 : 932)
       visit study_card_source_path(@document)
       assert_selector "pre code", text: /very_long_identifier_/, wait: 15
       assert_no_horizontal_overflow
-      visit study_guide_path(document_id: @document.id, section: StudyDocumentCards.new(documents: [@document]).cards.last[:id])
+      visit study_guide_path(document_id: @document.id, section: StudyDocumentCards.new(documents: [ @document ]).cards.last[:id])
       assert_selector ".study-guide-reading pre code", text: /very_long_identifier_/, wait: 15
       assert_no_horizontal_overflow
       visit study_map_path(topic: "kind:ai_system")
@@ -257,7 +257,7 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
   end
 
   test "offline save leaves the card in place and retry advances only once" do
-    visit study_configure_path(topic: "all", source_ids: [@document.id])
+    visit study_configure_path(topic: "all", source_ids: [ @document.id ])
     click_button "Começar"
     assert_selector "progress[value='0']", wait: 15
     browser = page.driver.browser
