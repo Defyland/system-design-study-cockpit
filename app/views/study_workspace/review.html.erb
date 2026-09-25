@@ -1,0 +1,17 @@
+<% content_for :title, "Revisão · Cockpit" %>
+<section class="study-page">
+  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path %><span>REVISÃO POR ESCOLHA</span></div>
+  <div class="study-page-heading"><h1>O que você quer rever?</h1><p>Escolha a lista e os itens. Apenas o botão Revisar seleção inicia uma rodada; nenhuma recomendação repete conteúdo automaticamente.</p></div>
+  <div class="study-grid"><div class="study-panel study-main-panel">
+    <nav class="study-review-categories" aria-label="Listas para revisão"><% [["saved", "Guardados", @saved.size], ["errors", "Erros no quiz", @errors.size], ["completed", "Concluídos", @completed.size]].each do |kind, name, count| %><%= link_to "#{name} · #{count}", study_review_path(kind: kind, topic: @topic), aria: { current: (@kind == kind ? "page" : nil) } %><% end %></nav>
+    <%= form_with url: study_review_path, method: :get, class: "study-filter" do |form| %><%= hidden_field_tag :kind, @kind %><%= form.label :topic, "Filtrar por assunto" %><%= form.select :topic, @topics.map { |key, label| [label, key] }, selected: @topic %><%= form.submit "Filtrar", class: "study-secondary" %><% end %>
+    <% if @items.empty? %><p class="study-empty"><%= { "saved" => "Guarde um card durante a leitura para formar esta lista.", "errors" => "Responda um quiz e reveja os erros aqui.", "completed" => "Leia cards para formar esta lista." }.fetch(@kind) %></p><% else %>
+      <%= form_with url: start_study_review_path, data: { controller: "review-selection" }, class: "study-review-selection" do %><%= hidden_field_tag :kind, @kind %>
+        <fieldset><legend>Selecione <%= @kind == "errors" ? "perguntas" : "cards" %> para revisar</legend>
+          <% @items.each do |card| %><div class="study-review-item"><label><%= check_box_tag "card_keys[]", card[:id], true, data: { action: "change->review-selection#count" } %><span><%= card[:prompt] %><small><%= card[:source] %></small></span></label>
+            <% if @kind == "saved" %><%= link_to "Remover marcação", study_bookmark_path(card[:id]), data: { turbo_method: :delete }, class: "study-text-button" %><% end %></div><% end %>
+        </fieldset><p class="study-muted">Seleção: <span data-review-selection-target="count"><%= @items.size %></span> · até 50 por rodada</p><button data-review-selection-target="button">Revisar seleção</button>
+      <% end %>
+    <% end %>
+  </div><aside class="study-panel study-side-panel"><h2>Seu progresso</h2><p><strong><%= @completed.size %></strong> cards lidos · <strong><%= @errors.size %></strong> perguntas com erro atual · <strong><%= @saved.size %></strong> guardados.</p><p class="study-muted">Remover um guardado não apaga a leitura. Acertar uma pergunta na revisão remove esse erro da lista.</p></aside></div>
+</section>

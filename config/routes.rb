@@ -5,6 +5,18 @@ Rails.application.routes.draw do
 
   root "dashboard#index"
   get "study-cards/source/:id", to: "study_cards#source", as: :study_card_source
+  get "study-cards/guide", to: "study_workspace#guide", as: :study_guide
+  get "study-cards/map", to: "study_workspace#map", as: :study_map
+  get "study-cards/configure", to: "study_workspace#configure", as: :study_configure
+  post "study-cards/configure", to: "study_workspace#start", as: :start_study_workspace
+  get "study-cards/review", to: "study_workspace#review", as: :study_review
+  post "study-cards/review", to: "study_workspace#start_review", as: :start_study_review
+  post "study-cards/bookmarks", to: "study_bookmarks#create", as: :study_bookmarks
+  delete "study-cards/bookmarks/:card_key", to: "study_bookmarks#destroy", as: :study_bookmark
+  get "study-cards/quiz", to: "study_quizzes#index", as: :study_quizzes
+  post "study-cards/quiz", to: "study_quizzes#create"
+  get "study-cards/quiz/:id", to: "study_quizzes#show", as: :study_quiz
+  patch "study-cards/quiz/:id", to: "study_quizzes#update"
   resources :study_cards, path: "study-cards", only: %i[index create show update]
 
   get "arena", to: "arcade#show", as: :arena

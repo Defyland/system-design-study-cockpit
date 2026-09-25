@@ -1,0 +1,8 @@
+<% content_for :title, "Quiz · Cockpit" %>
+<section class="study-page"><div class="study-meta"><%= link_to "← Biblioteca", study_cards_path %><span>QUIZ DO ARCADE</span></div>
+  <div class="study-page-heading"><h1>Teste sua resposta</h1><p>Perguntas e alternativas autoradas do English Arcade. Cada tentativa mostra a resposta correta e o motivo da alternativa errada; seu resultado não altera a leitura de cards.</p></div>
+  <div class="study-grid"><div class="study-panel study-main-panel"><p><strong><%= @catalog.cards.size %></strong> perguntas elegíveis · <strong><%= @answered_count %></strong> respondidas em rodadas inéditas.</p>
+    <%= form_with url: study_quizzes_path, class: "study-start" do |form| %><%= form.label :topic, "Trilha" %><%= form.select :topic, @topics.map { |key, label| [label, key] } %><div class="study-actions"><button name="mode" value="new">Começar perguntas inéditas</button><button name="mode" value="errors" class="study-secondary">Revisar erros por escolha</button></div><% end %>
+    <% if @catalog.cards.empty? %><p class="study-empty">Não há perguntas do Arcade com resposta e distractors elegíveis. Nenhum conteúdo do acervo foi convertido automaticamente em quiz.</p><% end %>
+  </div><aside class="study-panel study-side-panel"><h2>Retomar</h2><% if @rounds.empty? %><p class="study-muted">Nenhum quiz em andamento.</p><% end %><% @rounds.each do |round| %><p><%= link_to "#{round.mode == 'errors' ? 'Erros' : 'Perguntas inéditas'} · #{round.position}/#{round.card_keys.size}", study_quiz_path(round), class: "study-resume-link" %></p><% end %><%= link_to "Ver revisão", study_review_path %></aside></div>
+</section>

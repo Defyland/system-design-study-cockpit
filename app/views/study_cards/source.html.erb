@@ -1,6 +1,9 @@
 <% content_for :title, "#{@document.title} · Acervo" %>
-<section class="study-feed study-source-document">
-  <%= link_to "← Estudar cards", study_cards_path %>
-  <p class="study-eyebrow">DOCUMENTO ORIGINAL DO ACERVO</p>
-  <%= study_card_markdown(@document.body_markdown, source_path: @document.source_path) %>
+<section class="study-page study-source-document">
+  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path %><span>DOCUMENTO ORIGINAL DO ACERVO</span></div>
+  <article class="study-panel study-document-body"><h1><%= @document.title %></h1>
+    <% StudyDocumentCards.new(documents: [@document]).cards.each do |section| %>
+      <section id="section-<%= section[:id] %>" class="study-original-section" tabindex="-1"><%= study_card_markdown(section[:answer_markdown], source_path: @document.source_path) %></section>
+    <% end %>
+  </article>
 </section>

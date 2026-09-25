@@ -1,25 +1,42 @@
-<% content_for :title, "Estudar cards · Cockpit" %>
-<section class="study-feed">
-  <p class="study-eyebrow">PRÁTICA EM PEQUENAS DOSES</p>
-  <h1>Uma pergunta. Um caminho para responder.</h1>
-  <p>Até 50 cards por rodada. Leia, ensaie e avance. Os feitos só voltam quando você pedir.</p>
-  <p><strong><%= @catalog.size %> cards</strong> · <%= @completed.intersection(@catalog.map { |card| card[:id] }).size %> feitos · leitura não conta como acerto.</p>
-  <% @rounds.each do |round| %>
-    <p><%= link_to "Retomar #{round.replay? ? 'repetição' : 'rodada'} · #{@topics.fetch(round.topic, round.topic)} · #{round.position}/#{round.card_keys.size}", study_card_path(round), class: "study-resume" %></p>
-  <% end %>
-  <%= form_with url: study_cards_path, class: "study-start" do |form| %>
-    <%= form.label :topic, "O que você quer praticar?" %>
-    <%= form.select :topic, @topics.map { |key, label| [label, key] } %>
-    <div class="study-actions">
-      <button name="mode" value="new">Estudar inéditos · até 50</button>
-      <button name="mode" value="replay" class="study-secondary">Repetir feitos</button>
+<% content_for :title, "Biblioteca · Cockpit" %>
+<section class="study-page">
+  <div class="study-page-heading"><p class="study-eyebrow">BIBLIOTECA DE ESTUDO</p><h1>Escolha o que estudar</h1><p>Selecione uma trilha e, se quiser, os documentos da rodada. Avançar registra leitura, não acerto.</p></div>
+  <div class="study-grid">
+    <div class="study-panel study-main-panel">
+      <h2>Fontes do acervo</h2>
+      <%= form_with url: study_cards_path, method: :get, class: "study-filter" do |form| %>
+        <%= form.label :topic, "Filtrar por trilha" %>
+        <%= form.select :topic, @topics.map { |key, label| [label, key] }, selected: @selected_topic %>
+        <%= form.submit "Filtrar", class: "study-secondary" %>
+      <% end %>
+      <%= form_with url: study_cards_path, class: "study-start", data: { controller: "source-filter" } do %>
+        <%= hidden_field_tag :topic, @selected_topic %>
+        <label for="source-search">Buscar nesta lista</label>
+        <input id="source-search" type="search" placeholder="Título ou tipo de fonte" data-action="input->source-filter#search" data-source-filter-target="search">
+        <p class="study-muted"><%= @documents.size %> <%= @documents.size == 1 ? "documento" : "documentos" %> nesta trilha · <span data-source-filter-target="count">0 selecionados</span><span class="study-desktop-only">. Sem seleção, a rodada usa todos os conteúdos elegíveis da trilha.</span></p>
+        <p class="study-muted study-mobile-only" data-source-filter-target="hint">Escolha uma ou mais fontes para continuar.</p>
+        <div class="study-source-list" role="group" aria-label="Fontes disponíveis">
+          <% @documents.each do |document| %>
+            <div class="study-source-row" data-source-filter-target="row">
+              <label><%= check_box_tag "source_ids[]", document.id, @selected_source_ids.include?(document.id), data: { action: "change->source-filter#count" } %><span><strong><%= document.title %></strong><small><%= document.kind.humanize %> · <%= @document_counts.fetch(document.id, 0) %> seções</small></span></label>
+              <%= link_to "Original", study_card_source_path(document), class: "study-source-link" %>
+            </div>
+          <% end %>
+          <% if @documents.empty? %><p class="study-empty">Esta trilha não tem documentos no acervo. Outros materiais da trilha continuam disponíveis sem selecionar fonte.</p><% end %>
+        </div>
+        <p class="study-empty" data-source-filter-target="empty" hidden>Nenhuma fonte corresponde à busca. Ajuste o texto ou a trilha.</p>
+        <button type="button" class="study-mobile-only" data-source-filter-target="choose" data-action="click->source-filter#choose" disabled>Escolher formato →</button>
+        <div class="study-actions study-desktop-actions"><button name="mode" value="new">Nova rodada · até 50</button><button name="mode" value="replay" class="study-secondary">Repetir lidos por escolha</button></div>
+      <% end %>
     </div>
-  <% end %>
-  <details class="study-inventory">
-    <summary>Ver trilhas e quantidade de cards</summary>
-    <ul><% @topics.except("all").each do |key, label| %>
-      <li><%= label %>: <%= @catalog.count { |card| StudyCardCatalog.in_topic?(card, key) } %></li>
-    <% end %></ul>
-  </details>
-  <p class="study-muted">Perguntas relatadas têm fonte. Respostas didáticas e variações são identificadas. Os ensaios do currículo preservam os fatos já documentados no cockpit.</p>
+    <aside class="study-panel study-side-panel">
+      <h2>Seu estudo</h2>
+      <p><strong><%= @catalog.size %></strong> cards no catálogo · <strong><%= @completed.intersection(@catalog.map { |card| card[:id] }).size %></strong> lidos · <strong><%= @quiz_count %></strong> perguntas elegíveis no quiz.</p>
+      <h3>Retomar</h3>
+      <% if @rounds.empty? %><p class="study-muted">Nenhuma rodada em andamento.</p><% end %>
+      <% @rounds.each do |round| %><p><%= link_to "#{@topics.fetch(round.topic, round.topic.humanize)} · #{round.position}/#{round.card_keys.size}", study_card_path(round), class: "study-resume-link" %></p><% end %>
+      <div class="study-mode-links"><%= link_to "Guia com fontes", study_guide_path %><%= link_to "Quiz do Arcade", study_quizzes_path %><%= link_to "Mapa do acervo", study_map_path %></div>
+      <p class="study-muted">O quiz avalia respostas separadamente da leitura. Nenhuma revisão começa automaticamente.</p>
+    </aside>
+  </div>
 </section>

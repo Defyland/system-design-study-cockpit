@@ -31,10 +31,13 @@ class CockpitLoginTest < ApplicationSystemTestCase
     click_button "Entrar"
     assert_current_path chapters_path
     visit study_cards_path
-    select "Ruby", from: "O que você quer praticar?"
-    click_button "Estudar inéditos · até 50"
-    click_button "Feito, próximo"
-    assert_text "1 de", wait: 10
+    select "Ruby", from: "Filtrar por trilha"
+    click_button "Filtrar"
+    assert_selector "input[name='topic'][value='ruby']", visible: false, wait: 20
+    click_button "Nova rodada · até 50"
+    assert_selector ".study-question", wait: 15
+    click_button "Lido, próximo"
+    assert_selector "progress[value='1']", wait: 15
     round = StudyCardRound.last
     assert_equal "study", round.learner_key
     assert_equal 1, round.position

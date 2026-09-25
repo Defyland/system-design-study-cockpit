@@ -1,4 +1,8 @@
 module StudyCardsHelper
+  def study_section_path(card)
+    "#{study_card_source_path(card.fetch(:document_id))}#section-#{card.fetch(:id)}"
+  end
+
   def study_card_markdown(markdown, source_path: nil)
     html = Nokogiri::HTML.fragment(render_markdown(markdown))
     if source_path

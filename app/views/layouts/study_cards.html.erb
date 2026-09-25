@@ -3,21 +3,26 @@
   <head>
     <title><%= content_for(:title) || "Estudar cards · Cockpit" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="#176577">
+    <meta name="theme-color" content="#225B48">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "study_cards", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="study-body">
-    <header class="study-header">
-      <%= link_to "Study Cockpit", root_path %>
-      <%= link_to "Estudar cards", study_cards_path %>
-      <%= button_to "Sair", logout_path, method: :delete, class: "study-logout" if cockpit_session_authenticated? %>
-    </header>
-    <main id="main-content">
-      <% flash.each do |_type, message| %><p class="study-flash" role="status"><%= message %></p><% end %>
-      <%= yield %>
-    </main>
+  <% focused_study = (controller_name == "study_cards" || controller_name == "study_quizzes") && action_name == "show" %>
+  <% active_study_nav = controller_name == "study_workspace" && action_name == "review" ? "review" : (controller_name == "study_cards" || controller_name == "study_workspace" ? "library" : "study") %>
+  <body class="study-body <%= 'study-focused' if focused_study %>">
+    <a class="study-skip" href="#main-content">Pular para o conteúdo</a>
+    <div class="study-shell">
+      <aside class="study-nav" aria-label="Navegação do estudo">
+        <%= link_to "Study Cockpit", root_path, class: "study-brand" %>
+        <nav><%= link_to "Estudar", root_path, aria: { current: (active_study_nav == "study" ? "page" : nil) } %><%= link_to "Biblioteca", study_cards_path, aria: { current: (active_study_nav == "library" ? "page" : nil) } %><%= link_to "Revisão", study_review_path, aria: { current: (active_study_nav == "review" ? "page" : nil) } %></nav>
+        <%= button_to "Sair", logout_path, method: :delete, class: "study-logout" if cockpit_session_authenticated? %>
+      </aside>
+      <main id="main-content">
+        <% flash.each do |_type, message| %><p class="study-flash" role="status"><%= message %></p><% end %>
+        <%= yield %>
+      </main>
+    </div>
   </body>
 </html>

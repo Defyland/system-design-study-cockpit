@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_020100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -317,12 +317,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_010000) do
     t.index ["study_document_id"], name: "index_study_blocks_on_study_document_id"
   end
 
+  create_table "study_card_bookmarks", force: :cascade do |t|
+    t.string "card_key", null: false
+    t.datetime "created_at", null: false
+    t.string "learner_key", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "card_key"], name: "index_study_card_bookmarks_on_learner_key_and_card_key", unique: true
+  end
+
   create_table "study_card_rounds", force: :cascade do |t|
     t.jsonb "card_keys", default: [], null: false
     t.datetime "created_at", null: false
     t.string "learner_key", null: false
     t.integer "position", default: 0, null: false
     t.boolean "replay", default: false, null: false
+    t.jsonb "source_ids", default: [], null: false
     t.string "topic", null: false
     t.datetime "updated_at", null: false
     t.index ["learner_key"], name: "index_study_card_rounds_on_learner_key"
@@ -363,6 +372,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_010000) do
     t.datetime "updated_at", null: false
     t.index ["status"], name: "index_study_progresses_on_status"
     t.index ["study_document_id"], name: "index_study_progresses_on_study_document_id", unique: true
+  end
+
+  create_table "study_quiz_rounds", force: :cascade do |t|
+    t.jsonb "card_keys", default: [], null: false
+    t.datetime "created_at", null: false
+    t.string "learner_key", null: false
+    t.string "mode", default: "new", null: false
+    t.integer "position", default: 0, null: false
+    t.jsonb "responses", default: {}, null: false
+    t.jsonb "source_ids", default: [], null: false
+    t.string "topic", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key", "updated_at"], name: "index_study_quiz_rounds_on_learner_key_and_updated_at"
   end
 
   add_foreign_key "arcade_exercise_events", "arcade_lessons"
