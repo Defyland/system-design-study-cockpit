@@ -6,20 +6,40 @@ class ApplicationController < ActionController::Base
   stale_when_importmap_changes
 
   before_action :authenticate_cockpit!
+  helper_method :cockpit_session_authenticated?
 
   private
 
   def authenticate_cockpit!
-    username = ENV["STUDY_COCKPIT_USERNAME"]
     password = ENV["STUDY_COCKPIT_PASSWORD"]
 
     raise "Missing STUDY_COCKPIT_PASSWORD in production" if Rails.env.production? && password.blank?
     return if password.blank?
+    return if cockpit_session_authenticated?
+    return if request.authorization.present? && authenticate_with_http_basic { |username, secret| valid_cockpit_credentials?(username, secret) }
 
-    authenticate_or_request_with_http_basic("Study Cockpit") do |given_username, given_password|
-      secure_compare(given_username, username.presence || "study") &&
-        secure_compare(given_password, password)
+    if request.authorization.present?
+      request_http_basic_authentication("Study Cockpit")
+    elsif request.get? && request.format.html?
+      session[:cockpit_return_to] = request.fullpath
+      redirect_to login_path
+    else
+      head :unauthorized
     end
+  end
+
+  def valid_cockpit_credentials?(username, password)
+    valid_username = secure_compare(username, ENV["STUDY_COCKPIT_USERNAME"].presence || "study")
+    valid_password = secure_compare(password, ENV["STUDY_COCKPIT_PASSWORD"])
+    valid_username && valid_password
+  end
+
+  def cockpit_session_authenticated?
+    session[:cockpit_auth_version] == cockpit_auth_version
+  end
+
+  def cockpit_auth_version
+    Digest::SHA256.hexdigest("#{ENV['STUDY_COCKPIT_USERNAME'].presence || 'study'}\0#{ENV['STUDY_COCKPIT_PASSWORD']}")
   end
 
   def secure_compare(value, expected)

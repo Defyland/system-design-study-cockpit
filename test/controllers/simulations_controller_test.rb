@@ -16,7 +16,7 @@ class SimulationsControllerTest < ActionDispatch::IntegrationTest
   test "evaluate requires cockpit authentication" do
     get evaluate_simulation_path("canary-rollout")
 
-    assert_response :unauthorized
+    assert_redirected_to login_path
   end
 
   test "evaluate returns canonical simulation engine output" do

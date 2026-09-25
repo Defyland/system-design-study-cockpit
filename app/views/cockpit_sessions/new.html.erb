@@ -1,0 +1,11 @@
+<section class="study-feed study-login">
+  <p class="study-eyebrow">ACESSO AO COCKPIT</p>
+  <h1>Entrar no Study Cockpit</h1>
+  <%= form_with url: login_path, class: "study-start" do |form| %>
+    <%= form.label :username, "Usuário" %>
+    <%= form.text_field :username, required: true, autocomplete: "username", autofocus: true %>
+    <%= form.label :password, "Senha" %>
+    <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+    <%= form.submit "Entrar" %>
+  <% end %>
+</section>

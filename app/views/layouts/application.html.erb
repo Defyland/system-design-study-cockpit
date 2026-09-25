@@ -44,6 +44,7 @@
         <%= link_to "Misconceptions", misconceptions_path %>
         <%= link_to "Simuladores", simulations_path %>
         <%= link_to "Trilhas", side_tracks_path %>
+        <%= button_to "Sair", logout_path, method: :delete, class: "nav-logout" if cockpit_session_authenticated? %>
         <% ContentKind.navigation_entries.each do |entry| %>
           <%= link_to entry.short_label || entry.label, library_path(kind: entry.key) %>
         <% end %>

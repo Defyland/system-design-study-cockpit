@@ -1,6 +1,6 @@
 # Study cards
 
-Local implementation on base revision `b0f5d52` (working-tree changes, not deployed).
+The study card feed was released in `40537a6` with a browser navigation fix in `c555de0`. The local implementation notes below are historical; current production and login verification is in [evidence/cockpit-login/verification.md](evidence/cockpit-login/verification.md).
 
 ## Delivered behavior
 

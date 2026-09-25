@@ -96,6 +96,8 @@ a {
   font-size: 0.94rem;
 }
 
+.nav-logout { border: 0; padding: 0; background: none; color: #fffdf7; font: inherit; font-size: .94rem; text-decoration: underline; cursor: pointer; }
+
 .page {
   margin: 0 auto;
   max-width: 1180px;

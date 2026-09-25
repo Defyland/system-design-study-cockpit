@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  get "login", to: "cockpit_sessions#new", as: :login
+  post "login", to: "cockpit_sessions#create"
+  delete "logout", to: "cockpit_sessions#destroy", as: :logout
+
   root "dashboard#index"
   get "study-cards/source/:id", to: "study_cards#source", as: :study_card_source
   resources :study_cards, path: "study-cards", only: %i[index create show update]

@@ -10,7 +10,11 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="study-body">
-    <header class="study-header"><%= link_to "Study Cockpit", root_path %><%= link_to "Estudar cards", study_cards_path %></header>
+    <header class="study-header">
+      <%= link_to "Study Cockpit", root_path %>
+      <%= link_to "Estudar cards", study_cards_path %>
+      <%= button_to "Sair", logout_path, method: :delete, class: "study-logout" if cockpit_session_authenticated? %>
+    </header>
     <main id="main-content">
       <% flash.each do |_type, message| %><p class="study-flash" role="status"><%= message %></p><% end %>
       <%= yield %>

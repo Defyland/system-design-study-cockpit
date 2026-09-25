@@ -131,14 +131,14 @@ STUDY_CONTENT_MIN_DOCUMENTS=333
 
 ## Auth
 
-Em production, `STUDY_COCKPIT_PASSWORD` e obrigatoria.
+Em production, `STUDY_COCKPIT_PASSWORD` e obrigatoria. Acesse `/login` para entrar pelo formulario; ao abrir uma pagina protegida sem sessao, o cockpit redireciona para esse formulario e volta a pagina solicitada apos o login. A sessao usa cookie criptografado, `HttpOnly`, `SameSite=Lax`, `Secure` em production e validade de 12 horas. Trocar o usuario ou a senha configurados invalida a sessao. O botao **Sair** encerra a sessao no navegador. Clientes que ja enviam HTTP Basic Auth continuam aceitos.
 
 ```sh
 STUDY_COCKPIT_USERNAME=study
 STUDY_COCKPIT_PASSWORD=...
 ```
 
-Em development/test, se `STUDY_COCKPIT_PASSWORD` estiver vazia, o app fica sem Basic Auth.
+Em development/test, se `STUDY_COCKPIT_PASSWORD` estiver vazia, o app fica sem autenticacao.
 
 ## Railway
 
