@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   root "dashboard#index"
+  get "study-cards/source/:id", to: "study_cards#source", as: :study_card_source
+  resources :study_cards, path: "study-cards", only: %i[index create show update]
 
   get "arena", to: "arcade#show", as: :arena
   get "arena/warmup", to: "arcade#warmup", as: :arcade_warmup

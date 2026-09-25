@@ -1,0 +1,25 @@
+<% content_for :title, "Estudar cards · Cockpit" %>
+<section class="study-feed">
+  <p class="study-eyebrow">PRÁTICA EM PEQUENAS DOSES</p>
+  <h1>Uma pergunta. Um caminho para responder.</h1>
+  <p>Até 50 cards por rodada. Leia, ensaie e avance. Os feitos só voltam quando você pedir.</p>
+  <p><strong><%= @catalog.size %> cards</strong> · <%= @completed.intersection(@catalog.map { |card| card[:id] }).size %> feitos · leitura não conta como acerto.</p>
+  <% @rounds.each do |round| %>
+    <p><%= link_to "Retomar #{round.replay? ? 'repetição' : 'rodada'} · #{@topics.fetch(round.topic, round.topic)} · #{round.position}/#{round.card_keys.size}", study_card_path(round), class: "study-resume" %></p>
+  <% end %>
+  <%= form_with url: study_cards_path, class: "study-start" do |form| %>
+    <%= form.label :topic, "O que você quer praticar?" %>
+    <%= form.select :topic, @topics.map { |key, label| [label, key] } %>
+    <div class="study-actions">
+      <button name="mode" value="new">Estudar inéditos · até 50</button>
+      <button name="mode" value="replay" class="study-secondary">Repetir feitos</button>
+    </div>
+  <% end %>
+  <details class="study-inventory">
+    <summary>Ver trilhas e quantidade de cards</summary>
+    <ul><% @topics.except("all").each do |key, label| %>
+      <li><%= label %>: <%= @catalog.count { |card| StudyCardCatalog.in_topic?(card, key) } %></li>
+    <% end %></ul>
+  </details>
+  <p class="study-muted">Perguntas relatadas têm fonte. Respostas didáticas e variações são identificadas. Os ensaios do currículo preservam os fatos já documentados no cockpit.</p>
+</section>

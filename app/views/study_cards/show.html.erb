@@ -1,0 +1,50 @@
+<% content_for :title, "Rodada de cards · Cockpit" %>
+<section class="study-feed" data-controller="study-card" data-action="touchstart->study-card#touchStart touchend->study-card#touchEnd">
+  <div class="study-meta"><%= link_to "← Assuntos e rodadas", study_cards_path %><span><%= @round.replay? ? "Repetição escolhida" : "Cards inéditos" %></span></div>
+  <p role="status"><%= @round.position %> de <%= @round.card_keys.size %> <%= @round.replay? ? "revisados" : "feitos" %> · progresso salvo</p>
+  <progress value="<%= @round.position %>" max="<%= @round.card_keys.size %>" aria-label="Progresso da rodada"></progress>
+  <% if @round.finished? %>
+    <h1>Rodada concluída.</h1>
+    <p>Você pode parar por aqui. Nenhum card será repetido automaticamente.</p>
+    <%= link_to "Escolher próxima rodada", study_cards_path, class: "study-resume" %>
+  <% elsif @card %>
+    <article class="study-question" data-card-id="<%= @card.fetch(:id) %>">
+      <p class="study-eyebrow"><%= @topics.fetch(@card.fetch(:topic), @card.fetch(:topic)) %> · <%= @card[:answer_markdown] ? "LEITURA DO ACERVO" : "ENTREVISTADOR" %></p>
+      <% if @card[:document_title] %><p class="study-muted"><%= @card[:document_title] %></p><% end %>
+      <h1><%= @card.fetch(:prompt) %></h1>
+      <% if @card[:code] %><pre><code><%= @card[:code] %></code></pre><% end %>
+      <p class="study-muted">Responda mentalmente ou em voz alta, se quiser. Depois, abra o caminho de resposta.</p>
+      <details>
+        <summary><%= @card[:answer_markdown] ? "Ler conteúdo original" : "Ver raciocínio e resposta" %></summary>
+        <% if @card[:answer_markdown] %>
+          <div class="study-original"><%= study_card_markdown(@card[:answer_markdown], source_path: @card[:source_path]) %></div>
+        <% else %>
+          <% if @card[:context].present? %><h2>Contexto da pergunta</h2><p><%= @card[:context] %></p><% end %>
+          <% if @card[:reasoning].present? %><h2>Como eu organizo a resposta</h2><p><%= @card[:reasoning] %></p><% end %>
+          <h2>Como eu responderia</h2><div class="study-answer"><%= study_card_markdown(@card.fetch(:answer)) %></div>
+          <% if @card[:alternative].present? %><h2>Alternativa ou condição</h2><p><%= @card[:alternative] %></p><% end %>
+          <% if @card[:trap].present? %><h2>Armadilha a evitar</h2><p><%= @card[:trap] %></p><p class="study-muted"><%= @card[:explanation] %></p><% end %>
+          <% Array(@card[:options]).each do |option| %>
+            <h2>Resposta alternativa · por que falha</h2><p><%= option["text"] %></p><p class="study-muted"><%= option["why_wrong"] %></p>
+          <% end %>
+          <% if @card[:coaching].present? %>
+            <details><summary>Explicações, exercícios e referências do acervo</summary><%= study_coaching(@card[:coaching]) %></details>
+          <% end %>
+        <% end %>
+      </details>
+      <p class="study-source"><%= @card.fetch(:source) %>
+        <% if @card[:source_url] %> · <%= link_to(@card[:answer_markdown] ? "Abrir documento completo" : "Abrir relato", @card[:source_url], target: "_blank", rel: "noopener noreferrer") %><% end %>
+      </p>
+    </article>
+    <%= form_with url: study_card_path(@round), method: :patch, data: { study_card_target: "advance", action: "submit->study-card#submitting" } do %>
+      <%= hidden_field_tag :position, @round.position %><%= hidden_field_tag :direction, "next" %><%= hidden_field_tag :card_key, @card.fetch(:id) %>
+      <button data-study-card-target="button">Feito, próximo →</button>
+    <% end %>
+    <p class="study-muted">Ou deslize para a esquerda. Avançar registra estudo, não acerto.</p>
+  <% else %>
+    <h1>Este card não está disponível.</h1><p>Seu progresso foi preservado. Volte aos assuntos para escolher outra rodada.</p>
+  <% end %>
+  <% if @round.position.positive? %>
+    <%= button_to "Desfazer último avanço", study_card_path(@round), method: :patch, params: { position: @round.position, direction: "undo" }, class: "study-secondary" %>
+  <% end %>
+</section>

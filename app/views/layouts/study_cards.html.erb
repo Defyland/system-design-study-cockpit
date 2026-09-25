@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= content_for(:title) || "Estudar cards · Cockpit" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#176577">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "study_cards", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="study-body">
+    <header class="study-header"><%= link_to "Study Cockpit", root_path %><%= link_to "Estudar cards", study_cards_path %></header>
+    <main id="main-content">
+      <% flash.each do |_type, message| %><p class="study-flash" role="status"><%= message %></p><% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

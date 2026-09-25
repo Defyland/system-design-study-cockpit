@@ -1,0 +1,6 @@
+<% content_for :title, "#{@document.title} · Acervo" %>
+<section class="study-feed study-source-document">
+  <%= link_to "← Estudar cards", study_cards_path %>
+  <p class="study-eyebrow">DOCUMENTO ORIGINAL DO ACERVO</p>
+  <%= study_card_markdown(@document.body_markdown, source_path: @document.source_path) %>
+</section>

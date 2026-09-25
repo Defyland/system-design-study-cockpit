@@ -1,0 +1,55 @@
+require "application_system_test_case"
+
+class StudyCardLibraryTest < ApplicationSystemTestCase
+  setup do
+    StudyCardRound.delete_all
+  end
+
+  test "Ruby Rails Go and Elixir use the existing interview answers" do
+    visit study_cards_path
+    save_screenshot Rails.root.join("tmp/screenshots/study-cards-library.png")
+    select "Ruby", from: "O que você quer praticar?"
+    click_button "Estudar inéditos · até 50"
+    assert_text "What is the practical difference between a proc and a lambda?"
+    find("summary", text: "Ver raciocínio e resposta", match: :first).click
+    assert_text "a lambda checks its arity while a proc does not"
+    save_screenshot Rails.root.join("tmp/screenshots/study-cards-ruby.png")
+    click_button "Feito, próximo"
+    page.driver.browser.navigate.refresh
+    assert_no_text "What is the practical difference between a proc and a lambda?"
+    click_link "Assuntos e rodadas"
+    select "Ruby on Rails", from: "O que você quer praticar?"
+    click_button "Estudar inéditos · até 50"
+    assert_text "Ruby on Rails"
+    click_link "Assuntos e rodadas"
+    select "Golang", from: "O que você quer praticar?"
+    click_button "Estudar inéditos · até 50"
+    assert_text "Golang"
+    click_link "Assuntos e rodadas"
+    select "Elixir", from: "O que você quer praticar?"
+    click_button "Estudar inéditos · até 50"
+    assert_text "Elixir"
+  end
+  test "library cards render original prose and code and link to the complete document" do
+    document = StudyDocument.create!(kind: "reference_document", slug: "ruby-card-evidence", title: "Ruby closure notes",
+      source_path: "notes/ruby-card-evidence.md", position: 0, body_checksum: "card-evidence",
+      body_markdown: "# Ruby closure notes\n\n## Return boundary\n\nI choose a lambda when the return boundary must stay local.\n\n```ruby\ncallback = -> { 42 }\n```\n")
+    key = StudyDocumentCards.new(documents: [ document ]).cards.first.fetch(:id)
+    round = StudyCardRound.create!(learner_key: ENV["STUDY_COCKPIT_USERNAME"].presence || "anonymous",
+      topic: "ruby", card_keys: [ key ])
+    visit study_card_path(round)
+    assert_text "Ruby closure notes"
+    find("summary", text: "Ler conteúdo original").click
+    assert_text "I choose a lambda when the return boundary must stay local."
+    assert_selector "pre code", text: "callback = -> { 42 }"
+    assert_link "Abrir documento completo", href: study_card_source_path(document)
+    visit study_card_source_path(document)
+    assert_text "I choose a lambda when the return boundary must stay local."
+    assert_selector "pre code", text: "callback = -> { 42 }"
+    visit study_card_path(round)
+    click_button "Feito, próximo"
+    page.driver.browser.navigate.refresh
+    assert_text "Rodada concluída."
+    assert_equal 1, round.reload.position
+  end
+end

@@ -1,0 +1,33 @@
+
+Run options: --seed 28793
+
+# Running:
+
+Capybara starting Puma...
+* Version 8.0.2, codename: Into the Arena
+* Min threads: 0, max threads: 4
+* Listening on http://127.0.0.1:51214
+[Screenshot Image]: /Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/system-design-study-cockpit/tmp/screenshots/failures_test_study-_reload-_undo_and_explicitly_replay_completed_cards.png
+F
+
+Failure:
+StudyCardsTest#test_study,_reload,_undo_and_explicitly_replay_completed_cards [test/system/study_cards_test.rb:18]:
+expected to find text "Como você preservaria o contexto" in "Study Cockpit\nEstudar cards\n← Assuntos e rodadas\nCards inéditos\n0 de 50 feitos · progresso salvo\nFrontend · ENTREVISTADOR\nO que obj.print() imprime? E se a função for chamada separadamente?\nvar obj = {\n  value: 6,\n  print: function () { console.log(this.value); }\n};\nResponda mentalmente ou em voz alta, se quiser. Depois, abra o caminho de resposta.\nVer raciocínio e resposta\nAdaptada do relato · Rippling / Gourav Hammad · resposta didática · Abrir relato\nFeito, próximo →\nOu deslize para a esquerda. Avançar registra estudo, não acerto."
+
+bin/rails test test/system/study_cards_test.rb:8
+
+[Screenshot Image]: /Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/system-design-study-cockpit/tmp/screenshots/failures_test_a_filtered_round_ends_without_recycling_and_swipe_persists_on_mobile.png
+F
+
+Failure:
+StudyCardsTest#test_a_filtered_round_ends_without_recycling_and_swipe_persists_on_mobile [test/system/study_cards_test.rb:47]:
+expected to find text "How would you distinguish" in "Study Cockpit\nEstudar cards\n← Assuntos e rodadas\nCards inéditos\n0 de 2 feitos · progresso salvo\nInglês · ENTREVISTADOR\nThe interviewer says: “Make it scalable.” How would you clarify that request?\nResponda mentalmente ou em voz alta, se quiser. Depois, abra o caminho de resposta.\nVer raciocínio e resposta\nSimulação autoral · variação para treino\nFeito, próximo →\nOu deslize para a esquerda. Avançar registra estudo, não acerto."
+
+bin/rails test test/system/study_cards_test.rb:35
+
+
+
+Finished in 12.561474s, 0.1592 runs/s, 0.5573 assertions/s.
+2 runs, 7 assertions, 2 failures, 0 errors, 0 skips
+Coverage report generated for Minitest to /Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/system-design-study-cockpit/coverage.
+Line Coverage: 12.87% (1435 / 11146)

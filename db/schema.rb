@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -315,6 +315,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_090000) do
     t.datetime "updated_at", null: false
     t.index ["study_document_id", "position"], name: "index_study_blocks_on_study_document_id_and_position", unique: true
     t.index ["study_document_id"], name: "index_study_blocks_on_study_document_id"
+  end
+
+  create_table "study_card_rounds", force: :cascade do |t|
+    t.jsonb "card_keys", default: [], null: false
+    t.datetime "created_at", null: false
+    t.string "learner_key", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "replay", default: false, null: false
+    t.string "topic", null: false
+    t.datetime "updated_at", null: false
+    t.index ["learner_key"], name: "index_study_card_rounds_on_learner_key"
   end
 
   create_table "study_documents", force: :cascade do |t|

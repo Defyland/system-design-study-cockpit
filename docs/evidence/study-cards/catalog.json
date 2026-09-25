@@ -1,0 +1,26 @@
+{
+  "documents": 335,
+  "represented_documents": 335,
+  "cards": 3188,
+  "library_cards": 2634,
+  "arcade_questions_and_variants": 504,
+  "tracks": {
+    "ruby": 276,
+    "rails": 342,
+    "golang": 80,
+    "elixir": 86,
+    "react": 52,
+    "dsa": 36,
+    "databases": 90,
+    "general": 36,
+    "career": 36,
+    "rails_experience": 60,
+    "go_experience": 36,
+    "elixir_experience": 36,
+    "system_design": 36,
+    "salesforce": 12,
+    "library": 2634
+  },
+  "imported_content_errors": [],
+  "filesystem_differences": []
+}

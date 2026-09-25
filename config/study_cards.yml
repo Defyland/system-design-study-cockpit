@@ -1,0 +1,118 @@
+- id: rippling-this
+  topic: frontend
+  reported: true
+  prompt: 'O que obj.print() imprime? E se a função for chamada separadamente?'
+  code: "var obj = {\n  value: 6,\n  print: function () { console.log(this.value); }\n};"
+  reasoning: 'Primeiro vou conferir a chamada: declarar o objeto não executa a função. Eu identifico o receptor antes de decidir o valor de this.'
+  answer: 'Com obj.print(), eu obtenho 6. Se eu extrair o método para uma variável, perco esse receptor. Em uma função estrita, this será undefined e o acesso falhará; numa função não estrita, ele será o objeto global, cujo value não posso presumir.'
+  alternative: 'Eu pediria ao entrevistador a forma de chamada e o ambiente. Uma resposta única sem essas informações esconderia a condição que determina o resultado.'
+  trap: 'Eu diria que sempre imprime 6 porque a função foi definida dentro de obj.'
+  explanation: 'Uma função comum não captura automaticamente o objeto onde foi declarada.'
+- id: rippling-bind
+  topic: frontend
+  reported: true
+  prompt: 'Como você preservaria o contexto ao chamar obj.print depois?'
+  reasoning: 'Eu separo a referência da função do objeto que deverá atuar como this quando ela for executada.'
+  answer: 'Eu guardaria const later = obj.print.bind(obj). Ao executar later(), o receptor continua sendo obj, mesmo que o chamador não o forneça.'
+  alternative: 'Eu também posso usar () => obj.print(). Esse wrapper procura o método no momento da execução; bind conserva a função que existia quando o vínculo foi criado.'
+  trap: 'Eu usaria const later = obj.print() para guardar a função.'
+  explanation: 'Os parênteses executam o método imediatamente e guardam seu retorno.'
+- id: rippling-bind-polyfill
+  topic: frontend
+  reported: true
+  prompt: 'Como você implementaria uma versão de bind?'
+  reasoning: 'Eu esclareceria se o contrato inclui apenas chamadas comuns ou também construção com new. Isso muda o que uma implementação correta precisa fazer.'
+  answer: 'Para chamadas comuns, eu devolveria uma função que chama a original com apply, usando o receptor guardado e concatenando os argumentos antecipados com os novos. Eu verificaria o valor retornado e a ordem dos argumentos.'
+  alternative: 'Se new fizer parte do contrato, eu precisarei tratar construção e protótipo: um wrapper com apply não é um polyfill completo. Eu explicitaria esse limite antes de apresentar a versão reduzida.'
+  trap: 'Eu alteraria temporariamente uma propriedade do receptor para executar a função.'
+  explanation: 'Isso pode colidir com propriedades existentes e falhar em objetos não extensíveis.'
+- id: rippling-subscription
+  topic: frontend
+  reported: true
+  prompt: 'Projete um sistema simples de assinatura de estado.'
+  reasoning: 'Eu começo pelo contrato: ler estado, atualizar e assinar mudanças. Eu decido quando notificar e como cancelar uma assinatura.'
+  answer: 'Eu manteria o estado e um conjunto de listeners. subscribe registraria o listener e devolveria uma função de cancelamento. Ao atualizar, eu notificaria uma cópia do conjunto para que cancelamentos durante a iteração não alterem inesperadamente essa rodada.'
+  alternative: 'Se houver seletores, eu compararia o valor selecionado antes de notificar cada consumidor. Só adicionaria essa complexidade quando atualizações irrelevantes forem um problema.'
+  trap: 'Eu deixaria toda inscrição ativa para sempre.'
+  explanation: 'Consumidores desmontados continuariam recebendo notificações e poderiam manter referências desnecessárias.'
+- id: rippling-tabs
+  topic: frontend
+  reported: true
+  prompt: 'Como você desenharia um componente reutilizável de Tabs?'
+  reasoning: 'Eu esclareço quem controla a seleção e se os painéis precisam preservar estado. Também incluo navegação por teclado no contrato.'
+  answer: 'Eu usaria identificadores estáveis, uma aba ativa e um callback de mudança. Associaria abas e painéis acessíveis e trataria o foco por teclado. Para integrar com a URL, deixaria a tela controlar a seleção.'
+  alternative: 'Para uso independente, eu ofereceria estado interno com valor inicial. Manter painéis montados preserva estado local, mas eu avaliaria seu custo antes de escolher essa política.'
+  trap: 'Eu usaria o texto visível como identidade permanente da aba.'
+  explanation: 'Traduções, rótulos repetidos ou mudanças de texto podem alterar a identidade indevidamente.'
+- id: payment-retry
+  topic: backend
+  prompt: 'O pagamento sofreu timeout. Como tentar novamente sem duplicar a cobrança?'
+  reasoning: 'Eu separo falta de resposta de falha da operação. O timeout não demonstra que o provedor deixou de cobrar.'
+  answer: 'Eu reutilizaria a mesma chave de idempotência para a mesma operação, persistiria seu estado e consultaria o resultado no provedor. Eu verificaria que retries simultâneos não criam cobranças distintas.'
+  alternative: 'Sem idempotência ou consulta confiável, eu manteria o resultado pendente e faria reconciliação. Aceito confirmação mais lenta para evitar uma nova cobrança às cegas.'
+  trap: 'Eu criaria uma chave nova a cada retry.'
+  explanation: 'O provedor poderia interpretar cada tentativa como uma compra diferente.'
+- id: backend-pagination
+  topic: backend
+  prompt: 'Como paginar uma lista que recebe novos registros durante a navegação?'
+  reasoning: 'Eu defino uma ordenação estável e pergunto se precisamos de um retrato fixo ou de uma lista ao vivo.'
+  answer: 'Para avançar numa lista grande, eu usaria um cursor com os campos da ordenação e um identificador como desempate. Consultaria os registros posteriores ao cursor, com um índice compatível.'
+  alternative: 'Offset é simples e permite saltar para páginas, mas inserções podem deslocar resultados. Para exportação consistente, eu consideraria um snapshot em vez de prometer consistência apenas com cursor.'
+  trap: 'Eu ordenaria somente por uma data que pode se repetir.'
+  explanation: 'Sem desempate, a fronteira entre páginas fica ambígua.'
+- id: system-cache
+  topic: system
+  prompt: 'Você adicionaria cache a uma página com preços que mudam?'
+  reasoning: 'Eu primeiro definiria quanto atraso o produto tolera e qual etapa precisa confirmar o preço vigente.'
+  answer: 'Eu poderia armazenar a listagem com validade curta, mas validaria o preço na confirmação da compra. Eu mediria taxa de acerto, latência e divergência, porque um cache rápido pode entregar informação inadequada.'
+  alternative: 'Se o preço precisa ser atual em toda leitura, eu reduziria ou evitaria cache nessa fronteira. Invalidação por evento ajuda, mas ainda exige lidar com atrasos e falhas de entrega.'
+  trap: 'Eu assumiria que um TTL impede qualquer preço desatualizado.'
+  explanation: 'Durante a validade, o dado pode divergir da origem.'
+- id: system-outbox
+  topic: system
+  prompt: 'Como salvar um pedido e publicar seu evento sem perder a mensagem?'
+  reasoning: 'Eu identifico a escrita dupla: o banco pode confirmar enquanto a publicação falha.'
+  answer: 'Eu salvaria o pedido e uma entrada de outbox na mesma transação. Um processo publicaria as entradas pendentes e registraria o envio. Como uma falha pode causar reenvio, eu tornaria o consumidor idempotente.'
+  alternative: 'Eu manteria publicação direta se perder o evento fosse aceitável e explicitamente previsto. Para eventos críticos, aceito o custo operacional da outbox.'
+  trap: 'Eu prometeria entrega exatamente uma vez só porque há uma outbox.'
+  explanation: 'A falha após publicar e antes de registrar o envio pode produzir duplicatas.'
+- id: algorithms-pairs
+  topic: algorithms
+  prompt: 'Como encontrar dois números de um array cuja soma seja um alvo?'
+  reasoning: 'Eu confirmo se devo devolver índices, se existe uma única resposta e se posso usar memória adicional.'
+  answer: 'Eu percorreria os números mantendo um mapa de valores já vistos. Antes de inserir o atual, procuraria seu complemento. Assim evito usar o mesmo elemento duas vezes e obtenho tempo esperado linear com memória linear.'
+  alternative: 'Se o array estiver ordenado e eu só precisar dos valores, dois ponteiros usam memória constante. Ordenar antes custa tempo e pode exigir preservar os índices originais.'
+  trap: 'Eu inseriria o elemento antes da busca sem verificar se estou reutilizando seu índice.'
+  explanation: 'Um único valor igual à metade do alvo poderia ser usado duas vezes.'
+- id: algorithms-bfs
+  topic: algorithms
+  prompt: 'Como encontrar o menor caminho num grafo sem pesos?'
+  reasoning: 'Eu confirmo que cada aresta tem o mesmo custo e que queremos minimizar o número de passos.'
+  answer: 'Eu usaria busca em largura com uma fila, marcando os nós quando entram nela e guardando predecessores. A primeira descoberta alcança cada nó pela menor quantidade de arestas; reconstruo o caminho ao final.'
+  alternative: 'Se os pesos variarem e forem não negativos, eu consideraria Dijkstra. Uma busca em profundidade simples não garante o menor caminho.'
+  trap: 'Eu trataria o primeiro caminho de uma busca em profundidade como o menor.'
+  explanation: 'A ordem da exploração pode levar primeiro a um caminho longo.'
+- id: english-clarify
+  topic: english
+  prompt: 'The interviewer says: “Make it scalable.” How would you clarify that request?'
+  reasoning: 'I need a measurable target before choosing a mechanism. I will ask about workload and acceptable latency.'
+  answer: 'I would ask: “What traffic do we expect, and what latency should we maintain at peak load?” Then I would identify the constrained resource before proposing a change.'
+  alternative: 'If exact numbers are unavailable, I would state a working assumption and explain what evidence would make me revise it.'
+  trap: 'I would immediately promise unlimited scalability.'
+  explanation: 'The promise has no workload, resource or latency boundary.'
+- id: english-experience
+  topic: english
+  prompt: 'How would you distinguish something you did from a solution you are proposing?'
+  reasoning: 'I separate documented experience from a hypothetical recommendation so the interviewer can tell what I actually verified.'
+  answer: 'I would say “I measured the latency before the change” for completed work, and “I would measure the latency first” for a proposed approach. I would only claim a result I can support.'
+  alternative: 'If I participated without leading, I would say “I contributed to” and describe my responsibility instead of claiming ownership of the entire project.'
+  trap: 'I would describe a suggested solution as a past achievement.'
+  explanation: 'A technically plausible suggestion is not evidence of personal experience.'
+- id: frontend-request-race
+  topic: frontend
+  prompt: 'Uma busca antiga terminou depois da mais recente. Como evitar resultados errados na tela?'
+  reasoning: 'Eu separo a ordem de envio da ordem de chegada. A resposta mais recente a chegar pode pertencer à consulta antiga.'
+  answer: 'Eu associaria cada consulta a uma versão e só aplicaria a resposta se ainda corresponder à consulta atual. Cancelaria a requisição anterior quando possível, mas protegeria também a atualização do estado.'
+  alternative: 'Debounce reduz requisições, mas não resolve sozinho a corrida. Eu testaria duas consultas com respostas entregues em ordem inversa.'
+  trap: 'Eu assumiria que a rede entrega respostas na ordem em que enviei.'
+  explanation: 'Latências distintas permitem que uma resposta antiga sobrescreva a atual.'
