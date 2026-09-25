@@ -39,6 +39,7 @@
 .study-start { display: grid; gap: .85rem; }
 .study-start label { font-weight: 700; }
 .study-actions, .study-card-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: .6rem; }
+.study-library-actions a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: .8rem 1.1rem; border: 1px solid #225b48; border-radius: 9px; font-weight: 700; text-decoration: none; }
 .study-source-list { max-height: 440px; overflow: auto; border: 1px solid #e1e3dc; border-radius: 10px; }
 .study-source-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; border-bottom: 1px solid #e9ebe5; }
 .study-source-row[hidden] { display: none !important; }
@@ -100,10 +101,12 @@
 .study-mode-options label { display: block; padding: .4rem 0; }
 .study-selected-sources { padding: 1rem; background: #f0eaf8; border-radius: 9px; margin-bottom: 1.4rem; }
 .study-selected-sources ul { max-height: 120px; overflow: auto; margin: .5rem 0; }
-.study-guide-tabs { gap: .5rem; border-bottom: 1px solid #e1e3dc; }
+.study-guide-tabs { display: flex; gap: .5rem; border-bottom: 1px solid #e1e3dc; }
 .study-guide-tabs a { flex: 1; padding: .7rem .25rem; text-align: center; font-weight: 700; text-decoration: none; }
 .study-guide-tabs a[aria-current] { border-bottom: 3px solid #225b48; }
-.study-guide-reading { padding: 1rem 0; }
+.study-guide-reading { padding: 1.5rem 0; }
+.study-guide-reading h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); margin-bottom: 1.1rem; }
+.study-guide-reading .study-original { font-size: 1.05rem; line-height: 1.7; }
 .study-guide-reading .study-original { max-height: none; }
 .study-guide-reading button { margin-top: .7rem; }
 .study-source-dialog { width: min(700px, calc(100vw - 2rem)); max-height: 85dvh; margin: auto auto 0; padding: 1.2rem; border: 1px solid #d8cae9; border-radius: 18px 18px 0 0; box-shadow: 0 -12px 35px rgba(20, 41, 31, .18); overflow-y: auto; }
@@ -146,7 +149,7 @@
   .study-body .study-muted, .study-body .study-source-link { font-size: 1rem; }
   .study-mobile-only { display: block !important; }
   .study-desktop-only { display: none !important; }
-  .study-desktop-actions { display: none !important; }
+  .study-library-actions { display: grid; }
   .study-shell { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .study-focused .study-shell { padding-bottom: 0; }
   .study-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: #fff; border-top: 1px solid #e1e3dc; border-bottom: 0; padding: .2rem 1rem calc(.2rem + env(safe-area-inset-bottom)); }

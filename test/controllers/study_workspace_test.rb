@@ -30,7 +30,7 @@ class StudyWorkspaceTest < ActionDispatch::IntegrationTest
     section_path = "#{study_card_source_path(@document)}#section-#{sections.last[:id]}"
     get study_guide_path(document_id: @document.id, section: sections.last[:id])
     assert_response :success
-    assert_select ".study-source-pane", text: /Original second paragraph/
+    assert_select ".study-guide-reading", text: /Original second paragraph/
     assert_select "a[href='#{section_path}']"
     get section_path
     assert_response :success
@@ -112,5 +112,37 @@ class StudyWorkspaceTest < ActionDispatch::IntegrationTest
     assert_response :success
     get "/study-cards/review"
     assert_response :success
+  end
+
+  test "whole topic format starts authored interview cards without selected documents" do
+    get study_configure_path(topic: "frontend", scope: "all")
+    assert_response :success
+    post start_study_workspace_path, params: { topic: "frontend", scope: "all", format: "cards", mode: "new" }
+    assert_redirected_to study_card_path(StudyCardRound.last)
+    assert_equal "rippling-this", StudyCardRound.last.card_keys.first
+    assert_empty StudyCardRound.last.source_ids
+    post start_study_workspace_path, params: { topic: "all", scope: "all", format: "quiz" }
+    assert_redirected_to study_quiz_path(StudyQuizRound.last)
+    assert_empty StudyQuizRound.last.source_ids
+    post start_study_workspace_path, params: { topic: "frontend", scope: "all", format: "guide" }
+    assert_redirected_to study_guide_path(topic: "frontend")
+    post start_study_workspace_path, params: { topic: "frontend", scope: "all", format: "map" }
+    assert_redirected_to study_map_path(topic: "frontend")
+  end
+
+  test "guide keeps selected source scope and leaves empty tabs without a reading" do
+    second = StudyDocument.create!(kind: @document.kind, slug: "second-selected", title: "Second selected", source_path: "workspace/second.md", body_markdown: "# Second\nOriginal second source.\n", body_checksum: "second-selected", position: 1)
+    third = StudyDocument.create!(kind: @document.kind, slug: "third-unselected", title: "Third unselected", source_path: "workspace/third.md", body_markdown: "# Third\nUnselected source.\n", body_checksum: "third-unselected", position: 2)
+    get study_guide_path(topic: "all", document_id: @document.id, source_ids: [@document.id, second.id], tab: "Compare")
+    assert_response :success
+    assert_select "form[action='#{study_guide_path}'] input[name='source_ids[]'][value='#{@document.id}']"
+    assert_select "form[action='#{study_guide_path}'] input[name='source_ids[]'][value='#{second.id}']"
+    assert_select "select[name='document_id'] option[value='#{third.id}']", false
+    assert_select ".study-guide-reading", false
+    assert_select ".study-source-pane", text: /Nenhuma seção desta categoria/
+    get study_map_path(topic: "all", source_ids: [@document.id, second.id])
+    assert_select "form[action='#{study_map_path}'] input[name='source_ids[]'][value='#{@document.id}']"
+    assert_select "form[action='#{study_map_path}'] input[name='source_ids[]'][value='#{second.id}']"
+    assert_select ".study-map-list", text: /Unselected source/, count: 0
   end
 end

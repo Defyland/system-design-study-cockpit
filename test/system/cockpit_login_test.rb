@@ -34,7 +34,9 @@ class CockpitLoginTest < ApplicationSystemTestCase
     select "Ruby", from: "Filtrar por trilha"
     click_button "Filtrar"
     assert_selector "input[name='topic'][value='ruby']", visible: false, wait: 20
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_selector ".study-question", wait: 15
     click_button "Lido, próximo"
     assert_selector "progress[value='1']", wait: 15

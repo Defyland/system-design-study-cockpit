@@ -8,7 +8,9 @@ class StudyCardsTest < ApplicationSystemTestCase
   test "study, reload, undo and explicitly replay completed cards" do
     visit study_cards_path
     assert_text "cards", wait: 10
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_text "O que obj.print() imprime?", wait: 10
     assert_no_text "Com obj.print(), eu obtenho 6.", wait: 10
     find("summary").click
@@ -24,7 +26,11 @@ class StudyCardsTest < ApplicationSystemTestCase
     assert_empty StudyCardRound.completed_keys(StudyCardRound.last.learner_key)
     click_button "Lido, próximo"
     within(".study-meta") { click_link "Biblioteca" }
-    click_button "Repetir lidos por escolha"
+    assert_text "Escolha o que estudar", wait: 15
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    choose "Revisar lidos por escolha"
+    click_button "Começar"
     assert_text "Revisão escolhida", wait: 10
     assert_text "O que obj.print() imprime?", wait: 10
     click_button "Lido, próximo"

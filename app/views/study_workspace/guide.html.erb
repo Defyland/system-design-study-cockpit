@@ -1,24 +1,45 @@
 <% content_for :title, "Guia com fontes · Cockpit" %>
-<section class="study-page" data-controller="source-sheet">
-  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path %><span>GUIA COM FONTES</span></div>
-  <div class="study-page-heading"><h1>Leia a partir do acervo</h1><p>Seções originais para explorar, comparar quando o texto permite e praticar. O trecho citado reproduz o documento.</p></div>
+<section class="study-page study-guide-page" data-controller="source-sheet">
+  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path(topic: @topic, source_ids: @source_ids) %><span>GUIA COM FONTES</span></div>
+  <div class="study-page-heading"><h1>Leia a partir do acervo</h1><p>Explore as seções originais. Compare e Pratique aparecem quando o documento contém esse tipo de conteúdo.</p></div>
   <div class="study-grid">
     <div class="study-panel study-main-panel">
       <% if @document %>
-        <%= form_with url: study_guide_path, method: :get, class: "study-filter" do |form| %><%= form.label :document_id, "Documento" %><%= form.select :document_id, @documents.map { |doc| [doc.title, doc.id] }, selected: @document.id %><%= form.submit "Abrir", class: "study-secondary" %><% end %>
-        <nav class="study-guide-tabs study-mobile-only" aria-label="Etapas do guia"><% @groups.each do |name, sections| %><%= link_to "#{name} (#{sections.size})", study_guide_path(document_id: @document.id, source_ids: @source_ids, tab: name), aria: { current: (@active_tab == name ? "page" : nil) } %><% end %></nav>
-        <% if @selected %><article class="study-guide-reading study-mobile-only"><p class="study-eyebrow">LEITURA ORIGINAL · <%= @document.title %></p><div class="study-original"><%= study_card_markdown(@selected[:answer_markdown], source_path: @document.source_path) %></div><button type="button" class="study-secondary" data-action="click->source-sheet#open">Abrir fonte citada</button><%= button_to "Praticar com cards", study_cards_path, params: { topic: "library", source_ids: [@document.id], mode: "new" } %></article><% end %>
-        <% @groups.each do |name, sections| %>
-          <section class="study-guide-group <%= 'study-guide-inactive' if @active_tab != name %>"><h2><%= name %></h2>
-            <% if sections.empty? %><p class="study-muted"><%= name == "Compare" ? "Este documento não contém uma comparação identificada; consulte as seções originais em Entenda." : "Nenhuma seção desta categoria neste documento." %></p><% end %>
-            <ul><% sections.each do |section| %><li><%= link_to section[:prompt], study_guide_path(document_id: @document.id, source_ids: @source_ids, section: section[:id], tab: name), aria: { current: (@selected == section ? "location" : nil) } %><span><%= link_to "Abrir trecho original", study_section_path(section), class: "study-source-link" %></span></li><% end %></ul>
-          </section>
+        <%= form_with url: study_guide_path, method: :get, class: "study-filter" do |form| %>
+          <%= hidden_field_tag :topic, @topic %>
+          <% @source_ids.each do |id| %><%= hidden_field_tag "source_ids[]", id %><% end %>
+          <%= form.label :document_id, "Documento" %>
+          <%= form.select :document_id, @documents.map { |doc| [doc.title, doc.id] }, selected: @document.id %>
+          <%= form.submit "Abrir", class: "study-secondary" %>
         <% end %>
-      <% else %><p class="study-empty"><%= @missing_source ? "Fonte indisponível. Volte e escolha outro documento; nenhuma citação foi substituída." : "O acervo ainda não tem documentos importados." %></p><%= link_to "Voltar à biblioteca", study_cards_path %><% end %>
+        <nav class="study-guide-tabs" aria-label="Etapas do guia">
+          <% @groups.each do |name, sections| %><%= link_to "#{name} (#{sections.size})", study_guide_path(topic: @topic, document_id: @document.id, source_ids: @source_ids, tab: name), aria: { current: (@active_tab == name ? "page" : nil) } %><% end %>
+        </nav>
+        <% if @selected %>
+          <article class="study-guide-reading">
+            <p class="study-eyebrow">LEITURA ORIGINAL · <%= @document.title %></p>
+            <div class="study-original"><%= study_card_markdown(@selected[:answer_markdown], source_path: @document.source_path) %></div>
+            <div class="study-actions"><button type="button" class="study-secondary" data-action="click->source-sheet#open">Abrir fonte citada</button><%= button_to "Praticar com cards", study_cards_path, params: { topic: "library", source_ids: [@document.id], mode: "new" } %></div>
+          </article>
+        <% else %>
+          <p class="study-empty"><%= @missing_source ? "Trecho indisponível. Escolha uma seção existente." : "Nenhuma seção desta categoria neste documento." %></p>
+        <% end %>
+        <% sections = @groups.fetch(@active_tab) %>
+        <% if sections.any? %><div class="study-guide-group"><h2>Seções em <%= @active_tab %></h2><ul><% sections.each do |section| %><li><%= link_to section[:prompt], study_guide_path(topic: @topic, document_id: @document.id, source_ids: @source_ids, section: section[:id], tab: @active_tab), aria: { current: (@selected == section ? "location" : nil) } %></li><% end %></ul></div>
+        <% elsif @active_tab == "Compare" %><p class="study-muted">Este documento não contém uma comparação identificada; consulte as seções originais em Entenda.</p><% end %>
+      <% else %>
+        <p class="study-empty"><%= @missing_source ? "Fonte indisponível. Volte e escolha outro documento; nenhuma citação foi substituída." : "Esta trilha não tem documentos importados para o guia." %></p>
+        <%= link_to "Voltar à biblioteca", study_cards_path(topic: @topic, source_ids: @source_ids) %>
+      <% end %>
     </div>
-    <aside class="study-panel study-side-panel study-source-pane" aria-label="Trecho citado">
-      <h2>Trecho original</h2>
-      <% if @selected %><p class="study-muted"><%= @document.title %></p><div class="study-original"><%= study_card_markdown(@selected[:answer_markdown], source_path: @document.source_path) %></div><%= link_to "Abrir esta seção no documento", study_section_path(@selected), class: "study-citation" %><% else %><p><%= @missing_source ? "Trecho indisponível. Volte e escolha uma seção existente." : "Escolha uma seção para ler a fonte." %></p><% end %>
+    <aside class="study-panel study-side-panel study-source-pane" aria-label="Fonte do guia">
+      <h2>Fonte original</h2>
+      <% if @document %>
+        <p><strong><%= @document.title %></strong></p>
+        <p class="study-muted"><%= @active_tab %> · <%= @groups.fetch(@active_tab).size %> seções nesta categoria</p>
+        <% if @selected %><%= link_to "Abrir esta seção no documento", study_section_path(@selected), class: "study-citation" %><% else %><p>Nenhuma seção desta categoria neste documento.</p><% end %>
+        <%= link_to "Documento completo", study_card_source_path(@document) %>
+      <% else %><p>Escolha uma fonte disponível.</p><% end %>
     </aside>
   </div>
   <% if @selected %><dialog class="study-source-dialog" data-source-sheet-target="dialog" data-action="close->source-sheet#closed" aria-labelledby="study-source-dialog-title"><div class="study-dialog-header"><h2 id="study-source-dialog-title"><%= @document.title == @selected[:prompt] ? @document.title : "#{@document.title} · #{@selected[:prompt]}" %></h2><button type="button" class="study-secondary" data-action="click->source-sheet#close" aria-label="Fechar fonte">×</button></div><div class="study-original"><%= study_card_markdown(@selected[:answer_markdown], source_path: @document.source_path) %></div><%= link_to "Abrir documento completo", study_section_path(@selected), class: "study-citation" %><button type="button" class="study-secondary" data-action="click->source-sheet#close">Voltar ao guia</button></dialog><% end %>

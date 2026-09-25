@@ -5,7 +5,7 @@ export default class extends Controller {
 
   connect() {
     this.popstate = () => {
-      if (this.dialogTarget.open) this.dialogTarget.close()
+      if (this.hasDialogTarget && this.dialogTarget.open) this.dialogTarget.close()
       requestAnimationFrame(() => this.focusOrigin())
     }
     window.addEventListener("popstate", this.popstate)

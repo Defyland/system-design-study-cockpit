@@ -1,9 +1,9 @@
 <% content_for :title, "Mapa do acervo · Cockpit" %>
 <section class="study-page" data-controller="study-map">
-  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path %><span>MAPA DO ACERVO</span></div>
+  <div class="study-meta"><%= link_to "← Biblioteca", study_cards_path(topic: @selected_topic, source_ids: @source_ids) %><span>MAPA DO ACERVO</span></div>
   <div class="study-page-heading"><h1>Mapa do acervo</h1><p>Trilhas, documentos e seções do acervo. As conexões abaixo representam apenas esta hierarquia.</p></div>
   <div class="study-panel">
-    <%= form_with url: study_map_path, method: :get, class: "study-filter" do |form| %><%= form.label :topic, "Trilha" %><%= form.select :topic, @topics.map { |key, label| [label, key] }, selected: @selected_topic %><%= form.submit "Mostrar", class: "study-secondary" %><% end %>
+    <%= form_with url: study_map_path, method: :get, class: "study-filter" do |form| %><% @source_ids.each do |id| %><%= hidden_field_tag "source_ids[]", id %><% end %><%= form.label :topic, "Trilha" %><%= form.select :topic, @topics.map { |key, label| [label, key] }, selected: @selected_topic %><%= form.submit "Mostrar", class: "study-secondary" %><% end %>
     <p class="study-muted"><%= @documents.size %> <%= @documents.size == 1 ? "documento" : "documentos" %> nesta trilha. Expanda um documento, abra uma seção ou inicie uma rodada filtrada.</p>
     <div class="study-map-controls"><button type="button" class="study-secondary" data-action="click->study-map#map" data-study-map-target="mapButton">Mapa</button><button type="button" class="study-secondary" data-action="click->study-map#list" data-study-map-target="listButton">Lista</button><span data-study-map-target="zoomControls"><button type="button" class="study-secondary" data-action="click->study-map#zoomOut" aria-label="Reduzir mapa">−</button><button type="button" class="study-secondary" data-action="click->study-map#zoomIn" aria-label="Ampliar mapa">+</button><button type="button" class="study-secondary" data-action="click->study-map#fit">Enquadrar</button></span></div>
     <% if @documents.empty? %><p class="study-empty">Nenhum documento nesta trilha. Escolha outra para explorar.</p><% end %>

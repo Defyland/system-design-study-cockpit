@@ -13,8 +13,8 @@
         <%= hidden_field_tag :topic, @selected_topic %>
         <label for="source-search">Buscar nesta lista</label>
         <input id="source-search" type="search" placeholder="Título ou tipo de fonte" data-action="input->source-filter#search" data-source-filter-target="search">
-        <p class="study-muted"><%= @documents.size %> <%= @documents.size == 1 ? "documento" : "documentos" %> nesta trilha · <span data-source-filter-target="count">0 selecionados</span><span class="study-desktop-only">. Sem seleção, a rodada usa todos os conteúdos elegíveis da trilha.</span></p>
-        <p class="study-muted study-mobile-only" data-source-filter-target="hint">Escolha uma ou mais fontes para continuar.</p>
+        <p class="study-muted"><%= @documents.size %> <%= @documents.size == 1 ? "documento" : "documentos" %> nesta trilha · <span data-source-filter-target="count">0 selecionados</span></p>
+        <p class="study-muted" data-source-filter-target="hint">Escolha fontes para limitar o estudo a elas, ou use toda a trilha para incluir perguntas de entrevista e conteúdo do Arcade.</p>
         <div class="study-source-list" role="group" aria-label="Fontes disponíveis">
           <% @documents.each do |document| %>
             <div class="study-source-row" data-source-filter-target="row">
@@ -25,8 +25,7 @@
           <% if @documents.empty? %><p class="study-empty">Esta trilha não tem documentos no acervo. Outros materiais da trilha continuam disponíveis sem selecionar fonte.</p><% end %>
         </div>
         <p class="study-empty" data-source-filter-target="empty" hidden>Nenhuma fonte corresponde à busca. Ajuste o texto ou a trilha.</p>
-        <button type="button" class="study-mobile-only" data-source-filter-target="choose" data-action="click->source-filter#choose" disabled>Escolher formato →</button>
-        <div class="study-actions study-desktop-actions"><button name="mode" value="new">Nova rodada · até 50</button><button name="mode" value="replay" class="study-secondary">Repetir lidos por escolha</button></div>
+        <div class="study-actions study-library-actions"><button type="button" data-source-filter-target="choose" data-action="click->source-filter#choose" disabled>Escolher formato →</button><%= link_to "Estudar toda a trilha", study_configure_path(topic: @selected_topic, scope: "all"), class: "study-secondary" %></div>
       <% end %>
     </div>
     <aside class="study-panel study-side-panel">
@@ -35,7 +34,7 @@
       <h3>Retomar</h3>
       <% if @rounds.empty? %><p class="study-muted">Nenhuma rodada em andamento.</p><% end %>
       <% @rounds.each do |round| %><p><%= link_to "#{@topics.fetch(round.topic, round.topic.humanize)} · #{round.position}/#{round.card_keys.size}", study_card_path(round), class: "study-resume-link" %></p><% end %>
-      <div class="study-mode-links"><%= link_to "Guia com fontes", study_guide_path %><%= link_to "Quiz do Arcade", study_quizzes_path %><%= link_to "Mapa do acervo", study_map_path %></div>
+      <div class="study-mode-links"><%= link_to "Escolher formato para toda a trilha", study_configure_path(topic: @selected_topic, scope: "all") %></div>
       <p class="study-muted">O quiz avalia respostas separadamente da leitura. Nenhuma revisão começa automaticamente.</p>
     </aside>
   </div>

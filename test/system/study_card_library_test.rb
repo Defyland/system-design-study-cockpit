@@ -11,7 +11,9 @@ class StudyCardLibraryTest < ApplicationSystemTestCase
     select "Ruby", from: "Filtrar por trilha"
     click_button "Filtrar"
     assert_selector "input[name='topic'][value='ruby']", visible: false, wait: 20
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_text "What is the practical difference between a proc and a lambda?", wait: 10
     find("summary", text: "Ver raciocínio e resposta", match: :first).click
     assert_text "a lambda checks its arity while a proc does not", wait: 10
@@ -23,19 +25,25 @@ class StudyCardLibraryTest < ApplicationSystemTestCase
     select "Ruby on Rails", from: "Filtrar por trilha"
     click_button "Filtrar"
     assert_selector "input[name='topic'][value='rails']", visible: false, wait: 20
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_selector ".study-side-panel", text: /Ruby on Rails/, wait: 20
     within(".study-meta") { click_link "Biblioteca" }
     select "Golang", from: "Filtrar por trilha"
     click_button "Filtrar"
     assert_selector "input[name='topic'][value='golang']", visible: false, wait: 20
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_selector ".study-side-panel", text: /Golang/, wait: 20
     within(".study-meta") { click_link "Biblioteca" }
     select "Elixir", from: "Filtrar por trilha"
     click_button "Filtrar"
     assert_selector "input[name='topic'][value='elixir']", visible: false, wait: 20
-    click_button "Nova rodada · até 50"
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    click_button "Começar"
     assert_selector ".study-side-panel", text: /Elixir/, wait: 20
   end
   test "library cards render original prose and code and link to the complete document" do

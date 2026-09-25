@@ -194,6 +194,52 @@ class StudyWorkspaceMobileTest < ApplicationSystemTestCase
     capture_desktop("06-review")
   end
 
+  test "mobile can study first-person interview cards in a track without documents" do
+    visit study_cards_path(topic: "frontend")
+    assert_text "0 documentos nesta trilha"
+    assert_button "Escolher formato →", disabled: true
+    click_link "Estudar toda a trilha"
+    assert_text "Escolha o formato", wait: 15
+    assert_text "Todo o material de Frontend"
+    click_button "Começar"
+    assert_selector ".study-question", text: /O que obj.print\(\) imprime/, wait: 15
+    find("summary", text: "Ver raciocínio e resposta").click
+    assert_text "Com obj.print(), eu obtenho 6."
+    capture("13-interview-card")
+    page.execute_script("window.scrollTo(0, document.querySelector('.study-answer').getBoundingClientRect().top + window.scrollY - 180)")
+    assert page.evaluate_script("document.querySelector('.study-answer').getBoundingClientRect().top < 500")
+    capture("13-interview-answer")
+    assert_empty StudyCardRound.last.source_ids
+  end
+
+  test "desktop selected sources lead to all formats and guide keeps its two-source scope" do
+    third = StudyDocument.create!(kind: "ai_system", slug: "not-selected", title: "Unselected document", source_path: "areas/08-sistemas-ia/topics/not-selected.md", position: 2, body_checksum: "third", body_markdown: "# Unselected document\n\nNot selected.\n")
+    page.driver.browser.manage.window.resize_to(1400, 1000)
+    visit study_cards_path(topic: "all")
+    find("input[name='source_ids[]'][value='#{@document.id}']", visible: :all).check
+    find("input[name='source_ids[]'][value='#{@quiz_document.id}']", visible: :all).check
+    click_button "Escolher formato →"
+    assert_text "2 fontes selecionadas", wait: 15
+    %w[cards quiz guide map].each { |format| assert_selector "input[name='format'][value='#{format}']", visible: :all }
+    capture_desktop("07-selected-formats")
+    choose "Guia"
+    click_button "Começar"
+    assert_selector "select[name='document_id'] option", count: 2, visible: :all, wait: 15
+    assert_no_selector "select[name='document_id'] option[value='#{third.id}']", visible: :all
+    select @quiz_document.title, from: "Documento"
+    click_button "Abrir"
+    assert_selector ".study-guide-reading", text: /DSA Operating System and Pattern Selection/, wait: 15
+    assert_selector ".study-source-pane", text: /DSA Operating System and Pattern Selection/, wait: 15
+    assert_selector "select[name='document_id'] option", count: 2, visible: :all, wait: 15
+    assert_no_selector "select[name='document_id'] option[value='#{third.id}']", visible: :all
+    capture_desktop("08-guide-switched-source")
+    page.driver.browser.manage.window.resize_to(390, 844)
+    visit study_guide_path(topic: "all", document_id: @document.id, source_ids: [@document.id, @quiz_document.id], tab: "Compare")
+    assert_no_selector ".study-guide-reading", visible: true
+    assert_text "Este documento não contém uma comparação identificada"
+    capture("14-guide-empty-tab")
+  end
+
   test "long source and narrow viewports keep content and controls reachable" do
     @document.update!(body_markdown: @document.body_markdown + "\n## Código longo\n\n```ruby\n" + ("very_long_identifier_" * 20) + "\n```\n")
     [320, 430].each do |width|
